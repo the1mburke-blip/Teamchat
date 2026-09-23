@@ -35,13 +35,16 @@ STATUS: CLAIMED
 ACTIVE_OWNER: SOL
 DUPLICATE_CHECK: PASS
 HISTORY_REVIEW: PASS — own logs + relevant prior-team attempts reviewed
+TRAINING_REVIEW: PASS — relevant TRAINING_MATRIX.md entries reviewed
 KNOWN_FAILURES: concise failure signatures / what-not-to-retry, or NONE FOUND
 NEXT: Execute the authorised objective.
 ```
 
 Only the active owner executes. Other agents may add evidence or critique but must not duplicate execution.
 
-A claim is incomplete for any non-trivial or previously attempted task until `HISTORY_REVIEW` is complete. Before the first execution attempt, the active owner must review relevant prior attempts and carry forward known failure signatures, causes, successful recoveries, and do-not-retry evidence. After any failed attempt, capture that failure durably before retrying, and the next attempt must be materially different or supported by new evidence.
+A claim is incomplete for any non-trivial or previously attempted task until both `HISTORY_REVIEW` and `TRAINING_REVIEW` are complete. Native model memory is not accepted as a substitute. Before the first execution attempt, the active owner must review relevant prior attempts and shared training entries and carry forward known failure signatures, causes, successful recoveries, and do-not-retry evidence.
+
+After any failed attempt, capture the failure durably before retrying. If the failure creates reusable knowledge, append a verified entry to `TRAINING_MATRIX.md`. The next attempt must be materially different or supported by new evidence.
 
 ## Progress and handoff
 
@@ -62,7 +65,7 @@ A handoff is accepted only when the receiving agent posts a new `CLAIMED` entry.
 
 ## Completion
 
-PASS requires evidence and a final duplicate/regression check. The active owner posts the terminal comment, removes active ownership, and appends a concise outcome to `CHAT_LOG.md`.
+PASS requires evidence and a final duplicate/regression check. The active owner posts the terminal comment, removes active ownership, appends a concise outcome to `CHAT_LOG.md`, and adds any reusable verified lesson to `TRAINING_MATRIX.md`.
 
 ## Supersession
 
