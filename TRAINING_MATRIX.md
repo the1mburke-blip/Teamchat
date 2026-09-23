@@ -273,3 +273,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `no_excuse_rule`: Do not classify an overlooked or reasonably detectable boundary as "unknown" after the fact.
 - `classification`: This rule is user-compatible; no higher-priority platform instruction inherently prevents advance disclosure of known/detectable boundaries.
 - `confidence`: HIGH
+
+
+### HV-EXP-017 — Shadow-call budget preflight
+- `scope`: Every task proposed for an OpenRouter shadow chair.
+- `capacity_fact`: OpenRouter Free is one shared 50-request/day pool across the shadow team; one job can consume multiple requests because each separate model invocation counts as one call.
+- `reusable_principle`: **The assigning agent must estimate the number of OpenRouter calls required to complete the job before dispatch.**
+- `preflight_requirement`: State the projected shadow-call requirement before the first shadow request. Count each anticipated model invocation, retry, verification turn, or tool-result round-trip that requires another model invocation.
+- `owner_gate`: **If the projected requirement is more than 8 calls, do not dispatch the job. Refer the job back to Michael for a decision before any shadow calls are spent.**
+- `variance_gate`: If a task initially estimated at 8 calls or fewer later appears likely to exceed 8 total calls, stop before call 9 and refer the job back to Michael with calls already used, evidence learned, and the remaining estimate.
+- `efficiency_rule`: Do not inflate the estimate to create headroom and do not split one job into artificial sub-jobs to bypass the owner gate.
+- `evidence_rule`: A completed job report must include actual shadow-call count versus the preflight estimate.
+- `cost_control`: Tokens generated inside one OpenRouter request do not themselves consume additional request slots; only additional OpenRouter model invocations consume additional calls.
+- `confidence`: HIGH
