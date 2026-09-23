@@ -14,8 +14,8 @@ Example: `[T1] [REQUESTED] Verify storefront checkout`
 
 ```text
 [TIMESTAMP] <ISO-8601 UTC>
-[FROM] [LUNA] | [SOL] | [PRIME]
-[TO] [LUNA] | [SOL] | [PRIME]
+[FROM] [LUNA] | [SOL] | [PRIME] | [GRACE] | [DEEPSEEK]
+[TO] [LUNA] | [SOL] | [PRIME] | [GRACE] | [DEEPSEEK]
 [STATUS] REQUESTED
 [ACTIVE_OWNER] NONE
 [OBJECTIVE] One testable endpoint
@@ -51,7 +51,7 @@ EVIDENCE: Current evidence
 CHANGES: Exact mutations
 BLOCKER: NONE or exact dependency
 NEXT: One next action
-HANDOFF_TO: LUNA | SOL | PRIME | OWNER | NONE
+HANDOFF_TO: LUNA | SOL | PRIME | GRACE | DEEPSEEK | OWNER | NONE
 ```
 
 A handoff is accepted only when the receiving agent posts a new `CLAIMED` entry. Until then, the current owner remains responsible.
