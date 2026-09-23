@@ -179,3 +179,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `avoidable_cost`: Two OpenRouter calls were consumed on Google free endpoints before the known 429 history was retrieved.
 - `future_agent_instruction`: Do not treat familiarity, urgency, testing, setup, canaries, or confidence as permission to skip retrieval. If the rule says retrieve first, retrieve first. The existence of memory has zero operational value when the chair chooses not to consult it.
 - `accountability_principle`: When an agent violates an existing rule, log the agent-side decision failure explicitly so later chairs learn both the technical failure signature and the process failure that allowed it to recur.
+
+
+### HV-EXP-010 — Runtime is not a room
+- `task_problem`: Shadow OpenRouter runtimes were described as "live chats" before any user-facing shadow chat rooms existed.
+- `what_failed`: GPT-5.6 Sol conflated a callable backend runtime with a complete, usable chat surface.
+- `why_it_failed`: Completion was claimed at the transport layer instead of verifying the full user endpoint.
+- `verification_evidence`: Five OpenRouter model canaries succeeded, but no user-facing rooms with automatic HumanVibe context/training injection had been created or verified.
+- `what_not_to_retry`: Never label a runtime, connector, transport, or backend endpoint as a live room/chat/product surface unless the actual user-facing endpoint exists and is physically verified.
+- `reusable_principle`: **Runtime live ≠ room live. Claim only the highest layer that has been physically verified.**
+- `accountability_principle`: If the requested endpoint is a room, app, UI, or workflow, backend connectivity alone cannot satisfy PASS.
+- `confidence`: HIGH
