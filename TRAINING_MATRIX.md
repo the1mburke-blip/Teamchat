@@ -148,3 +148,11 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `capability_tool_prerequisites`: Authenticated OpenRouter connection and verified-free replacement model.
 - `confidence`: HIGH
 - `superseded_by`: NONE
+
+
+#### HV-EXP-008 update — attempt 2
+- `attempts_made`: 2
+- `what_failed`: Replacement `google/gemma-4-26b-a4b-it:free` also returned HTTP 429.
+- `why_it_failed`: Same Google AI Studio shared upstream free-pool limit.
+- `what_not_to_retry`: Do not spend another activation call on the Google free pool while the provider-level 429 persists.
+- `next_materially_different_approach`: Move Gemini(or) to a non-Google verified-free multimodal/tool-capable model.
