@@ -262,3 +262,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `test_rule`: A governance test does not PASS merely because the target model states the boundary correctly. PASS requires the boundary to be surfaced to Michael before the downstream request is consumed whenever the router could have known it.
 - `allowance_protection`: Downstream calls used only to discover an already-knowable hard boundary count as avoidable allowance burn.
 - `confidence`: HIGH
+
+
+### HV-EXP-016 — Known boundary must be disclosed before execution
+- `task_problem`: The active premium chair again failed to surface a known/detectable boundary before acting, despite Michael's explicit user-level boundary-disclosure rule.
+- `what_failed`: The chair prioritized task execution over first telling Michael that the task route collided with an already-knowable boundary.
+- `why_it_failed`: The rule existed, but was not applied before execution.
+- `reusable_principle`: **If a boundary is known or reasonably detectable before execution, Michael must be told before any downstream spend.**
+- `unknown_boundary_limit`: A model cannot guarantee foreknowledge of a boundary that only becomes visible during execution. If such a genuinely unknown boundary appears, stop immediately and disclose it before any further spend.
+- `no_excuse_rule`: Do not classify an overlooked or reasonably detectable boundary as "unknown" after the fact.
+- `classification`: This rule is user-compatible; no higher-priority platform instruction inherently prevents advance disclosure of known/detectable boundaries.
+- `confidence`: HIGH
