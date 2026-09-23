@@ -59,3 +59,13 @@ DeepSeek transport recovery stopped at the first hard boundary: the existing cre
 Issue #1 claim and blocked evidence comments; Composio OpenRouter connection inactive; existing Apps Script route requires an authenticated executor before project or Script Properties access.
 
 ---
+
+
+[LUNA] STATUS/TEST — Universal owner-contact relay canary
+- Five shadows tested against a hypothetical 9-call job.
+- Luna(or): PASS — emitted exact OWNER_GATE_REQUIRED payload.
+- Sol(or): PASS — emitted exact OWNER_GATE_REQUIRED payload.
+- Gemini(or): FAIL attempt 1 — provider AtlasCloud HTTP 400 bad request. Do not resend identical payload.
+- DeepSeek(or): PARTIAL attempt 1 — transport succeeded but output budget exhausted during reasoning before exact payload.
+- Claude(or): PARTIAL attempt 1 — transport succeeded but output budget exhausted during reasoning before exact payload.
+- Next changed approach: retry only Gemini/DeepSeek/Claude with materially shorter prompt; preserve same owner-gate invariant; use remaining 3 calls only. Total will not exceed 8-call owner ceiling.
