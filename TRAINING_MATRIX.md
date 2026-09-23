@@ -106,16 +106,26 @@ Native model memory may help, but HumanVibe continuity must not depend on it. Sh
 Agent narrative is not completion evidence. A recovery or PASS becomes reusable training only when the final state is physically/readback verified.
 
 
-## Hierarchical escalation ladder
+## Free-shadow escalation ladder
 
-For a chair operating from a 10-call daily allocation inside the shared free-call pool:
+OpenRouter Free is the first inference layer for eligible work. The premium chairs remain the escalation layer.
 
-- Attempts 1–7 are the chair's bounded learning/execution budget.
-- Each failed attempt must be captured before the next; every new attempt must use the accumulated failure evidence and materially change the approach.
-- Calls 8–10 are protected reserve for other work, verification, or emergency recovery. They are not consumed to keep grinding the same failed task unless OWNER explicitly overrides.
-- After Luna's seventh failed educated attempt, Luna hands the complete failure/learning packet upward to SOL.
-- SOL must read the Training Matrix plus Luna's complete failure packet before SOL attempt 1. SOL then receives up to seven educated attempts of his own.
-- After SOL's seventh failed educated attempt, SOL stops and hands the consolidated Luna + SOL learning packet to OWNER. OWNER decides the next destination.
-- Do not route laterally to another chair merely because the current chair exhausted its budget.
-- A hard capability blocker escalates immediately rather than consuming seven attempts.
-- Any HUMAN_ELEMENT requirement — owner authentication, physical-device action, security approval, payment/identity confirmation, or other action only Michael can lawfully/physically perform — bypasses the attempt ladder and goes directly to OWNER immediately.
+- The shared OpenRouter Free account limit is 50 requests/day.
+- HumanVibe maintains five role-matched free shadows defined in `FREE_CHAIRS.md`.
+- Each shadow receives at most 7 educated attempts on the same task.
+- Each failed attempt must be captured before the next, and the next attempt must materially change based on accumulated evidence.
+- A nominal 10-call allocation per shadow therefore protects 3 calls for unrelated work, verification, or emergency recovery.
+- Across five shadows, 5 × 7 = 35 maximum task attempts if all five roles are legitimately engaged; 15 shared calls remain protected reserve.
+- After attempt 7, escalation is vertical to the matching premium counterpart, not an arbitrary lateral model.
+- The premium counterpart must read the shadow's complete failure packet plus this Training Matrix before premium attempt 1.
+- Premium chairs use the same history/training/failure-capture discipline and a maximum 7-attempt learning cycle before their normal higher-chair/OWNER escalation.
+- Any HUMAN_ELEMENT requirement bypasses the model ladder and goes directly to OWNER.
+- A hard capability/authentication blocker escalates immediately instead of consuming seven calls.
+- Never permit a free-model failure to trigger an automatic paid OpenRouter fallback.
+- Revalidate the selected OpenRouter model as a live free endpoint before execution because the free catalog can change.
+
+### HV-EXP-006 — Free intelligence before premium allowance
+When a safe, capable free shadow exists, use it to learn first. Premium reasoning should receive the accumulated evidence rather than rediscovering failures from scratch.
+
+### HV-EXP-007 — Reserve is operational capacity
+A daily request ceiling is shared infrastructure, not a target to exhaust. Protect reserve calls for verification, emergencies, and unrelated work.

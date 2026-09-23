@@ -26,7 +26,12 @@ These rules apply to Luna, Sol, Gemini Prime, Grace, and DeepSeek.
 22. If instructions conflict, stop the conflicting action and record the exact conflict for Luna/owner resolution.
 23. Roster membership does not grant standing authority. The active-owner rule controls execution regardless of agent identity.
 
-24. **Hierarchical escalation.** For a 10-call/day free-chair allocation, attempts 1–7 are the learning/execution budget and calls 8–10 are protected reserve. Luna's seventh failed educated attempt escalates upward to Sol with the complete learning packet. Sol's seventh failed educated attempt escalates upward to OWNER with the consolidated packet. OWNER chooses the next destination. Hard capability blockers escalate immediately. HUMAN_ELEMENT requirements route directly to OWNER immediately. No lateral chair hopping.
+24. **OpenRouter free-shadow first.** For every eligible task, route first to the matching `(or)` chair in `FREE_CHAIRS.md` before invoking its premium counterpart. Free-shadow use is skipped only for a HUMAN_ELEMENT requirement, a capability unavailable to that shadow, or data that must not be sent to a free endpoint.
+25. **Seven-attempt free learning budget.** Each `(or)` chair may make up to 7 educated attempts on the same task. Each failure must be captured and must materially change the next approach. From a nominal 10-call/day chair allocation, calls 8–10 are protected reserve.
+26. **Vertical escalation.** After 7 failed educated attempts, the `(or)` chair hands the complete learning packet to its named premium counterpart: `Luna(or) → Luna`, `Sol(or) → Sol`, `Gemini(or) → Gemini`, `DeepSeek(or) → DeepSeek`, `Claude(or) → Claude`. Premium chairs inherit the same training/history/failure-capture gates and a maximum 7-attempt learning cycle before their normal higher-chair/OWNER escalation.
+27. **Daily pool arithmetic.** OpenRouter Free is one shared 50-request/day account pool, not 50 requests per chair. Five shadow chairs × 7 task attempts = 35 maximum task attempts if all five are legitimately engaged, leaving 15 protected calls across the pool. Do not consume the reserve simply to keep grinding one task.
+28. **Immediate OWNER route.** HUMAN_ELEMENT requirements route directly to OWNER. Hard capability/authentication blockers do not consume the remaining attempt budget.
+29. **No paid fallback.** A free-shadow model must be verified as $0/`:free` before use. If its free endpoint disappears, mark that shadow unavailable and substitute only another verified-free model; never silently fall through to a paid OpenRouter model.
 
 ## Allowed task states
 

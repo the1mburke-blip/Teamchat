@@ -54,16 +54,23 @@ Before the first execution attempt, the active owner must review relevant prior 
 
 After any failed attempt, capture the failure durably before retrying. If the failure creates reusable knowledge, append a verified entry to `TRAINING_MATRIX.md`. The next attempt must be materially different or supported by new evidence.
 
-## Deterministic escalation
+## Free-shadow and deterministic escalation
 
-- Per free chair: maximum 7 educated attempts on the same task; retain 3 calls from a 10-call daily allocation as protected reserve.
-- Luna attempt 7 FAIL/BLOCKED after genuine learning → HANDOFF_TO: SOL with all seven failure records.
-- SOL must ingest the full Luna packet and shared training before SOL attempt 1.
-- SOL attempt 7 FAIL/BLOCKED after genuine learning → HANDOFF_TO: OWNER with the consolidated Luna + SOL record.
-- OWNER chooses any further chair or route.
-- Hard capability blockers escalate immediately; do not burn the remaining attempt budget proving the same blocker.
-- HUMAN_ELEMENT blockers bypass the ladder and route directly to OWNER immediately.
-- No lateral chair hopping and no executing-chair self-downgrade around this rule.
+- Read `FREE_CHAIRS.md` and route first to the matching `(or)` shadow when the task is eligible for free inference.
+- Each `(or)` shadow gets at most 7 educated attempts on the same task; calls 8–10 of a nominal 10-call allocation remain protected reserve.
+- Every failed attempt is captured before another call and must materially change the next approach.
+- On shadow attempt 7 failure, hand the complete learning packet vertically to the named premium counterpart:
+  - `Luna(or) → Luna`
+  - `Sol(or) → Sol`
+  - `Gemini(or) → Gemini`
+  - `DeepSeek(or) → DeepSeek`
+  - `Claude(or) → Claude`
+- The premium counterpart must ingest the full shadow packet and Training Matrix before premium attempt 1.
+- Premium chairs use the same learning discipline and maximum 7-attempt cycle before the established higher-chair/OWNER escalation.
+- OpenRouter Free is a shared 50-request/day pool. Five shadows × 7 task attempts = 35 possible task attempts if all five are legitimately engaged, leaving 15 shared reserve calls.
+- A hard capability/authentication blocker escalates immediately.
+- A HUMAN_ELEMENT blocker bypasses all model attempts and routes directly to OWNER.
+- Free endpoints must be revalidated as free before use. No paid OpenRouter fallback is permitted.
 
 ## Progress and handoff
 
