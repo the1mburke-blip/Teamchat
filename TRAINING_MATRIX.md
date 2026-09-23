@@ -163,3 +163,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `verification_evidence`: Successful OpenRouter generation `gen-1790200565-O5YxX2wJWhU5ox8Lmlx8`; provider AtlasCloud; reported generation cost $0.
 - `what_not_to_retry`: Do not immediately return Gemini(or) to the Google free shared pool while the provider-level 429 condition persists.
 - `superseded_by`: Gemini(or) live mapping in `FREE_CHAIRS.md`.
+
+
+### HV-EXP-009 — Retrieval before every call
+- `task_problem`: Shadow-chair activation repeated a known Google 429 pattern because prior notes were not retrieved before the first canary.
+- `what_failed`: The execution chair treated activation canaries as exempt from the full training/history retrieval gate.
+- `why_it_failed`: Retrieval existed as policy but was not enforced as a hard pre-call condition.
+- `verification_evidence`: Two OpenRouter Google free-model calls returned 429 before the known Google quota/rate-limit history was surfaced.
+- `what_not_to_retry`: Never send even a canary/test call before reviewing shared training and relevant prior failure notes.
+- `reusable_principle`: **No attestation = no call. Retrieval is immutable across every model, task class, test, canary, retry, and verification step.**
+- `capability_tool_prerequisites`: Access to the shared Training Matrix and relevant prior logs before inference.
+- `confidence`: HIGH

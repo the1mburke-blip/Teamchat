@@ -38,3 +38,8 @@ These rules apply to Luna, Sol, Gemini Prime, Grace, and DeepSeek.
 `REQUESTED → CLAIMED → EXECUTING → VERIFYING → PASS | PARTIAL | BLOCKED | FAIL | SUPERSEDED`
 
 Only `CLAIMED`, `EXECUTING`, or `VERIFYING` may have an active owner.
+
+
+30. **Retrieval evidence is a hard precondition.** No model call, canary, test, retry, verification prompt, or production execution may be sent until the active chair has first produced the complete job-start attestation, including a task-relevant verbatim `TRAINING_QUOTE`, `TRAINING_SOURCE`, `TRAINING_RELEVANCE`, known-failure readback, and allowance estimate. This gate is immutable across premium and `(or)` chairs. The executing model cannot waive it, classify around it, or defer it until after the first call.
+31. **Known-failure check is mandatory before call 1.** The chair must explicitly search prior team/agent logs and the Training Matrix for the task's system/provider/tool/failure signatures. If a relevant known failure exists, it must be named in `KNOWN_FAILURES` before call 1 and the planned route must avoid repeating it unless new evidence makes the retry materially different.
+32. **Protocol violation accounting.** Any call made before retrieval evidence exists is recorded as a process failure and allowance waste, even if the call succeeds. Its lesson must be captured before further execution.

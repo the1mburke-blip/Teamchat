@@ -99,3 +99,22 @@ PASS requires evidence and a final duplicate/regression check. The active owner 
 ## Supersession
 
 Do not edit history to hide obsolete instructions. Add a new `SUPERSEDED` entry citing the superseded Issue/comment and replacement authority.
+
+
+## Hard pre-call gate
+
+This gate applies to every model and every executable invocation, including canaries, tests, retries, and verification calls.
+
+Before call 1, the active chair must record:
+- `HISTORY_REVIEW: PASS`
+- `TRAINING_REVIEW: PASS`
+- `TRAINING_QUOTE`
+- `TRAINING_SOURCE`
+- `TRAINING_RELEVANCE`
+- `KNOWN_FAILURES`
+- `MODEL_CHAIR`
+- `ALLOWANCE_ESTIMATE`
+
+The chair must search the Training Matrix and relevant prior logs for matching provider, tool, system, and failure signatures. If a known failure exists, it must be surfaced before execution and the proposed route must account for it.
+
+**No attestation = no call.** This is not discretionary and cannot be bypassed by calling the task trivial, treating it as a canary/test, or relying on native model memory.
