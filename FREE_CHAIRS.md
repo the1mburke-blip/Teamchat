@@ -8,7 +8,7 @@ These are role-equivalent **shadow chairs**, not claims that the underlying mode
 |---|---|---|---|
 | Luna(or) | NVIDIA Nemotron 3 Ultra (free) | `nvidia/nemotron-3-ultra-550b-a55b:free` | coordination, orchestration, deep reasoning, research, multi-step planning |
 | Sol(or) | Poolside Laguna S 2.1 (free) | `poolside/laguna-s-2.1:free` | software engineering, coding-agent work, terminal/execution planning |
-| Gemini(or) | Google Gemma 4 31B (free) | `google/gemma-4-31b-it:free` | multimodal reasoning, document understanding, tool/function calling, strategy/research |
+| Gemini(or) | Dots Studio Dots3-Note Preview (free) | `dots-studio/dots-3-note-preview:free` | multimodal reasoning, document understanding, tool/function calling, strategy/research |
 | DeepSeek(or) | Cohere North Mini Code (free) | `cohere/north-mini-code:free` | technical specialist, agentic coding, terminal work, interleaved reasoning/tool use |
 | Claude(or) | NVIDIA Nemotron 3 Super (free) | `nvidia/nemotron-3-super-120b-a12b:free` | independent critique, long-context reasoning, planning, second-pass review |
 
@@ -41,3 +41,18 @@ The reserve is shared in reality; the per-chair 10-call split is a planning enve
 - If a listed free endpoint disappears, mark that shadow unavailable and select a replacement only after verifying the replacement is currently free and role-appropriate.
 - Do not send credentials, secrets, private customer data, owner-private data, or other confidential material to free endpoints.
 - Use sanitized task packets. Tasks that require protected data or owner authentication bypass the free layer.
+
+
+## Live activation evidence — 2026-09-23
+
+All five shadow chairs have completed a real zero-cost OpenRouter transport canary and are **LIVE**.
+
+| Shadow | Status | Verified model | Canary evidence | Cost |
+|---|---|---|---|---|
+| Luna(or) | LIVE | `nvidia/nemotron-3-ultra-550b-a55b:free` | generation `gen-1790200455-1uwELqsj40EKeCW4g3Qg` | $0 |
+| Sol(or) | LIVE | `poolside/laguna-s-2.1:free` | generation `gen-1790200457-8D3wDBcZoSTXUvezdiZ5` | $0 |
+| Gemini(or) | LIVE | `dots-studio/dots-3-note-preview:free` | generation `gen-1790200565-O5YxX2wJWhU5ox8Lmlx8` | $0 |
+| DeepSeek(or) | LIVE | `cohere/north-mini-code:free` | generation `gen-1790200455-yeGq5JeymffDixGnprBl` | $0 |
+| Claude(or) | LIVE | `nvidia/nemotron-3-super-120b-a12b:free` | generation `gen-1790200461-1o9QPFpiSY0ihqtJpsSV` | $0 |
+
+Gemini(or) activation learned around two upstream Google free-pool 429s rather than repeating them. The live replacement is the verified-free Dots3 multimodal/tool-capable endpoint. Revalidate before future use because that preview endpoint is time-limited.

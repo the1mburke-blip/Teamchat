@@ -156,3 +156,10 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `why_it_failed`: Same Google AI Studio shared upstream free-pool limit.
 - `what_not_to_retry`: Do not spend another activation call on the Google free pool while the provider-level 429 persists.
 - `next_materially_different_approach`: Move Gemini(or) to a non-Google verified-free multimodal/tool-capable model.
+
+
+#### HV-EXP-008 recovery
+- `successful_recovery`: Gemini(or) moved to `dots-studio/dots-3-note-preview:free`, a non-Google verified-free multimodal/tool-capable route.
+- `verification_evidence`: Successful OpenRouter generation `gen-1790200565-O5YxX2wJWhU5ox8Lmlx8`; provider AtlasCloud; reported generation cost $0.
+- `what_not_to_retry`: Do not immediately return Gemini(or) to the Google free shared pool while the provider-level 429 condition persists.
+- `superseded_by`: Gemini(or) live mapping in `FREE_CHAIRS.md`.
