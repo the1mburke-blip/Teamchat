@@ -46,3 +46,5 @@ Only `CLAIMED`, `EXECUTING`, or `VERIFYING` may have an active owner.
 
 
 33. **Michael — user-level boundary doctrine.** The boundary-disclosure rule applies to Michael as the user across all topics and projects, not only HumanVibe. Before substantive execution, surface any known hard platform, permission, authentication, privacy, safety, legal, or capability boundary that could prevent completion or materially change the route/cost. Full doctrine: `MICHAEL_USER_GOVERNANCE.md`.
+
+34. **Owner-contact transport.** Any task that must be referred to OWNER — including a shadow job projected above 8 calls or a job that would exceed 8 total calls — is not considered referred until the assigning/front-door agent sends Michael a direct Gmail alert through the connected HumanVibe Gmail path and records the evidence in Teamchat. If Michael is already present in the active front-door conversation, surface the same alert there too. The alert must state the job, projected/used call count, exact gate reason, evidence learned, and the smallest decision required. If Gmail owner contact is unavailable, set `OWNER_CONTACT_BLOCKED` and stop; do not continue past the gate.
