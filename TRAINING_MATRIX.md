@@ -4,13 +4,13 @@
 
 This is the durable, model-independent experience pool for HumanVibe agents.
 
-A chair does not need built-in memory to benefit from team learning. Before non-trivial execution, the current chair retrieves the relevant entries here plus relevant issue/log history. Verified lessons discovered by one chair become reusable training for every later chair.
+A chair does not need built-in memory to benefit from team learning. Before execution of any executable task, the current chair retrieves the relevant entries here plus relevant issue/log history. Verified lessons discovered by one chair become reusable training for every later chair.
 
 **Knowledge belongs to HumanVibe, not to the model occupying the chair.**
 
 ## Mandatory retrieval gate
 
-Before the first execution attempt on any non-trivial or previously attempted task:
+Before the first execution attempt on every executable task:
 
 1. Read the relevant task/Issue and current coordination state.
 2. Search this matrix for matching task, system, tool, failure signature, or capability.
@@ -25,7 +25,7 @@ If no relevant entry exists, record `NONE FOUND`; do not invent prior knowledge.
 
 ## Mandatory job-start proof
 
-No non-trivial task enters EXECUTING without all of:
+No executable task enters EXECUTING without all of:
 
 - `MODEL_CHAIR`
 - `HISTORY_REVIEW: PASS`
@@ -104,3 +104,18 @@ Native model memory may help, but HumanVibe continuity must not depend on it. Sh
 
 ### HV-EXP-005 — Evidence closes the loop
 Agent narrative is not completion evidence. A recovery or PASS becomes reusable training only when the final state is physically/readback verified.
+
+
+## Hierarchical escalation ladder
+
+For a chair operating from a 10-call daily allocation inside the shared free-call pool:
+
+- Attempts 1–7 are the chair's bounded learning/execution budget.
+- Each failed attempt must be captured before the next; every new attempt must use the accumulated failure evidence and materially change the approach.
+- Calls 8–10 are protected reserve for other work, verification, or emergency recovery. They are not consumed to keep grinding the same failed task unless OWNER explicitly overrides.
+- After Luna's seventh failed educated attempt, Luna hands the complete failure/learning packet upward to SOL.
+- SOL must read the Training Matrix plus Luna's complete failure packet before SOL attempt 1. SOL then receives up to seven educated attempts of his own.
+- After SOL's seventh failed educated attempt, SOL stops and hands the consolidated Luna + SOL learning packet to OWNER. OWNER decides the next destination.
+- Do not route laterally to another chair merely because the current chair exhausted its budget.
+- A hard capability blocker escalates immediately rather than consuming seven attempts.
+- Any HUMAN_ELEMENT requirement — owner authentication, physical-device action, security approval, payment/identity confirmation, or other action only Michael can lawfully/physically perform — bypasses the attempt ladder and goes directly to OWNER immediately.

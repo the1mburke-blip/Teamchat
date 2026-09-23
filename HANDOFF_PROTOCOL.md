@@ -48,11 +48,22 @@ NEXT: Execute the authorised objective.
 
 Only the active owner executes. Other agents may add evidence or critique but must not duplicate execution.
 
-A claim is incomplete for any non-trivial or previously attempted task until both `HISTORY_REVIEW` and `TRAINING_REVIEW` are complete, the relevant training quote/source/relevance are present, and allowance usage has been estimated. Native model memory is not accepted as a substitute. A generic or unrelated training quote is a failed start gate. Do not enter EXECUTING until the complete attestation exists.
+A claim is incomplete for every executable task until both `HISTORY_REVIEW` and `TRAINING_REVIEW` are complete, the relevant training quote/source/relevance are present, and allowance usage has been estimated. Native model memory is not accepted as a substitute. A generic or unrelated training quote is a failed start gate. Do not enter EXECUTING until the complete attestation exists.
 
 Before the first execution attempt, the active owner must review relevant prior attempts and shared training entries and carry forward known failure signatures, causes, successful recoveries, and do-not-retry evidence.
 
 After any failed attempt, capture the failure durably before retrying. If the failure creates reusable knowledge, append a verified entry to `TRAINING_MATRIX.md`. The next attempt must be materially different or supported by new evidence.
+
+## Deterministic escalation
+
+- Per free chair: maximum 7 educated attempts on the same task; retain 3 calls from a 10-call daily allocation as protected reserve.
+- Luna attempt 7 FAIL/BLOCKED after genuine learning → HANDOFF_TO: SOL with all seven failure records.
+- SOL must ingest the full Luna packet and shared training before SOL attempt 1.
+- SOL attempt 7 FAIL/BLOCKED after genuine learning → HANDOFF_TO: OWNER with the consolidated Luna + SOL record.
+- OWNER chooses any further chair or route.
+- Hard capability blockers escalate immediately; do not burn the remaining attempt budget proving the same blocker.
+- HUMAN_ELEMENT blockers bypass the ladder and route directly to OWNER immediately.
+- No lateral chair hopping and no executing-chair self-downgrade around this rule.
 
 ## Progress and handoff
 
