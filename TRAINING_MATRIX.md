@@ -298,3 +298,15 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `evidence_rule`: PASS requires a sent-message ID or equivalent transport evidence plus the Teamchat record.
 - `failure_rule`: If the Gmail owner-alert transport is unavailable, mark OWNER_CONTACT_BLOCKED and stop; do not continue the shadow job past the owner gate.
 - `confidence`: HIGH
+
+
+### HV-EXP-019 — Universal owner-contact relay
+- `scope`: Every shadow chair and every shadow-assigned task.
+- `reusable_principle`: **Shadows do not need direct Gmail capability; owner contact is a mandatory control-layer relay responsibility of the assigning front door.**
+- `assignment_gate`: A shadow task may not be dispatched unless an active front-door owner-contact relay is available.
+- `owner_gate_signal`: When a shadow reaches any owner gate (including projected >8 calls, call-8 ceiling, HUMAN_ELEMENT, or owner-only decision), it must return an explicit `OWNER_GATE_REQUIRED` payload to the assigning front door and stop.
+- `relay_action`: The assigning front door must immediately send Michael the owner alert by Gmail and record the event in Teamchat.
+- `no_false_requirement`: No shadow may be treated as defective merely because it lacks its own Gmail connector; the control layer owns transport.
+- `fail_closed`: If the front-door owner-contact relay is unavailable, the shadow job must not start or continue.
+- `evidence_rule`: PASS requires proof that the shadow emitted the owner-gate signal and the front door produced the owner-facing alert.
+- `confidence`: HIGH
