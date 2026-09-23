@@ -129,3 +129,22 @@ When a safe, capable free shadow exists, use it to learn first. Premium reasonin
 
 ### HV-EXP-007 — Reserve is operational capacity
 A daily request ceiling is shared infrastructure, not a target to exhaust. Protect reserve calls for verification, emergencies, and unrelated work.
+
+
+### HV-EXP-008 — Gemini(or) upstream free-pool rate limit
+- `experience_id`: HV-EXP-008
+- `date_utc`: 2026-09-23T21:54:15.000Z
+- `source_agent`: LUNA
+- `task_problem`: Activate Gemini(or) shadow chair through OpenRouter Free.
+- `environment_context`: OpenRouter authenticated; model `google/gemma-4-31b-it:free`; zero-cost canary.
+- `symptoms_failure_signature`: HTTP 429 from Google AI Studio shared upstream pool.
+- `attempts_made`: 1
+- `what_failed`: Gemma 4 31B free canary was not served.
+- `why_it_failed`: OpenRouter reported the upstream provider shared free pool was temporarily rate-limited.
+- `successful_recovery`: NONE YET
+- `verification_evidence`: OpenRouter error metadata identified `limit_source=upstream_provider_shared_pool`.
+- `what_not_to_retry`: Do not immediately repeat the identical Gemma 4 31B request.
+- `reusable_principle`: A free endpoint can be valid yet temporarily unavailable; switch to another verified-free role-appropriate endpoint rather than blind retry or paid fallback.
+- `capability_tool_prerequisites`: Authenticated OpenRouter connection and verified-free replacement model.
+- `confidence`: HIGH
+- `superseded_by`: NONE
