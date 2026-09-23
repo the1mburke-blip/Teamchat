@@ -34,10 +34,14 @@ The assigned agent rechecks for an active owner, then comments:
 STATUS: CLAIMED
 ACTIVE_OWNER: SOL
 DUPLICATE_CHECK: PASS
+HISTORY_REVIEW: PASS — own logs + relevant prior-team attempts reviewed
+KNOWN_FAILURES: concise failure signatures / what-not-to-retry, or NONE FOUND
 NEXT: Execute the authorised objective.
 ```
 
 Only the active owner executes. Other agents may add evidence or critique but must not duplicate execution.
+
+A claim is incomplete for any non-trivial or previously attempted task until `HISTORY_REVIEW` is complete. Before the first execution attempt, the active owner must review relevant prior attempts and carry forward known failure signatures, causes, successful recoveries, and do-not-retry evidence. After any failed attempt, capture that failure durably before retrying, and the next attempt must be materially different or supported by new evidence.
 
 ## Progress and handoff
 
