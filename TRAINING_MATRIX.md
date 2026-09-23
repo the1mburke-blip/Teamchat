@@ -190,3 +190,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **Runtime live ≠ room live. Claim only the highest layer that has been physically verified.**
 - `accountability_principle`: If the requested endpoint is a room, app, UI, or workflow, backend connectivity alone cannot satisfy PASS.
 - `confidence`: HIGH
+
+
+### HV-EXP-011 — No breadcrumbs means finish the route
+- `task_problem`: After identifying that the shadow models had live runtimes but no user-facing rooms, GPT-5.6 Sol told OWNER to say "RUN TEST" instead of immediately executing the valid test path.
+- `what_failed`: The chair converted an executable next action into another owner relay step.
+- `why_it_failed`: The no-breadcrumbs rule was treated as conversational guidance instead of an immutable execution constraint.
+- `verification_evidence`: The assistant explicitly ended with "Say RUN TEST and I’ll do exactly that" even though the OpenRouter runtime and test capability were already available.
+- `what_not_to_retry`: Do not ask OWNER to restate approval, relay state, type a trigger phrase, or perform a routine step when the current chair already has authority and capability to continue.
+- `reusable_principle`: **If the next valid action is executable by the active chair, execute it. Do not turn it into an owner prompt.**
+- `accountability_principle`: No-breadcrumbs is immutable across all models and chairs; convenience, caution, or conversational habit does not override it.
+- `confidence`: HIGH
