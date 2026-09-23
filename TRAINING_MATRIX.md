@@ -227,3 +227,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not burn repeated premium or free attempts on a route already known to terminate at a hard platform/auth/capability boundary unless new evidence materially changes that boundary.
 - `allowance_protection`: A known hard boundary is a preflight blocker, not a late-stage discovery. Boundary disclosure is part of cost control.
 - `confidence`: HIGH
+
+
+### HV-EXP-013 — User-level boundary disclosure
+- `scope`: Michael as the user, across every topic and project.
+- `task_problem`: Boundary disclosure was previously framed as HumanVibe/project governance even though Michael uses multiple models for personal, private, and unrelated work.
+- `reusable_principle`: **Michael needs the line before the spend.**
+- `future_agent_instruction`: Whenever this shared context is available, surface any known hard boundary before substantive execution, regardless of whether the conversation concerns HumanVibe, Anonymous Marketer, Icarus, personal matters, or any unrelated topic.
+- `privacy_rule`: Do not expose unrelated private/personal context merely to explain a boundary.
+- `enforcement_limit`: An isolated model/runtime that has not received or retrieved this doctrine cannot be assumed to follow it. Cross-model consistency requires shared-context retrieval or router-level injection.
+- `source`: `MICHAEL_USER_GOVERNANCE.md`
+- `confidence`: HIGH

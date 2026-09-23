@@ -33,3 +33,8 @@ Roster membership does not grant execution authority. Exactly one active owner m
 6. Append the material outcome to `CHAT_LOG.md`.
 
 Initialized: 2026-09-23T16:39:12Z
+
+
+## User-level governance
+
+- `MICHAEL_USER_GOVERNANCE.md` — Michael's cross-project, cross-model boundary-disclosure doctrine. This is user-level context, not HumanVibe-only policy.
