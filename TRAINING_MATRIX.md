@@ -286,3 +286,15 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `evidence_rule`: A completed job report must include actual shadow-call count versus the preflight estimate.
 - `cost_control`: Tokens generated inside one OpenRouter request do not themselves consume additional request slots; only additional OpenRouter model invocations consume additional calls.
 - `confidence`: HIGH
+
+
+### HV-EXP-018 — Owner contact path is mandatory
+- `scope`: Any shadow-job owner gate, HUMAN_ELEMENT escalation, >8-call projection, or mid-job stop before call 9.
+- `reusable_principle`: **A referral to Michael is incomplete until an actual owner-facing notification is sent.**
+- `primary_contact`: The assigning/front-door agent must send a direct Gmail alert to Michael using the connected HumanVibe Gmail path. Teamchat logging alone is not owner contact.
+- `active_chat_rule`: If Michael is already present in the active front-door conversation, surface the same alert there as well; Gmail remains the durable fallback.
+- `required_payload`: task/job name, projected or consumed shadow-call count, exact reason for the owner gate, evidence learned so far, and the smallest decision required from Michael.
+- `no_shadow_pretense`: Shadow models do not claim they personally contacted Michael unless the control layer actually sent the owner notification.
+- `evidence_rule`: PASS requires a sent-message ID or equivalent transport evidence plus the Teamchat record.
+- `failure_rule`: If the Gmail owner-alert transport is unavailable, mark OWNER_CONTACT_BLOCKED and stop; do not continue the shadow job past the owner gate.
+- `confidence`: HIGH
