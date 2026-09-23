@@ -18,8 +18,26 @@ Before the first execution attempt on any non-trivial or previously attempted ta
 4. Review relevant prior-team attempts.
 5. Carry forward verified `what_not_to_retry`, prerequisites, recoveries, and evidence.
 6. Record `TRAINING_REVIEW: PASS` before entering EXECUTING.
+7. Quote one verbatim line from this matrix that is materially relevant to the task; record its lesson ID/section heading and one sentence explaining the relevance.
+8. Record the exact model/runtime occupying the chair and an estimated token/request/allowance cost before execution.
 
-If no relevant entry exists, record `NONE FOUND`; do not invent prior knowledge.
+If no relevant entry exists, record `NONE FOUND`; do not invent prior knowledge. When no prior task-specific lesson exists, quote the most relevant governing seed lesson or principle instead.
+
+## Mandatory job-start proof
+
+No non-trivial task enters EXECUTING without all of:
+
+- `MODEL_CHAIR`
+- `HISTORY_REVIEW: PASS`
+- `TRAINING_REVIEW: PASS`
+- `TRAINING_QUOTE` — exact text from this file
+- `TRAINING_SOURCE` — lesson ID or section heading
+- `TRAINING_RELEVANCE` — why that quote changes or constrains this execution
+- `ALLOWANCE_ESTIMATE` — tokens, requests, or allowance percentage using the best measurable unit
+
+The quote is proof of retrieval, not decoration. It must be relevant to the actual task. A generic quote selected merely to satisfy the field fails the gate.
+
+At terminal status record `ALLOWANCE_USED` as measured usage when available, otherwise as an explicitly labelled estimate. If expected usage materially changes during execution, stop and re-preflight.
 
 ## Failure-to-learning gate
 
