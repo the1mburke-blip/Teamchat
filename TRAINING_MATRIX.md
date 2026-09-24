@@ -310,3 +310,13 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `fail_closed`: If the front-door owner-contact relay is unavailable, the shadow job must not start or continue.
 - `evidence_rule`: PASS requires proof that the shadow emitted the owner-gate signal and the front door produced the owner-facing alert.
 - `confidence`: HIGH
+
+
+### HV-EXP-020 — Model unavailable = route, not incident
+- `scope`: HumanVibe shadow-model routing and front-door orchestration.
+- `failure`: GPT-5.6 Sol treated ordinary shadow-model availability as a broken system, creating unnecessary diagnosis, owner messages, and finite allowance burn.
+- `reusable_principle`: **MODEL UNAVAILABLE = ROUTE, NOT INCIDENT.** Stay on the same authorized model line, select the next available authorized model, preserve €0/spend constraints, execute, verify, and report.
+- `escalation_gate`: Escalate only when the entire authorized line is unavailable, substitution materially changes the task, or a genuine design/authorization/safety boundary requires OWNER.
+- `accountability`: Model/operator non-compliance; no missing rule or platform defect established.
+- `physical_evidence`: HumanVibe OpenRouter remained ACTIVE; free canary returned exact `AUTOMATION_SHADOW_OK` via `nex-agi/nex-n2.5-mini:free`, provider Nex AGI, generation `gen-1790234168-PrQf3CtYLG6iOUXEUmU8`, reported cost $0.
+- `confidence`: HIGH
