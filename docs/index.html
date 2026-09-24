@@ -1,101 +1,173 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0d10">
-<title>HumanVibe Agent OS</title>
-<link rel="manifest" href="manifest.json">
-<style>
-:root{--bg:#0b0d10;--panel:#12161b;--panel2:#171c22;--text:#f5f7fa;--muted:#9ba6b2;--line:#26303a;--ok:#61d095;--warn:#f5c451;--bad:#ff6b6b;--accent:#8ab4ff}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{position:sticky;top:0;z-index:5;background:rgba(11,13,16,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px 16px}
-.brand{font-weight:800;letter-spacing:.08em}.sub{color:var(--muted);font-size:12px;margin-top:3px}
-main{max-width:1100px;margin:auto;padding:16px 16px 84px}.grid{display:grid;gap:12px}.cards{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}.card h3{margin:0 0 8px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.big{font-size:26px;font-weight:800}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}button,a.btn{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px;text-decoration:none;font-weight:650;cursor:pointer}
-button:hover,a.btn:hover{border-color:#43505d}.accent{background:#1a2740;border-color:#34558b}.muted{color:var(--muted)}.section{margin-top:18px}.section h2{font-size:16px;margin:0 0 10px}
-nav{position:fixed;bottom:0;left:0;right:0;z-index:8;background:rgba(11,13,16,.97);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
-nav button{border:0;background:transparent;color:var(--muted);padding:8px 4px;font-size:12px}nav button.active{color:var(--text);background:var(--panel2)}
-.view{display:none}.view.active{display:block}.task,.agent,.log{padding:12px 0;border-bottom:1px solid var(--line)}.task:last-child,.agent:last-child,.log:last-child{border-bottom:0}
-.task-title{font-weight:750}.status{font-size:11px;padding:3px 7px;border-radius:8px;background:#232a31;color:#dce3ea}.status.open{color:#9be0bc}.status.blocked{color:#ff9d9d}
-textarea{width:100%;min-height:120px;background:#0d1116;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical}
-pre{white-space:pre-wrap;word-break:break-word;margin:0;color:#d9e0e7;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
-.rule{padding:9px 0;border-bottom:1px solid var(--line)}.rule strong{display:block}.error{color:#ff9d9d}
-@media(min-width:760px){nav{position:sticky;top:68px;max-width:1100px;margin:0 auto;border:1px solid var(--line);border-radius:12px;padding:6px;grid-template-columns:repeat(4,140px);justify-content:center}main{padding-bottom:24px}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d10" />
+  <meta name="description" content="HumanVibe Agent OS mobile control plane" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <title>HumanVibe Agent OS</title>
+  <style>
+    :root{--bg:#0b0d10;--panel:#13171c;--panel2:#181e25;--line:#28313b;--text:#f3f6f8;--muted:#96a2ad;--accent:#e9ff70;--good:#8cf5b5;--warn:#ffd36b;--bad:#ff8d8d;--r:18px}
+    *{box-sizing:border-box} html{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 70% -10%,#26321c 0,transparent 28rem),var(--bg)}
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    .shell{max-width:980px;margin:auto;padding:18px 16px 92px}
+    header{display:flex;justify-content:space-between;gap:14px;align-items:center;margin:6px 0 20px}
+    .brand{display:flex;gap:12px;align-items:center}.mark{width:44px;height:44px;border-radius:14px;background:var(--accent);color:#10130c;display:grid;place-items:center;font-weight:900}
+    h1{font-size:19px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .badge{font-size:11px;border:1px solid var(--line);background:#11161a;padding:7px 10px;border-radius:999px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.card{grid-column:span 12;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:16px}
+    @media(min-width:720px){.half{grid-column:span 6}.third{grid-column:span 4}}
+    .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+    h2{font-size:22px;margin:6px 0 10px} h3{font-size:15px;margin:0 0 9px}
+    p{line-height:1.5;color:#cbd3da;margin:7px 0}.metrics{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .metric{border:1px solid var(--line);background:#0e1216;border-radius:12px;padding:10px 12px;min-width:125px}.metric b{display:block;font-size:17px}.metric span{font-size:11px;color:var(--muted)}
+    .rule{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--line);padding:10px 0}.rule:first-of-type{border-top:0}.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:7px;flex:0 0 auto}
+    label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}input,textarea,select{width:100%;border:1px solid var(--line);background:#0c1014;color:var(--text);border-radius:12px;padding:12px;outline:none}textarea{min-height:92px;resize:vertical}
+    input:focus,textarea:focus,select:focus{border-color:#66734b;box-shadow:0 0 0 3px #dfff6918}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.btn{border:1px solid var(--line);background:#171d23;color:var(--text);padding:10px 13px;border-radius:12px;text-decoration:none}.btn.primary{background:var(--accent);color:#12150c;border-color:var(--accent);font-weight:750}.btn.danger{color:#ffc1c1}
+    pre{white-space:pre-wrap;word-break:break-word;background:#0b0f13;border:1px solid var(--line);border-radius:12px;padding:12px;max-height:290px;overflow:auto;color:#d7dee4;font-size:12px}
+    .agent{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line)}.agent:first-of-type{border-top:0}.agent small{color:var(--muted)}.role{font-size:11px;color:var(--accent)}
+    .queue-item{padding:12px 0;border-top:1px solid var(--line)}.queue-item:first-child{border-top:0}.queue-top{display:flex;justify-content:space-between;gap:10px}.queue-title{font-weight:700}.queue-meta{font-size:11px;color:var(--muted);margin-top:4px}
+    nav{position:fixed;left:0;right:0;bottom:0;background:#0a0d10e8;backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px max(10px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:flex;justify-content:center;z-index:10}
+    .tabs{width:min(960px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.tab{border:0;background:transparent;color:var(--muted);padding:9px 5px;border-radius:10px;font-size:12px}.tab.active{background:#1a211a;color:var(--accent)}
+    section[data-view]{display:none}section[data-view].active{display:block}.links a{display:block;color:#dffb77;text-decoration:none;padding:9px 0;border-top:1px solid var(--line)}.links a:first-child{border-top:0}
+    .statusline{display:flex;gap:7px;align-items:center}.lamp{width:8px;height:8px;border-radius:50%;background:var(--good)}.lamp.offline{background:var(--warn)}
+    footer{color:var(--muted);font-size:11px;text-align:center;margin:24px 0}
+  </style>
 </head>
 <body>
-<header><div class="brand">HUMANVIBE // AGENT OS</div><div class="sub">GitHub-native control plane · mobile-first · €0 infrastructure</div></header>
-<nav>
-<button data-view="command" class="active">Command</button>
-<button data-view="tasks">Tasks</button>
-<button data-view="team">Team</button>
-<button data-view="rules">Rules</button>
-</nav>
-<main>
-<section id="command" class="view active">
-<div class="grid cards">
-<div class="card"><h3>System</h3><div class="big">ONLINE</div><div class="pill"><span class="dot"></span>GitHub live</div></div>
-<div class="card"><h3>Open Work</h3><div id="openCount" class="big">—</div><div class="muted">GitHub Issues</div></div>
-<div class="card"><h3>Operating Mode</h3><div class="big">€0</div><div class="muted">Free-shadow first</div></div>
-<div class="card"><h3>Last Sync</h3><div id="syncTime" class="big" style="font-size:18px">—</div><div class="muted">Europe/Dublin</div></div>
+<div class="shell">
+  <header>
+    <div class="brand"><div class="mark">HV</div><div><h1>HumanVibe Agent OS</h1><div class="sub">Mobile control plane · v0.1</div></div></div>
+    <div class="badge statusline"><span id="lamp" class="lamp"></span><span id="net">Online</span></div>
+  </header>
+
+  <section data-view="home" class="active">
+    <div class="grid">
+      <div class="card">
+        <div class="eyebrow">Control plane</div><h2>Human judgement. Agent execution.</h2>
+        <p>A mobile-first front door for HumanVibe tasks, handoffs, governance and evidence. No hidden paid fallback.</p>
+        <div class="metrics">
+          <div class="metric"><b>€0</b><span>Spend policy</span></div>
+          <div class="metric"><b>5</b><span>Rostered chairs</span></div>
+          <div class="metric"><b>1</b><span>Active owner max</span></div>
+          <div class="metric"><b>Evidence</b><span>Required for PASS</span></div>
+        </div>
+      </div>
+      <div class="card half"><div class="eyebrow">Operating core</div><h3>Immutable execution rules</h3>
+        <div class="rule"><span class="dot"></span><div><b>MEASURE TWICE. CUT ONCE.</b><p>Check route, ownership and evidence before execution.</p></div></div>
+        <div class="rule"><span class="dot"></span><div><b>NO EVIDENCE = NO CLAIM.</b><p>PASS requires physical or readback verification.</p></div></div>
+        <div class="rule"><span class="dot"></span><div><b>SPEND ONLY AFTER PROFIT.</b><p>Use authorized €0 infrastructure only.</p></div></div>
+      </div>
+      <div class="card half"><div class="eyebrow">Fast actions</div><h3>Open the canonical room</h3>
+        <div class="links">
+          <a href="https://github.com/the1mburke-blip/Teamchat/issues" target="_blank" rel="noopener">GitHub work queue ↗</a>
+          <a href="https://github.com/the1mburke-blip/Teamchat/blob/main/CHAT_LOG.md" target="_blank" rel="noopener">Team chat log ↗</a>
+          <a href="https://github.com/the1mburke-blip/Teamchat/blob/main/OPERATING_RULES.md" target="_blank" rel="noopener">Operating rules ↗</a>
+          <a href="https://github.com/the1mburke-blip/Teamchat/blob/main/TRAINING_MATRIX.md" target="_blank" rel="noopener">Training matrix ↗</a>
+        </div>
+        <div class="actions"><button class="btn primary" id="installBtn" hidden>Install app</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-view="task">
+    <div class="grid">
+      <div class="card half"><div class="eyebrow">Task composer</div><h2>Create a governed handoff</h2>
+        <label>Chair</label><select id="owner"><option>SOL</option><option>LUNA</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option></select>
+        <label>Objective</label><input id="objective" placeholder="One testable endpoint" />
+        <label>Scope</label><textarea id="scope" placeholder="Systems and actions authorised"></textarea>
+        <label>Evidence required</label><textarea id="evidence" placeholder="Physical/readback proof required for PASS"></textarea>
+        <div class="actions"><button class="btn primary" id="buildPacket">Build packet</button><button class="btn" id="saveDraft">Save locally</button></div>
+      </div>
+      <div class="card half"><div class="eyebrow">Packet preview</div><h3>Canonical task header</h3><pre id="packet">Complete the task fields to generate a packet.</pre>
+        <div class="actions"><button class="btn" id="copyPacket">Copy</button><button class="btn primary" id="openIssue">Open GitHub Issue</button></div>
+      </div>
+      <div class="card"><div class="eyebrow">Local queue</div><h3>Saved on this device</h3><div id="queue"></div></div>
+    </div>
+  </section>
+
+  <section data-view="team">
+    <div class="grid">
+      <div class="card"><div class="eyebrow">Canonical roster</div><h2>Team Room</h2><p>Roles below are roster definitions, not simulated online status.</p>
+        <div class="agent"><div><b>Luna</b><br><small>Operational oversight and routing</small></div><span class="role">[LUNA]</span></div>
+        <div class="agent"><div><b>Sol</b><br><small>Authenticated execution and verification</small></div><span class="role">[SOL]</span></div>
+        <div class="agent"><div><b>Gemini Prime</b><br><small>Strategy and independent critique</small></div><span class="role">[PRIME]</span></div>
+        <div class="agent"><div><b>Grace</b><br><small>Control-loop continuity and bounded operations</small></div><span class="role">[GRACE]</span></div>
+        <div class="agent"><div><b>DeepSeek</b><br><small>Technical analysis and bounded specialist execution</small></div><span class="role">[DEEPSEEK]</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-view="rules">
+    <div class="grid">
+      <div class="card half"><div class="eyebrow">Execution lifecycle</div><h2>State machine</h2><pre>REQUESTED → CLAIMED → EXECUTING → VERIFYING
+                         ↘ PASS
+                         ↘ PARTIAL
+                         ↘ BLOCKED
+                         ↘ FAIL
+                         ↘ SUPERSEDED</pre></div>
+      <div class="card half"><div class="eyebrow">Hard gates</div><h2>Before execution</h2>
+        <div class="rule"><span class="dot"></span><div><b>History first</b><p>Review prior attempts and failures.</p></div></div>
+        <div class="rule"><span class="dot"></span><div><b>Training proof</b><p>Retrieve the shared matrix and quote the relevant lesson.</p></div></div>
+        <div class="rule"><span class="dot"></span><div><b>Shadow first</b><p>Use a verified-free capable chair before premium allowance when eligible.</p></div></div>
+        <div class="rule"><span class="dot"></span><div><b>One active owner</b><p>No duplicate execution.</p></div></div>
+      </div>
+      <div class="card"><div class="eyebrow">Boundary</div><h3>What this v0.1 does</h3><p>This PWA is the mobile control surface: task composition, local queue, install/offline support, and direct access to the canonical GitHub coordination room. It does not store credentials or impersonate agent runtimes.</p></div>
+    </div>
+  </section>
+
+  <footer>HumanVibe Agent OS · source of truth: the1mburke-blip/Teamchat · build 2026-09-24</footer>
 </div>
-<div class="section"><div class="row"><button id="refresh" class="accent">Refresh live state</button><a class="btn" href="https://github.com/the1mburke-blip/Teamchat/issues/new" target="_blank" rel="noopener">New work item</a><a class="btn" href="https://github.com/the1mburke-blip/Teamchat" target="_blank" rel="noopener">Open repo</a></div></div>
-<div class="section"><h2>Owner scratchpad</h2><div class="card"><textarea id="scratch" placeholder="Local notes on this device…"></textarea><div class="row" style="margin-top:8px"><button id="saveNote">Save locally</button><span id="saveState" class="muted"></span></div></div></div>
-<div class="section"><h2>Recent Teamchat</h2><div class="card"><pre id="chat">Loading…</pre></div></div>
-</section>
-<section id="tasks" class="view">
-<div class="section"><h2>Executable work</h2><div class="card" id="issues">Loading live issues…</div></div>
-</section>
-<section id="team" class="view">
-<div class="section"><h2>Chairs</h2><div class="card">
-<div class="agent"><b>[LUNA]</b> <span class="muted">Operational oversight and routing</span></div>
-<div class="agent"><b>[SOL]</b> <span class="muted">Authenticated execution and verification</span></div>
-<div class="agent"><b>[PRIME]</b> <span class="muted">Strategy and independent critique</span></div>
-<div class="agent"><b>[GRACE]</b> <span class="muted">Control-loop continuity and workflow enforcement</span></div>
-<div class="agent"><b>[DEEPSEEK]</b> <span class="muted">Technical analysis and bounded specialist execution</span></div>
-</div></div>
-<div class="section"><h2>Execution contract</h2><div class="card"><div class="rule"><strong>One active owner</strong><span class="muted">No duplicate execution.</span></div><div class="rule"><strong>Evidence before PASS</strong><span class="muted">Agent assertions are not proof.</span></div><div class="rule"><strong>History before action</strong><span class="muted">Known failures must be read before call 1.</span></div></div></div>
-</section>
-<section id="rules" class="view">
-<div class="section"><h2>Immutable operating rules</h2><div class="card">
-<div class="rule"><strong>MEASURE TWICE. CUT ONCE.</strong></div>
-<div class="rule"><strong>NO EVIDENCE = NO CLAIM.</strong></div>
-<div class="rule"><strong>SPEND ONLY AFTER PROFIT.</strong></div>
-<div class="rule"><strong>Free-shadow first.</strong><span class="muted">Use the matching verified €0 chair before premium execution.</span></div>
-<div class="rule"><strong>No duplicate execution.</strong></div>
-<div class="rule"><strong>No simulated agent responses.</strong></div>
-<div class="rule"><strong>Owner contact on hard gate.</strong><span class="muted">Stop at the first hard capability/authentication blocker.</span></div>
-</div></div>
-</section>
-</main>
+
+<nav><div class="tabs">
+  <button class="tab active" data-tab="home">Home</button>
+  <button class="tab" data-tab="task">Tasks</button>
+  <button class="tab" data-tab="team">Team</button>
+  <button class="tab" data-tab="rules">Rules</button>
+</div></nav>
+
 <script>
-const REPO='the1mburke-blip/Teamchat';
-const $=s=>document.querySelector(s);
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button,.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.view).classList.add('active')});
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-async function sync(){
-  $('#syncTime').textContent='syncing…';
-  try{
-    const [issuesRes,chatRes]=await Promise.all([
-      fetch('https://api.github.com/repos/'+REPO+'/issues?state=open&per_page=30',{headers:{Accept:'application/vnd.github+json'}}),
-      fetch('https://raw.githubusercontent.com/'+REPO+'/main/CHAT_LOG.md?ts='+Date.now())
-    ]);
-    if(!issuesRes.ok) throw new Error('GitHub issues '+issuesRes.status);
-    const issues=(await issuesRes.json()).filter(x=>!x.pull_request);
-    $('#openCount').textContent=issues.length;
-    $('#issues').innerHTML=issues.length?issues.map(i=>'<div class="task"><div class="row"><span class="status open">OPEN</span><span class="task-title">#'+i.number+' '+esc(i.title)+'</span></div><div class="muted" style="margin-top:6px">'+esc((i.body||'').slice(0,220))+'</div><div style="margin-top:8px"><a class="btn" target="_blank" rel="noopener" href="'+i.html_url+'">Open issue</a></div></div>').join(''):'<div class="muted">No open work items.</div>';
-    if(chatRes.ok){const t=await chatRes.text();$('#chat').textContent=t.split('\n').slice(-42).join('\n')||'No Teamchat entries.'}
-    else $('#chat').textContent='Teamchat unavailable ('+chatRes.status+').';
-    $('#syncTime').textContent=new Intl.DateTimeFormat('en-IE',{timeZone:'Europe/Dublin',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date());
-  }catch(e){$('#issues').innerHTML='<div class="error">'+esc(e.message)+'</div>';$('#syncTime').textContent='offline';}
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const KEY='hv-agent-os-tasks-v1';
+let installPrompt=null;
+
+function setView(name){$$('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===name));$$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));}
+$$('.tab').forEach(b=>b.onclick=()=>setView(b.dataset.tab));
+
+function packet(){
+  const owner=$('#owner').value, objective=$('#objective').value.trim(), scope=$('#scope').value.trim(), evidence=$('#evidence').value.trim();
+  return `[TIMESTAMP] ${new Date().toISOString()}
+[FROM] [${owner}]
+[TO] [${owner}]
+[STATUS] REQUESTED
+[ACTIVE_OWNER] NONE
+[OBJECTIVE] ${objective||'One testable endpoint'}
+[SCOPE] ${scope||'Define authorised systems/actions'}
+[PROTECTED] Credentials, paid services, unrelated production systems
+[COST] €0
+[ALLOWANCE_BUDGET] Preflight required before execution
+[EVIDENCE_REQUIRED] ${evidence||'Physical/readback proof required for PASS'}`;
 }
-$('#refresh').onclick=sync;
-$('#scratch').value=localStorage.getItem('hv-agentos-scratch')||'';
-$('#saveNote').onclick=()=>{localStorage.setItem('hv-agentos-scratch',$('#scratch').value);$('#saveState').textContent='Saved on this device';setTimeout(()=>$('#saveState').textContent='',1800)};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-sync();
+function build(){ $('#packet').textContent=packet(); return $('#packet').textContent; }
+$('#buildPacket').onclick=build;
+$('#copyPacket').onclick=async()=>{await navigator.clipboard.writeText(build()); $('#copyPacket').textContent='Copied'; setTimeout(()=>$('#copyPacket').textContent='Copy',1200)};
+$('#openIssue').onclick=()=>{const objective=$('#objective').value.trim()||'New HumanVibe task';const body=build();window.open('https://github.com/the1mburke-blip/Teamchat/issues/new?title='+encodeURIComponent('[T1] [REQUESTED] '+objective.slice(0,70))+'&body='+encodeURIComponent(body),'_blank','noopener');};
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
+function save(items){localStorage.setItem(KEY,JSON.stringify(items));render()}
+$('#saveDraft').onclick=()=>{const objective=$('#objective').value.trim();if(!objective)return;const items=load();items.unshift({id:Date.now(),objective,owner:$('#owner').value,packet:build(),created:new Date().toISOString()});save(items.slice(0,30));};
+function render(){const q=$('#queue'),items=load();q.innerHTML=items.length?'':'<p>No local drafts yet.</p>';items.forEach(t=>{const el=document.createElement('div');el.className='queue-item';el.innerHTML='<div class="queue-top"><div><div class="queue-title"></div><div class="queue-meta"></div></div><button class="btn danger">Delete</button></div>';el.querySelector('.queue-title').textContent=t.objective;el.querySelector('.queue-meta').textContent=t.owner+' · '+new Date(t.created).toLocaleString();el.querySelector('button').onclick=()=>save(load().filter(x=>x.id!==t.id));q.appendChild(el)})}
+render();
+
+function net(){const on=navigator.onLine;$('#net').textContent=on?'Online':'Offline';$('#lamp').classList.toggle('offline',!on)}window.addEventListener('online',net);window.addEventListener('offline',net);net();
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('#installBtn').hidden=false});
+$('#installBtn').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('#installBtn').hidden=true};
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 </script>
-</body></html>
+</body>
+</html>
