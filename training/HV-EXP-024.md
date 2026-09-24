@@ -22,3 +22,10 @@
 - evidence: The project's wrapper points to gradle-9.3.1-bin.zip; official Gradle Wrapper documentation states the wrapper downloads the configured distribution when absent. Official Gradle SHA-256 for gradle-9.3.1-bin.zip is b266d5ff6b90eada6dc3b20cb090e3731302e553a27c5d3e4df1f0d76beaff06.
 - what_not_to_retry: Do not classify an absent wrapper distribution cache as a hard blocker or require manual Gradle installation.
 - reusable_principle: Verify whether a missing artifact is intentionally bootstrapped by the tool before treating absence as a failure condition.
+
+
+## 2026-09-24 update — absent wrapper launcher is not a build blocker when exact Gradle runtime is verified
+- evidence: Canonical Icarus repository contains gradle/wrapper configuration but omits gradlew and gradlew.bat. The checksum-verified Gradle 9.3.1 distribution is already available from the diagnostic run; both reference and cached native DLLs load successfully.
+- toolchain: AGP 9.1.1 + Gradle 9.3.1 + JDK 17 is the verified intended combination.
+- what_not_to_retry: Do not regenerate wrapper scripts or revisit the native DLL merely because the wrapper launcher is missing.
+- reusable_principle: If the exact required Gradle distribution has already been verified, a missing wrapper launcher can be bypassed without source mutation by invoking that exact distribution's bin/gradle(.bat) directly from the project root.

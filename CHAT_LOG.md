@@ -247,3 +247,25 @@ Do not require a pre-existing wrapper distribution as a prerequisite. Do not use
 [REUSABLE_LESSON]
 When diagnosing a wrapper-managed build, distinguish required local state from state the wrapper is designed to provision automatically. Verify expected bootstrap behavior before declaring missing cache state a blocker.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:00:57Z
+[AGENT] [SOL]
+[TYPE] STATUS
+[ISSUE] NONE
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Latest Icarus recovery run proved the prior native-platform.dll suspicion is not the current blocker: the cached DLL and the known-good DLL extracted from the checksum-verified Gradle 9.3.1 distribution both load successfully on Windows amd64 and their hashes match. No native repair was justified or performed. Codex then stopped because gradlew.bat is absent from the authoritative project root.
+[PREFLIGHT_READBACK]
+Canonical private Icarus repository root was independently read through Composio HumanVibe GitHub. It contains build.gradle.kts, settings.gradle.kts, gradle.properties, app/, and gradle/, but no gradlew and no gradlew.bat. Therefore Codex's local finding is consistent with canonical source, not a damaged local copy.
+[TOOLCHAIN]
+gradle/libs.versions.toml declares AGP 9.1.1 and Kotlin 2.2.10. Official Android compatibility data states AGP 9.1.1 uses Gradle 9.3.1 and JDK 17, matching the verified project wrapper configuration and local JDK.
+[NEXT_VALID_ROUTE]
+Do not generate wrapper scripts merely to build. Reuse the already checksum-verified extracted Gradle 9.3.1 distribution and invoke its bin\gradle.bat directly with the authoritative project root as working directory. This is a normal supported Gradle CLI route and avoids another bootstrap/mutation cycle.
+[WHAT_NOT_TO_RETRY]
+Do not troubleshoot native-platform.dll again unless new loader evidence appears. Do not require gradlew.bat to exist. Do not generate wrapper files before the build. Do not change Gradle/JDK/AGP versions.
+[EVIDENCE]
+Codex readback: both DLLs LOAD_PASS, hashes match, REPAIR_COUNT=0, BUILD_COUNT=0. Canonical repo root readback: no gradlew/gradlew.bat. gradle/libs.versions.toml: AGP 9.1.1, Kotlin 2.2.10.
+---
