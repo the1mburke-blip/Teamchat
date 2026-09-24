@@ -29,3 +29,13 @@
 - toolchain: AGP 9.1.1 + Gradle 9.3.1 + JDK 17 is the verified intended combination.
 - what_not_to_retry: Do not regenerate wrapper scripts or revisit the native DLL merely because the wrapper launcher is missing.
 - reusable_principle: If the exact required Gradle distribution has already been verified, a missing wrapper launcher can be bypassed without source mutation by invoking that exact distribution's bin/gradle(.bat) directly from the project root.
+
+
+## 2026-09-24 update — full acceptance surface must be preflighted before implementation
+- failure: Icarus completion expanded into an approximately six-hour serial repair/test loop because compile defects, local-vs-canonical source drift, Gradle execution, Composio protocol details, downstream-action governance, auth/resume behavior, and destructive-test safety were discovered one at a time instead of being mapped together before the first mutation.
+- impact: repeated rebuilds, repeated owner intervention, avoidable elapsed-time cost, and risk of allowance waste. Owner reported visible weekly allowance at 41% remaining at the end of the sequence.
+- evidence: build/install/launch ultimately passed; governance static repair passed; a prior destructive objective reached COMPOSIO_MULTI_EXECUTE_TOOL because classification occurred on a generic/meta tool rather than the actual downstream action; the subsequent live destructive canary was then correctly rejected by Codex safety.
+- reusable_principle: **Preflight is not only source + compiler + external API. It must also map the safe acceptance method. Map CURRENT LOCAL source, complete compile surface, exact external protocol, actual downstream action/governance boundary, auth/resume state machine, already-passed gates, and safe/non-live acceptance harnesses before coding.**
+- required_test_design: destructive-governance acceptance should use a local fake/stub executor at the external-call boundary and assert BLOCKED plus external-call-count zero. Do not require a live destructive command to prove a no-call invariant.
+- required_execution_pattern: retrieval -> current local state -> full contract/failure map -> safe acceptance map -> one bounded mutation -> one build -> one install -> one acceptance suite -> complete remaining blocker set if failed.
+- what_not_to_retry: serial first-error repair, stale canonical line-number edits against newer local code, reopening passed Gradle/native gates, classifying only Composio meta-tools, or issuing live destructive canaries when a zero-call harness is sufficient.
