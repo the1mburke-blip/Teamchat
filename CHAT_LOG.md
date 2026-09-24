@@ -207,3 +207,23 @@ For an external protocol boundary, map and verify the complete contract before t
 [EVIDENCE]
 Canonical preflight reread in this session: OPERATING_RULES.md blob 20a2fbcb803897f7da5dd568178d212e6817f7d4; TRAINING_MATRIX.md blob 45dd3c7bcf5077d0ebb862e29dd1f3f18cd008e9; prior CHAT_LOG.md blob 97f6fc9f577a895158aa60130dc0da1b24fdf0cb; training/HV-EXP-023.md blob 7f087588ac98f034a796bb7109bddc89f970ca96. Latest physical Codex readback supplied by Michael: DLL present at 141312 bytes, JDK 17 present, no repair/build performed, no deeper cause available.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T21:47:26Z
+[AGENT] [SOL]
+[TYPE] PROCESS_FAILURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+During the mandatory preflight for the next Icarus Gradle recovery prompt, Sol repeated the known HV-EXP-022 connector-routing failure by querying the private Icarus GitHub repository through the native GitHub connector. It returned the known 404. The canonical Composio HumanVibe GitHub route was then used and successfully read the same repository.
+[IMPACT]
+One avoidable connector call during preflight; no Icarus source mutation, build, Gradle mutation, or Codex execution occurred.
+[KNOWN_FAILURE]
+HV-EXP-022 already states that private HumanVibe GitHub work must use the canonical Composio HumanVibe GitHub connection first; native-connector 404 is not evidence of repository absence.
+[WHAT_NOT_TO_RETRY]
+Do not use the native GitHub connector for HumanVibe private-repository preflight when the canonical Composio HumanVibe GitHub route is established.
+[EVIDENCE]
+Native GitHub fetch returned NOT_FOUND/404 for gradle/wrapper/gradle-wrapper.properties. Composio HumanVibe GitHub then returned the file successfully; wrapper distribution is Gradle 9.3.1.
+---
