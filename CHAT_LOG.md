@@ -886,3 +886,20 @@ COMPOSIO_MANAGE_CONNECTIONS: NOT REACHED DUE CURRENT GATE PREDICATE
 CURRENT_FIRST_FAILING_LINK: unauthenticated-connection predicate / missing sanitized connection-field evidence
 NEXT_ACTION: capture exact parsed connection fields; no mutation before evidence
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:39:30Z
+[AGENT] [SOL]
+[TYPE] REUSABLE_TEMPLATE_PRESERVED
+[ISSUE] ICARUS_FINAL_FULL_PREFLIGHT
+[STATUS] PASS
+[BODY]
+The final one-attempt Icarus full-preflight T1 has been preserved as a dedicated reusable training artifact so it can be reused after allowance exhaustion or in future comparable integrated-agent builds.
+[ARTIFACT]
+training/T1-ICARUS-FINAL-FULL-PREFLIGHT-TEMPLATE.md
+[CONTENTS]
+Includes frozen PASS layers, full blocker matrix, predicted-next-blocker review, one-atomic-repair rule, static readback gates, one-build/one-install/one-runtime limits, Gemini-bypass constraints, Composio auth/session/redirect/PENDING_AUTH checks, hard-stop rules, and required return format.
+[USE]
+Retrieve canonical history/training first, inspect CURRENT LOCAL SOURCE, then use this template as the preflight skeleton. Adapt entity/toolkit names only; do not weaken the blocker-matrix or stop conditions.
+---

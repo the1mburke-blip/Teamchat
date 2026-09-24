@@ -89,3 +89,10 @@
   if the current gate-trace run fails at night, stop. Do not repair/rebuild/reinstall/retry. Resume the exact first failing link later.
 - reusable principle:
   Late-stage integration debugging must resume from the narrowest physically proven boundary. Preserve passed layers as frozen and capture the exact predicate inputs before changing the predicate.
+
+
+## 2026-09-24 update — final full-preflight T1 preserved as reusable template
+- artifact: training/T1-ICARUS-FINAL-FULL-PREFLIGHT-TEMPLATE.md
+- purpose: reusable last-attempt pattern for integrated agent/app debugging after multiple partial fixes.
+- required use: retrieve canonical history/training, inspect current-local source, freeze passed layers, map full blocker and predicted-next-blocker surface, then allow at most one bounded mutation/build/install/runtime path.
+- do not simplify away: external-contract fields, connection/session/auth state, downstream governance, UI surfacing, safe test path, compile-surface readback, or hard-stop conditions.
