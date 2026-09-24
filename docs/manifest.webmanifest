@@ -1,12 +1,12 @@
 {
-  "name": "HumanVibe Agent OS",
-  "short_name": "Agent OS",
-  "description": "HumanVibe mobile control plane",
+  "name": "HumanVibe Team OS",
+  "short_name": "Team OS",
+  "description": "Live GitHub-backed HumanVibe team room and task control plane",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0b0d10",
-  "theme_color": "#0b0d10",
+  "background_color": "#0a0d10",
+  "theme_color": "#0a0d10",
   "icons": [
     {
       "src": "./icon.svg",

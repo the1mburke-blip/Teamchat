@@ -1,173 +1,183 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0d10" />
-  <meta name="description" content="HumanVibe Agent OS mobile control plane" />
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-  <title>HumanVibe Agent OS</title>
-  <style>
-    :root{--bg:#0b0d10;--panel:#13171c;--panel2:#181e25;--line:#28313b;--text:#f3f6f8;--muted:#96a2ad;--accent:#e9ff70;--good:#8cf5b5;--warn:#ffd36b;--bad:#ff8d8d;--r:18px}
-    *{box-sizing:border-box} html{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    body{margin:0;min-height:100vh;background:radial-gradient(circle at 70% -10%,#26321c 0,transparent 28rem),var(--bg)}
-    button,input,textarea,select{font:inherit}
-    button{cursor:pointer}
-    .shell{max-width:980px;margin:auto;padding:18px 16px 92px}
-    header{display:flex;justify-content:space-between;gap:14px;align-items:center;margin:6px 0 20px}
-    .brand{display:flex;gap:12px;align-items:center}.mark{width:44px;height:44px;border-radius:14px;background:var(--accent);color:#10130c;display:grid;place-items:center;font-weight:900}
-    h1{font-size:19px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
-    .badge{font-size:11px;border:1px solid var(--line);background:#11161a;padding:7px 10px;border-radius:999px}
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.card{grid-column:span 12;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:16px}
-    @media(min-width:720px){.half{grid-column:span 6}.third{grid-column:span 4}}
-    .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-    h2{font-size:22px;margin:6px 0 10px} h3{font-size:15px;margin:0 0 9px}
-    p{line-height:1.5;color:#cbd3da;margin:7px 0}.metrics{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    .metric{border:1px solid var(--line);background:#0e1216;border-radius:12px;padding:10px 12px;min-width:125px}.metric b{display:block;font-size:17px}.metric span{font-size:11px;color:var(--muted)}
-    .rule{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--line);padding:10px 0}.rule:first-of-type{border-top:0}.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:7px;flex:0 0 auto}
-    label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}input,textarea,select{width:100%;border:1px solid var(--line);background:#0c1014;color:var(--text);border-radius:12px;padding:12px;outline:none}textarea{min-height:92px;resize:vertical}
-    input:focus,textarea:focus,select:focus{border-color:#66734b;box-shadow:0 0 0 3px #dfff6918}
-    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.btn{border:1px solid var(--line);background:#171d23;color:var(--text);padding:10px 13px;border-radius:12px;text-decoration:none}.btn.primary{background:var(--accent);color:#12150c;border-color:var(--accent);font-weight:750}.btn.danger{color:#ffc1c1}
-    pre{white-space:pre-wrap;word-break:break-word;background:#0b0f13;border:1px solid var(--line);border-radius:12px;padding:12px;max-height:290px;overflow:auto;color:#d7dee4;font-size:12px}
-    .agent{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line)}.agent:first-of-type{border-top:0}.agent small{color:var(--muted)}.role{font-size:11px;color:var(--accent)}
-    .queue-item{padding:12px 0;border-top:1px solid var(--line)}.queue-item:first-child{border-top:0}.queue-top{display:flex;justify-content:space-between;gap:10px}.queue-title{font-weight:700}.queue-meta{font-size:11px;color:var(--muted);margin-top:4px}
-    nav{position:fixed;left:0;right:0;bottom:0;background:#0a0d10e8;backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px max(10px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:flex;justify-content:center;z-index:10}
-    .tabs{width:min(960px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.tab{border:0;background:transparent;color:var(--muted);padding:9px 5px;border-radius:10px;font-size:12px}.tab.active{background:#1a211a;color:var(--accent)}
-    section[data-view]{display:none}section[data-view].active{display:block}.links a{display:block;color:#dffb77;text-decoration:none;padding:9px 0;border-top:1px solid var(--line)}.links a:first-child{border-top:0}
-    .statusline{display:flex;gap:7px;align-items:center}.lamp{width:8px;height:8px;border-radius:50%;background:var(--good)}.lamp.offline{background:var(--warn)}
-    footer{color:var(--muted);font-size:11px;text-align:center;margin:24px 0}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<meta name="description" content="HumanVibe Team OS — live GitHub-backed team room and task control plane">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>HumanVibe Team OS</title>
+<style>
+:root{--bg:#0a0d10;--panel:#11161b;--panel2:#171e25;--line:#27313b;--text:#f3f6f8;--muted:#98a4ae;--accent:#e9ff70;--good:#8cf5b5;--warn:#ffd36b;--bad:#ff9494;--blue:#98c8ff;--r:16px}
+*{box-sizing:border-box}html{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}body{margin:0;background:radial-gradient(circle at 80% -10%,#22301c 0,transparent 32rem),var(--bg);min-height:100vh}
+button,input,textarea,select{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:auto;padding:16px 14px 90px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 16px}.brand{display:flex;align-items:center;gap:11px}.mark{width:42px;height:42px;border-radius:13px;background:var(--accent);color:#0a0d10;font-weight:900;display:grid;place-items:center}h1{font-size:19px;margin:0}.sub{font-size:11px;color:var(--muted);margin-top:3px}
+.sync{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}.lamp{width:8px;height:8px;border-radius:50%;background:var(--good)}.lamp.bad{background:var(--bad)}.lamp.warn{background:var(--warn)}
+.banner{display:flex;justify-content:space-between;gap:10px;align-items:center;background:#151a18;border:1px solid #34402a;padding:11px 12px;border-radius:13px;margin-bottom:12px;font-size:12px}.banner b{color:var(--accent)}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0 0 12px}.tab{border:1px solid var(--line);background:#10151a;color:var(--muted);border-radius:11px;padding:10px}.tab.active{background:#1c2418;color:var(--accent);border-color:#475735}
+.view{display:none}.view.active{display:block}.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:14px}.grid{display:grid;gap:12px}.two{grid-template-columns:1fr}@media(min-width:820px){.two{grid-template-columns:1.15fr .85fr}}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1}.btn{border:1px solid var(--line);background:#171d23;color:var(--text);padding:9px 12px;border-radius:11px;text-decoration:none;display:inline-block}.btn.primary{background:var(--accent);border-color:var(--accent);color:#10130c;font-weight:800}.btn.ghost{background:transparent}.btn.small{padding:6px 9px;font-size:11px}
+input,textarea,select{width:100%;background:#0b0f13;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px;outline:none}textarea{min-height:90px;resize:vertical}label{display:block;color:var(--muted);font-size:11px;margin:10px 0 5px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}@media(min-width:720px){.controls{grid-template-columns:2fr repeat(2,1fr) auto}}
+.board{display:grid;gap:10px}.task{background:#0e1317;border:1px solid var(--line);border-radius:13px;padding:12px}.tasktop{display:flex;justify-content:space-between;gap:12px}.tasktitle{font-weight:780;line-height:1.35}.meta{font-size:11px;color:var(--muted);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap}.pill{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:#141a20}.pill.good{color:var(--good)}.pill.bad{color:var(--bad)}.pill.warn{color:var(--warn)}.pill.blue{color:var(--blue)}
+.detail{display:none;border-top:1px solid var(--line);margin-top:10px;padding-top:10px}.detail.open{display:block}.field{font-size:12px;margin:7px 0}.field b{color:var(--muted);font-weight:650;margin-right:6px}.comment{border-top:1px solid var(--line);padding:10px 0}.comment:first-child{border-top:0}.commenthead{font-size:10px;color:var(--muted);margin-bottom:5px}.commentbody{white-space:pre-wrap;font-size:12px;line-height:1.45}
+.room{max-height:58vh;overflow:auto}.message{padding:11px 0;border-top:1px solid var(--line)}.message:first-child{border-top:0}.message .who{font-size:11px;color:var(--accent);font-weight:750}.message .when{font-size:10px;color:var(--muted);margin-left:7px}.message .body{white-space:pre-wrap;font-size:13px;line-height:1.5;margin-top:5px}
+.empty{padding:24px 8px;text-align:center;color:var(--muted);font-size:13px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}h2{font-size:20px;margin:4px 0 10px}p{color:#ccd4da;line-height:1.45;font-size:13px}
+pre{background:#090d10;border:1px solid var(--line);border-radius:11px;padding:10px;white-space:pre-wrap;word-break:break-word;font-size:11px;max-height:240px;overflow:auto}
+footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
+</style>
 </head>
 <body>
 <div class="shell">
-  <header>
-    <div class="brand"><div class="mark">HV</div><div><h1>HumanVibe Agent OS</h1><div class="sub">Mobile control plane · v0.1</div></div></div>
-    <div class="badge statusline"><span id="lamp" class="lamp"></span><span id="net">Online</span></div>
-  </header>
+<header>
+  <div class="brand"><div class="mark">HV</div><div><h1>HumanVibe Team OS</h1><div class="sub">GitHub-backed shared control plane</div></div></div>
+  <div class="sync"><span id="lamp" class="lamp warn"></span><span id="syncText">Syncing…</span></div>
+</header>
 
-  <section data-view="home" class="active">
-    <div class="grid">
-      <div class="card">
-        <div class="eyebrow">Control plane</div><h2>Human judgement. Agent execution.</h2>
-        <p>A mobile-first front door for HumanVibe tasks, handoffs, governance and evidence. No hidden paid fallback.</p>
-        <div class="metrics">
-          <div class="metric"><b>€0</b><span>Spend policy</span></div>
-          <div class="metric"><b>5</b><span>Rostered chairs</span></div>
-          <div class="metric"><b>1</b><span>Active owner max</span></div>
-          <div class="metric"><b>Evidence</b><span>Required for PASS</span></div>
-        </div>
-      </div>
-      <div class="card half"><div class="eyebrow">Operating core</div><h3>Immutable execution rules</h3>
-        <div class="rule"><span class="dot"></span><div><b>MEASURE TWICE. CUT ONCE.</b><p>Check route, ownership and evidence before execution.</p></div></div>
-        <div class="rule"><span class="dot"></span><div><b>NO EVIDENCE = NO CLAIM.</b><p>PASS requires physical or readback verification.</p></div></div>
-        <div class="rule"><span class="dot"></span><div><b>SPEND ONLY AFTER PROFIT.</b><p>Use authorized €0 infrastructure only.</p></div></div>
-      </div>
-      <div class="card half"><div class="eyebrow">Fast actions</div><h3>Open the canonical room</h3>
-        <div class="links">
-          <a href="https://github.com/the1mburke-blip/Teamchat/issues" target="_blank" rel="noopener">GitHub work queue ↗</a>
-          <a href="https://github.com/the1mburke-blip/Teamchat/blob/main/CHAT_LOG.md" target="_blank" rel="noopener">Team chat log ↗</a>
-          <a href="https://github.com/the1mburke-blip/Teamchat/blob/main/OPERATING_RULES.md" target="_blank" rel="noopener">Operating rules ↗</a>
-          <a href="https://github.com/the1mburke-blip/Teamchat/blob/main/TRAINING_MATRIX.md" target="_blank" rel="noopener">Training matrix ↗</a>
-        </div>
-        <div class="actions"><button class="btn primary" id="installBtn" hidden>Install app</button></div>
-      </div>
-    </div>
-  </section>
+<div class="banner"><span><b>SHARED STATE LIVE</b> — Team Room + tasks read directly from Teamchat GitHub.</span><span>Direct agent wake: <b>NOT CONNECTED</b></span></div>
 
-  <section data-view="task">
-    <div class="grid">
-      <div class="card half"><div class="eyebrow">Task composer</div><h2>Create a governed handoff</h2>
-        <label>Chair</label><select id="owner"><option>SOL</option><option>LUNA</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option></select>
-        <label>Objective</label><input id="objective" placeholder="One testable endpoint" />
-        <label>Scope</label><textarea id="scope" placeholder="Systems and actions authorised"></textarea>
-        <label>Evidence required</label><textarea id="evidence" placeholder="Physical/readback proof required for PASS"></textarea>
-        <div class="actions"><button class="btn primary" id="buildPacket">Build packet</button><button class="btn" id="saveDraft">Save locally</button></div>
-      </div>
-      <div class="card half"><div class="eyebrow">Packet preview</div><h3>Canonical task header</h3><pre id="packet">Complete the task fields to generate a packet.</pre>
-        <div class="actions"><button class="btn" id="copyPacket">Copy</button><button class="btn primary" id="openIssue">Open GitHub Issue</button></div>
-      </div>
-      <div class="card"><div class="eyebrow">Local queue</div><h3>Saved on this device</h3><div id="queue"></div></div>
-    </div>
-  </section>
-
-  <section data-view="team">
-    <div class="grid">
-      <div class="card"><div class="eyebrow">Canonical roster</div><h2>Team Room</h2><p>Roles below are roster definitions, not simulated online status.</p>
-        <div class="agent"><div><b>Luna</b><br><small>Operational oversight and routing</small></div><span class="role">[LUNA]</span></div>
-        <div class="agent"><div><b>Sol</b><br><small>Authenticated execution and verification</small></div><span class="role">[SOL]</span></div>
-        <div class="agent"><div><b>Gemini Prime</b><br><small>Strategy and independent critique</small></div><span class="role">[PRIME]</span></div>
-        <div class="agent"><div><b>Grace</b><br><small>Control-loop continuity and bounded operations</small></div><span class="role">[GRACE]</span></div>
-        <div class="agent"><div><b>DeepSeek</b><br><small>Technical analysis and bounded specialist execution</small></div><span class="role">[DEEPSEEK]</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section data-view="rules">
-    <div class="grid">
-      <div class="card half"><div class="eyebrow">Execution lifecycle</div><h2>State machine</h2><pre>REQUESTED → CLAIMED → EXECUTING → VERIFYING
-                         ↘ PASS
-                         ↘ PARTIAL
-                         ↘ BLOCKED
-                         ↘ FAIL
-                         ↘ SUPERSEDED</pre></div>
-      <div class="card half"><div class="eyebrow">Hard gates</div><h2>Before execution</h2>
-        <div class="rule"><span class="dot"></span><div><b>History first</b><p>Review prior attempts and failures.</p></div></div>
-        <div class="rule"><span class="dot"></span><div><b>Training proof</b><p>Retrieve the shared matrix and quote the relevant lesson.</p></div></div>
-        <div class="rule"><span class="dot"></span><div><b>Shadow first</b><p>Use a verified-free capable chair before premium allowance when eligible.</p></div></div>
-        <div class="rule"><span class="dot"></span><div><b>One active owner</b><p>No duplicate execution.</p></div></div>
-      </div>
-      <div class="card"><div class="eyebrow">Boundary</div><h3>What this v0.1 does</h3><p>This PWA is the mobile control surface: task composition, local queue, install/offline support, and direct access to the canonical GitHub coordination room. It does not store credentials or impersonate agent runtimes.</p></div>
-    </div>
-  </section>
-
-  <footer>HumanVibe Agent OS · source of truth: the1mburke-blip/Teamchat · build 2026-09-24</footer>
+<div class="tabs">
+  <button class="tab active" data-view="room">Team Room</button>
+  <button class="tab" data-view="tasks">Tasks</button>
+  <button class="tab" data-view="dispatch">Dispatch</button>
 </div>
 
-<nav><div class="tabs">
-  <button class="tab active" data-tab="home">Home</button>
-  <button class="tab" data-tab="task">Tasks</button>
-  <button class="tab" data-tab="team">Team</button>
-  <button class="tab" data-tab="rules">Rules</button>
-</div></nav>
+<section class="view active" id="room">
+  <div class="grid two">
+    <div class="card">
+      <div class="row"><div class="grow"><div class="eyebrow">Canonical shared room</div><h2>Live Team Room</h2></div><button class="btn small" id="refreshRoom">Refresh</button></div>
+      <div id="roomFeed" class="room"><div class="empty">Loading shared messages…</div></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Write path</div><h2>Post a real message</h2>
+      <p>Messages live in GitHub issue #6. The web app has no embedded credential, so writing opens the authenticated GitHub room rather than pretending a local message is shared.</p>
+      <a class="btn primary" href="https://github.com/the1mburke-blip/Teamchat/issues/6" target="_blank" rel="noopener">Open Team Room to post</a>
+      <div style="height:12px"></div>
+      <div class="eyebrow">Evidence rule</div><p>Only GitHub issue/comment state is shown as shared. Local browser state is never presented as team state.</p>
+    </div>
+  </div>
+</section>
 
+<section class="view" id="tasks">
+  <div class="card">
+    <div class="row"><div class="grow"><div class="eyebrow">Canonical work queue</div><h2>Live tasks</h2></div><button class="btn small" id="refreshTasks">Refresh</button></div>
+    <div class="controls">
+      <input id="search" placeholder="Search tasks">
+      <select id="statusFilter"><option value="">All states</option><option>REQUESTED</option><option>CLAIMED</option><option>EXECUTING</option><option>VERIFYING</option><option>BLOCKED</option><option>PASS</option><option>FAIL</option><option>PARTIAL</option><option>SUPERSEDED</option></select>
+      <select id="ownerFilter"><option value="">All owners</option><option>LUNA</option><option>SOL</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option><option>OWNER</option><option>NONE</option></select>
+      <span class="pill" id="taskCount">0 tasks</span>
+    </div>
+    <div id="taskBoard" class="board"><div class="empty">Loading live issues…</div></div>
+  </div>
+</section>
+
+<section class="view" id="dispatch">
+  <div class="grid two">
+    <div class="card">
+      <div class="eyebrow">Real task initiation</div><h2>Dispatch to Teamchat</h2>
+      <label>Target chair</label>
+      <select id="to"><option>SOL</option><option>LUNA</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option></select>
+      <label>Tier</label><select id="tier"><option>T1</option><option>T2</option><option>T3</option></select>
+      <label>Objective</label><input id="objective" placeholder="One testable endpoint">
+      <label>Scope</label><textarea id="scope" placeholder="Systems and actions authorised"></textarea>
+      <label>Evidence required</label><textarea id="evidence" placeholder="Physical/readback proof required for PASS"></textarea>
+      <div class="row" style="margin-top:12px"><button class="btn primary" id="dispatchBtn">Open real GitHub task</button><button class="btn" id="previewBtn">Preview packet</button></div>
+      <p style="font-size:11px">You enter the task once here. GitHub opens with the title/body prefilled; submit there to create the canonical shared task. Automatic agent wakeup is not claimed.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Dispatch packet</div><h2>Preview</h2><pre id="packet">Complete the objective to preview.</pre>
+      <div class="eyebrow">One backend gap</div><p>An authenticated HTTPS dispatch endpoint is still required for direct in-app GitHub writes and automatic agent wakeup. No browser token will be added to fake this.</p>
+    </div>
+  </div>
+</section>
+
+<footer>HumanVibe Team OS · canonical source: the1mburke-blip/Teamchat · room #6 · zero browser secrets</footer>
+</div>
 <script>
+const OWNER='the1mburke-blip', REPO='Teamchat', ROOM=6;
+const API='https://api.github.com/repos/'+OWNER+'/'+REPO;
+let issues=[], roomComments=[], commentsCache=new Map();
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const KEY='hv-agent-os-tasks-v1';
-let installPrompt=null;
+const headers={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
 
-function setView(name){$$('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===name));$$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));}
-$$('.tab').forEach(b=>b.onclick=()=>setView(b.dataset.tab));
+$$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.toggle('active',x===b));$$('.view').forEach(v=>v.classList.toggle('active',v.id===b.dataset.view));});
 
-function packet(){
-  const owner=$('#owner').value, objective=$('#objective').value.trim(), scope=$('#scope').value.trim(), evidence=$('#evidence').value.trim();
-  return `[TIMESTAMP] ${new Date().toISOString()}
-[FROM] [${owner}]
-[TO] [${owner}]
+function esc(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function fmt(t){try{return new Date(t).toLocaleString()}catch{return t}}
+function meta(body=''){
+  const out={}; for(const line of body.split(/\r?\n/)){const m=line.match(/^\[([A-Z_]+)\]\s*(.*)$/);if(m)out[m[1]]=m[2].trim()}
+  return out;
+}
+function titleStatus(title=''){const m=title.match(/^\[[^\]]+\]\s*\[([^\]]+)\]/);return m?m[1].toUpperCase():''}
+function issueStatus(i){const m=meta(i.body||''); return (m.STATUS||titleStatus(i.title)|| (i.state==='closed'?'PASS':'REQUESTED')).replace(/[\[\]]/g,'').toUpperCase()}
+function issueOwner(i){const m=meta(i.body||'');return (m.ACTIVE_OWNER||m.TO||'NONE').replace(/[\[\]]/g,'').toUpperCase()}
+function pillClass(s){if(['PASS','DONE'].includes(s))return'good';if(['FAIL','BLOCKED'].includes(s))return'bad';if(['EXECUTING','VERIFYING','CLAIMED'].includes(s))return'blue';return'warn'}
+async function get(url){const r=await fetch(url,{headers,cache:'no-store'});if(!r.ok)throw new Error(r.status+' '+r.statusText);return r.json()}
+function setSync(ok,msg){$('#lamp').className='lamp '+(ok?'':'bad');$('#syncText').textContent=msg}
+
+async function syncAll(){
+  try{
+    setSync(true,'Syncing…');
+    const [all,room]=await Promise.all([
+      get(API+'/issues?state=all&per_page=100&sort=updated&direction=desc'),
+      get(API+'/issues/'+ROOM+'/comments?per_page=100')
+    ]);
+    issues=all.filter(x=>!x.pull_request && x.number!==ROOM);
+    roomComments=room; renderTasks(); renderRoom();
+    setSync(true,'Live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSync(false,'Sync failed');document.title='Team OS · sync error';console.error(e)}
+}
+function renderRoom(){
+  const box=$('#roomFeed');
+  if(!roomComments.length){box.innerHTML='<div class="empty">Room is live. No comments yet.</div>';return}
+  box.innerHTML=roomComments.map(c=>'<div class="message"><div><span class="who">'+esc(c.user?.login||'unknown')+'</span><span class="when">'+esc(fmt(c.created_at))+'</span></div><div class="body">'+esc(c.body||'')+'</div></div>').join('');
+  box.scrollTop=box.scrollHeight;
+}
+function renderTasks(){
+  const q=$('#search').value.toLowerCase(), sf=$('#statusFilter').value, of=$('#ownerFilter').value;
+  const list=issues.filter(i=>{
+    const s=issueStatus(i),o=issueOwner(i),hay=(i.title+' '+(i.body||'')).toLowerCase();
+    return (!q||hay.includes(q))&&(!sf||s===sf)&&(!of||o===of);
+  });
+  $('#taskCount').textContent=list.length+' tasks';
+  const box=$('#taskBoard'); if(!list.length){box.innerHTML='<div class="empty">No matching shared tasks.</div>';return}
+  box.innerHTML=list.map(i=>{
+    const m=meta(i.body||''),s=issueStatus(i),o=issueOwner(i);
+    return '<article class="task" data-n="'+i.number+'"><div class="tasktop"><div class="grow"><div class="tasktitle">#'+i.number+' '+esc(i.title)+'</div><div class="meta"><span class="pill '+pillClass(s)+'">'+esc(s)+'</span><span class="pill">Owner '+esc(o)+'</span><span class="pill">'+i.comments+' comments</span><span>'+esc(fmt(i.updated_at))+'</span></div></div><button class="btn small expand">Evidence</button></div><div class="detail"><div class="field"><b>Objective</b>'+esc(m.OBJECTIVE||'—')+'</div><div class="field"><b>Scope</b>'+esc(m.SCOPE||'—')+'</div><div class="field"><b>To</b>'+esc((m.TO||'—').replace(/[\[\]]/g,''))+'</div><div class="field"><b>Evidence required</b>'+esc(m.EVIDENCE_REQUIRED||'—')+'</div><div class="comments"><div class="empty">Open evidence to load comments.</div></div><a class="btn small" href="'+i.html_url+'" target="_blank" rel="noopener">Open canonical issue</a></div></article>';
+  }).join('');
+  $$('.expand').forEach(btn=>btn.onclick=()=>toggleEvidence(btn.closest('.task')));
+}
+async function toggleEvidence(card){
+  const d=card.querySelector('.detail'),n=Number(card.dataset.n);d.classList.toggle('open');if(!d.classList.contains('open'))return;
+  const box=card.querySelector('.comments'); if(commentsCache.has(n)){renderComments(box,commentsCache.get(n));return}
+  box.innerHTML='<div class="empty">Loading shared evidence…</div>';
+  try{const cs=await get(API+'/issues/'+n+'/comments?per_page=100');commentsCache.set(n,cs);renderComments(box,cs)}catch(e){box.innerHTML='<div class="empty">Could not load comments.</div>'}
+}
+function renderComments(box,cs){box.innerHTML=cs.length?cs.map(c=>'<div class="comment"><div class="commenthead">'+esc(c.user?.login||'unknown')+' · '+esc(fmt(c.created_at))+'</div><div class="commentbody">'+esc(c.body||'')+'</div></div>').join(''):'<div class="empty">No comments/evidence yet.</div>'}
+
+function buildPacket(){
+  const to=$('#to').value,tier=$('#tier').value,obj=$('#objective').value.trim(),scope=$('#scope').value.trim(),ev=$('#evidence').value.trim();
+  const body=`[TIMESTAMP] ${new Date().toISOString()}
+[FROM] [OWNER]
+[TO] [${to}]
 [STATUS] REQUESTED
 [ACTIVE_OWNER] NONE
-[OBJECTIVE] ${objective||'One testable endpoint'}
-[SCOPE] ${scope||'Define authorised systems/actions'}
-[PROTECTED] Credentials, paid services, unrelated production systems
+[OBJECTIVE] ${obj||'One testable endpoint'}
+[SCOPE] ${scope||'Authorised execution required to achieve the objective'}
+[PROTECTED] Credentials, paid services, and unrelated production systems
 [COST] €0
 [ALLOWANCE_BUDGET] Preflight required before execution
-[EVIDENCE_REQUIRED] ${evidence||'Physical/readback proof required for PASS'}`;
+[EVIDENCE_REQUIRED] ${ev||'Physical/readback proof required for PASS'}`;
+  return {title:`[${tier}] [REQUESTED] ${obj||'New HumanVibe task'}`,body};
 }
-function build(){ $('#packet').textContent=packet(); return $('#packet').textContent; }
-$('#buildPacket').onclick=build;
-$('#copyPacket').onclick=async()=>{await navigator.clipboard.writeText(build()); $('#copyPacket').textContent='Copied'; setTimeout(()=>$('#copyPacket').textContent='Copy',1200)};
-$('#openIssue').onclick=()=>{const objective=$('#objective').value.trim()||'New HumanVibe task';const body=build();window.open('https://github.com/the1mburke-blip/Teamchat/issues/new?title='+encodeURIComponent('[T1] [REQUESTED] '+objective.slice(0,70))+'&body='+encodeURIComponent(body),'_blank','noopener');};
-
-function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
-function save(items){localStorage.setItem(KEY,JSON.stringify(items));render()}
-$('#saveDraft').onclick=()=>{const objective=$('#objective').value.trim();if(!objective)return;const items=load();items.unshift({id:Date.now(),objective,owner:$('#owner').value,packet:build(),created:new Date().toISOString()});save(items.slice(0,30));};
-function render(){const q=$('#queue'),items=load();q.innerHTML=items.length?'':'<p>No local drafts yet.</p>';items.forEach(t=>{const el=document.createElement('div');el.className='queue-item';el.innerHTML='<div class="queue-top"><div><div class="queue-title"></div><div class="queue-meta"></div></div><button class="btn danger">Delete</button></div>';el.querySelector('.queue-title').textContent=t.objective;el.querySelector('.queue-meta').textContent=t.owner+' · '+new Date(t.created).toLocaleString();el.querySelector('button').onclick=()=>save(load().filter(x=>x.id!==t.id));q.appendChild(el)})}
-render();
-
-function net(){const on=navigator.onLine;$('#net').textContent=on?'Online':'Offline';$('#lamp').classList.toggle('offline',!on)}window.addEventListener('online',net);window.addEventListener('offline',net);net();
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('#installBtn').hidden=false});
-$('#installBtn').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('#installBtn').hidden=true};
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+function preview(){const p=buildPacket();$('#packet').textContent=p.title+'\n\n'+p.body;return p}
+$('#previewBtn').onclick=preview;
+$('#dispatchBtn').onclick=()=>{const p=preview();if(!$('#objective').value.trim()){alert('Objective required');return}const u='https://github.com/'+OWNER+'/'+REPO+'/issues/new?title='+encodeURIComponent(p.title)+'&body='+encodeURIComponent(p.body);window.open(u,'_blank','noopener')};
+['search','statusFilter','ownerFilter'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',renderTasks));
+$('#refreshTasks').onclick=syncAll;$('#refreshRoom').onclick=syncAll;
+window.addEventListener('online',syncAll);window.addEventListener('offline',()=>setSync(false,'Offline shell'));
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
+syncAll();setInterval(()=>{if(navigator.onLine)syncAll()},120000);
 </script>
-</body>
-</html>
+</body></html>
