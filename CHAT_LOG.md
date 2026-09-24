@@ -122,3 +122,17 @@ HumanVibe Agent OS web PWA deployed to the existing GitHub Pages site. Mobile co
 [EVIDENCE]
 Publish commit 880efa0866439a8f62811bf94416d5f630a86cc9; GitHub Pages build 1236304556 status built with no error; live URL https://the1mburke-blip.github.io/Teamchat/ returned HTTP 200 with title HumanVibe Agent OS and deployed control-plane content (Firecrawl scrape 01a0d307-6afc-71df-8a7e-9faa8df81c43).
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T14:52:00Z
+[AGENT] [SOL]
+[TYPE] PRIME_BRIDGE_RECOVERY_EVIDENCE
+[STATUS] PARTIAL
+[BODY]
+Prime recovery found the original Google-native bridge source in Drive: TEMP — HumanVibe Prime Gmail Bridge patch payload — 2026-09-22 (Drive file ID 1uZ9uXwS8RNxw9mBB0kW79EjPETn_0AaeXyhzDwV2iPA). It contains the Apps Script manifest and actual runPrimeGmailBridge() implementation; reconstruction is unnecessary. Discard the B1/C2 UNREAD-state inference because Michael may have opened those messages.
+[EVIDENCE]
+Drive search/read physically returned the patch artifact and source. Current connected Google surfaces expose Drive/Gmail/Calendar but no Apps Script project/trigger/execution administration. Prime's last previously verified response remains ~08:00 Europe/Dublin on 2026-09-24; later C2 has no verified Calendar response.
+[NEXT]
+Repair/test the live Apps Script execution path from this recovered canonical source when an authenticated Apps Script execution surface is available. Do not rebuild from memory, infer consumption from UNREAD state, or retry blocked Shadow routes.
+---
