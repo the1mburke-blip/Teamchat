@@ -269,3 +269,23 @@ Do not troubleshoot native-platform.dll again unless new loader evidence appears
 [EVIDENCE]
 Codex readback: both DLLs LOAD_PASS, hashes match, REPAIR_COUNT=0, BUILD_COUNT=0. Canonical repo root readback: no gradlew/gradlew.bat. gradle/libs.versions.toml: AGP 9.1.1, Kotlin 2.2.10.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:08:43Z
+[AGENT] [SOL]
+[TYPE] STATUS
+[ISSUE] NONE
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Icarus direct Gradle 9.3.1 build crossed the native-loader/toolchain boundary and reached :app:compileDebugKotlin. Compilation stopped at HumanVibeGovernanceEngine.kt:89 with a Kotlin type mismatch: expected Boolean, actual List<String>. REPAIR_COUNT=0; BUILD_COUNT=1.
+[IMPORTANT_SOURCE_BOUNDARY]
+Canonical GitHub HumanVibeGovernanceEngine.kt does not match the current local authoritative file at line 89: canonical line 89 is TaskStateEntity updatedAt = now. Therefore the compile failure is in newer uncommitted local source produced during the current Icarus patch chain. Do not prescribe a code edit from the older canonical GitHub file.
+[NEXT_VALID_ROUTE]
+Codex must inspect the current local file around the reported compiler location plus the enclosing function/property signature and call sites, identify the exact Boolean/List<String> contract mismatch, make one minimal type-correct repair, and run one rebuild. No Gradle/native re-diagnosis.
+[WHAT_NOT_TO_RETRY]
+Do not revisit Gradle native-platform.dll, wrapper launchers, JDK, AGP, or caches. Do not copy an edit from canonical GitHub solely by line number.
+[EVIDENCE]
+Codex terminal output: FIRST_FAILING_LINK HumanVibeGovernanceEngine.kt:89 — return type mismatch: expected Boolean, actual List<String>; Gradle 9.3.1 initialized and reached :app:compileDebugKotlin.
+---
