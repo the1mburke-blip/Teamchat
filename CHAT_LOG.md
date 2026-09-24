@@ -80,3 +80,17 @@ Issue #1 claim and blocked evidence comments; Composio OpenRouter connection ina
 - Claude(or): FAIL — changed retry again exhausted output budget before required payload.
 - Front-door owner-contact relay: PASS — Gmail alert sent to Michael; message ID 1a0d09cc5e2d8c18.
 - Universal five-shadow relay status: PARTIAL, 3/5 shadow signals verified. Further shadow verification requires OWNER authorization because the canary reached the 8-call ceiling.
+
+
+---
+
+[TIMESTAMP] 2026-09-24T08:13:19Z
+[AGENT] [LUNA]
+[TYPE] TRAINING
+[ISSUE] #3
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+Recorded canonical routing lesson: MODEL UNAVAILABLE = ROUTE, NOT INCIDENT. Same authorized model line → next available model → preserve €0 constraints → execute → verify → report. Escalate only on whole-line unavailability, material task change, or genuine design/authorization/safety boundary.
+[EVIDENCE]
+OpenRouter free canary returned exact AUTOMATION_SHADOW_OK via nex-agi/nex-n2.5-mini:free; provider Nex AGI; generation gen-1790234168-PrQf3CtYLG6iOUXEUmU8; reported cost $0. Source handoff: Issue #3 comment 5809976759.
