@@ -96,3 +96,13 @@
 - purpose: reusable last-attempt pattern for integrated agent/app debugging after multiple partial fixes.
 - required use: retrieve canonical history/training, inspect current-local source, freeze passed layers, map full blocker and predicted-next-blocker surface, then allow at most one bounded mutation/build/install/runtime path.
 - do not simplify away: external-contract fields, connection/session/auth state, downstream governance, UI surfacing, safe test path, compile-surface readback, or hard-stop conditions.
+
+
+## 2026-09-24 final acceptance lesson — capture unknown runtime shape before parser repair
+Final runtime acceptance after a proper full preflight still failed at one narrow boundary:
+parseConnectionGateTrace(searchContext) returned null because the actual SEARCH_TOOLS connection-status structure remained unparseable and its sanitized shape was not exposed.
+
+Freeze all passed downstream/static gates. The next valid move is not another parser guess. Instrument/capture the sanitized boundary structure first: keys, nesting, primitive types, arrays/counts, and semantic connection fields only. Then perform one evidence-matched parser repair.
+
+Reusable rule:
+When a parser still returns null after a comprehensive static preflight, stop patching semantics and capture the real runtime shape at the parser boundary before any further mutation.

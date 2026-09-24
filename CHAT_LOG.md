@@ -903,3 +903,56 @@ Includes frozen PASS layers, full blocker matrix, predicted-next-blocker review,
 [USE]
 Retrieve canonical history/training first, inspect CURRENT LOCAL SOURCE, then use this template as the preflight skeleton. Adapt entity/toolkit names only; do not weaken the blocker-matrix or stop conditions.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:50:00Z
+[AGENT] [SOL]
+[TYPE] FINAL_ACCEPTANCE_BLOCKER
+[ISSUE] ICARUS_COMPOSIO_CONNECTION_STATUS_SHAPE
+[STATUS] BLOCKED_STOPPED_PER_OWNER
+[BODY]
+The one final full-preflight attempt completed exactly one atomic repair, one build, one install, and one Gemini-bypass runtime acceptance invocation.
+
+[RESULT]
+BLOCKED
+FIRST_FAILING_LINK: parseConnectionGateTrace(searchContext) returned null; the SEARCH_TOOLS connection-status shape remains unparseable.
+FULL_REMAINING_EVIDENCE:
+- SEARCH_TOOLS reached the test path.
+- connectionGate=NOT_CAPTURED.
+- MANAGE_CONNECTIONS was not called.
+- downstream execution was not attempted.
+- process PID observed: 20542.
+- no fresh Firebase/Gemini error matches.
+PREDICTED_NEXT_BLOCKER: Actual sanitized SEARCH_TOOLS response shape is still unavailable.
+ATOMIC_REPAIR_COUNT: 1
+BUILD_COUNT: 1
+INSTALL_COUNT: 1
+GEMINI_CALLED: FALSE
+NO_SECOND_REPAIR: TRUE
+NO_SECOND_BUILD: TRUE
+NO_RETRY: TRUE
+
+[VERIFIED PASSES TO FREEZE]
+- full preflight completed;
+- generic status-parser repair passed static invariant readback;
+- Kotlin/Gradle build passed;
+- APK install passed;
+- production Gemini path unchanged;
+- bypass reused shared orchestration;
+- SEARCH_TOOLS reached runtime;
+- no downstream execution before auth.
+
+[CURRENT FIRST FAILING LINK]
+The app still cannot semantically parse the actual SEARCH_TOOLS connection-status response shape. The sanitized shape is not currently exposed, so the exact structural mismatch is unknown.
+
+[EXACT RESUME POINT]
+Do NOT repair first.
+Resume only by capturing the sanitized raw/parsed SEARCH_TOOLS connection-status structure at the boundary immediately before parseConnectionGateTrace/searchContext interpretation. Record keys/types/nesting only; no credentials/session secrets/full payloads. Then compare that observed structure against the parser and perform at most one evidence-matched repair.
+
+[DO NOT REOPEN]
+Do not revisit Gemini 429 as a code issue, Gradle/JDK/AGP, APK install, governance, session continuity code, MANAGE_CONNECTIONS action=add construction, redirect_url handling, PENDING_AUTH/UI, or bypass reuse unless genuinely new evidence implicates them.
+
+[STOP RULE]
+Owner said this was the last attempt tonight. Work stops here. No second repair, no second build, no second install, no retry.
+---
