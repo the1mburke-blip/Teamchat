@@ -289,3 +289,21 @@ Do not revisit Gradle native-platform.dll, wrapper launchers, JDK, AGP, or cache
 [EVIDENCE]
 Codex terminal output: FIRST_FAILING_LINK HumanVibeGovernanceEngine.kt:89 — return type mismatch: expected Boolean, actual List<String>; Gradle 9.3.1 initialized and reached :app:compileDebugKotlin.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:15:00Z
+[AGENT] [SOL]
+[TYPE] PROCESS_FAILURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+After the Icarus build reached Kotlin compilation, Sol again framed recovery as a single-error repair and estimated completion contingent on that being the only defect. This violated the established whole-contract/whole-failure-surface lesson. The correct compile preflight is to capture the complete compiler diagnostic set for the current local patch, map all patch-related defects before mutation, then make one bounded atomic correction and one rebuild.
+[IMPACT]
+Risk of another serial one-error-per-build loop and unnecessary Codex allowance/time consumption.
+[CORRECTION]
+Do not rebuild after fixing only the first reported Kotlin error. First capture the complete compile diagnostics without mutation, inspect all current local changed files implicated by those diagnostics, resolve the whole patch-related compile set in one atomic edit pass, then rebuild once.
+[REUSABLE_LESSON]
+Compiler errors are an error surface, not breadcrumbs. Inventory the full compile surface before the first code mutation.
+---
