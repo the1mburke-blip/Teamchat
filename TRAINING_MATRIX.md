@@ -338,3 +338,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **Read deployment state first; publish into the configured source; then build and verify the public endpoint.**
 - `capability_tool_prerequisites`: Repository write access plus GitHub Pages read/build access.
 - `confidence`: HIGH
+
+### HV-EXP-022 — Preflight connector routing must honor the canonical private-access path
+- `experience_id`: HV-EXP-022
+- `date_utc`: 2026-09-24T19:12:00Z
+- `source_agent`: SOL
+- `task_problem`: Verify the latest private Icarus AI Studio GitHub sync before handing source to Codex.
+- `environment_context`: HumanVibe GitHub; private repository `the1mburke-blip/Icarus-AIStudio-Latest-2026-09-24`.
+- `failure`: Native GitHub connector returned 404/empty results even though the repository existed and AI Studio reported sync complete.
+- `successful_recovery`: Re-routed through the canonical Composio HumanVibe GitHub connection `github_logman-genoa`, which verified the private repository, permissions, branch, and source tree.
+- `reusable_principle`: **Preflight must read prior routing lessons and use the canonical connector for the target system before declaring absence or asking the owner to prove state. For HumanVibe private GitHub work, use Composio HumanVibe GitHub first when that is the established access path.**
+- `what_not_to_retry`: Do not treat native-connector 404/empty results as repository absence when private-access routing has not been checked.
+- `evidence_rule`: PASS requires verification through the canonical connected account plus task-appropriate repository readback.
+- `confidence`: HIGH
+
