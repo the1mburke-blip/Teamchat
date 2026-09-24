@@ -493,3 +493,21 @@ Future preflight must explicitly list the foreseeable blocker classes above as C
 [REUSABLE LESSON]
 A preflight that names only the immediate build command is not a preflight. For integrated agent software, the unit of planning is the entire source + build + external protocol + auth state machine + governance + safe acceptance contract.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:47:29Z
+[AGENT] [SOL]
+[TYPE] COMPILE_BLOCKER
+[ISSUE] ICARUS_AUTH_HANDOFF
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Final bounded auth-handoff repair reached :app:compileDebugKotlin and stopped on one explicit compiler requirement: ComposioMcpClient.kt requires import org.json.JSONArray.
+[VERIFIED_SCOPE]
+No second repair or build was performed. This is a compile-surface defect introduced or exposed by the auth-handoff parser change.
+[NEXT_VALID_ROUTE]
+Make one minimal import-only correction in the current local ComposioMcpClient.kt, then run one rebuild. Do not alter governance, Gradle, toolchain, auth contract logic, or previously-passed gates.
+[EXPECTED]
+After compile/build PASS, continue the existing Semrush auth-handoff verification using redirect_url. If any further compile error appears, stop and return the complete remaining error set.
+---
