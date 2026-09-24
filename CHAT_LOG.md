@@ -341,3 +341,76 @@ Do not bypass the executor safety control. Replace the live destructive canary w
 [WHAT_NOT_TO_RETRY]
 Do not issue a real or nominal destructive external command from Codex merely to test that Icarus would block it.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:40:00Z
+[AGENT] [SOL]
+[TYPE] INCIDENT_RETROSPECTIVE
+[ISSUE] ICARUS_BUILD_AND_GOVERNANCE
+[STATUS] PROCESS_FAILURE_WITH_RECOVERY
+[ACTIVE_OWNER] SOL
+
+[OWNER_IMPACT]
+The Icarus completion sequence consumed approximately six hours of owner time when the intended scope should have been achievable in roughly 15 minutes with a complete preflight and one bounded implementation/verification pass. The visible weekly allowance remained at 41% at the end of the sequence, but the elapsed-time cost and repeated intervention burden were unacceptable.
+
+[PRIMARY_FAILURE]
+The initial preflight was incomplete. It did not map the whole current-local-source, compiler, toolchain, Composio MCP, governance, authentication/resume, and acceptance-test surface before mutation/build. Requirements and defects were discovered serially instead.
+
+[FAILURE_CHAIN]
+1. Source/compiler work proceeded without first inventorying the full current local compile surface.
+2. Repairs were initially framed around first-reported compiler errors instead of the complete error set.
+3. Canonical GitHub source was older than the active local uncommitted source, creating risk of stale-line reasoning.
+4. Gradle/native/wrapper paths were revisited before the exact build boundary was fully mapped.
+5. Composio transport requirements were discovered incrementally: x-consumer-api-key, dual Accept header, SSE parsing, inputSchema, meta-tool flow, session continuity, connection management, and downstream execution.
+6. Governance originally classified the generic/meta Composio tool rather than the actual discovered downstream action, allowing a destructive objective to reach COMPOSIO_MULTI_EXECUTE_TOOL.
+7. The destructive governance acceptance test itself was designed as a live destructive command, which Codex safety correctly refused after the production repair.
+8. The safe acceptance method should have been known in preflight: local fake/stub executor at the final external-execution boundary, asserting BLOCKED and external-call-count zero.
+9. The overall pattern became serial patch -> build -> new blocker -> patch rather than one mapped contract -> one bounded correction -> one verification suite.
+
+[VERIFIED_RECOVERY_STATE]
+- Direct Gradle 9.3.1 route: PASS.
+- Kotlin compile/build: PASS.
+- APK install: PASS.
+- App launch/process: PASS.
+- Connected Composio execution path: previously physically proven.
+- GitHub read-only execution path: previously physically proven.
+- Governance production repair static check: PASS.
+- Live destructive canary: NOT EXECUTED because Codex safety blocked the test command.
+- Safe local governance acceptance harness: required to verify destructive block with zero external calls.
+- Semrush auth gate/resume remains the final external acceptance path after safe governance verification.
+- Voice remains a separate enhancement, not part of current core completion.
+- No evidence that a real GitHub repository was deleted; the named test repository returns 404/nonexistent.
+
+[ALLOWANCE]
+Owner reported visible weekly allowance still at 41% remaining after the latest repair/verification stretch. Do not infer finer-grained usage beyond that visible rounded value.
+
+[ROOT_CAUSE]
+Bad preflight and incomplete acceptance-surface mapping by SOL. The dominant cost was process failure, not intrinsic build complexity.
+
+[MANDATORY_CORRECTION]
+Before any future Icarus implementation/build:
+1. Retrieve canonical history/training.
+2. Inspect CURRENT LOCAL source/status/diff as authority for active code.
+3. Map the entire compile surface and all signature/constructor contracts.
+4. Map the exact external protocol and authentication contract.
+5. Map the actual downstream action/governance boundary, not only meta-tools.
+6. Map connection/auth/resume behavior.
+7. Map the full acceptance suite, including which tests must be local/fake rather than live external destructive actions.
+8. Identify already-passed gates and explicitly prohibit reopening them without new evidence.
+9. Only then perform one bounded atomic implementation pass.
+10. Run one build, one install, and one acceptance suite.
+11. On failure, return the complete remaining error/failure surface; do not enter serial one-error-per-build repair loops.
+
+[REUSABLE_RULE]
+MAP THE COMPLETE CONTRACT + CURRENT LOCAL FAILURE SURFACE + SAFE ACCEPTANCE SURFACE BEFORE THE FIRST MUTATION.
+Compiler errors, protocol requirements, governance actions, and test-safety constraints are one preflight surface, not separate breadcrumbs.
+
+[WHAT_NOT_TO_REPEAT]
+- No first-error-only repair plans.
+- No stale GitHub line-number patching against newer local source.
+- No revisiting passed Gradle/native/toolchain gates without new evidence.
+- No generic/meta-tool governance classification when the real downstream action is known later.
+- No live destructive external canary when a zero-call local harness can prove the invariant.
+- No six-hour serial discovery loop for a bounded build task.
+---
