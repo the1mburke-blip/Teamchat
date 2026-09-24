@@ -641,3 +641,248 @@ Before mutation, capture the sanitized parsed SEARCH_TOOLS result fields used by
 [WHAT_NOT_TO_RETRY]
 Do not revisit Gemini, build toolchain, session extraction, redirect_url parsing, governance, or installation unless new evidence implicates them.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:34:11Z
+[AGENT] [SOL]
+[TYPE] FULL_STATE_SNAPSHOT
+[ISSUE] ICARUS_FINAL_COMPOSIO_HANDOFF
+[STATUS] BLOCKED_WITH_VERIFIED_PROGRESS
+[ACTIVE_OWNER] SOL
+
+[OWNER_DIRECTIVE]
+Log everything before allowance exhaustion. Preserve every verified PASS, blocker, failed path, quota condition, current stop rule, and exact resume point. Do not reopen passed gates.
+
+[PROCESS_INCIDENT]
+The Icarus completion sequence ran for approximately six hours. Owner correctly identified the dominant failure as bad preflight and failure to follow immutable rules. Most blocker classes were foreseeable and should have been mapped before the first mutation/build. This produced serial discovery, repeated rebuilds/tests, unnecessary Gemini usage, and excessive owner time.
+
+[IMMUTABLE_RULE_FAILURES ALREADY RECORDED]
+- Incomplete preflight before substantive work.
+- Whole source/build/protocol/auth/governance/acceptance surface not mapped before mutation.
+- Serial one-error/one-rebuild discovery occurred.
+- Already-passed gates were at times revisited.
+- Safe acceptance method for destructive governance was not designed up front.
+- Allowance/time hard-stop discipline was applied late rather than at first scope expansion.
+
+[MANDATORY FUTURE BUILD PREFLIGHT]
+Comparable integrated builds must explicitly check:
+1. current local source/status/diff vs canonical repo;
+2. complete compiler/type/signature/constructor surface;
+3. exact build/runtime/toolchain route;
+4. external auth headers/media types/response encodings;
+5. external schema/meta-tool/downstream-tool field names;
+6. connection state and session continuity;
+7. exact auth-handoff response fields;
+8. pending-auth persistence and resume semantics;
+9. governance on actual downstream action;
+10. fail-closed destructive/financial handling;
+11. safe local acceptance harnesses for no-call invariants;
+12. already-passed gates / do-not-reopen list;
+13. complete acceptance suite;
+14. endpoint, allowance estimate, elapsed-time estimate, and hard-stop threshold.
+Silence is not PASS. Any material unknown blocks implementation until resolved or explicitly preflighted as a blocker.
+
+[VERIFIED TOOLCHAIN / BUILD STATE]
+- Windows amd64.
+- JDK/Temurin 17 is the verified Java runtime.
+- AGP/Kotlin/Gradle combination already verified.
+- Gradle 9.3.1 direct execution path is valid.
+- Missing gradlew/gradlew.bat is not a blocker.
+- Prior native-platform.dll suspicion is closed; verified DLLs load and hashes matched.
+- Do not revisit Gradle/native/JDK/wrapper/cache work without new evidence.
+- Latest single actual Gradle build using Temurin 17: PASS.
+- :app:compileDebugKotlin: PASS.
+- APK build: PASS.
+- Latest newly built debug APK install to authorized Redmi: PASS.
+- Package/runtime installation path is healthy.
+- Initial explicit activity launch used the wrong class; resolved launcher component was to be used read-only. This was a launch-command/test issue, not an APK/install defect.
+
+[DEVICE]
+- Authorized Redmi device: serial 53f351aa.
+- Model previously verified: 24115RA8EG.
+- App package: com.aistudio.icarus.primex.
+
+[VERIFIED CORE APP PATH]
+- Objective field population: PASS when valid submission method used.
+- sendMessage invocation: PASS.
+- Task creation: PASS.
+- Task ID creation: PASS.
+- Example traced task IDs: TASK-191A4525 and TASK-8817BE9F.
+- Firebase/startup/build/install/launch baseline had previously passed.
+- Connected Composio execution transport had previously been physically proven.
+- Read-only GitHub execution had previously been physically proven.
+
+[COMPOSIO VERIFIED EXTERNAL CONTRACT]
+- SEARCH_TOOLS discovers suitable downstream toolkit/tool.
+- SEARCH_TOOLS response exposes workflow correlation identifier as nested response.session.id.
+- Subsequent MANAGE_CONNECTIONS request accepts the same value under parameter session_id.
+- MANAGE_CONNECTIONS action=add creates an auth link.
+- Live Composio proof for semrush_mcp returned status=initiated and a real redirect_url.
+- Therefore Composio itself is capable of generating the Semrush authentication link.
+- MANAGE_CONNECTIONS auth-link response field is redirect_url, not COMPOSIO_AUTH_URL.
+- Session field names differ across response/request: response.session.id -> request.session_id.
+- Connection/auth path must preserve the same session across SEARCH_TOOLS -> MANAGE_CONNECTIONS.
+- PENDING_AUTH must preserve original objective/toolkit/tool/session and stop before downstream execution until connection ACTIVE.
+
+[COMPOSIO TOOLKIT STATE OBSERVED]
+- GitHub active via HumanVibe Composio account.
+- Buffer active.
+- OpenRouter active.
+- semrush_mcp and semrush observed as not active in live Composio search.
+- Live direct MANAGE_CONNECTIONS for semrush_mcp produced initiated status plus redirect_url.
+- Do not infer that all toolkits are proven; target architecture is generic discovery/auth/execution.
+
+[GOVERNANCE]
+Governance negative test originally failed because the app classified a generic/meta Composio tool instead of the actual downstream action. This was repaired.
+Safe local governance acceptance verified:
+- DESTRUCTIVE_INTENT_GATE: PASS
+- DOWNSTREAM_ACTION_GATE: PASS
+- EXTERNAL_EXECUTOR_CALL_COUNT: 0
+- COMPOSIO_MULTI_EXECUTE_TOOL_CALL_COUNT: 0
+- READ_ONLY_CONTROL_TEST: PASS
+- BUILD: PASS
+- INSTALL: PASS
+- LAUNCH: PASS
+Therefore destructive-governance repair is verified.
+Do not rerun live destructive tests. Safe local zero-call harness is the required acceptance method.
+
+[SESSION EXTRACTION / AUTH HANDOFF HISTORY]
+1. Initial Semrush auth gate failed because Icarus expected/parsed an auth URL incorrectly.
+2. External contract was verified: redirect_url is the correct MANAGE_CONNECTIONS response field.
+3. Production phone path later reported missing MCP session ID.
+4. Live Composio contract was verified: SEARCH_TOOLS response.session.id must be mapped/persisted and sent as MANAGE_CONNECTIONS session_id.
+5. Production trace then proved:
+   OBJECTIVE_FIELD_POPULATED: PASS
+   SEND_MESSAGE_INVOKED: PASS
+   TASK_CREATED: PASS
+   TASK_ID_PRESENT: PASS
+   SEARCH_TOOLS_HTTP_RECEIVED: TRUE
+   SESSION_ID_EXTRACTED: FALSE
+   SESSION_ID_PERSISTED: FALSE
+   MANAGE_CONNECTIONS_CALLED: FALSE
+   FIRST_FAILING_LINK: extractSessionId returned null for SEARCH_TOOLS response.session.id
+6. A bounded session-extraction repair was designed around current-local extractSessionId and actual JSON-RPC/SSE nesting.
+
+[GEMINI QUOTA BLOCKER]
+After prolonged six-hour testing, Gemini reasoning began returning HTTP 429 quota exceeded.
+Verified trace:
+- OBJECTIVE_FIELD_POPULATED: PASS
+- SEND_MESSAGE_INVOKED: PASS
+- TASK_CREATED: PASS
+- TASK_ID_PRESENT: PASS
+- Gemini reasoning HTTP 429 occurred before SEARCH_TOOLS.
+- SEARCH_TOOLS_HTTP_RECEIVED: FALSE on that run.
+- Session extraction/auth handoff was NOT REACHED on that run.
+- DOWNSTREAM_EXECUTION_BEFORE_AUTH: NOT_ATTEMPTED.
+Interpretation: 429 is an upstream provider quota/rate-limit blocker, not evidence of a new Icarus code defect.
+No code change/rebuild is justified by the 429 itself.
+Owner explicitly noted that six hours of repeated Gemini use likely caused quota exhaustion.
+Rule from this point: no further Gemini calls tonight.
+
+[TEST-HARNESS HISTORY]
+One automated handoff trace failed before production orchestration:
+- input remained empty;
+- sendMessage not invoked;
+- no task created.
+That run did not test Composio at all and was correctly classified as a test-harness/input-submission failure.
+Subsequent deterministic submission proved objective/sendMessage/task creation all work.
+Do not infer production Composio defects from failed empty-input automation.
+
+[POST-GEMINI TEST BYPASS]
+Because Gemini is quota-blocked, a test-only post-Gemini entrypoint was designed to exercise the existing production post-reasoning orchestration without calling Gemini.
+Requirements:
+- test-only;
+- reuse SAME TaskState/PENDING_AUTH/governance/SEARCH_TOOLS/session/MANAGE_CONNECTIONS/redirect_url path;
+- do not create parallel raw-Composio shortcut;
+- do not alter normal production Gemini behavior.
+Static readback of the test-only entrypoint: PASS.
+Latest direct Gradle build for this test path: PASS.
+Latest APK install: PASS.
+Gemini called in bypass runtime test: FALSE.
+Therefore bypass design/build/install are proven enough to continue runtime acceptance.
+
+[LATEST RUNTIME RESULT — CURRENT FIRST FAILING LINK]
+Gemini-bypassed Semrush runtime test reached SEARCH_TOOLS successfully but did NOT call MANAGE_CONNECTIONS.
+Latest gate trace supplied by Codex:
+ICARUS_CONNECTION_GATE_TRACE
+TOOLKIT_SLUG: semrush_mcp
+HAS_ACTIVE_CONNECTION: NOT_CAPTURED
+CONNECTION_STATUS: NOT_CAPTURED
+STATUS_MESSAGE: NOT_CAPTURED
+ACCOUNT_COUNT: NOT_CAPTURED
+GATE_EXPECTED_CONDITION: connectionRequiresAuthentication(searchContext) must match a hard-coded unauthenticated-status marker
+GATE_ACTUAL_EVALUATION: FALSE; MANAGE_CONNECTIONS was not called
+FIRST_FAILING_LINK: Sanitized connection fields are not persisted or exposed before the predicate returns false, so the exact response-field mismatch cannot be physically identified
+REPAIR_REQUIRED: TRUE
+NO_REPAIR_PERFORMED: TRUE
+
+[CURRENT INTERPRETATION]
+The current blocker is NOT Gemini, Gradle, install, governance, session extraction, or redirect_url generation.
+SEARCH_TOOLS completes in the bypass path.
+The immediate blocker is the unauthenticated-connection gate:
+connectionRequiresAuthentication(searchContext)
+evaluates FALSE because it relies on a hard-coded unauthenticated-status marker, while the sanitized parsed connection fields needed to explain the mismatch are not persisted/exposed.
+Therefore MANAGE_CONNECTIONS is never called.
+
+[EXACT RESUME POINT]
+Resume ONLY here:
+1. Do not mutate yet.
+2. Capture the sanitized SEARCH_TOOLS connection fields consumed by connectionRequiresAuthentication:
+   - toolkit slug;
+   - has_active_connection;
+   - connection status;
+   - status message;
+   - account count;
+   - exact parsed marker/value used by the predicate.
+3. Compare those physically observed fields to the hard-coded predicate.
+4. Identify exact response-shape/value mismatch.
+5. Only then perform one bounded predicate repair.
+6. One build/install/runtime verification only if source changes.
+7. PASS target:
+   - Gemini bypass remains FALSE for Gemini called;
+   - SEARCH_TOOLS succeeds;
+   - session ID extracted/persisted;
+   - unauthenticated connection recognized;
+   - MANAGE_CONNECTIONS called using same session_id;
+   - redirect_url present;
+   - auth URL visible;
+   - PENDING objective preserved;
+   - downstream execution before auth NOT_ATTEMPTED.
+8. If this gate-trace attempt fails tonight, STOP. Owner is going to bed. No repair/rebuild/reinstall/retry tonight. Preserve first failing link and resume from it when work continues.
+
+[DO-NOT-REOPEN LIST]
+Do not revisit without genuinely new evidence:
+- Gradle native-platform.dll
+- wrapper launcher absence
+- JDK/AGP/Gradle versions
+- APK installation path
+- Gemini 429 as a code issue
+- destructive governance implementation
+- generic Composio headers
+- Accept application/json + text/event-stream requirement
+- SSE support
+- inputSchema naming
+- redirect_url field contract
+- response.session.id -> request.session_id contract
+- live destructive test design
+- empty-input automation path
+
+[ALLOWANCE / COST]
+Owner reported visible weekly allowance remained at 41% during the late repair sequence. Do not infer sub-percent consumption from that rounded value.
+Owner requested this snapshot specifically to preserve state in case allowance/tokens run out.
+
+[STOP RULE]
+Owner's explicit instruction: the current unauthenticated-connection gate trace is the last attempt tonight. If it fails, stop for the night. No further repairs, builds, installs, or retries. Resume the exact first failing link later; do not re-diagnose passed work.
+
+[FINAL CURRENT STATUS]
+ICARUS_CORE_BUILD: PASS
+APK_INSTALL: PASS
+GOVERNANCE: VERIFIED PASS
+GEMINI_REASONING: TEMPORARILY BLOCKED BY 429 QUOTA
+POST_GEMINI_BYPASS: BUILT/INSTALLED, RUNTIME SEARCH_TOOLS REACHED
+COMPOSIO_SEARCH_TOOLS: PASS IN BYPASS RUN
+COMPOSIO_MANAGE_CONNECTIONS: NOT REACHED DUE CURRENT GATE PREDICATE
+CURRENT_FIRST_FAILING_LINK: unauthenticated-connection predicate / missing sanitized connection-field evidence
+NEXT_ACTION: capture exact parsed connection fields; no mutation before evidence
+---

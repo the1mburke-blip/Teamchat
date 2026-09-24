@@ -61,3 +61,31 @@
 - enforcement: Every applicable item must be marked CHECKED/PASS or CHECKED/BLOCKED before mutation. NOT_APPLICABLE requires an explicit reason. Unknown material items block implementation.
 - failure handling: If a listed blocker class is first discovered after implementation begins, classify that as a preflight defect, stop, record it, re-preflight the whole affected contract, and avoid serial patch/rebuild discovery.
 - reusable principle: **For integrated agent software, preflight covers the whole source + toolchain + external protocol + auth state machine + governance + safe acceptance surface.**
+
+
+## 2026-09-24 update — preserve exact integrated-runtime resume boundary
+- context: Icarus reached a late-stage generic Composio auth-handoff blocker after build/install/governance had already passed. Gemini quota exhaustion then required a test-only post-reasoning bypass to continue verification without model calls.
+- proven external contract:
+  - SEARCH_TOOLS returns workflow correlation at nested response.session.id.
+  - MANAGE_CONNECTIONS accepts that value as request session_id.
+  - MANAGE_CONNECTIONS action=add can return redirect_url.
+  - live semrush_mcp proof showed status=initiated plus redirect_url.
+- proven app state:
+  - build/install pass;
+  - governance safe local zero-call test pass;
+  - deterministic objective submission/sendMessage/task creation pass;
+  - Gemini-bypass test entrypoint static readback pass;
+  - bypass build/install pass;
+  - bypass SEARCH_TOOLS runtime call pass.
+- current first failing link:
+  connectionRequiresAuthentication(searchContext) evaluates false after SEARCH_TOOLS, so MANAGE_CONNECTIONS is not called.
+- evidence gap:
+  toolkit slug is captured as semrush_mcp, but sanitized has_active_connection, connection status, status message, and account count are not persisted/exposed before the predicate returns false. Therefore the exact response-field mismatch is not yet physically identified.
+- mandatory next method:
+  capture sanitized parsed connection fields first; compare to the gate's hard-coded unauthenticated marker; mutate only after exact mismatch is proven.
+- do-not-reopen:
+  Gradle/native/JDK/wrapper, install, governance, Gemini 429 as code issue, generic transport headers, SSE, inputSchema, redirect_url contract, and session.id -> session_id contract absent new evidence.
+- stop rule:
+  if the current gate-trace run fails at night, stop. Do not repair/rebuild/reinstall/retry. Resume the exact first failing link later.
+- reusable principle:
+  Late-stage integration debugging must resume from the narrowest physically proven boundary. Preserve passed layers as frozen and capture the exact predicate inputs before changing the predicate.
