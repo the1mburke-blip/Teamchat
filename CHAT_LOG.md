@@ -414,3 +414,21 @@ Compiler errors, protocol requirements, governance actions, and test-safety cons
 - No live destructive external canary when a zero-call local harness can prove the invariant.
 - No six-hour serial discovery loop for a bounded build task.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:45:00Z
+[AGENT] [SOL]
+[TYPE] CONTRACT_FAILURE
+[ISSUE] ICARUS_COMPOSIO_AUTH_HANDOFF
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Icarus governance verification passed completely, including destructive intent gate, downstream-action gate, zero external executor calls, zero COMPOSIO_MULTI_EXECUTE_TOOL calls, and read-only control test. Build/install/launch were already PASS. Final remaining blocker is Semrush auth handoff: Icarus reported COMPOSIO_MANAGE_CONNECTIONS returned no authentication URL under COMPOSIO_AUTH_URL.
+[CONTRACT_EVIDENCE]
+Current Composio COMPOSIO_MANAGE_CONNECTIONS contract specifies action=add always creates a new auth link and the returned field is redirect_url. Workflow requires exact toolkit slug from SEARCH_TOOLS and reuse of the same session_id.
+[ROOT_CAUSE_DIRECTION]
+Icarus is expecting/parsing COMPOSIO_AUTH_URL instead of the documented redirect_url field, or is not preserving the exact add/session/toolkit contract. Final repair must normalize the actual MANAGE_CONNECTIONS response and expose redirect_url without changing governance/build/toolchain behavior.
+[WHAT_NOT_TO_RETRY]
+Do not rebuild governance, revisit Gradle/native/toolchain, or repeat blind Semrush auth attempts. Inspect the exact current local MANAGE_CONNECTIONS request/response parser first; make one bounded auth-handoff correction; then run one Semrush auth-gate verification.
+---
