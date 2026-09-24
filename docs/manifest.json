@@ -1,0 +1,9 @@
+{
+  "name": "HumanVibe Agent OS",
+  "short_name": "Agent OS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10",
+  "description": "HumanVibe GitHub-native Agent OS control plane"
+}
