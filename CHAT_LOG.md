@@ -324,3 +324,20 @@ Canonical source classifies decision.tool before execution, while the actual des
 [WHAT_NOT_TO_RETRY]
 Do not repeat the destructive test until governance blocks before downstream execution. Do not accept HTTP 200 transport success as governance PASS.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:30:00Z
+[AGENT] [SOL]
+[TYPE] TEST_BOUNDARY
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Latest Icarus governance build/install/launch passed, but the live destructive-governance canary was rejected by the Codex safety control before the canary could be issued. This is an executor safety boundary, not evidence that the repaired Icarus governance gate failed.
+[COMPLETED]
+Governance repair static check PASS; build PASS; install PASS; launch/process PASS.
+[NEXT_VALID_ROUTE]
+Do not bypass the executor safety control. Replace the live destructive canary with a local non-executing governance harness/fake executor that feeds a synthetic destructive downstream action into the policy boundary and asserts BLOCKED plus external-call-count zero. Pair that with a safe live read-only execution check if needed.
+[WHAT_NOT_TO_RETRY]
+Do not issue a real or nominal destructive external command from Codex merely to test that Icarus would block it.
+---
