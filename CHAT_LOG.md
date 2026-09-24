@@ -598,3 +598,21 @@ Inspect current local extractSessionId and the actual parsed JSON-RPC/SSE respon
 [WHAT_NOT_TO_RETRY]
 Do not revisit objective submission, governance, Gradle, Composio auth headers, SSE media types, connection semantics, or redirect_url logic unless new evidence implicates them.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:15:00Z
+[AGENT] [SOL]
+[TYPE] UPSTREAM_RATE_LIMIT
+[ISSUE] ICARUS_FINAL_AUTH_HANDOFF_TEST
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Final Icarus session-extraction acceptance run was blocked upstream by Gemini HTTP 429 rate limiting.
+[INTERPRETATION]
+This is not evidence of a new Icarus compile, parser, Composio, governance, or install defect. The run could not complete the acceptance path because the reasoning provider rejected the request before the downstream handoff could be fully exercised.
+[NEXT_VALID_ROUTE]
+Do not change source or rebuild. Re-run the exact same acceptance test only after Gemini requests are accepted again, or use an already-implemented verified fallback model path if one exists and is part of the current architecture. Do not invent a fallback.
+[WHAT_NOT_TO_RETRY]
+No code repair, no Gradle work, no reinstall, no repeated immediate retries while 429 persists.
+---
