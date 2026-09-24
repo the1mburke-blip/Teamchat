@@ -562,3 +562,39 @@ Use a deterministic objective-submission path that physically invokes Icarus sen
 [WHAT_NOT_TO_RETRY]
 No rebuild, reinstall, governance change, Gradle work, or parser mutation based on this run. No blind repeat of the same empty-input automation.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:10:00Z
+[AGENT] [SOL]
+[TYPE] RUNTIME_CONTRACT_FAILURE
+[ISSUE] ICARUS_COMPOSIO_SESSION_EXTRACTION
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Production phone-path trace now proves objective submission and task creation are healthy, SEARCH_TOOLS is physically reached, but Icarus fails to extract the MCP session identifier.
+[EVIDENCE]
+OBJECTIVE_FIELD_POPULATED: PASS
+SEND_MESSAGE_INVOKED: PASS
+TASK_CREATED: PASS
+TASK_ID_PRESENT: PASS
+TASK_ID: TASK-191A4525
+SEARCH_TOOLS_HTTP_RECEIVED: TRUE
+SEARCH_TOOLS_SESSION_ID_PRESENT: UNKNOWN because raw payload is not exposed
+SESSION_ID_EXTRACTED: FALSE
+SESSION_ID_PERSISTED: FALSE
+MANAGE_CONNECTIONS_CALLED: FALSE
+REDIRECT_URL_PRESENT: FALSE
+AUTH_URL_VISIBLE: FALSE
+FIRST_FAILING_LINK: extractSessionId returned null for SEARCH_TOOLS response.session.id
+STATUS: BLOCKED
+CAPABILITY_REQUIRED: MCP_SESSION_ID
+DOWNSTREAM_EXECUTION: NOT_ATTEMPTED
+NO_REPAIR_PERFORMED: TRUE
+[ROOT_CAUSE_BOUNDARY]
+The failure is now isolated to current local SEARCH_TOOLS response parsing/session extraction. External Composio behavior has already been physically proven to expose session.id and MANAGE_CONNECTIONS accepts the same value as session_id.
+[NEXT_VALID_ROUTE]
+Inspect current local extractSessionId and the actual parsed JSON-RPC/SSE response wrapper. Repair only the exact nesting/response-shape mismatch needed to extract session.id, persist it, and pass it as session_id. Preserve redirect_url parsing. One build/install/test only.
+[WHAT_NOT_TO_RETRY]
+Do not revisit objective submission, governance, Gradle, Composio auth headers, SSE media types, connection semantics, or redirect_url logic unless new evidence implicates them.
+---
