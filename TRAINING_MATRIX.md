@@ -320,3 +320,21 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `accountability`: Model/operator non-compliance; no missing rule or platform defect established.
 - `physical_evidence`: HumanVibe OpenRouter remained ACTIVE; free canary returned exact `AUTOMATION_SHADOW_OK` via `nex-agi/nex-n2.5-mini:free`, provider Nex AGI, generation `gen-1790234168-PrQf3CtYLG6iOUXEUmU8`, reported cost $0.
 - `confidence`: HIGH
+
+
+### HV-EXP-021 — Read the existing Pages source before deployment
+- `experience_id`: HV-EXP-021
+- `date_utc`: 2026-09-24T10:48:00Z
+- `source_agent`: SOL
+- `task_problem`: Deploy the HumanVibe Agent OS web app to the existing Teamchat GitHub Pages site.
+- `environment_context`: Teamchat repository; GitHub Pages legacy build; writable HumanVibe GitHub connection.
+- `symptoms_failure_signature`: Pages update returned HTTP 404 "The certificate does not exist yet"; create-site fallback returned HTTP 409 "GitHub Pages is already enabled."
+- `attempts_made`: 2 configuration attempts before reading current Pages state.
+- `what_failed`: The route tried to update/create Pages before reading the existing Pages source configuration.
+- `why_it_failed`: Pages already existed and served `main:/docs`, while the new app had initially been committed at repository root.
+- `successful_recovery`: Read Pages configuration, copied the already-committed PWA into `docs/`, triggered the existing Pages build, then verified the public endpoint.
+- `verification_evidence`: Commit `880efa0866439a8f62811bf94416d5f630a86cc9`; Pages build `1236304556` status `built`; public URL returned HTTP 200 and title `HumanVibe Agent OS`.
+- `what_not_to_retry`: Do not assume Pages source path and do not create/update Pages before reading the existing site configuration.
+- `reusable_principle`: **Read deployment state first; publish into the configured source; then build and verify the public endpoint.**
+- `capability_tool_prerequisites`: Repository write access plus GitHub Pages read/build access.
+- `confidence`: HIGH
