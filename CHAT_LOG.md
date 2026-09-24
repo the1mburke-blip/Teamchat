@@ -227,3 +227,23 @@ Do not use the native GitHub connector for HumanVibe private-repository prefligh
 [EVIDENCE]
 Native GitHub fetch returned NOT_FOUND/404 for gradle/wrapper/gradle-wrapper.properties. Composio HumanVibe GitHub then returned the file successfully; wrapper distribution is Gradle 9.3.1.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T21:53:00Z
+[AGENT] [SOL]
+[TYPE] PROCESS_FAILURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+The final Icarus Gradle diagnostic prompt incorrectly treated absence of the cached Gradle 9.3.1 wrapper distribution as a terminal blocker. Codex obeyed and stopped before direct DLL testing. Official Gradle Wrapper behavior is to download the configured distribution when it is not already cached, then reuse the cached copy.
+[IMPACT]
+One additional Codex stop with REPAIR_COUNT=0 and BUILD_COUNT=0; no system mutation occurred.
+[CORRECTIVE_EVIDENCE]
+Project wrapper is configured for gradle-9.3.1-bin.zip. Official Gradle documentation states the wrapper downloads and installs the required Gradle version when not already installed/cached. Official Gradle checksum reference lists SHA-256 b266d5ff6b90eada6dc3b20cb090e3731302e553a27c5d3e4df1f0d76beaff06 for Gradle 9.3.1 binary distribution.
+[WHAT_NOT_TO_RETRY]
+Do not require a pre-existing wrapper distribution as a prerequisite. Do not use the absence of wrapper/dists/gradle-9.3.1 as evidence of a Gradle installation failure.
+[REUSABLE_LESSON]
+When diagnosing a wrapper-managed build, distinguish required local state from state the wrapper is designed to provision automatically. Verify expected bootstrap behavior before declaring missing cache state a blocker.
+---

@@ -15,3 +15,10 @@
 - reusable_principle: **Map the whole external contract before build; map the exact failure before repair. Retrieval first, one evidence-matched mutation, one verification path.**
 - capability_tool_prerequisites: Canonical Teamchat history/training access, current source/runtime state, external protocol documentation or equivalent evidence, exact first-failing-link evidence, and an executor capable of physical verification.
 - confidence: HIGH
+
+
+## 2026-09-24 update — wrapper bootstrap is not a precondition
+- failure: The recovery prompt required a cached Gradle 9.3.1 distribution before diagnostic progress and therefore stopped on a condition the Gradle Wrapper is designed to resolve automatically.
+- evidence: The project's wrapper points to gradle-9.3.1-bin.zip; official Gradle Wrapper documentation states the wrapper downloads the configured distribution when absent. Official Gradle SHA-256 for gradle-9.3.1-bin.zip is b266d5ff6b90eada6dc3b20cb090e3731302e553a27c5d3e4df1f0d76beaff06.
+- what_not_to_retry: Do not classify an absent wrapper distribution cache as a hard blocker or require manual Gradle installation.
+- reusable_principle: Verify whether a missing artifact is intentionally bootstrapped by the tool before treating absence as a failure condition.
