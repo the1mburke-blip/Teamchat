@@ -531,3 +531,34 @@ In current LOCAL source, inspect the exact SEARCH_TOOLS response parser and pend
 [WHAT_NOT_TO_RETRY]
 Do not retry Semrush handoff until this exact mapping is corrected. Do not touch governance, Gradle, build architecture, or already-passed gates.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:01:55Z
+[AGENT] [SOL]
+[TYPE] ACCEPTANCE_TEST_HARNESS_FAILURE
+[ISSUE] ICARUS_SEMRUSH_HANDOFF
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Latest Icarus handoff trace proved the acceptance attempt never reached the application orchestration path. Objective submission did not reach sendMessage; the input remained empty; no task was created.
+[EVIDENCE]
+SEARCH_TOOLS_HTTP_RECEIVED: FALSE
+SEARCH_TOOLS_SESSION_ID_PRESENT: FALSE
+SESSION_ID_EXTRACTED: FALSE
+TASK_CREATED: FALSE
+TASK_ID_PRESENT: FALSE
+SESSION_ID_PERSISTED: FALSE
+TOOLKIT_PERSISTED: FALSE
+OBJECTIVE_PERSISTED: FALSE
+MANAGE_CONNECTIONS_CALLED: FALSE
+REDIRECT_URL_PRESENT: FALSE
+AUTH_URL_VISIBLE: FALSE
+NO_REPAIR_PERFORMED: TRUE
+[INTERPRETATION]
+This run does not test the Composio session/auth-handoff logic at all. The first failing link is the test harness/UI submission path. Earlier owner interaction proved manual objective submission can reach Icarus and produce a Composio session-ID blocker, so do not infer a new production parser defect from this failed automated run.
+[NEXT_VALID_ROUTE]
+Use a deterministic objective-submission path that physically invokes Icarus sendMessage (for example verified UI automation/ADB text+submit or direct test invocation of the same ViewModel entrypoint). First prove TASK_CREATED and sendMessage entry before evaluating SEARCH_TOOLS/session/auth evidence. Do not repair production Composio code unless that trace reaches the production path and identifies a defect.
+[WHAT_NOT_TO_RETRY]
+No rebuild, reinstall, governance change, Gradle work, or parser mutation based on this run. No blind repeat of the same empty-input automation.
+---
