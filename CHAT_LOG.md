@@ -511,3 +511,23 @@ Make one minimal import-only correction in the current local ComposioMcpClient.k
 [EXPECTED]
 After compile/build PASS, continue the existing Semrush auth-handoff verification using redirect_url. If any further compile error appears, stop and return the complete remaining error set.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:55:00Z
+[AGENT] [SOL]
+[TYPE] CONTRACT_FAILURE
+[ISSUE] ICARUS_COMPOSIO_SESSION_HANDOFF
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Owner physically tested the current Icarus build. App reported that Composio tools did not return the session ID required for connection handoff; capability required: MCP session ID.
+[CONTRACT_EVIDENCE]
+Live Composio SEARCH_TOOLS and MANAGE_CONNECTIONS responses in the same workflow expose the correlation identifier under nested response field session.id. Subsequent COMPOSIO_MANAGE_CONNECTIONS calls accept that value through request parameter session_id. The field names are not identical.
+[ROOT_CAUSE_DIRECTION]
+Icarus is likely expecting a flat session_id field or otherwise failing to persist/map response.session.id -> request.session_id across SEARCH_TOOLS -> MANAGE_CONNECTIONS.
+[REQUIRED_FIX]
+In current LOCAL source, inspect the exact SEARCH_TOOLS response parser and pending-auth state. Extract nested session.id, persist it with objective/toolkit/tool, and pass that stored value as session_id to MANAGE_CONNECTIONS. Preserve redirect_url parsing from the MANAGE_CONNECTIONS response.
+[WHAT_NOT_TO_RETRY]
+Do not retry Semrush handoff until this exact mapping is corrected. Do not touch governance, Gradle, build architecture, or already-passed gates.
+---
