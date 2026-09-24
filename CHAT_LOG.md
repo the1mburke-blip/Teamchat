@@ -616,3 +616,28 @@ Do not change source or rebuild. Re-run the exact same acceptance test only afte
 [WHAT_NOT_TO_RETRY]
 No code repair, no Gradle work, no reinstall, no repeated immediate retries while 429 persists.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:30:00Z
+[AGENT] [SOL]
+[TYPE] RUNTIME_GATE_FAILURE
+[ISSUE] ICARUS_COMPOSIO_UNAUTHENTICATED_CONNECTION_GATE
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Gemini-bypassed runtime acceptance reached SEARCH_TOOLS successfully, but the returned result did not satisfy Icarus's unauthenticated-connection gate, so COMPOSIO_MANAGE_CONNECTIONS was not called.
+[EVIDENCE]
+GEMINI_CALLED: FALSE
+SEARCH_TOOLS: COMPLETED
+COMPOSIO_MANAGE_CONNECTIONS_CALLED: FALSE
+DOWNSTREAM_EXECUTION: NOT_ATTEMPTED
+BUILD: PASS
+INSTALL: PASS
+[FIRST_FAILING_LINK]
+SEARCH_TOOLS result -> unauthenticated-connection gate predicate.
+[NEXT_VALID_ROUTE]
+Before mutation, capture the sanitized parsed SEARCH_TOOLS result fields used by the gate, especially toolkit slug(s), connection status/has_active_connection, and any status string. Compare those exact fields to the gate predicate. Repair only the proven predicate/shape mismatch, then run one build/install/runtime test.
+[WHAT_NOT_TO_RETRY]
+Do not revisit Gemini, build toolchain, session extraction, redirect_url parsing, governance, or installation unless new evidence implicates them.
+---
