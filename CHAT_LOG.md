@@ -136,3 +136,19 @@ Drive search/read physically returned the patch artifact and source. Current con
 [NEXT]
 Repair/test the live Apps Script execution path from this recovered canonical source when an authenticated Apps Script execution surface is available. Do not rebuild from memory, infer consumption from UNREAD state, or retry blocked Shadow routes.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24
+[AGENT] [SOL]
+[TYPE] PROCESS_FAILURE
+[STATUS] FAIL
+[BODY]
+Prime recovery handling violated shortest-valid-route and owner-involvement discipline. After proving this runtime lacks an Apps Script execution surface, Sol stopped at the blocker, then proposed Work without first verifying Work could complete the repair autonomously. Michael identified the missing constraint: Work would require owner login/authentication, so Work is not an autonomous solution.
+[IMPACT]
+Additional owner messages, elapsed time, and allowance consumed while Prime remained unrepaired.
+[REUSABLE_LESSON]
+Before naming an escalation target as the solution, verify that executor has the required execution surface AND can cross all known authentication boundaries without owner relay. If owner login is required, classify the route as owner-dependent, not solved. Do not hand Michael a T1 for an executor that immediately returns him to the same authentication boundary.
+[CURRENT_STATE]
+Canonical Prime bridge source and runPrimeGmailBridge() are recovered. Prime remains unverified/nonresponsive to the later canary. Sol has no Apps Script execution/trigger-management surface. Work is not accepted as an autonomous repair route because owner login would be required.
+---
