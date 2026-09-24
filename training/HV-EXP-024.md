@@ -39,3 +39,25 @@
 - required_test_design: destructive-governance acceptance should use a local fake/stub executor at the external-call boundary and assert BLOCKED plus external-call-count zero. Do not require a live destructive command to prove a no-call invariant.
 - required_execution_pattern: retrieval -> current local state -> full contract/failure map -> safe acceptance map -> one bounded mutation -> one build -> one install -> one acceptance suite -> complete remaining blocker set if failed.
 - what_not_to_retry: serial first-error repair, stale canonical line-number edits against newer local code, reopening passed Gradle/native gates, classifying only Composio meta-tools, or issuing live destructive canaries when a zero-call harness is sufficient.
+
+
+## 2026-09-24 update — mandatory blocker-matrix preflight for integrated builds
+- trigger: Owner review of the six-hour Icarus sequence concluded that the dominant failure was bad preflight and non-compliance with immutable operating rules, not unavoidable implementation complexity.
+- rule: **Do not start implementation until the complete blocker matrix is explicitly checked.**
+- mandatory blocker matrix:
+  1. current local source/status/diff vs canonical repository;
+  2. complete compiler/type/signature/constructor surface;
+  3. exact build/runtime/toolchain route;
+  4. external transport headers/media types and response encodings;
+  5. external schema field names and meta-tool/downstream-tool contract;
+  6. connection state and session continuity;
+  7. exact auth-handoff response fields (for current Composio contract, redirect_url);
+  8. pending-auth persistence and resume semantics;
+  9. governance on the actual downstream action, with fail-closed destructive/financial handling;
+  10. safe acceptance design, including local zero-call harnesses for destructive invariants;
+  11. already-passed gates/do-not-reopen list;
+  12. complete acceptance suite;
+  13. endpoint, allowance estimate, elapsed-time estimate, and hard-stop/re-preflight threshold.
+- enforcement: Every applicable item must be marked CHECKED/PASS or CHECKED/BLOCKED before mutation. NOT_APPLICABLE requires an explicit reason. Unknown material items block implementation.
+- failure handling: If a listed blocker class is first discovered after implementation begins, classify that as a preflight defect, stop, record it, re-preflight the whole affected contract, and avoid serial patch/rebuild discovery.
+- reusable principle: **For integrated agent software, preflight covers the whole source + toolchain + external protocol + auth state machine + governance + safe acceptance surface.**

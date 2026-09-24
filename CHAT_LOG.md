@@ -432,3 +432,64 @@ Icarus is expecting/parsing COMPOSIO_AUTH_URL instead of the documented redirect
 [WHAT_NOT_TO_RETRY]
 Do not rebuild governance, revisit Gradle/native/toolchain, or repeat blind Semrush auth attempts. Inspect the exact current local MANAGE_CONNECTIONS request/response parser first; make one bounded auth-handoff correction; then run one Semrush auth-gate verification.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T22:43:34Z
+[AGENT] [SOL]
+[TYPE] IMMUTABLE_RULE_VIOLATION
+[ISSUE] ICARUS_PREFLIGHT
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+
+[OWNER_FINDING]
+The approximately six-hour Icarus build/recovery sequence was primarily a bad-preflight failure and a failure to follow the immutable operating rules. Most blocker classes encountered were foreseeable or could have been surfaced before the first mutation/build by combining already-known project context with a complete current-state and external-contract inspection.
+
+[VIOLATED_OPERATING REQUIREMENTS]
+- MEASURE TWICE. CUT ONCE.
+- Mandatory preflight before substantive work.
+- NO EVIDENCE = NO CLAIM.
+- Shortest valid path; no retry loops.
+- Retrieval/history/training before execution.
+- Map whole contract and failure surface before mutation.
+- Stop/re-preflight when route, cost, time, or endpoint materially changes.
+
+[PREVENTABLE BLOCKER CLASSES THAT MUST HAVE BEEN FLAGGED UP FRONT]
+1. CURRENT LOCAL SOURCE vs canonical GitHub drift; active local diff/source must be authoritative for compilation.
+2. Full Kotlin compiler/signature/constructor surface; capture complete error set before any edit.
+3. Exact Gradle/JDK/AGP execution route and wrapper-launcher availability; distinguish required artifacts from bootstrapped/optional artifacts.
+4. Composio client authentication header contract.
+5. Required Accept media types and SSE/JSON response parsing.
+6. MCP schema naming (inputSchema) and meta-tool architecture.
+7. SEARCH_TOOLS -> actual downstream tool -> connection state -> execution flow.
+8. Session-ID continuity across Composio meta-tool calls.
+9. MANAGE_CONNECTIONS exact request/response contract, including action=add and auth link field redirect_url.
+10. PENDING_AUTH objective/tool/toolkit/session persistence and resume-after-auth behavior.
+11. Governance must classify the ACTUAL downstream action, not merely a generic Composio/meta tool.
+12. Destructive/financial actions must fail closed before MULTI_EXECUTE.
+13. Destructive governance acceptance must use a safe local fake/stub executor and assert external-call-count zero, not a live destructive external command.
+14. All previously passed gates must be frozen and explicitly excluded from re-diagnosis absent new evidence.
+15. Full acceptance suite must be designed before coding: compile, build, install, launch, read-only control, destructive block, auth handoff, auth resume, persistence/evidence.
+16. Allowance/time budget and a hard stop/re-preflight threshold must be declared before execution.
+
+[MANDATORY FUTURE BUILD PREFLIGHT]
+For any comparable app/agent/integration build, the preflight is not complete until it produces a blocker matrix covering:
+A. Current local source state/diff.
+B. Compiler/API/type-contract surface.
+C. Build/runtime/toolchain contract.
+D. Every external protocol/header/schema/response field.
+E. Authentication + connection + session state machine.
+F. Actual downstream action and governance boundary.
+G. Safe acceptance method for every gate.
+H. Already-passed gates / do-not-reopen list.
+I. Exact endpoint/deliverable, allowance estimate, elapsed-time estimate, and hard-stop threshold.
+J. One bounded mutation plan and one verification path.
+
+If any of A-J is unknown and material, implementation must NOT start. Resolve the uncertainty or declare the single blocker first.
+
+[ENFORCEMENT]
+Future preflight must explicitly list the foreseeable blocker classes above as CHECKED/PASS, CHECKED/BLOCKED, or NOT_APPLICABLE. Silence is not a pass. Discovery of one of these classes after implementation begins is a preflight defect and triggers stop/re-preflight, not serial repair.
+
+[REUSABLE LESSON]
+A preflight that names only the immediate build command is not a preflight. For integrated agent software, the unit of planning is the entire source + build + external protocol + auth state machine + governance + safe acceptance contract.
+---
