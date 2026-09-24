@@ -956,3 +956,30 @@ Do not revisit Gemini 429 as a code issue, Gradle/JDK/AGP, APK install, governan
 [STOP RULE]
 Owner said this was the last attempt tonight. Work stops here. No second repair, no second build, no second install, no retry.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-24T23:55:00Z
+[AGENT] [SOL]
+[TYPE] PLAIN_ENGLISH_BLOCKER_EXPLANATION
+[ISSUE] ICARUS_COMPOSIO_CONNECTION_STATUS_SHAPE
+[BODY]
+Plain-English explanation of the final blocker:
+
+Icarus successfully reached COMPOSIO_SEARCH_TOOLS, but parseConnectionGateTrace(searchContext) returned null because the app still could not understand the exact connection-status structure returned at runtime.
+
+Because that parse failed:
+- connection state remained NOT_CAPTURED;
+- Icarus could not prove that semrush_mcp was unauthenticated;
+- COMPOSIO_MANAGE_CONNECTIONS was not called;
+- no authentication redirect_url was generated or surfaced;
+- no downstream execution occurred.
+
+The remaining blocker is therefore narrow and specific:
+capture the actual sanitized runtime shape of the SEARCH_TOOLS connection-status object immediately before parseConnectionGateTrace/searchContext interpretation. Do not change the parser again until those keys/types/nesting are physically observed.
+
+This is not currently evidence of a Gradle, install, governance, Gemini, session-continuity, redirect_url, PENDING_AUTH, or UI-path defect.
+
+[OWNER_STOP]
+Owner is going to bed. No further work tonight.
+---
