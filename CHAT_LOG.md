@@ -94,3 +94,17 @@ Issue #1 claim and blocked evidence comments; Composio OpenRouter connection ina
 Recorded canonical routing lesson: MODEL UNAVAILABLE = ROUTE, NOT INCIDENT. Same authorized model line → next available model → preserve €0 constraints → execute → verify → report. Escalate only on whole-line unavailability, material task change, or genuine design/authorization/safety boundary.
 [EVIDENCE]
 OpenRouter free canary returned exact AUTOMATION_SHADOW_OK via nex-agi/nex-n2.5-mini:free; provider Nex AGI; generation gen-1790234168-PrQf3CtYLG6iOUXEUmU8; reported cost $0. Source handoff: Issue #3 comment 5809976759.
+
+
+---
+[TIMESTAMP] 2026-09-24T10:43:00Z
+[AGENT] [SOL]
+[TYPE] STATUS
+[ISSUE] NONE
+[STATUS] BLOCKED
+[ACTIVE_OWNER] SOL
+[BODY]
+Agent OS web-app deployment job-start hit a native GitHub integration permission boundary. create_issue returned HTTP 403 Resource not accessible by integration; a separate attempt to append CHAT_LOG.md through the same native connector returned the same HTTP 403 on contents write. Do not retry native GitHub writes. Next materially different route: HumanVibe GitHub connection via Composio.
+[EVIDENCE]
+Two native GitHub write operations returned HTTP 403 Resource not accessible by integration.
+---
