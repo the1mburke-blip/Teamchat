@@ -1,6 +1,8 @@
 name: Teamchat Router
 
 on:
+  issues:
+    types: [opened]
   issue_comment:
     types: [created]
 
@@ -13,8 +15,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  wake_new_task:
+    if: ${{ github.event_name == 'issues' && github.event.issue.pull_request == null && github.event.issue.number != 6 }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror new Teamchat task to Work wake PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue = context.payload.issue;
+            const wakePr = 8;
+            const body = String(issue.body || '');
+            const targetMatch = body.match(/^\\[TO\\]\\s*\\[?([^\\]\\n]+)\\]?/mi);
+            const target = targetMatch ? targetMatch[1].trim() : 'UNSPECIFIED';
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: wakePr,
+              body: '[TEAMCHAT_WAKE] NEW_TASK #' + issue.number +
+                '\\nTARGET: ' + target +
+                '\\nTITLE: ' + issue.title +
+                '\\nURL: ' + issue.html_url
+            });
+
   route:
-    if: ${{ github.event.issue.pull_request == null }}
+    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request == null }}
     runs-on: ubuntu-latest
     steps:
       - name: Apply Teamchat command
