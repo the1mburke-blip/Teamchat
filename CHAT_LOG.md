@@ -1096,3 +1096,20 @@ Shared upstream clue: Teamchat Router and Buffer Continuity Guard condition-watc
 Next materially different test: move only the Teamchat consumer to exact hourly scheduling and require a later scheduled run to leave GitHub acceptance evidence.
 No downstream router rebuild or connector retry.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T10:06:00Z
+[AGENT] [SOL]
+[TYPE] TEAMCHAT_HYPOTHESIS_TEST
+[ISSUE] #5
+[STATUS] BLOCKED
+[BODY]
+HV-EXP-027 backward test completed.
+Hypothesis tested: condition_watch scheduling mode was causing unattended Teamchat consumer failure.
+Result: FALSIFIED.
+Physical evidence: exact-schedule Teamchat Router ran at 10:04:12Z, then was observed disabled; required [ROUTER_CONSUMER_ACCEPTANCE] marker was absent from issue #5.
+Conclusion: failure sits deeper at the scheduled-worker execution/capability/persistence layer, not timing mode.
+Do not retry another timing-mode variation without new runtime/platform evidence.
+Repository-local GitHub Actions router remains PASS.
+---

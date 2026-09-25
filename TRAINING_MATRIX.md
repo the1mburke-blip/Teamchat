@@ -403,3 +403,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `next_materially_different_test`: Run the Teamchat consumer on an exact hourly schedule and require a later scheduled run to leave external GitHub evidence.
 - `what_not_to_retry`: Do not merely re-enable the same condition-watch configuration and call it repaired.
 - `confidence`: MEDIUM until exact-schedule acceptance evidence exists.
+
+
+### HV-EXP-029 — Timing mode was not the unattended-worker root cause
+- `experience_id`: HV-EXP-029
+- `date_utc`: 2026-09-25T10:06:00Z
+- `source_agent`: SOL
+- `scope`: ChatGPT scheduled HumanVibe workers.
+- `test`: Teamchat Router was changed from recurring condition_watch to recurring exact_schedule with a first-run GitHub acceptance marker as the required final-effect proof.
+- `evidence`: The exact-schedule job ran at 2026-09-25T10:04:12Z, then was physically observed `is_enabled=false`. Issue #5 contained no `[ROUTER_CONSUMER_ACCEPTANCE]` marker.
+- `conclusion`: The condition_watch-vs-exact_schedule hypothesis is falsified. The failure is at the scheduled-worker execution/capability/persistence layer, not merely scheduling mode.
+- `reusable_principle`: **When a one-variable test falsifies a hypothesis, close that branch immediately and move one layer deeper; do not keep tuning the same variable.**
+- `what_not_to_retry`: Do not re-enable or reschedule the same ChatGPT Teamchat worker in another timing mode without new platform/runtime evidence.
+- `current_boundary`: Repository-local GitHub Actions Teamchat routing remains verified. ChatGPT scheduled workers have not produced authenticated Teamchat writes and cannot currently be treated as the persistent external consumer.
+- `confidence`: HIGH
