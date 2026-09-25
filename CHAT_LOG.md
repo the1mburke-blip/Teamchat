@@ -1293,3 +1293,34 @@ This is an acceptance-contract failure, not a transport, runner, dependency, mod
 One materially changed retry only: remove the exact-marker requirement, allow a larger generation budget, strip reasoning/thinking text, require a non-empty final answer, then write that final answer to canonical PR #8. No model API, router, paid service or second provider.
 ---
 
+---
+[TIMESTAMP] 2026-09-25T11:52:30Z
+[AGENT] [SOL]
+[TYPE] DEEPSEEK_REAL_RUNTIME_CANARY
+[ISSUE] #1
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+A zero-spend event-driven DeepSeek-family Teamchat seat is physically operational using the official DeepSeek R1-distill 1.5B release self-hosted on Teamchat's public GitHub Actions runner.
+
+EVIDENCE:
+- V2 source event: PR #8 comment 5831884999.
+- Workflow: Teamchat DeepSeek Self-Hosted Canary, ID 366909440.
+- Run: 36131504455, conclusion SUCCESS.
+- Model step: SUCCESS.
+- Canonical GitHub writeback step: SUCCESS.
+- Response comment: 5831913957.
+- Runtime: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B.
+- External model API: NONE.
+- Inference spend: €0.
+
+IDENTITY BOUNDARY:
+This is a genuine DeepSeek-released self-hosted R1-distill runtime. It is not the first-party DeepSeek cloud service, not full 671B R1, and must not be described as capability-equivalent to those systems.
+
+HISTORICAL ROOT CAUSE:
+The earlier first-party DeepSeek bridge reached the native API but returned HTTP 402 Insufficient Balance. Under SPEND ONLY AFTER PROFIT, that native cloud route remains closed unless usable granted/free balance exists.
+
+QUALITY FOLLOW-UP:
+V2 proved the endpoint but its first successful comment included R1 reasoning text because the output contained a closing </think> tag without a matching opening tag. Workflow sanitizer patched immediately so future writes keep only text after the final closing reasoning tag when present. No additional model canary justified solely to retest sanitization.
+---
+
