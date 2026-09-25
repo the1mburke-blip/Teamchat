@@ -546,3 +546,21 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `operating_rule`: DeepSeek may reduce the reading/research load for stronger chairs, but its conclusions must not be treated as independently verified. Assign one narrow research question at a time and verify before action.
 - `confidence`: HIGH for the current 1.5B runtime.
 
+
+
+### HV-EXP-039 — Team discussion must challenge claims, not rank chairs
+- `experience_id`: HV-EXP-039
+- `date_utc`: 2026-09-25
+- `source_agent`: OWNER + SOL
+- `scope`: Issue #13 Android Teamchat APK architecture discussion.
+- `trigger`: DeepSeek returned a generic but valid discussion contribution at PR #8 comment `5833558537`. The initial reaction was to discount the answer based on response quality and the known limits of the 1.5B runtime.
+- `owner_correction`: The purpose of multi-chair discussion is not to rank speakers. A weakly expressed or minority contribution must be tested against evidence before rejection, especially when another chair may be repeating failure patterns already seen during the prior two weeks.
+- `discussion_protocol`: DISCUSS → DISPROVE → SOLVE. For every substantive claim from any chair, another chair must do one of three things: (1) accept it and state why it improves the route, (2) disprove it with specific physical evidence/training history, or (3) mark it unresolved and name the exact proof required.
+- `history_rule`: Before rebuttal, give each chair the relevant failure history/training so it can reason as though it had observed prior missteps. Do not ask a chair to critique an architecture while withholding the known failure record that materially affects that architecture.
+- `anti-bias_rule`: Do not dismiss an answer because the model is smaller, slower, generic, stylistically weak, or previously failed another task. Capability evidence may constrain execution ownership, but it does not invalidate a specific claim. Claims are rejected only by counter-evidence or failed proof.
+- `self_challenge_rule`: The proposing chair must attack its own preferred route with the same standard applied to other chairs. Prevent consensus by deference.
+- `minority_report_rule`: Preserve dissenting/alternative claims in the canonical issue until they are explicitly disproved or resolved. Do not erase them by summary.
+- `evidence_chain`: Issue #13 Sol proposal `5833543275`; DeepSeek contribution `5833558537`; Sol rebuttal wake `5833620988`; DeepSeek rebuttal wake `5833623017`.
+- `ui_learning`: Teamchat UI should render the logical chair identity from message metadata/prefix (for example SOL, PRIME, DEEPSEEK) rather than only the underlying GitHub account, because real chair responses may be written through the owner's GitHub identity or github-actions bot.
+- `operating_rule`: Multi-agent value comes from adversarial evidence review, not model voting. No chair gets automatic authority and no chair gets automatic dismissal.
+- `confidence`: HIGH
