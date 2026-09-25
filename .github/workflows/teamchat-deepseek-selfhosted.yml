@@ -67,7 +67,40 @@ jobs:
           wake = os.environ.get("WAKE_BODY", "")
           wake_id = os.environ.get("WAKE_ID", "")
 
-          if "MODE: CAPABILITY_CEILING_TEST" in wake:
+          if "MODE: ROLE_LANE_TEST" in wake:
+              keys_match = re.search(r"TRAINING_KEYS:\s*([^\n]+)", wake, flags=re.I)
+              keys = [k.strip() for k in (keys_match.group(1).split(",") if keys_match else []) if k.strip()]
+              sources = []
+              for p in ["TRAINING_MATRIX.md", "CHAT_LOG.md"]:
+                  try:
+                      sources.append((p, pathlib.Path(p).read_text(encoding="utf-8", errors="replace")))
+                  except FileNotFoundError:
+                      pass
+
+              evidence_chunks = []
+              for key in keys:
+                  for path, text in sources:
+                      pos = text.lower().find(key.lower())
+                      if pos >= 0:
+                          start = max(0, pos - 900)
+                          end = min(len(text), pos + 2600)
+                          evidence_chunks.append(f"--- {path} / {key} ---\n{text[start:end]}")
+
+              training_context = "\n\n".join(evidence_chunks)
+              if not training_context:
+                  training_context = "No matching training section was found."
+
+              prompt = (
+                  "You are the bounded HumanVibe DeepSeek chair running locally from the official "
+                  "DeepSeek-R1-Distill-Qwen-1.5B release. This is a role-lane benchmark against an "
+                  "already-resolved HumanVibe issue. You MUST review the supplied TRAINING CONTEXT "
+                  "before attempting the task. Do not perform external actions. Keep the answer short. "
+                  "Your first line must be exactly: TRAINING_REVIEW: PASS. Then answer only the requested "
+                  "task, using the training evidence where relevant and not inventing facts.\n\n"
+                  f"TRAINING CONTEXT:\n{training_context}\n\n"
+                  f"TASK WAKE:\n{wake}"
+              )
+          elif "MODE: CAPABILITY_CEILING_TEST" in wake:
               prompt = (
                   "You are the bounded HumanVibe DeepSeek chair running locally from the official "
                   "DeepSeek-R1-Distill-Qwen-1.5B release. Solve the benchmark in the GitHub wake. "
@@ -135,9 +168,11 @@ jobs:
               core.setFailed('DeepSeek model returned no final text.');
               return;
             }
-            const benchmark = String(process.env.WAKE_BODY || '').includes('MODE: CAPABILITY_CEILING_TEST');
+            const wakeBody = String(process.env.WAKE_BODY || '');
+            const benchmark = wakeBody.includes('MODE: CAPABILITY_CEILING_TEST');
+            const roleLane = wakeBody.includes('MODE: ROLE_LANE_TEST');
             const body = [
-              benchmark ? '[DEEPSEEK] TEAMCHAT_CAPABILITY_BENCHMARK_RESULT' : '[DEEPSEEK] TEAMCHAT_GENUINE_SELFHOSTED_CANARY_OK',
+              roleLane ? '[DEEPSEEK] TEAMCHAT_ROLE_LANE_TEST_RESULT' : (benchmark ? '[DEEPSEEK] TEAMCHAT_CAPABILITY_BENCHMARK_RESULT' : '[DEEPSEEK] TEAMCHAT_GENUINE_SELFHOSTED_CANARY_OK'),
               '',
               'RUNTIME: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
               'HOST: GitHub public standard runner · CPU inference · no model API',
