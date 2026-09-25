@@ -1152,3 +1152,55 @@ When that single authentication boundary is available, inspect the existing proj
 [COST]
 €0
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T10:08:00Z
+[AGENT] [SOL]
+[TYPE] NEW_CHAT_HANDOVER
+[STATUS] PARTIAL
+[BODY]
+Purpose: preserve the full Teamchat troubleshooting state for continuation in a fresh chat without rethreading failed routes.
+
+WHAT WAS PROVEN
+- Repository-local Teamchat control plane is PASS: GitHub Actions router handles /task, /claim, /status, /handoff, /evidence, /release.
+- Live /claim SOL physically mutated issue #5; duplicate claim was correctly rejected.
+- Team OS GitHub Pages remains built/public from main:/docs.
+- HV-EXP-027 is now universal problem-solving doctrine: ENDPOINT → FINAL-EFFECT EVIDENCE → DEPENDENCY CHAIN → PREREQUISITES → LAYER BOUNDARY → MINIMUM REPAIR → FINAL-EFFECT VERIFICATION → DURABLE LEARNING.
+- ChatGPT recurring worker timing-mode hypothesis was tested and falsified. condition_watch and exact_schedule both failed to produce a persistent authenticated Teamchat consumer. Do not retry timing-mode variations. See HV-EXP-029.
+- External prior art was found: use supported event-triggered work rather than polling.
+- GitHub-side wake bridge is physically PASS: persistent PR #8 exists; workflow commit 6b5740672c823448e01166829589b13c95ffe848 mirrors newly opened Teamchat issues to PR #8 comments; canary issue #11 triggered Actions run 36122872269 SUCCESS and PR #8 received comment 5830711657 beginning TEAMCHAT_WAKE NEW_TASK #11, target SOL.
+- This pattern is logged as HV-EXP-030.
+
+CURRENT TWO POSSIBLE COMPLETION PATHS
+1) PREFERRED EVENT PATH
+Teamchat issue → GitHub Actions → PR #8 comment → ChatGPT Work GitHub event trigger → canonical issue read/execution/writeback.
+GitHub side is verified.
+Remaining boundary: create/verify the account-level ChatGPT Work event-trigger subscription watching PR #8 comments, then run one end-to-end wake canary.
+Until a real Work wake occurs and writes back, full unattended Teamchat consumption is PARTIAL.
+
+2) GOOGLE APPS SCRIPT FALLBACK
+Teamchat issue/comment → GitHub Actions → authenticated Apps Script Web App POST → Google runtime → verified Teamchat writeback.
+Work inspected this route and stopped safely.
+Blocker: authenticated Google Apps Script project/deployment administration is unavailable in Work runtime. Apps Script was signed out; Google ServiceLogin returned HTTP 502; Drive can recover source/manifest but cannot administer Apps Script code/deployments/Script Properties/triggers; no active Google/Apps Script connector exists. Repository currently has zero Actions secrets.
+Do not build sender/secrets/canary until receiver/deployment authority exists. Logged as HV-EXP-031.
+
+DO NOT RETRY
+- ChatGPT recurring Teamchat schedulers, regardless of timing mode.
+- Native GitHub mutation route that returned 403.
+- Browser/PWA secrets.
+- Direct unauthenticated Apps Script webhook.
+- Apps Script sender build before authenticated receiver/deployment surface exists.
+- Duplicate free-shadow design generation.
+- Fake external-runtime wake acknowledgements.
+
+WORK RESULT
+Work completed its investigation and is BLOCKED only on the Apps Script authentication/deployment surface for that fallback architecture. It did not alter the working router or create insecure infrastructure.
+
+PASS/FAIL RULE FOR NEXT CHAT
+Do not wait passively. PASS only when a Teamchat-origin event causes a real external Work/Google runtime wake and a verified writeback appears in canonical Teamchat with no owner relay. If no such marker exists, state remains PARTIAL/BLOCKED.
+First action in new chat: inspect whether the Work PR #8 event-trigger subscription now exists and whether any post-#11 wake/writeback evidence appeared. If not, the smallest completion step is to enable that supported Work event trigger; do not reopen scheduler or Apps Script routes unless the Work event trigger is unavailable.
+
+COST
+€0. No paid route.
+---
