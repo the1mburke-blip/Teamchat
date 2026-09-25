@@ -1,0 +1,172 @@
+name: Teamchat Router
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: teamchat-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  route:
+    if: ${{ github.event.issue.pull_request == null }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply Teamchat command
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const eventIssue = context.payload.issue;
+            const comment = context.payload.comment;
+            const association = String(comment.author_association || '').toUpperCase();
+            const allowedAssociations = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+            if (!allowedAssociations.has(association)) {
+              core.notice('Ignored command from non-authorized association: ' + association);
+              return;
+            }
+
+            const command = String(comment.body || '').trim();
+            const now = new Date().toISOString();
+            const chairs = '(LUNA|SOL|PRIME|GRACE|DEEPSEEK|CLAUDE|CODEX)';
+            const terminal = new Set(['PASS', 'PARTIAL', 'FAIL', 'BLOCKED']);
+
+            const fresh = async () => (await github.rest.issues.get({
+              owner, repo, issue_number: eventIssue.number
+            })).data;
+
+            const readField = (body, name, fallback = '') => {
+              const m = String(body || '').match(new RegExp('^\\[' + name + '\\]\\s*(.*)$', 'mi'));
+              return m ? m[1].trim().replace(/[\\[\\]]/g, '').toUpperCase() : fallback;
+            };
+
+            const setField = (body, name, value) => {
+              const line = '[' + name + '] ' + value;
+              const re = new RegExp('^\\[' + name + '\\]\\s*.*$', 'mi');
+              return re.test(body || '') ? String(body || '').replace(re, line) : (String(body || '').trim() + '\n' + line).trim();
+            };
+
+            const routerComment = async (text) => {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: eventIssue.number,
+                body: '[ROUTER] ' + now + '\n' + text
+              });
+            };
+
+            if (eventIssue.number === 6) {
+              const task = command.match(new RegExp('^/task\\s+' + chairs + '\\s*\\|\\s*([^|]+?)(?:\\s*\\|\\s*(.+))?$', 'i'));
+              if (!task) return;
+              const target = task[1].toUpperCase();
+              const objective = task[2].trim();
+              const evidence = (task[3] || 'Physical/readback proof required for PASS').trim();
+              const issueBody = [
+                '[TIMESTAMP] ' + now,
+                '[FROM] [OWNER]',
+                '[TO] [' + target + ']',
+                '[STATUS] REQUESTED',
+                '[ACTIVE_OWNER] NONE',
+                '[OBJECTIVE] ' + objective,
+                '[SCOPE] Teamchat room dispatch; execute only after canonical preflight',
+                '[PROTECTED] Credentials, paid services, unrelated production systems',
+                '[COST] €0',
+                '[ALLOWANCE_BUDGET] Preflight required before execution',
+                '[EVIDENCE_REQUIRED] ' + evidence
+              ].join('\n');
+              const created = await github.rest.issues.create({
+                owner, repo,
+                title: '[T1] [REQUESTED] ' + objective.slice(0, 120),
+                body: issueBody
+              });
+              await routerComment('TASK_CREATED: #' + created.data.number + ' → ' + target + '\n' + created.data.html_url);
+              return;
+            }
+
+            let current = await fresh();
+            let body = String(current.body || '');
+            let active = readField(body, 'ACTIVE_OWNER', 'NONE');
+            let status = readField(body, 'STATUS', current.state === 'closed' ? 'PASS' : 'REQUESTED');
+
+            const claim = command.match(new RegExp('^/claim\\s+' + chairs + '$', 'i'));
+            if (claim) {
+              const actor = claim[1].toUpperCase();
+              if (active !== 'NONE') {
+                await routerComment('CLAIM_REJECTED: active owner is ' + active + '.');
+                return;
+              }
+              if (terminal.has(status)) {
+                await routerComment('CLAIM_REJECTED: task is terminal (' + status + ').');
+                return;
+              }
+              body = setField(body, 'TO', '[' + actor + ']');
+              body = setField(body, 'STATUS', 'CLAIMED');
+              body = setField(body, 'ACTIVE_OWNER', actor);
+              await github.rest.issues.update({ owner, repo, issue_number: eventIssue.number, body });
+              await routerComment('CLAIM_APPLIED: ' + actor + ' owns task #' + eventIssue.number + '.');
+              return;
+            }
+
+            const statusCmd = command.match(new RegExp('^/status\\s+' + chairs + '\\s+(CLAIMED|EXECUTING|VERIFYING)$', 'i'));
+            if (statusCmd) {
+              const actor = statusCmd[1].toUpperCase();
+              const next = statusCmd[2].toUpperCase();
+              if (active !== actor) {
+                await routerComment('STATUS_REJECTED: ' + actor + ' is not active owner (' + active + ').');
+                return;
+              }
+              body = setField(body, 'STATUS', next);
+              await github.rest.issues.update({ owner, repo, issue_number: eventIssue.number, body });
+              await routerComment('STATUS_APPLIED: ' + actor + ' → ' + next + '.');
+              return;
+            }
+
+            const handoff = command.match(new RegExp('^/handoff\\s+' + chairs + '\\s+' + chairs + '$', 'i'));
+            if (handoff) {
+              const actor = handoff[1].toUpperCase();
+              const target = handoff[2].toUpperCase();
+              if (active !== actor) {
+                await routerComment('HANDOFF_REJECTED: ' + actor + ' is not active owner (' + active + ').');
+                return;
+              }
+              body = setField(body, 'TO', '[' + target + ']');
+              body = setField(body, 'STATUS', 'REQUESTED');
+              body = setField(body, 'ACTIVE_OWNER', 'NONE');
+              await github.rest.issues.update({ owner, repo, issue_number: eventIssue.number, body });
+              await routerComment('HANDOFF_APPLIED: ' + actor + ' → ' + target + '; owner released.');
+              return;
+            }
+
+            const evidenceCmd = command.match(new RegExp('^/evidence\\s+' + chairs + '\\s+(PASS|PARTIAL|FAIL|BLOCKED)\\s*\\|\\s*(.+)$', 'is'));
+            if (evidenceCmd) {
+              const actor = evidenceCmd[1].toUpperCase();
+              const result = evidenceCmd[2].toUpperCase();
+              const evidence = evidenceCmd[3].trim();
+              if (active !== actor) {
+                await routerComment('EVIDENCE_REJECTED: ' + actor + ' is not active owner (' + active + ').');
+                return;
+              }
+              body = setField(body, 'STATUS', result);
+              body = setField(body, 'ACTIVE_OWNER', 'NONE');
+              await github.rest.issues.update({ owner, repo, issue_number: eventIssue.number, body });
+              await routerComment('TERMINAL_APPLIED: actor=' + actor + ' result=' + result + '\nEVIDENCE: ' + evidence);
+              return;
+            }
+
+            const release = command.match(new RegExp('^/release\\s+' + chairs + '$', 'i'));
+            if (release) {
+              const actor = release[1].toUpperCase();
+              if (active !== actor) {
+                await routerComment('RELEASE_REJECTED: ' + actor + ' is not active owner (' + active + ').');
+                return;
+              }
+              body = setField(body, 'STATUS', 'REQUESTED');
+              body = setField(body, 'ACTIVE_OWNER', 'NONE');
+              await github.rest.issues.update({ owner, repo, issue_number: eventIssue.number, body });
+              await routerComment('RELEASE_APPLIED: ' + actor + ' released task #' + eventIssue.number + '.');
+              return;
+            }

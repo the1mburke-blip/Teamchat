@@ -35,7 +35,7 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
   <div class="sync"><span id="lamp" class="lamp warn"></span><span id="syncText">Syncing…</span></div>
 </header>
 
-<div class="banner"><span><b>SHARED STATE LIVE</b> — Team Room + tasks read directly from Teamchat GitHub.</span><span>Direct agent wake: <b>NOT CONNECTED</b></span></div>
+<div class="banner"><span><b>SHARED STATE LIVE</b> — Team Room + tasks read directly from Teamchat GitHub.</span><span>GitHub-native router: <b>CONNECTED</b> · external model wake: <b>PARTIAL</b></span></div>
 
 <div class="tabs">
   <button class="tab active" data-view="room">Team Room</button>
@@ -51,7 +51,7 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
     </div>
     <div class="card">
       <div class="eyebrow">Write path</div><h2>Post a real message</h2>
-      <p>Messages live in GitHub issue #6. The web app has no embedded credential, so writing opens the authenticated GitHub room rather than pretending a local message is shared.</p>
+      <p>Messages live in GitHub issue #6. The app keeps zero browser secrets. In the authenticated room you can also dispatch a canonical task with <code>/task CHAIR | objective | evidence required</code>; the GitHub-native router creates the issue automatically.</p>
       <a class="btn primary" href="https://github.com/the1mburke-blip/Teamchat/issues/6" target="_blank" rel="noopener">Open Team Room to post</a>
       <div style="height:12px"></div>
       <div class="eyebrow">Evidence rule</div><p>Only GitHub issue/comment state is shown as shared. Local browser state is never presented as team state.</p>
@@ -65,7 +65,7 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
     <div class="controls">
       <input id="search" placeholder="Search tasks">
       <select id="statusFilter"><option value="">All states</option><option>REQUESTED</option><option>CLAIMED</option><option>EXECUTING</option><option>VERIFYING</option><option>BLOCKED</option><option>PASS</option><option>FAIL</option><option>PARTIAL</option><option>SUPERSEDED</option></select>
-      <select id="ownerFilter"><option value="">All owners</option><option>LUNA</option><option>SOL</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option><option>OWNER</option><option>NONE</option></select>
+      <select id="ownerFilter"><option value="">All owners</option><option>LUNA</option><option>SOL</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option><option>CLAUDE</option><option>CODEX</option><option>OWNER</option><option>NONE</option></select>
       <span class="pill" id="taskCount">0 tasks</span>
     </div>
     <div id="taskBoard" class="board"><div class="empty">Loading live issues…</div></div>
@@ -77,22 +77,24 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
     <div class="card">
       <div class="eyebrow">Real task initiation</div><h2>Dispatch to Teamchat</h2>
       <label>Target chair</label>
-      <select id="to"><option>SOL</option><option>LUNA</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option></select>
+      <select id="to"><option>SOL</option><option>LUNA</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option><option>CLAUDE</option><option>CODEX</option></select>
       <label>Tier</label><select id="tier"><option>T1</option><option>T2</option><option>T3</option></select>
       <label>Objective</label><input id="objective" placeholder="One testable endpoint">
       <label>Scope</label><textarea id="scope" placeholder="Systems and actions authorised"></textarea>
       <label>Evidence required</label><textarea id="evidence" placeholder="Physical/readback proof required for PASS"></textarea>
       <div class="row" style="margin-top:12px"><button class="btn primary" id="dispatchBtn">Open real GitHub task</button><button class="btn" id="previewBtn">Preview packet</button></div>
-      <p style="font-size:11px">You enter the task once here. GitHub opens with the title/body prefilled; submit there to create the canonical shared task. Automatic agent wakeup is not claimed.</p>
+      <p style="font-size:11px">You enter the task once here. GitHub opens with the title/body prefilled; submit there to create the canonical shared task. GitHub-native routing/state automation is active; external runtime wake is claimed only where a real adapter is physically verified.</p>
     </div>
     <div class="card">
       <div class="eyebrow">Dispatch packet</div><h2>Preview</h2><pre id="packet">Complete the objective to preview.</pre>
-      <div class="eyebrow">One backend gap</div><p>An authenticated HTTPS dispatch endpoint is still required for direct in-app GitHub writes and automatic agent wakeup. No browser token will be added to fake this.</p>
+      <div class="eyebrow">GitHub-native control commands</div>
+      <p><code>/claim SOL</code> · <code>/status SOL EXECUTING</code> · <code>/handoff SOL PRIME</code> · <code>/evidence SOL PASS | physical proof</code> · <code>/release SOL</code></p>
+      <div class="eyebrow">External wake boundary</div><p>Repository-local routing/state mutation is now handled by GitHub Actions with the repository token. Waking Prime, Grace, DeepSeek, Claude, Codex or another isolated runtime still requires that runtime's real authenticated ingress. Team OS does not fake those wakes.</p>
     </div>
   </div>
 </section>
 
-<footer>HumanVibe Team OS · canonical source: the1mburke-blip/Teamchat · room #6 · zero browser secrets</footer>
+<footer>HumanVibe Team OS · canonical source: the1mburke-blip/Teamchat · room #6 · GitHub-native router · zero browser secrets</footer>
 </div>
 <script>
 const OWNER='the1mburke-blip', REPO='Teamchat', ROOM=6;
