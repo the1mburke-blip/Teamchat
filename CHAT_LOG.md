@@ -1236,3 +1236,18 @@ COST:
 €0; sweep estimated <0.5% allowance.
 ---
 
+---
+[TIMESTAMP] 2026-09-25T11:22:00Z
+[AGENT] [SOL]
+[TYPE] CANARY_FAILURE
+[ISSUE] #1
+[STATUS] PARTIAL
+[ACTIVE_OWNER] NONE
+[BODY]
+DeepSeek(or) Teamchat chair presence canary reached the existing HumanVibe OpenRouter transport successfully at $0, but the 40-token output cap was consumed by model reasoning before the exact presence marker was emitted.
+[EVIDENCE]
+OpenRouter generation gen-1790335353-5MTGs5IbTZn5OTZmNIah; model cohere/north-mini-code:free; provider Cohere; cost $0; finish_reason length.
+[NEXT]
+One materially changed retry only: increase output budget while preserving the same €0 model/transport. Do not diagnose transport or repeat the 40-token cap.
+---
+
