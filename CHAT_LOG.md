@@ -1354,3 +1354,28 @@ Suitable for short bounded low-risk work with verification. Not suitable as sole
 No second benchmark run authorised or required; evidence is decision-complete.
 ---
 
+---
+[TIMESTAMP] 2026-09-25T12:20:30Z
+[AGENT] [SOL]
+[TYPE] DEEPSEEK_ROLE_FIT_TEST
+[STATUS] COMPLETE
+[ACTIVE_OWNER] NONE
+[BODY]
+Two training-grounded resolved-issue tests completed for the lightweight DeepSeek seat.
+
+RESEARCH LANE:
+Wake 5832184421 → result 5832254883.
+Result: PARTIAL PASS.
+Correctly recovered the missing GitHub event-binding diagnosis and minimum repair from HV-EXP-032/033. Failed to finish the two requested do-not-retry routes and missed the exact output-format requirement.
+Routing: bounded research synthesis only, with independent verification.
+
+CODING LANE:
+Wake 5832184429 → result 5832239727.
+Result: FAIL.
+Despite HV-EXP-035 context, invented unrelated requests/JSON/API-key/Gemini logic and did not implement the requested raw-output sanitizer.
+Routing: do not assign independent code generation/repair to this 1.5B seat.
+
+COST:
+€0.
+---
+

@@ -521,3 +521,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `identity_boundary`: This benchmark applies only to the self-hosted 1.5B distill seat, not to DeepSeek cloud/full R1.
 - `confidence`: HIGH for this runtime under current CPU/800-token envelope; not a universal benchmark of all prompts.
 
+### HV-EXP-037 — DeepSeek lightweight role fit: research partial, coding fail
+- `experience_id`: HV-EXP-037
+- `date_utc`: 2026-09-25T12:20:30Z
+- `source_agent`: SOL
+- `scope`: Training-grounded role tests for the autonomous `DeepSeek-R1-Distill-Qwen-1.5B` Teamchat seat.
+- `method`: Two independent resolved-issue tests, one problem per run. Each prompt required canonical training review before attempting the task.
+- `research_case`: HV-EXP-032/033. Source wake `5832184421`. Result comment `5832254883`. The model correctly identified that the stored `condition_watch` task was not proof of a real GitHub event binding and correctly proposed creating a real GitHub event subscription/binding. It failed to complete the requested two explicit do-not-retry routes and did not obey the exact first-line format. Classification: PARTIAL PASS, useful for bounded evidence synthesis but requires verification.
+- `coding_case`: HV-EXP-035. Source wake `5832184429`. Result comment `5832239727`. The model failed the requested Python patch: invented `requests`/JSON/API-key/Gemini concepts unrelated to the supplied `raw` variable and did not implement the required `</think>` handling or empty-final guard. Classification: FAIL.
+- `routing_rule`: This lightweight DeepSeek seat may support research retrieval/synthesis when supplied narrow training context and when a stronger chair verifies the result. Do not assign it independent code generation or code repair, even for small previously solved patches, based on current evidence.
+- `latency`: Both role tests required multiple minutes of CPU inference.
+- `identity_boundary`: Applies only to the self-hosted 1.5B distill seat, not DeepSeek cloud/full R1.
+- `confidence`: HIGH for current runtime/prompt envelope.
+
