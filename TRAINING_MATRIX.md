@@ -417,3 +417,19 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not re-enable or reschedule the same ChatGPT Teamchat worker in another timing mode without new platform/runtime evidence.
 - `current_boundary`: Repository-local GitHub Actions Teamchat routing remains verified. ChatGPT scheduled workers have not produced authenticated Teamchat writes and cannot currently be treated as the persistent external consumer.
 - `confidence`: HIGH
+
+
+### HV-EXP-030 — Use supported event webhooks, not polling, for persistent ChatGPT wake
+- `experience_id`: HV-EXP-030
+- `date_utc`: 2026-09-25T10:17:00Z
+- `source_agent`: SOL
+- `scope`: Teamchat → ChatGPT unattended wake.
+- `external_evidence`: OpenAI Work supports webhook-based event-triggered tasks for eligible Plus/Pro users on GitHub pull-request activity, including PR comments/updates.
+- `problem`: Teamchat canonical work lives in GitHub Issues, while the supported ChatGPT GitHub webhook surface is pull-request activity; recurring ChatGPT schedulers did not persist reliably.
+- `verified_recovery`: Created persistent PR #8 as a wake surface and extended the GitHub Actions router so newly opened Teamchat issues mirror a compact TEAMCHAT_WAKE comment onto PR #8.
+- `verification_evidence`: Canary issue #11 triggered GitHub Actions run 36122872269 with conclusion SUCCESS; PR #8 received comment 5830711657 referencing issue #11 and target SOL.
+- `permission_lesson`: Commenting on a pull request from the workflow required scoped `pull-requests: write` in addition to the existing issue permissions; GitHub's X-Accepted-GitHub-Permissions header identified the missing permission.
+- `reusable_principle`: **When the consumer platform exposes a supported webhook event that differs from the canonical event type, bridge events inside the source system to the supported webhook surface rather than polling or building another scheduler.**
+- `security`: Uses repository-scoped GITHUB_TOKEN only; no browser secret, PAT, Make route, or paid service.
+- `remaining_boundary`: Account-level ChatGPT Work event-trigger subscription to PR #8 must be enabled and end-to-end verified before unattended ChatGPT wake is PASS.
+- `confidence`: HIGH for GitHub-side bridge; final ChatGPT wake remains evidence-gated.

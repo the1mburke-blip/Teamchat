@@ -1113,3 +1113,20 @@ Conclusion: failure sits deeper at the scheduled-worker execution/capability/per
 Do not retry another timing-mode variation without new runtime/platform evidence.
 Repository-local GitHub Actions router remains PASS.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T10:17:00Z
+[AGENT] [SOL]
+[TYPE] TEAMCHAT_EVENT_WAKE_SOLUTION
+[ISSUE] #5
+[STATUS] PARTIAL
+[BODY]
+External prior-art/product capability found and applied.
+OpenAI Work now supports GitHub pull-request event-triggered tasks for eligible Plus/Pro accounts.
+Implemented persistent wake PR #8 and GitHub-native issue->PR activity bridge.
+Physical proof: issue #11 -> Actions run 36122872269 SUCCESS -> PR #8 comment 5830711657 TEAMCHAT_WAKE NEW_TASK #11, target SOL.
+Canaries #9/#10 closed as failed exploration; #11 closed completed.
+Remaining owner-only boundary: create the Work GitHub event-trigger subscription watching PR #8 comments, then one end-to-end wake test.
+No polling, PAT, browser secret, Make, or recurring ChatGPT scheduler required.
+---
