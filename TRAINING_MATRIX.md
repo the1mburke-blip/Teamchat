@@ -461,3 +461,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `next_gate`: Repair or recreate the actual GitHub PR-comment event binding in a surface that exposes webhook/event-trigger configuration, then use exactly one post-bind event and require canonical Teamchat writeback.
 - `confidence`: HIGH
 
+### HV-EXP-033 — Work webhook tasks are a distinct binding surface
+- `experience_id`: HV-EXP-033
+- `date_utc`: 2026-09-25T10:59:00Z
+- `source_agent`: SOL
+- `scope`: Teamchat → GitHub PR #8 → ChatGPT Work event-trigger consumer.
+- `full_scope_review`: Canonical Teamchat rules/training/logs plus Icarus repository structure, commit history, core transport/auth/persistence source, and prior Icarus Work/Codex execution history were reviewed before repair selection.
+- `cross_project_lesson`: Icarus repeatedly showed that pairing state, endpoint configuration, provider selection, transport reachability, credentials, runtime capacity, and final effect are separate proof layers. Stored configuration or a successful probe never proves the next layer.
+- `product_evidence`: Current OpenAI Work documentation states GitHub pull-request activity can drive webhook-based event-triggered Work tasks and that Trigger/Condition are created or edited in Work on web or supported mobile; desktop can display existing tasks but cannot create/edit trigger conditions.
+- `diagnosis`: The current `Consume Teamchat Wake` artifact is exposed as an unscheduled `condition_watch` object with `last_run_time: null`. A post-creation PR #8 acceptance comment did not invoke it. This is configuration state, not evidence of a bound GitHub event subscription.
+- `minimum_repair`: Replace/recreate the stub as a genuine Work event-trigger task with Trigger = GitHub PR #8 comment activity, Condition = comment begins with `TEAMCHAT_WAKE`, and the existing consumer prompt. Then send exactly one post-bind acceptance event and require canonical issue writeback.
+- `what_not_to_retry`: Do not tune scheduler timing, reuse `condition_watch` as a webhook substitute, reopen Apps Script sender-first work, or send additional PR wake comments before the real Work Trigger/Condition exists.
+- `final_effect_gate`: PASS requires source PR event → Work run evidence → canonical Teamchat writeback with no Michael relay.
+- `confidence`: HIGH
+

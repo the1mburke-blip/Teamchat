@@ -1204,3 +1204,35 @@ First action in new chat: inspect whether the Work PR #8 event-trigger subscript
 COST
 €0. No paid route.
 ---
+
+---
+[TIMESTAMP] 2026-09-25T10:59:00Z
+[AGENT] [SOL]
+[TYPE] FULL_SCOPE_PRE_FIX_SWEEP
+[STATUS] BLOCKED
+[BODY]
+Owner-directed full-scope sweep completed before another Teamchat fix attempt.
+
+READ:
+- Canonical OPERATING_RULES.md, TRAINING_MATRIX.md, HANDOFF_PROTOCOL.md and relevant CHAT_LOG.md.
+- Current Teamchat PR #8 / issue #11 wake evidence and Consume Teamchat Wake task state.
+- Private Icarus repository via the canonical HumanVibe GitHub connection: complete 84-path tree, commit history, .env.example, metadata.json, IcarusRepository.kt, ComposioMcpClient.kt, HumanVibeGovernanceEngine.kt, GeminiReasoningEngine.kt, SecureStore.kt.
+- Prior Icarus Work/Codex history covering ADB transport, pairing, provider capacity, Firebase configuration, AI Studio limits, release gating and no-retry lessons.
+- Current official OpenAI Work/GitHub event-trigger documentation.
+
+SYNTHESIS:
+Icarus confirms the same recurring failure class: configuration/pairing/provider/transport/auth/runtime/final-effect are separate layers. Teamchat currently has repository event generation PASS and a stored ChatGPT task object, but no proof of the actual GitHub→Work webhook binding.
+
+ROOT CAUSE:
+The current Consume Teamchat Wake artifact is not verified as a genuine Work event-trigger binding. It is exposed as an unscheduled condition-watch object; a post-creation PR #8 acceptance event left last_run_time null and produced no canonical writeback.
+
+MINIMUM REPAIR:
+Create/recreate the task in the Work event-trigger surface with Trigger=GitHub PR #8 comment activity, Condition=begins with TEAMCHAT_WAKE, Prompt=current consumer prompt. Only then issue one acceptance event.
+
+BOUNDARY:
+This chat runtime exposes scheduled/condition-watch task controls but no Work Trigger/Condition creation/edit schema. No substitute route was attempted.
+
+COST:
+€0; sweep estimated <0.5% allowance.
+---
+
