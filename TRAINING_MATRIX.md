@@ -351,4 +351,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not treat native-connector 404/empty results as repository absence when private-access routing has not been checked.
 - `evidence_rule`: PASS requires verification through the canonical connected account plus task-appropriate repository readback.
 - `confidence`: HIGH
-
+### HV-EXP-025 — Repository router is not external-runtime wake
+- experience_id: HV-EXP-025
+- date_utc: 2026-09-25T09:18:00Z
+- source_agent: SOL
+- task_problem: Make HumanVibe Teamchat a real shared control plane without embedding browser credentials or inventing agent wake capability.
+- verified_recovery: GitHub Actions with the scoped repository GITHUB_TOKEN now handles repository-local /claim, /status, /handoff, /evidence, /release, and Team Room /task commands. A live /claim SOL on issue #5 updated canonical issue state and a duplicate claim was automatically rejected.
+- deployment_evidence: Teamchat Router workflow active; Pages source remains main:/docs; latest Pages build physically reported built.
+- boundary_evidence: Teamchat repository currently has zero GitHub Actions repository secrets and zero repository webhooks. No verified authenticated ingress exists from GitHub into isolated Prime/Grace/DeepSeek/Claude/Codex runtimes.
+- what_not_to_retry: Do not call repository-local routing an external agent wake, do not embed GitHub or external credentials in the Pages browser, and do not create fake wake acknowledgements.
+- reusable_principle: GitHub-native state routing can be autonomous without browser secrets; waking an external runtime is a separate adapter that requires a physically verified authenticated ingress.
+- confidence: HIGH

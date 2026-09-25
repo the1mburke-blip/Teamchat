@@ -1022,3 +1022,21 @@ Repository-local Teamchat routing is now live. External isolated-runtime wake ad
 ALLOWANCE:
 0 new shadow generation calls; €0 external spend; premium allowance not directly measurable, remained inside stated <=1–2% task budget based on current scope.
 ---
+---
+[TIMESTAMP] 2026-09-25T09:18:00Z
+[AGENT] [SOL]
+[TYPE] TEAMCHAT_ROUTER_REPAIR
+[ISSUE] #5
+[STATUS] PARTIAL
+[BODY]
+Teamchat repository-local control plane is now physically functional.
+Verified:
+- GitHub Actions workflow .github/workflows/teamchat-router.yml is active.
+- Real /claim command mutated issue #5 from ACTIVE_OWNER NONE to SOL.
+- Duplicate claim was automatically rejected while SOL owned the task.
+- Team OS Pages source at main:/docs exposes the canonical command set and external-wake boundary.
+- GitHub Pages latest build is built and HTTPS/public.
+- Repository has 0 Actions secrets and 0 configured webhooks, so no authenticated external-runtime wake adapter exists to wire without adding a new credential/endpoint.
+Current boundary: Teamchat can route and mutate canonical repository state automatically; it cannot honestly wake isolated external runtimes (Prime, Grace, DeepSeek, Claude, Codex) until each has a real authenticated ingress.
+NO EVIDENCE = NO CLAIM.
+---
