@@ -563,4 +563,5 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `evidence_chain`: Issue #13 Sol proposal `5833543275`; DeepSeek contribution `5833558537`; Sol rebuttal wake `5833620988`; DeepSeek rebuttal wake `5833623017`.
 - `ui_learning`: Teamchat UI should render the logical chair identity from message metadata/prefix (for example SOL, PRIME, DEEPSEEK) rather than only the underlying GitHub account, because real chair responses may be written through the owner's GitHub identity or github-actions bot.
 - `operating_rule`: Multi-agent value comes from adversarial evidence review, not model voting. No chair gets automatic authority and no chair gets automatic dismissal.
+- `equal_discussion_rule`: Equal discussion means equal standing to surface and challenge claims, not equal capability or equal execution authority. Simpler reasoning can be deliberately useful because it may expose a hidden assumption, contradiction, or unnecessary layer that stronger chairs overlook through complexity.
 - `confidence`: HIGH
