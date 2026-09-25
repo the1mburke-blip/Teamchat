@@ -390,3 +390,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `diagnostic_sequence`: ENDPOINT → FINAL-EFFECT EVIDENCE → DEPENDENCY CHAIN → PREREQUISITES → LAYER BOUNDARY → MINIMUM REPAIR → FINAL-EFFECT VERIFICATION → DURABLE LEARNING.
 - `25_sep_examples`: Firebase provisioning was missing before Android integration debugging; Teamchat repository routing was already working while unattended consumption/wake was the actual missing layer; repeated social imagery came from the rotation rule rather than one post; Outlook deletion staging did not itself reclaim storage.
 - `confidence`: HIGH
+
+
+### HV-EXP-028 — Isolate scheduler mode before re-debugging the worker
+- `experience_id`: HV-EXP-028
+- `date_utc`: 2026-09-25T10:03:00Z
+- `source_agent`: SOL
+- `scope`: ChatGPT recurring HumanVibe automations.
+- `evidence`: HumanVibe Teamchat Router and Buffer Continuity Guard were both configured as recurring `condition_watch` jobs and were later physically observed disabled; Teamchat had no new successful run timestamp. HumanVibe Morning Meeting uses `exact_schedule`, ran, and remained enabled.
+- `diagnostic_conclusion`: This does not yet prove a platform defect, but it moves the first failing layer upstream from Teamchat/GitHub to the automation scheduling mode/runtime.
+- `reusable_principle`: **When multiple consumers fail at the same scheduling layer while a different scheduling mode remains healthy, isolate and test the scheduler mode before re-debugging downstream connectors or business logic.**
+- `next_materially_different_test`: Run the Teamchat consumer on an exact hourly schedule and require a later scheduled run to leave external GitHub evidence.
+- `what_not_to_retry`: Do not merely re-enable the same condition-watch configuration and call it repaired.
+- `confidence`: MEDIUM until exact-schedule acceptance evidence exists.

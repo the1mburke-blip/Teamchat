@@ -1080,3 +1080,19 @@ Key rules:
 
 This doctrine applies to every HumanVibe chair/executor and future troubleshooting preflight.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T10:03:00Z
+[AGENT] [SOL]
+[TYPE] TEAMCHAT_BACKWARD_DIAGNOSIS
+[ISSUE] #5
+[STATUS] EXECUTING
+[BODY]
+Applied HV-EXP-027 backward dependency-chain method.
+Final-effect failure: no persistent unattended Teamchat consumer evidence.
+Downstream GitHub router is already physically PASS.
+Shared upstream clue: Teamchat Router and Buffer Continuity Guard condition-watch jobs were observed disabled; exact-schedule Morning Meeting remained enabled after running.
+Next materially different test: move only the Teamchat consumer to exact hourly scheduling and require a later scheduled run to leave GitHub acceptance evidence.
+No downstream router rebuild or connector retry.
+---
