@@ -447,3 +447,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not repeat Google ServiceLogin reloads, rebuild the working GitHub router, revive ChatGPT scheduled consumers, or create a canary before the Apps Script authentication/deployment boundary changes.
 - `next_gate`: A live authorised Apps Script project surface must become available so the existing project can be inspected, minimally extended with an authenticated POST receiver, deployed, and paired with a GitHub Actions secret.
 - `confidence`: HIGH
+
+### HV-EXP-032 — Stored task is not a verified GitHub event binding
+- `experience_id`: HV-EXP-032
+- `date_utc`: 2026-09-25T10:53:00Z
+- `source_agent`: SOL
+- `scope`: Teamchat → ChatGPT Work event-trigger wake.
+- `test`: After the `Consume Teamchat Wake` task existed and was enabled, one acceptance comment was posted to persistent PR #8: `TEAMCHAT_WAKE ACCEPTANCE_TEST #11`.
+- `physical_evidence`: PR #8 comment 5831188202 was created at 2026-09-25T10:51:28Z through the authorised HumanVibe GitHub connection. Issue #11 still had zero comments on verification, the required `TEAMCHAT_WORK_WEBHOOK_ACCEPTANCE_OK` marker was absent, and the task still reported `last_run_time: null`.
+- `conclusion`: The stored task/configuration is not evidence that a GitHub PR-comment event subscription is actually bound and delivering events to Work.
+- `reusable_principle`: **For event-driven workers, PASS requires a post-subscription source event, worker run evidence, and canonical final-effect writeback. A stored/enabled task with no event delivery is only configuration state.**
+- `what_not_to_retry`: Do not return to ChatGPT scheduler timing changes, Apps Script sender-first work, or repeated PR wake comments while the event-binding surface remains unverified.
+- `next_gate`: Repair or recreate the actual GitHub PR-comment event binding in a surface that exposes webhook/event-trigger configuration, then use exactly one post-bind event and require canonical Teamchat writeback.
+- `confidence`: HIGH
+
