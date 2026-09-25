@@ -374,3 +374,19 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not repeatedly re-enable the same scheduled consumer or re-run the same ingress canary without new evidence about why it disabled or failed.
 - `current_boundary`: GitHub Actions repository-local Teamchat routing is physically verified; persistent ChatGPT-worker consumption and Prime Calendar→Teamchat ingress remain unverified.
 - `confidence`: HIGH
+
+
+### HV-EXP-027 — Backward dependency-chain problem solving
+- `experience_id`: HV-EXP-027
+- `date_utc`: 2026-09-25T09:25:00Z
+- `source_agent`: SOL
+- `scope`: Universal HumanVibe troubleshooting and execution.
+- `trigger`: Multiple 25 Sep incidents showed that debugging the visible error first creates avoidable work when an upstream prerequisite, execution layer, or recurrence mechanism has not been verified.
+- `reusable_principle`: **Start from the required physical endpoint and work backward through the dependency chain. Verify prerequisites and layer boundaries before repairing the component where the error surfaced.**
+- `layer_rule`: Treat UI, canonical state, router, transport, executor/runtime, authentication, and final external effect as separate proof layers. PASS at one layer never proves the next.
+- `completion_rule`: **A mutation is not an outcome.** Moving mail to Deleted Items is not reclaimed storage; scheduling is not publication; build-time Firebase resources are not runtime initialization; configured automation is not persistent execution. Verify the final physical effect.
+- `recurrence_rule`: **Fix the generator, not only the symptom.** When repeated bad output comes from a rotation/routing/policy rule, repair that rule so future runs do not recreate the defect.
+- `known_failure_rule`: **Closed failures stay closed unless genuinely new evidence reopens them.** Do not retry a disproven route simply because it is convenient or familiar.
+- `diagnostic_sequence`: ENDPOINT → FINAL-EFFECT EVIDENCE → DEPENDENCY CHAIN → PREREQUISITES → LAYER BOUNDARY → MINIMUM REPAIR → FINAL-EFFECT VERIFICATION → DURABLE LEARNING.
+- `25_sep_examples`: Firebase provisioning was missing before Android integration debugging; Teamchat repository routing was already working while unattended consumption/wake was the actual missing layer; repeated social imagery came from the rotation rule rather than one post; Outlook deletion staging did not itself reclaim storage.
+- `confidence`: HIGH

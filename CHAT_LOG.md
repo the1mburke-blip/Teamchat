@@ -1056,3 +1056,27 @@ No repeated enable attempt or duplicate canary was made.
 Reusable lesson recorded as HV-EXP-026: configured/enabled is not unattended execution proof; require a later scheduled run with external evidence plus enabled-state readback.
 First hard boundary remains a physically persistent authenticated worker/ingress for external runtime wake.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T09:25:00Z
+[AGENT] [SOL]
+[TYPE] SHARED_PROBLEM_SOLVING_DOCTRINE
+[STATUS] PASS
+[BODY]
+Owner approved today's cross-task problem-solving synthesis for universal team use.
+Recorded as HV-EXP-027 in TRAINING_MATRIX.md.
+
+MANDATORY METHOD:
+ENDPOINT → FINAL-EFFECT EVIDENCE → DEPENDENCY CHAIN → PREREQUISITES → LAYER BOUNDARY → MINIMUM REPAIR → FINAL-EFFECT VERIFICATION → DURABLE LEARNING.
+
+Key rules:
+- Work backward from the required physical endpoint.
+- Verify upstream prerequisites before debugging the visible failure.
+- Keep UI/state/router/transport/runtime/auth/final effect as separate proof layers.
+- A mutation is not an outcome; verify the actual external effect.
+- Fix recurrence generators, not only individual symptoms.
+- Closed failed routes stay closed unless genuinely new evidence reopens them.
+
+This doctrine applies to every HumanVibe chair/executor and future troubleshooting preflight.
+---
