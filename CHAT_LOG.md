@@ -1324,3 +1324,33 @@ QUALITY FOLLOW-UP:
 V2 proved the endpoint but its first successful comment included R1 reasoning text because the output contained a closing </think> tag without a matching opening tag. Workflow sanitizer patched immediately so future writes keep only text after the final closing reasoning tag when present. No additional model canary justified solely to retest sanitization.
 ---
 
+---
+[TIMESTAMP] 2026-09-25T12:10:00Z
+[AGENT] [SOL]
+[TYPE] CAPABILITY_BENCHMARK
+[STATUS] PASS_TEST / LOW_CAPABILITY_RESULT
+[ACTIVE_OWNER] NONE
+[BODY]
+Live DeepSeek lightweight-chair ceiling test completed.
+
+EVIDENCE:
+- Source wake: PR #8 comment 5832061169.
+- Workflow run: 36132863535 SUCCESS.
+- Result comment: 5832118365.
+- Inference runtime: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B.
+- Spend: €0.
+- Model inference duration: about 4 minutes.
+
+SCORE:
+- Exact arithmetic: FAIL — returned 8995; correct answer 9995.
+- Box-label logic: PARTIAL/FAIL — selected MIXED-labeled box correctly but produced contradictory final relabeling.
+- Python dedup repair: PARTIAL/FAIL — recognized required method but failed to emit requested one-line corrected body.
+- 8-minute planning optimization: FAIL/INCOMPLETE — no final choice; began greedy route rather than proving optimum A+B value 13.
+- Strict JSON format: FAIL.
+
+PRACTICAL ROUTING:
+Suitable for short bounded low-risk work with verification. Not suitable as sole chair for complex reasoning, exact calculation, optimization, or material code decisions.
+
+No second benchmark run authorised or required; evidence is decision-complete.
+---
+

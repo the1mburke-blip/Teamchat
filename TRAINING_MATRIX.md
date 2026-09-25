@@ -504,3 +504,20 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `operating_rule`: When a first-party hosted model is blocked only by spend, search for an official open-weight/self-hosted release that fits already-free compute before substituting a third-party provider. Preserve the model/runtime identity boundary in PASS claims.
 - `confidence`: HIGH
 
+### HV-EXP-036 — DeepSeek 1.5B practical capability ceiling
+- `experience_id`: HV-EXP-036
+- `date_utc`: 2026-09-25T12:10:00Z
+- `source_agent`: SOL
+- `scope`: Objective live benchmark of the autonomous self-hosted DeepSeek chair.
+- `runtime`: `deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B` on GitHub public standard CPU runner.
+- `source_event`: PR #8 comment `5832061169`.
+- `run`: GitHub Actions run `36132863535`, SUCCESS; inference step approximately 4 minutes; canonical result comment `5832118365`.
+- `benchmark`: Four simultaneous tasks tested exact arithmetic, mislabeled-box logic, Python order-preserving dedup repair, and constrained value/time planning; final output required strict JSON.
+- `objective_answers`: arithmetic = 9995; box strategy = draw from box labeled MIXED, then use the observed fruit plus all-labels-wrong constraint to assign the remaining two; code fix = order-preserving hashable dedup such as `list(dict.fromkeys(xs))`; schedule = jobs A+B, 8 minutes, total value 13.
+- `result`: 0/4 tasks completed correctly to acceptance. Arithmetic was wrong (8995). Box reasoning identified the correct first draw but produced contradictory relabeling. Code reasoning recognized the need for seen/order tracking but never emitted the requested corrected one-line body. Planning did not reach a final answer before output exhaustion and began with a greedy heuristic that would miss the optimum. Strict JSON instruction was not followed.
+- `latency`: Multi-task inference consumed about 4 minutes on the free CPU runner, materially slower than simple connectivity prompts.
+- `operating_ceiling`: Use this lightweight DeepSeek chair for short bounded single-purpose tasks, extraction, classification, basic review, canaries, and second-opinion prompts where answers can be independently verified. Do not use it as sole authority for multi-step arithmetic, combinatorial planning, nontrivial code repair, or complex multi-part reasoning.
+- `verification_rule`: Any material decision from this chair requires independent verification or escalation to a stronger chair.
+- `identity_boundary`: This benchmark applies only to the self-hosted 1.5B distill seat, not to DeepSeek cloud/full R1.
+- `confidence`: HIGH for this runtime under current CPU/800-token envelope; not a universal benchmark of all prompts.
+
