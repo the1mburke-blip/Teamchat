@@ -1,0 +1,124 @@
+name: Teamchat DeepSeek Self-Hosted Canary
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: teamchat-deepseek-${{ github.event.comment.id }}
+  cancel-in-progress: false
+
+jobs:
+  deepseek_canary:
+    if: >-
+      github.event.sender.type != 'Bot' &&
+      github.event.issue.number == 8 &&
+      github.event.issue.pull_request != null &&
+      contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
+      (startsWith(github.event.comment.body, 'TEAMCHAT_WAKE') ||
+       startsWith(github.event.comment.body, '[TEAMCHAT_WAKE]')) &&
+      contains(github.event.comment.body, 'TARGET: DEEPSEEK')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout canonical Teamchat
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install CPU inference runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors sentencepiece
+
+      - name: Run genuine DeepSeek-released model
+        id: deepseek
+        shell: bash
+        env:
+          WAKE_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/run_deepseek.py <<'PY'
+          import os
+          import pathlib
+          import torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+
+          model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+          tokenizer = AutoTokenizer.from_pretrained(model_id)
+          model = AutoModelForCausalLM.from_pretrained(
+              model_id,
+              torch_dtype=torch.float32,
+              low_cpu_mem_usage=True,
+          )
+          model.eval()
+
+          wake = os.environ.get("WAKE_BODY", "")
+          prompt = (
+              "You are executing a benign connectivity canary for the HumanVibe Teamchat. "
+              "Do not perform external actions. The token DEEPSEEK is a HumanVibe chair label, "
+              "not a claim about your identity. After any internal reasoning, your final answer "
+              "must contain exactly this marker on its own line:\n"
+              "DEEPSEEK_SELFHOSTED_OK\n\n"
+              "GitHub wake payload:\n" + wake
+          )
+
+          messages = [{"role": "user", "content": prompt}]
+          rendered = tokenizer.apply_chat_template(
+              messages, tokenize=False, add_generation_prompt=True
+          )
+          inputs = tokenizer(rendered, return_tensors="pt")
+
+          with torch.inference_mode():
+              generated = model.generate(
+                  **inputs,
+                  max_new_tokens=256,
+                  do_sample=False,
+                  pad_token_id=tokenizer.eos_token_id,
+              )
+
+          new_tokens = generated[0][inputs["input_ids"].shape[1]:]
+          response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+          pathlib.Path("/tmp/deepseek-output.txt").write_text(response, encoding="utf-8")
+
+          if "DEEPSEEK_SELFHOSTED_OK" not in response:
+              raise SystemExit("DeepSeek model did not emit required canary marker")
+          PY
+          python /tmp/run_deepseek.py
+
+      - name: Write verified DeepSeek model response to PR 8
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('/tmp/deepseek-output.txt', 'utf8').trim();
+            if (!output.includes('DEEPSEEK_SELFHOSTED_OK')) {
+              core.setFailed('Required model-emitted marker missing.');
+              return;
+            }
+            const body = [
+              '[DEEPSEEK] TEAMCHAT_GENUINE_SELFHOSTED_CANARY_OK',
+              '',
+              'RUNTIME: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
+              'HOST: GitHub public standard runner · CPU inference · no model API',
+              'MODEL_OUTPUT:',
+              output.slice(0, 4000),
+              '',
+              'BOUNDARY: Genuine DeepSeek-released R1-distill runtime proven. This is not the first-party DeepSeek cloud service or the full 671B R1.'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 8,
+              body
+            });
