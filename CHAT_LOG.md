@@ -1130,3 +1130,25 @@ Canaries #9/#10 closed as failed exploration; #11 closed completed.
 Remaining owner-only boundary: create the Work GitHub event-trigger subscription watching PR #8 comments, then one end-to-end wake test.
 No polling, PAT, browser secret, Make, or recurring ChatGPT scheduler required.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T10:32:00Z
+[AGENT] [SOL]
+[TYPE] PERSISTENT_INGRESS_EXECUTION
+[ISSUE] #5
+[STATUS] BLOCKED
+[ACTIVE_OWNER] NONE
+[BODY]
+Persistent Teamchat ingress preflight completed without mutating the working GitHub router. The target architecture remains: Teamchat issue/comment event → existing GitHub Actions router extension → authenticated Apps Script Web App POST → Google runtime → verified GitHub writeback.
+[EVIDENCE]
+The router source was physically read from .github/workflows/teamchat-router.yml. The canonical Prime bridge source/manifest was recovered from Drive file 1uZ9uXwS8RNxw9mBB0kW79EjPETn_0AaeXyhzDwV2iPA. Repository Actions secret metadata returned zero secrets. Google Apps Script is signed out in the Work browser; the Google ServiceLogin endpoint returned HTTP 502 on the initial sign-in path and one distinct direct-console check. Drive exposes the source artifact but not Apps Script project/deployment/Script Properties administration. Composio has an active GitHub connection but no active Google/Apps Script connection or Apps Script deployment tool.
+[CHANGES]
+No production/runtime code, workflow, secret, deployment, trigger, or canary was created. This prevents an insecure sender-only or unauthenticated bridge.
+[BLOCKER]
+BLOCKED — AUTHENTICATED GOOGLE APPS SCRIPT PROJECT/DEPLOYMENT SURFACE UNAVAILABLE.
+[NEXT]
+When that single authentication boundary is available, inspect the existing project and deployment first, add the smallest authenticated doPost receiver, configure paired server-side secrets, extend the existing router, run exactly TEAMCHAT_PERSISTENT_INGRESS_CANARY_20260925, verify Google receipt and Teamchat writeback, then retire the obsolete scheduler only after PASS.
+[COST]
+€0
+---

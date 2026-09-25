@@ -433,3 +433,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `security`: Uses repository-scoped GITHUB_TOKEN only; no browser secret, PAT, Make route, or paid service.
 - `remaining_boundary`: Account-level ChatGPT Work event-trigger subscription to PR #8 must be enabled and end-to-end verified before unattended ChatGPT wake is PASS.
 - `confidence`: HIGH for GitHub-side bridge; final ChatGPT wake remains evidence-gated.
+
+
+### HV-EXP-031 — Do not build the sender before the authenticated receiver is deployable
+- `experience_id`: HV-EXP-031
+- `date_utc`: 2026-09-25T10:32:00Z
+- `source_agent`: SOL
+- `scope`: Persistent Teamchat ingress through GitHub Actions and Google Apps Script.
+- `verified_state`: The existing GitHub Actions Teamchat router is intact and working. The canonical Google-native Prime bridge source and manifest were recovered from Drive. The Teamchat repository has zero Actions secrets.
+- `failure_boundary`: The Work cloud browser is signed out of Apps Script and Google's ServiceLogin returned HTTP 502 on the initial sign-in route and one distinct direct-console check. The connected Drive surface can read the source artifact but cannot administer Apps Script code, deployments, Script Properties, triggers, or executions. The authorised Composio GitHub connection is active, but no authorised Google/Apps Script connection or Apps Script deployment tool is exposed.
+- `security_decision`: No unauthenticated direct webhook, sender-only workflow, repository secret, or canary was created. A shared secret cannot be safely established until both the Apps Script receiver and GitHub Actions secret can be configured and read back.
+- `reusable_principle`: **For an authenticated event bridge, prove the receiver's execution and secret-storage surface before mutating the sender. Source recovery is not deployment authority.**
+- `what_not_to_retry`: Do not repeat Google ServiceLogin reloads, rebuild the working GitHub router, revive ChatGPT scheduled consumers, or create a canary before the Apps Script authentication/deployment boundary changes.
+- `next_gate`: A live authorised Apps Script project surface must become available so the existing project can be inspected, minimally extended with an authenticated POST receiver, deployed, and paired with a GitHub Actions secret.
+- `confidence`: HIGH
