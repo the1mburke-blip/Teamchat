@@ -1,0 +1,78 @@
+name: Teamchat Prime Ingress
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: teamchat-prime-${{ github.event.comment.id }}
+  cancel-in-progress: false
+
+jobs:
+  prime_ingress:
+    if: >-
+      vars.PRIME_TEAMCHAT_ENABLED == 'true' &&
+      github.event.issue.number == 8 &&
+      github.event.issue.pull_request != null &&
+      (startsWith(github.event.comment.body, 'TEAMCHAT_WAKE') ||
+       startsWith(github.event.comment.body, '[TEAMCHAT_WAKE]')) &&
+      contains(github.event.comment.body, 'TARGET: PRIME')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout canonical Teamchat
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Run real Gemini Prime chair
+        id: prime
+        uses: google-github-actions/run-gemini-cli@v0
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: gemini-3.8-flash
+          prompt: |-
+            You are Gemini Prime, the real HumanVibe supervisory chair, running from the canonical Teamchat repository.
+
+            This is a connection/ingress proof only. Do not mutate repository files, task ownership, production systems, or external services.
+
+            Before answering:
+            1. Read OPERATING_RULES.md.
+            2. Read TRAINING_MATRIX.md.
+            3. Read HANDOFF_PROTOCOL.md.
+            4. Read the relevant tail of CHAT_LOG.md.
+            5. Inspect this GitHub wake payload:
+
+            ${{ github.event.comment.body }}
+
+            Return exactly these four lines:
+            [PRIME] TEAMCHAT_REAL_CHAIR_OK
+            TRAINING_REVIEW: PASS
+            SOURCE: GitHub issue_comment -> Gemini CLI
+            WAKE_COMMENT_ID: ${{ github.event.comment.id }}
+
+      - name: Write Prime response into PR #8
+        if: ${{ steps.prime.outputs.summary != '' }}
+        uses: actions/github-script@v7
+        env:
+          PRIME_OUTPUT: ${{ steps.prime.outputs.summary }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const output = String(process.env.PRIME_OUTPUT || '').trim();
+            if (!output) {
+              core.setFailed('Gemini Prime returned no summary.');
+              return;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 8,
+              body: output
+            });
