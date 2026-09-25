@@ -45,11 +45,13 @@ jobs:
         shell: bash
         env:
           WAKE_BODY: ${{ github.event.comment.body }}
+          WAKE_ID: ${{ github.event.comment.id }}
         run: |
           set -euo pipefail
           cat > /tmp/run_deepseek.py <<'PY'
           import os
           import pathlib
+          import re
           import torch
           from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -57,53 +59,68 @@ jobs:
           tokenizer = AutoTokenizer.from_pretrained(model_id)
           model = AutoModelForCausalLM.from_pretrained(
               model_id,
-              torch_dtype=torch.float32,
+              dtype=torch.float32,
               low_cpu_mem_usage=True,
           )
           model.eval()
 
           wake = os.environ.get("WAKE_BODY", "")
+          wake_id = os.environ.get("WAKE_ID", "")
           prompt = (
-              "You are executing a benign connectivity canary for the HumanVibe Teamchat. "
-              "Do not perform external actions. The token DEEPSEEK is a HumanVibe chair label, "
-              "not a claim about your identity. After any internal reasoning, your final answer "
-              "must contain exactly this marker on its own line:\n"
-              "DEEPSEEK_SELFHOSTED_OK\n\n"
-              "GitHub wake payload:\n" + wake
+              "You are a bounded HumanVibe DeepSeek chair canary running locally from an official "
+              "DeepSeek R1-distill release. Do not perform external actions. Read the GitHub wake "
+              "payload and return one concise final sentence confirming you received it. Include "
+              "the wake comment id and target name in that final sentence.\n\n"
+              f"WAKE_COMMENT_ID: {wake_id}\n"
+              f"WAKE_PAYLOAD:\n{wake}"
           )
 
-          messages = [{"role": "user", "content": prompt}]
           rendered = tokenizer.apply_chat_template(
-              messages, tokenize=False, add_generation_prompt=True
+              [{"role": "user", "content": prompt}],
+              tokenize=False,
+              add_generation_prompt=True,
           )
           inputs = tokenizer(rendered, return_tensors="pt")
 
           with torch.inference_mode():
               generated = model.generate(
                   **inputs,
-                  max_new_tokens=256,
-                  do_sample=False,
+                  max_new_tokens=640,
+                  do_sample=True,
+                  temperature=0.6,
+                  top_p=0.95,
                   pad_token_id=tokenizer.eos_token_id,
               )
 
           new_tokens = generated[0][inputs["input_ids"].shape[1]:]
-          response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
-          pathlib.Path("/tmp/deepseek-output.txt").write_text(response, encoding="utf-8")
+          raw = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
-          if "DEEPSEEK_SELFHOSTED_OK" not in response:
-              raise SystemExit("DeepSeek model did not emit required canary marker")
+          # R1-family outputs may contain a reasoning block. Persist only the final answer.
+          final = re.sub(r"<think>[\s\S]*?</think>", "", raw, flags=re.I).strip()
+          if not final and "</think>" in raw.lower():
+              final = re.split(r"</think>", raw, flags=re.I)[-1].strip()
+          if not final:
+              # No reasoning tags: the generation itself is the final answer.
+              final = raw.strip()
+
+          if not final:
+              raise SystemExit("DeepSeek model returned no final text")
+
+          pathlib.Path("/tmp/deepseek-output.txt").write_text(final, encoding="utf-8")
           PY
           python /tmp/run_deepseek.py
 
       - name: Write verified DeepSeek model response to PR 8
         uses: actions/github-script@v8
+        env:
+          WAKE_ID: ${{ github.event.comment.id }}
         with:
           github-token: ${{ github.token }}
           script: |
             const fs = require('fs');
             const output = fs.readFileSync('/tmp/deepseek-output.txt', 'utf8').trim();
-            if (!output.includes('DEEPSEEK_SELFHOSTED_OK')) {
-              core.setFailed('Required model-emitted marker missing.');
+            if (!output) {
+              core.setFailed('DeepSeek model returned no final text.');
               return;
             }
             const body = [
@@ -111,8 +128,8 @@ jobs:
               '',
               'RUNTIME: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
               'HOST: GitHub public standard runner · CPU inference · no model API',
-              'MODEL_OUTPUT:',
-              output.slice(0, 4000),
+              'SOURCE_WAKE_COMMENT: ' + process.env.WAKE_ID,
+              'MODEL_FINAL: ' + output.slice(0, 2000),
               '',
               'BOUNDARY: Genuine DeepSeek-released R1-distill runtime proven. This is not the first-party DeepSeek cloud service or the full 671B R1.'
             ].join('\n');

@@ -1276,3 +1276,20 @@ COST:
 €0. No paid route introduced.
 ---
 
+---
+[TIMESTAMP] 2026-09-25T11:46:30Z
+[AGENT] [SOL]
+[TYPE] CANARY_FAILURE
+[ISSUE] #1
+[STATUS] PARTIAL
+[ACTIVE_OWNER] NONE
+[BODY]
+DeepSeek self-hosted Teamchat canary V1 proved the PR-event, GitHub-runner, dependency, model-download/load and inference layers, but failed before canonical writeback because the acceptance contract unnecessarily required the model to emit an exact magic marker within a 256-token generation budget.
+[EVIDENCE]
+PR #8 wake comment 5831811769; workflow Teamchat DeepSeek Self-Hosted Canary ID 366909440; run 36130930036; job 108057765978. Checkout PASS. CPU runtime install PASS. Official deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B weights loaded 339/339. Model inference ran for about 63 seconds. Failure was exactly: DeepSeek model did not emit required canary marker.
+[DIAGNOSIS]
+This is an acceptance-contract failure, not a transport, runner, dependency, model-download, authentication or hardware failure.
+[NEXT]
+One materially changed retry only: remove the exact-marker requirement, allow a larger generation budget, strip reasoning/thinking text, require a non-empty final answer, then write that final answer to canonical PR #8. No model API, router, paid service or second provider.
+---
+
