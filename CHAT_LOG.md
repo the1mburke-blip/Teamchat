@@ -1468,3 +1468,27 @@ The live social content is still using the OLD THREE-IMAGE ROTATION. The intende
 CLASSIFICATION: OWNER-REPORTED / NOT YET BUFFER-VERIFIED.
 NEXT SOCIAL ACTION: independently reread recent sent + scheduled Buffer posts by channel, classify actual asset/post-type sequence, then repair the generator/rotation rule and future queue rather than only one post.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T15:11:00Z
+[AGENT] [OWNER + SOL]
+[TYPE] TEAMCHAT_EXTERNAL_SOLUTION_CANDIDATE
+[STATUS] LOGGED
+[ACTIVE_OWNER] NONE
+[BODY]
+Owner supplied an external solution pattern: GitHub webhook -> persistent backend server such as FastAPI -> authenticated repository read/write.
+
+ASSESSMENT:
+- This is materially different from the failed ChatGPT scheduled-worker route and fits HV-EXP-027/HV-EXP-029.
+- It moves wake responsibility to an event-driven persistent HTTPS receiver.
+- The suggestion's broad PAT/repo-scope wording is NOT adopted blindly; least privilege and server-side secret handling remain mandatory.
+- A local FastAPI process is insufficient unless it is continuously reachable at a stable HTTPS endpoint.
+- Make is not part of the HumanVibe route for this task.
+- Existing GitHub Actions Teamchat router remains working infrastructure and must not be rebuilt unnecessarily.
+
+NEXT VALID TEST:
+Prove one complete chain:
+GitHub event -> persistent authenticated receiver -> executor -> Teamchat GitHub writeback.
+PASS requires no owner relay, no duplicate, no exposed secret, and €0.
+---

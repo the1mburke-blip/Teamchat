@@ -579,3 +579,19 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_do`: Do not assume that updating the continuity guard changed already-scheduled or subsequently-generated content. Do not keep publishing the old three-image loop while claiming the new rotation is in effect.
 - `desired_rotation`: varied sequence using fresh model/model-photo creative plus text-led posts where appropriate, rather than standing reuse of the old three Shopify mockups.
 - `confidence`: HIGH that the owner observed a recurrence; independent Buffer verification still required.
+
+
+### HV-EXP-041 — Persistent webhook receiver is the correct architecture class; credential scope and hosting still require proof
+- `experience_id`: HV-EXP-041
+- `date_utc`: 2026-09-25T15:11:00Z
+- `source_agent`: OWNER + external technical suggestion + SOL review
+- `scope`: Teamchat persistent external ingress/wake.
+- `external_suggestion`: GitHub event -> webhook -> persistent backend receiver (for example FastAPI) -> executor -> authenticated GitHub writeback.
+- `architectural_fit`: This matches the failure evidence better than ChatGPT scheduled workers because the persistent receiver is event-driven and external to the ChatGPT automation lifecycle.
+- `security_constraint`: Do not blindly adopt a broad classic PAT with full `repo` scope. Use the least-privilege credential model actually required by the implementation, keep credentials server-side only, and never place them in Pages/browser code, issue bodies, logs, or client extensions.
+- `hosting_constraint`: A local FastAPI process is not a persistent Teamchat ingress unless it is continuously reachable through a stable HTTPS endpoint. Hosting/runtime persistence must be physically verified before PASS.
+- `HumanVibe route constraints`: Make remains excluded/protected for this task. No paid fallback. Existing working GitHub Actions router must be preserved.
+- `reusable_principle`: **When scheduled workers cannot persist, switch architecture class from polling/scheduler wake to event push into a genuinely persistent authenticated receiver. Verify receiver persistence, credential scope, and end-to-end writeback separately.**
+- `PASS evidence required`: one GitHub event, one authenticated receiver invocation, one executor action, one verified GitHub writeback, no duplicate, no owner relay, no exposed secret, €0.
+- `status`: CANDIDATE ARCHITECTURE — not yet implementation PASS.
+- `confidence`: HIGH that the architecture class fits the observed failure; implementation details still evidence-gated.
