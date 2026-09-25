@@ -66,14 +66,26 @@ jobs:
 
           wake = os.environ.get("WAKE_BODY", "")
           wake_id = os.environ.get("WAKE_ID", "")
-          prompt = (
-              "You are a bounded HumanVibe DeepSeek chair canary running locally from an official "
-              "DeepSeek R1-distill release. Do not perform external actions. Read the GitHub wake "
-              "payload and return one concise final sentence confirming you received it. Include "
-              "the wake comment id and target name in that final sentence.\n\n"
-              f"WAKE_COMMENT_ID: {wake_id}\n"
-              f"WAKE_PAYLOAD:\n{wake}"
-          )
+
+          if "MODE: CAPABILITY_CEILING_TEST" in wake:
+              prompt = (
+                  "You are the bounded HumanVibe DeepSeek chair running locally from the official "
+                  "DeepSeek-R1-Distill-Qwen-1.5B release. Solve the benchmark in the GitHub wake. "
+                  "Reason carefully, but your FINAL answer must be only one valid JSON object with "
+                  "exactly these keys: arithmetic, box_strategy, code_fix, schedule. "
+                  "Do not add markdown or commentary outside the JSON.\n\n"
+                  f"WAKE_COMMENT_ID: {wake_id}\n"
+                  f"BENCHMARK:\n{wake}"
+              )
+          else:
+              prompt = (
+                  "You are a bounded HumanVibe DeepSeek chair canary running locally from an official "
+                  "DeepSeek R1-distill release. Do not perform external actions. Read the GitHub wake "
+                  "payload and return one concise final sentence confirming you received it. Include "
+                  "the wake comment id and target name in that final sentence.\n\n"
+                  f"WAKE_COMMENT_ID: {wake_id}\n"
+                  f"WAKE_PAYLOAD:\n{wake}"
+              )
 
           rendered = tokenizer.apply_chat_template(
               [{"role": "user", "content": prompt}],
@@ -85,7 +97,7 @@ jobs:
           with torch.inference_mode():
               generated = model.generate(
                   **inputs,
-                  max_new_tokens=640,
+                  max_new_tokens=800,
                   do_sample=True,
                   temperature=0.6,
                   top_p=0.95,
@@ -95,10 +107,7 @@ jobs:
           new_tokens = generated[0][inputs["input_ids"].shape[1]:]
           raw = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
-          # R1-family outputs may contain a reasoning block. Persist only the final answer.
           if "</think>" in raw.lower():
-              # Some R1-distill generations contain a closing tag without an opening tag.
-              # In that case everything before the last closing tag is reasoning.
               final = re.split(r"</think>", raw, flags=re.I)[-1].strip()
           else:
               final = re.sub(r"<think>[\s\S]*?</think>", "", raw, flags=re.I).strip()
@@ -116,6 +125,7 @@ jobs:
         uses: actions/github-script@v8
         env:
           WAKE_ID: ${{ github.event.comment.id }}
+          WAKE_BODY: ${{ github.event.comment.body }}
         with:
           github-token: ${{ github.token }}
           script: |
@@ -125,15 +135,16 @@ jobs:
               core.setFailed('DeepSeek model returned no final text.');
               return;
             }
+            const benchmark = String(process.env.WAKE_BODY || '').includes('MODE: CAPABILITY_CEILING_TEST');
             const body = [
-              '[DEEPSEEK] TEAMCHAT_GENUINE_SELFHOSTED_CANARY_OK',
+              benchmark ? '[DEEPSEEK] TEAMCHAT_CAPABILITY_BENCHMARK_RESULT' : '[DEEPSEEK] TEAMCHAT_GENUINE_SELFHOSTED_CANARY_OK',
               '',
               'RUNTIME: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
               'HOST: GitHub public standard runner · CPU inference · no model API',
               'SOURCE_WAKE_COMMENT: ' + process.env.WAKE_ID,
-              'MODEL_FINAL: ' + output.slice(0, 2000),
+              'MODEL_FINAL: ' + output.slice(0, 5000),
               '',
-              'BOUNDARY: Genuine DeepSeek-released R1-distill runtime proven. This is not the first-party DeepSeek cloud service or the full 671B R1.'
+              'BOUNDARY: Genuine DeepSeek-released R1-distill runtime. Not the first-party DeepSeek cloud service or full 671B R1.'
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
