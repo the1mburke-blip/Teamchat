@@ -28,8 +28,10 @@ jobs:
             const issue = context.payload.issue;
             const wakePr = 8;
             const body = String(issue.body || '');
-            const targetMatch = body.match(/^\\[TO\\]\\s*\\[?([^\\]\\n]+)\\]?/mi);
-            const target = targetMatch ? targetMatch[1].trim() : 'UNSPECIFIED';
+            const toLine = body.split('\n').find(line => line.trim().toUpperCase().startsWith('[TO]'));
+            const target = toLine
+              ? toLine.trim().slice(4).replaceAll('[', '').replaceAll(']', '').trim()
+              : 'UNSPECIFIED';
             await github.rest.issues.createComment({
               owner, repo, issue_number: wakePr,
               body: '[TEAMCHAT_WAKE] NEW_TASK #' + issue.number +
