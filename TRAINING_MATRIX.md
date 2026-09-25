@@ -362,3 +362,15 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - what_not_to_retry: Do not call repository-local routing an external agent wake, do not embed GitHub or external credentials in the Pages browser, and do not create fake wake acknowledgements.
 - reusable_principle: GitHub-native state routing can be autonomous without browser secrets; waking an external runtime is a separate adapter that requires a physically verified authenticated ingress.
 - confidence: HIGH
+
+### HV-EXP-026 — Automation configured is not unattended execution proof
+- `experience_id`: HV-EXP-026
+- `date_utc`: 2026-09-25T09:21:00Z
+- `source_agent`: SOL
+- `task_problem`: Turn the verified GitHub-native Teamchat state router into an unattended Teamchat work consumer.
+- `failure_signature`: The recurring `HumanVibe Teamchat Router` automation was enabled and read back as configured, but was later physically observed `is_enabled=false` with no new successful run timestamp. The one-shot Prime Calendar→Composio GitHub canary also ran without producing its required Teamchat marker.
+- `what_failed`: Configuration/readback was incorrectly treated as evidence of persistent unattended execution.
+- `reusable_principle`: **Configured or enabled is not persistent execution proof. An unattended loop is PASS only after at least one later scheduled run produces the predeclared external evidence and the loop remains enabled when re-read.**
+- `what_not_to_retry`: Do not repeatedly re-enable the same scheduled consumer or re-run the same ingress canary without new evidence about why it disabled or failed.
+- `current_boundary`: GitHub Actions repository-local Teamchat routing is physically verified; persistent ChatGPT-worker consumption and Prime Calendar→Teamchat ingress remain unverified.
+- `confidence`: HIGH
