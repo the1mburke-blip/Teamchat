@@ -35,7 +35,7 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
   <div class="sync"><span id="lamp" class="lamp warn"></span><span id="syncText">Syncing…</span></div>
 </header>
 
-<div class="banner"><span><b>SHARED STATE LIVE</b> — Team Room + tasks read directly from Teamchat GitHub.</span><span>GitHub router: <b>CONNECTED</b> · unattended front door: <b>ENABLED</b> · specialist wake: <b>PARTIAL</b></span></div>
+<div class="banner"><span><b>SHARED STATE LIVE</b> — Team Room + tasks read directly from Teamchat GitHub.</span><span>GitHub router: <b>CONNECTED</b> · unattended front door: <b>DISABLED / UNVERIFIED</b> · specialist wake: <b>PARTIAL</b></span></div>
 
 <div class="tabs">
   <button class="tab active" data-view="room">Team Room</button>
@@ -89,12 +89,12 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
       <div class="eyebrow">Dispatch packet</div><h2>Preview</h2><pre id="packet">Complete the objective to preview.</pre>
       <div class="eyebrow">GitHub-native control commands</div>
       <p><code>/claim SOL</code> · <code>/status SOL EXECUTING</code> · <code>/handoff SOL PRIME</code> · <code>/evidence SOL PASS | physical proof</code> · <code>/release SOL</code></p>
-      <div class="eyebrow">External wake boundary</div><p>Repository-local routing/state mutation is handled immediately by GitHub Actions. The single HumanVibe Teamchat Router condition-watch now consumes safe unowned REQUESTED work without owner relay. Prime may be routed only through the proven Google bridge; Grace, DeepSeek, Claude and Codex still require their own physically verified ingress before any wake is claimed.</p>
+      <div class="eyebrow">External wake boundary</div><p>Repository-local routing/state mutation is handled immediately by GitHub Actions. The unattended Teamchat consumer is not currently verified: its scheduled automation was later observed disabled without a successful new run. Repository-local GitHub routing remains live. Prime, Grace, DeepSeek, Claude and Codex still require physically verified persistent ingress before any wake is claimed.</p>
     </div>
   </div>
 </section>
 
-<footer>HumanVibe Team OS · canonical source: the1mburke-blip/Teamchat · room #6 · GitHub router + unattended front door · zero browser secrets</footer>
+<footer>HumanVibe Team OS · canonical source: the1mburke-blip/Teamchat · room #6 · GitHub router · unattended front door unverified · zero browser secrets</footer>
 </div>
 <script>
 const OWNER='the1mburke-blip', REPO='Teamchat', ROOM=6;

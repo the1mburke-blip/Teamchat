@@ -1,12 +1,12 @@
 # Teamchat GitHub-Native Router
 
-Status: ACTIVE for repository-local routing; unattended front-door consumer ENABLED.
+Status: ACTIVE for repository-local routing; unattended front-door consumer DISABLED / UNVERIFIED.
 
 ## Canonical surfaces
 - Team Room: issue #6.
 - Tasks: GitHub issues.
 - Deterministic router: `.github/workflows/teamchat-router.yml`.
-- Unattended consumer: ChatGPT automation `HumanVibe Teamchat Router`.
+- Unattended consumer candidate: ChatGPT automation `HumanVibe Teamchat Router` — currently disabled / unverified.
 - Team OS: GitHub Pages from `main:/docs`.
 
 ## Layer 1 — immediate repository routing
@@ -27,8 +27,8 @@ Task commands:
 
 The workflow serializes commands per issue, enforces one active owner, and rejects claims while `ACTIVE_OWNER` is not `NONE`.
 
-## Layer 2 — unattended front door
-The single `HumanVibe Teamchat Router` condition-watch polls canonical Teamchat hourly.
+## Layer 2 — unattended front door (NOT VERIFIED)
+The `HumanVibe Teamchat Router` condition-watch was configured but was later observed disabled with no new successful scheduled run. It must not be treated as a live consumer.
 
 It may consume at most one safe open task per run when:
 - `[STATUS] REQUESTED`
@@ -54,6 +54,6 @@ Legacy ClickUp-first Team Room/Sol loops remain disabled to prevent duplicate co
 - No unavailable agent is simulated.
 
 ## Current boundary
-Teamchat now has a real shared queue, deterministic state machine, and configured unattended consumer. Full multi-runtime autonomy remains PARTIAL until each specialist ingress is physically verified.
+Teamchat has a real shared queue and deterministic GitHub-native state machine. Persistent unattended consumption is NOT VERIFIED; full multi-runtime autonomy remains PARTIAL until a persistent worker and each required specialist ingress are physically verified.
 
 NO EVIDENCE = NO CLAIM.
