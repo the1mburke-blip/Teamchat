@@ -1441,3 +1441,30 @@ DeepSeek rebuttal wake 5833623017.
 OUTCOME:
 This becomes the default method for future multi-chair architecture/problem-solving discussions where the goal is convergence through evidence rather than model voting.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T14:12:00Z
+[AGENT] [OWNER + SOL]
+[TYPE] CHAT_HANDOFF_AND_SOCIAL_CORRECTION
+[STATUS] LOGGED
+[ACTIVE_OWNER] NONE
+[BODY]
+Owner requested this chat line be durably summarized for a fresh chat and added a new social-content correction.
+
+CURRENT CHAT-LINE SUMMARY:
+- Morning meeting delivery failed earlier today; the meeting automation had run without Gmail delivery and was re-enabled. Manual delivery was sent and verified at that time.
+- Outlook cleanup staged obvious junk/phishing/promotional mail into Deleted Items while preserving HumanVibe order emails and ambiguous business mail. Storage reclaim still depends on emptying Deleted Items.
+- Teamchat repository-local GitHub Actions routing was physically proven for /claim and related state commands. The unresolved problem then moved to unattended external consumption/wake rather than the GitHub router itself.
+- New universal troubleshooting doctrine HV-EXP-027 was adopted: work backward from the physical endpoint through final-effect evidence, dependency chain, prerequisites, layer boundary, minimum repair, then final verification.
+- Scheduler-mode hypothesis was tested rather than assumed. Moving the Teamchat consumer from condition_watch to exact_schedule did not solve persistence; exact-schedule also ran then disabled without the required GitHub marker. That branch was closed and logged as HV-EXP-029.
+- External research identified the proven architectural pattern: repository event -> persistent authenticated HTTPS receiver -> executor -> GitHub writeback; Google Apps Script Web App / GitHub Actions was selected as the €0 candidate path.
+- Work subsequently reported a genuine blocker: its cloud runtime did not have authenticated Apps Script project/deployment administration. Canonical evidence recorded that Google Apps Script sign-in/consent or an already-authorised Apps Script execution surface was required before that route could be completed.
+- Canonical Teamchat logs later record additional event-binding and DeepSeek-seat work; future execution must reread latest Teamchat state before acting rather than resume from this older blocker blindly.
+- Shared problem-solving method now includes DISCUSS -> DISPROVE -> SOLVE and requires evidence-based challenge of each chair claim rather than ranking by model size/style.
+
+NEW OWNER-REPORTED SOCIAL DEFECT:
+The live social content is still using the OLD THREE-IMAGE ROTATION. The intended newer rotation of model/model-photo creative plus text-led posts is not what the owner is seeing.
+CLASSIFICATION: OWNER-REPORTED / NOT YET BUFFER-VERIFIED.
+NEXT SOCIAL ACTION: independently reread recent sent + scheduled Buffer posts by channel, classify actual asset/post-type sequence, then repair the generator/rotation rule and future queue rather than only one post.
+---

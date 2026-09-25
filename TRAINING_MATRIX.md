@@ -565,3 +565,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `operating_rule`: Multi-agent value comes from adversarial evidence review, not model voting. No chair gets automatic authority and no chair gets automatic dismissal.
 - `equal_discussion_rule`: Equal discussion means equal standing to surface and challenge claims, not equal capability or equal execution authority. Simpler reasoning can be deliberately useful because it may expose a hidden assumption, contradiction, or unnecessary layer that stronger chairs overlook through complexity.
 - `confidence`: HIGH
+
+
+### HV-EXP-040 — Declared social rotation is not publication-state proof
+- `experience_id`: HV-EXP-040
+- `date_utc`: 2026-09-25T14:12:00Z
+- `source_agent`: OWNER + SOL
+- `scope`: HumanVibe social-content continuity and Buffer verification.
+- `owner_observation`: Social content is still using the old three-image product rotation rather than the intended newer rotation mixing model photos, product/model imagery, and text-led posts.
+- `verification_state`: OWNER-REPORTED / NOT YET INDEPENDENTLY RE-READ FROM BUFFER.
+- `reusable_principle`: **A configured content rule is not publication-state proof. Verify the actual live/scheduled asset mix after the rule change.**
+- `required_check`: Read the current Buffer queue and recent sent posts by channel, classify each asset/post type, and compare the observed sequence against the intended rotation before claiming the visual-content fix is active.
+- `what_not_to_do`: Do not assume that updating the continuity guard changed already-scheduled or subsequently-generated content. Do not keep publishing the old three-image loop while claiming the new rotation is in effect.
+- `desired_rotation`: varied sequence using fresh model/model-photo creative plus text-led posts where appropriate, rather than standing reuse of the old three Shopify mockups.
+- `confidence`: HIGH that the owner observed a recurrence; independent Buffer verification still required.
