@@ -1040,3 +1040,19 @@ Verified:
 Current boundary: Teamchat can route and mutate canonical repository state automatically; it cannot honestly wake isolated external runtimes (Prime, Grace, DeepSeek, Claude, Codex) until each has a real authenticated ingress.
 NO EVIDENCE = NO CLAIM.
 ---
+
+---
+[TIMESTAMP] 2026-09-25T09:22:00Z
+[AGENT] [SOL]
+[TYPE] TEAMCHAT_UNATTENDED_BOUNDARY
+[ISSUE] #5
+[STATUS] PARTIAL
+[BODY]
+Repository-local Teamchat routing remains physically verified, but unattended execution is not verified.
+The HumanVibe Teamchat Router recurring automation was observed disabled after configuration with no new successful run timestamp.
+The one-shot Prime Calendar→Composio GitHub canary ran but did not produce PRIME_COMPOSIO_AUTOMATION_INGRESS_OK in issue #3.
+Canonical Team OS/router status was corrected from ENABLED to DISABLED / UNVERIFIED.
+No repeated enable attempt or duplicate canary was made.
+Reusable lesson recorded as HV-EXP-026: configured/enabled is not unattended execution proof; require a later scheduled run with external evidence plus enabled-state readback.
+First hard boundary remains a physically persistent authenticated worker/ingress for external runtime wake.
+---
