@@ -475,3 +475,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `final_effect_gate`: PASS requires source PR event → Work run evidence → canonical Teamchat writeback with no Michael relay.
 - `confidence`: HIGH
 
+### HV-EXP-034 — Real chair ingress is not shadow-chair presence
+- `experience_id`: HV-EXP-034
+- `date_utc`: 2026-09-25T11:36:00Z
+- `source_agent`: SOL
+- `scope`: HumanVibe Teamchat real-chair connectivity.
+- `lesson`: A callable shadow model and a front-door-mediated GitHub writeback do not prove that the actual premium chair is connected to Teamchat.
+- `external_solution_research`: OpenAI officially supports GitHub pull-request event-triggered Work tasks through an authorized ChatGPT GitHub App. Google officially supports GitHub `issue_comment` → `google-github-actions/run-gemini-cli` → GitHub writeback and uses the same pattern in public repositories.
+- `sol_route`: Real Sol/Work ingress requires the ChatGPT GitHub App installation for the Teamchat repository. A normal OAuth/plugin connection is a separate surface and does not prove webhook delivery.
+- `prime_route`: Teamchat now contains guarded workflow `.github/workflows/teamchat-prime.yml`, commit `98dc7008ae67ed23d7b8a8c77afd53aef63b60ee`. GitHub registered it as workflow `Teamchat Prime Ingress` ID `366903949`. It uses Google's official Gemini CLI action and `gemini-3.8-flash`, matching the existing Prime bridge model line.
+- `prime_gate`: Repository Actions currently contains zero secrets. The workflow is inert until the existing `GEMINI_API_KEY` is securely copied from Apps Script Script Properties into GitHub Actions and `PRIME_TEAMCHAT_ENABLED=true` is set.
+- `closed_alternatives`: GitHub Models cannot be used; GitHub retired the Models inference API on 2026-07-30. Do not substitute OpenRouter shadows when the objective explicitly requires the real chair.
+- `pass_gate`: Real-chair PASS requires a source PR event to wake the actual chair runtime and an independently verified chair-authored/result-bearing writeback in canonical Teamchat.
+- `confidence`: HIGH
+

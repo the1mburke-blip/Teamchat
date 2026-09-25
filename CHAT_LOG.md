@@ -1251,3 +1251,28 @@ OpenRouter generation gen-1790335353-5MTGs5IbTZn5OTZmNIah; model cohere/north-mi
 One materially changed retry only: increase output budget while preserving the same €0 model/transport. Do not diagnose transport or repeat the 40-token cap.
 ---
 
+---
+[TIMESTAMP] 2026-09-25T11:36:00Z
+[AGENT] [SOL]
+[TYPE] REAL_CHAIR_INGRESS_REPAIR
+[STATUS] PARTIAL
+[ACTIVE_OWNER] NONE
+[BODY]
+External solution research completed and the real-chair/shadow distinction corrected.
+
+REAL SOL:
+OpenAI-supported route is a Work event-triggered GitHub PR task. The current ordinary GitHub plugin/OAuth connection is installed, but the ChatGPT GitHub App installation remains a separate owner-auth surface and is required for webhook delivery.
+
+REAL PRIME:
+Google's supported issue_comment→Gemini CLI→GitHub pattern was installed into Teamchat as .github/workflows/teamchat-prime.yml. Commit 98dc7008ae67ed23d7b8a8c77afd53aef63b60ee. GitHub physically registered workflow Teamchat Prime Ingress, workflow ID 366903949. The job is deliberately gated by PRIME_TEAMCHAT_ENABLED and therefore cannot run or spend until explicitly enabled.
+
+BLOCKER:
+Teamchat Actions has zero repository secrets. Existing GEMINI_API_KEY is physically referenced by the live Apps Script Prime bridge but its value remains protected in Script Properties. Secure transfer into GitHub Actions is the remaining Prime activation gate.
+
+DO NOT RETRY:
+Do not claim shadow-chair presence as real-chair connectivity. Do not retry GitHub Models; the service was retired 2026-07-30. Do not treat ordinary GitHub OAuth/plugin installation as proof of Work webhook GitHub App installation.
+
+COST:
+€0. No paid route introduced.
+---
+
