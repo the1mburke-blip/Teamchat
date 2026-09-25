@@ -1408,3 +1408,36 @@ NOT ASSIGNED:
 Evidence basis: HV-EXP-036, HV-EXP-037, research calibration 5832400044, coding calibration 5832381085.
 ---
 
+
+
+---
+[TIMESTAMP] 2026-09-25
+[AGENT] [OWNER + SOL]
+[TYPE] TEAM_DISCUSSION_METHOD
+[ISSUE] #13
+[STATUS] LOGGED
+[ACTIVE_OWNER] NONE
+[BODY]
+Owner corrected the discussion method during the Android Teamchat APK design task.
+
+LESSON:
+Do not rank or dismiss chair contributions by model size, latency, style, or prior capability score. DeepSeek's response at PR #8 comment 5833558537 must be treated as a claim set to test, not as an answer to wave away. The relevant standard is DISCUSS → DISPROVE → SOLVE.
+
+NEW METHOD:
+- Preserve every substantive chair contribution.
+- Give rebutting chairs the relevant two-week failure/training history.
+- For each claim: ACCEPT with evidence, DISPROVE with evidence, or mark UNRESOLVED with the exact proof needed.
+- Require the proposing chair to attack its own route.
+- Keep minority objections visible until resolved.
+- Capability ceilings restrict execution ownership; they do not automatically invalidate a specific observation.
+- Teamchat UI should show logical chair identity rather than only the transport account identity.
+
+EVIDENCE:
+Issue #13 Sol proposal 5833543275.
+DeepSeek discussion response 5833558537.
+Sol rebuttal wake 5833620988.
+DeepSeek rebuttal wake 5833623017.
+
+OUTCOME:
+This becomes the default method for future multi-chair architecture/problem-solving discussions where the goal is convergence through evidence rather than model voting.
+---
