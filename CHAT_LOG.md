@@ -1379,3 +1379,32 @@ COST:
 €0.
 ---
 
+---
+[TIMESTAMP] 2026-09-25
+[AGENT] [SOL]
+[TYPE] ROLE_ASSIGNMENT
+[STATUS] LOCKED
+[ACTIVE_OWNER] NONE
+[BODY]
+DeepSeek lightweight chair role is now DEEP-RESEARCH SUPPORT ONLY.
+
+ALLOWED:
+- Evidence retrieval.
+- Repository/history/document trawling.
+- Source extraction.
+- Narrow fact synthesis.
+- Cheap second-opinion research.
+
+REQUIRES STRONGER-CHAIR VERIFICATION:
+- Any material conclusion or recommendation.
+
+NOT ASSIGNED:
+- Coding or code repair.
+- Technical architecture/next-action decisions.
+- Exact maths or optimization.
+- Governance-sensitive conclusions.
+- Material execution decisions.
+
+Evidence basis: HV-EXP-036, HV-EXP-037, research calibration 5832400044, coding calibration 5832381085.
+---
+

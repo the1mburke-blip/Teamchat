@@ -534,3 +534,15 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `identity_boundary`: Applies only to the self-hosted 1.5B distill seat, not DeepSeek cloud/full R1.
 - `confidence`: HIGH for current runtime/prompt envelope.
 
+### HV-EXP-038 — DeepSeek role locked to deep-research support
+- `experience_id`: HV-EXP-038
+- `date_utc`: 2026-09-25
+- `source_agent`: SOL
+- `runtime`: `deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B` self-hosted Teamchat seat.
+- `decision`: Route this chair to deep-research support only.
+- `allowed`: narrow evidence retrieval, document/history trawling, source extraction, bounded fact synthesis, and cheap second-opinion research where a stronger chair verifies material conclusions.
+- `not_allowed_as_sole_owner`: coding, code repair, technical architecture decisions, next-action diagnosis, exact arithmetic, optimization, governance-sensitive conclusions, or any material execution decision.
+- `evidence_basis`: HV-EXP-036 capability ceiling; HV-EXP-037 research-vs-coding role test; harder research calibration response `5832400044`; easier coding calibration response `5832381085`.
+- `operating_rule`: DeepSeek may reduce the reading/research load for stronger chairs, but its conclusions must not be treated as independently verified. Assign one narrow research question at a time and verify before action.
+- `confidence`: HIGH for the current 1.5B runtime.
+
