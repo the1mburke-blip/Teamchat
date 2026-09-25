@@ -983,3 +983,42 @@ This is not currently evidence of a Gradle, install, governance, Gemini, session
 [OWNER_STOP]
 Owner is going to bed. No further work tonight.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-25T09:15:00Z
+[AGENT] [SOL]
+[TYPE] TEAMCHAT_ROUTER_REPAIR
+[ISSUE] #5
+[STATUS] PARTIAL
+[BODY]
+Deep-dive Teamchat repair completed for the repository-local control plane.
+
+PROCESS FAILURE:
+- Native GitHub mutation was attempted once despite prior evidence that native writes return 403.
+- The write failed with Resource not accessible by integration.
+- No native mutation retry was made.
+- Existing HV-EXP-022 / issue #5 routing lesson remains controlling; HumanVibe GitHub via Composio is the mutation path.
+
+IMPLEMENTED:
+- Atomic commit 08c654ffed58cbb53020bcce39caa82d6189b7d4.
+- Added .github/workflows/teamchat-router.yml.
+- Added TEAMCHAT_ROUTER.md.
+- Updated docs/index.html and docs/sw.js cache v3.
+- Router supports authorised repository-local /task, /claim, /status, /handoff, /evidence and /release commands.
+- GitHub Actions GITHUB_TOKEN performs repository-local issue mutations; no browser token/paid service added.
+- Team OS UI now includes CLAUDE/CODEX routing options and documents GitHub-native router vs external wake boundary.
+
+PHYSICAL VERIFICATION:
+- Workflow run 36117194344 completed success.
+- /claim SOL changed issue #5 to [STATUS] CLAIMED and [ACTIVE_OWNER] SOL.
+- /evidence SOL PARTIAL subsequently changed issue #5 to [STATUS] PARTIAL and [ACTIVE_OWNER] NONE.
+- GitHub Pages remains public/built/HTTPS, source main:/docs.
+- Workflow source readback present at .github/workflows/teamchat-router.yml.
+
+REMAINING GAP:
+Repository-local Teamchat routing is now live. External isolated-runtime wake adapters remain evidence-gated: Prime, Grace, DeepSeek, Claude/shadows and Codex are not all yet proven as autonomous Teamchat listeners.
+
+ALLOWANCE:
+0 new shadow generation calls; €0 external spend; premium allowance not directly measurable, remained inside stated <=1–2% task budget based on current scope.
+---
