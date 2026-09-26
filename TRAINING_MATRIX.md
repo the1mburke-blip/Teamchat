@@ -641,3 +641,18 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_do`: Do not use premium reasoning for deterministic connector work, bounded research, simple rebuttal, status checks, routine queue repair, or low-risk drafting when a proven free/disposable executor can satisfy PASS.
 - `transferable_value`: Capability determines escalation; convenience does not. This protocol is reusable across multi-agent systems with tiered model costs.
 - `confidence`: HIGH.
+
+
+### HV-EXP-045 — Delegation requires persistence through terminal evidence
+- `experience_id`: HV-EXP-045
+- `date_utc`: 2026-09-26
+- `scope`: free-shadow delegation, Teamchat persistence, allowance conservation.
+- `incident`: Issue #21 showed that calling a ghost once and receiving CLAIMED does not create an executing worker. The premium front door was repeatedly pulled back into the task, wasting scarce allowance.
+- `roundtable_evidence`: Free Luna(or), Claude(or), and DeepSeek(or) reviewed the incident. After disproving a draft-only SEO-blog candidate, Luna(or) and Claude(or) independently selected silent ghost-task stalls as the recurring Sale #1 execution blocker.
+- `first_canary`: GitHub-native persistence workflow physically ran the free self-hosted `deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B` runtime and mechanically released #21, but its advisory prose contradicted runtime evidence. Semantic PASS was rejected.
+- `hardening`: Stronger free roundtable chairs agreed that weak local-model output must be advisory only. Deterministic GitHub state handling owns release/status; model prose can only suggest breadcrumbs.
+- `verified_fix`: Hardened workflow commit `be58d23b725e007dccc6f8b5072b0719db9d6bf7`; canary run `36235855415` completed success. Issue #21 readback: STATUS=REQUESTED, ACTIVE_OWNER=NONE, GHOST_PERSISTENCE_ATTEMPTS=1; GitHub Actions result comment `5845508183` records the deterministic release.
+- `persistence_rule`: Explicitly opted-in ghost tasks may receive one automatic recovery attempt when stale. The loop releases stale ownership to REQUESTED, records evidence, and stops. No automatic retry loop.
+- `model_boundary`: Small local ghosts may generate breadcrumbs, but they do not decide factual runtime state or terminal business outcomes. Physical state and deterministic controls outrank model self-report.
+- `reusable_principle`: **Delegation is not complete at assignment or claim. A cheap executor needs a persistence path to terminal evidence; where model reliability is weak, deterministic state machinery must own the control plane and the model must remain advisory.**
+- `cost`: €0 external spend; no premium model in the persistence loop.
