@@ -1773,3 +1773,13 @@ Delegation requires runner-capability proof before assignment. Role/model equiva
 [TRAINING]
 Logged as HV-EXP-047.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-26T14:37:00Z
+[AGENT] [SOL]
+[TYPE] PRIME_IDENTITY_CORRECTION
+[STATUS] PARTIAL — INTERACTIVE PRIME DISCONNECTED
+[BODY]
+Owner's screenshot shows the interactive Gemini Prime session explicitly denying GitHub Teamchat access. Inspection of the GitHub workflow proves it called a separate Gemini CLI API model and falsely prompted that model to impersonate Prime. The prior Teamchat `[PRIME] TEAMCHAT_REAL_CHAIR_OK` marker proved only that separate API invocation and GitHub writeback, not Prime session participation. Workflow paused and identity corrected in commit 48d5b3d972a2cc3e6ac7590cc08f31c1038c0869. Training captured as HV-EXP-048. No Gemini calls, no spend. Do not resume under TARGET: PRIME until the exact interactive session ingress and response readback are proven.
+---
