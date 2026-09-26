@@ -1,4 +1,4 @@
-name: Teamchat Prime Ingress
+name: Teamchat Gemini CLI Proxy (paused - identity unverified)
 
 on:
   issue_comment:
@@ -15,17 +15,9 @@ concurrency:
 
 jobs:
   prime_ingress:
-    if: >-
-      vars.PRIME_TEAMCHAT_ENABLED == 'true' &&
-      github.event.issue.number == 8 &&
-      github.event.issue.pull_request != null &&
-      (github.event.comment.user.login == 'github-actions[bot]' ||
-       github.event.comment.author_association == 'OWNER' ||
-       github.event.comment.author_association == 'MEMBER' ||
-       github.event.comment.author_association == 'COLLABORATOR') &&
-      (startsWith(github.event.comment.body, 'TEAMCHAT_WAKE') ||
-       startsWith(github.event.comment.body, '[TEAMCHAT_WAKE]')) &&
-      contains(github.event.comment.body, 'TARGET: PRIME')
+    # Paused: invokes an API model, not Michael's interactive Prime session.
+    # Do not reactivate for TARGET: PRIME.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -104,14 +96,14 @@ jobs:
             );
             core.setOutput('target_issue', targetIssue ? String(targetIssue) : '');
 
-      - name: Run real Gemini Prime chair
+      - name: Run Gemini CLI proxy (paused)
         id: prime
         uses: google-github-actions/run-gemini-cli@v0
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-3.8-flash
           prompt: |-
-            You are Gemini Prime, the real HumanVibe supervisory chair, running inside the canonical Teamchat repository.
+            You are a separate Gemini CLI API invocation, not Michael's interactive Prime session.
 
             This is a REAL TEAMCHAT CONSUMER run, not a connection-proof-only canary.
 
@@ -153,12 +145,12 @@ jobs:
             const targetIssue = Number(process.env.TARGET_ISSUE || 0) || 0;
             const wakeId = String(process.env.WAKE_COMMENT_ID || '');
             if (!output) {
-              core.setFailed('Gemini Prime returned no summary.');
+              core.setFailed('Gemini CLI proxy returned no summary.');
               return;
             }
 
             const body = [
-              '[PRIME] TEAMCHAT_RESPONSE',
+              '[GEMINI_CLI_PROXY] TEAMCHAT_RESPONSE',
               'SOURCE_WAKE_COMMENT: ' + wakeId,
               '',
               output
