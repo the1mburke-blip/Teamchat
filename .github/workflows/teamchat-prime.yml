@@ -1,4 +1,4 @@
-name: Teamchat Prime Ingress
+name: Teamchat Gemini CLI Proxy (paused - identity unverified)
 
 on:
   issue_comment:
@@ -15,13 +15,9 @@ concurrency:
 
 jobs:
   prime_ingress:
-    if: >-
-      vars.PRIME_TEAMCHAT_ENABLED == 'true' &&
-      github.event.issue.number == 8 &&
-      github.event.issue.pull_request != null &&
-      (startsWith(github.event.comment.body, 'TEAMCHAT_WAKE') ||
-       startsWith(github.event.comment.body, '[TEAMCHAT_WAKE]')) &&
-      contains(github.event.comment.body, 'TARGET: PRIME')
+    # Paused: this workflow invokes a separate Gemini API model, not the owner's
+    # interactive Prime session. Do not reactivate under TARGET: PRIME.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -33,14 +29,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run real Gemini Prime chair
+      - name: Run Gemini CLI proxy (paused)
         id: prime
         uses: google-github-actions/run-gemini-cli@v0
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-3.8-flash
           prompt: |-
-            You are Gemini Prime, the real HumanVibe supervisory chair, running from the canonical Teamchat repository.
+            You are a separate Gemini CLI API invocation. You are not Michael's interactive Prime session.
 
             This is a connection/ingress proof only. Do not mutate repository files, task ownership, production systems, or external services.
 
@@ -54,7 +50,7 @@ jobs:
             ${{ github.event.comment.body }}
 
             Return exactly these four lines:
-            [PRIME] TEAMCHAT_REAL_CHAIR_OK
+            [GEMINI_CLI_PROXY] API_INVOCATION_ONLY
             TRAINING_REVIEW: PASS
             SOURCE: GitHub issue_comment -> Gemini CLI
             WAKE_COMMENT_ID: ${{ github.event.comment.id }}
