@@ -1,0 +1,256 @@
+name: Teamchat Ghost Persistence Loop
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Optional ghost task issue number to force once'
+        required: false
+        type: string
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: teamchat-ghost-persistence
+  cancel-in-progress: false
+
+jobs:
+  recover_stalled_ghost:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      startsWith(github.event.comment.body, 'GHOST_PERSISTENCE_WAKE')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout canonical Teamchat
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Select one opted-in stalled ghost task
+        id: select
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { owner, repo } = context.repo;
+
+            const readField = (body, name, fallback = '') => {
+              const m = String(body || '').match(new RegExp('^\\[' + name + '\\]\\s*(.*)$', 'mi'));
+              return m ? m[1].trim() : fallback;
+            };
+
+            const commentBody = String(context.payload.comment?.body || '');
+            const commentMatch = commentBody.match(/^GHOST_PERSISTENCE_WAKE\s+ISSUE:\s*(\d+)/mi);
+            const inputIssue = String(context.payload.inputs?.issue_number || '').trim();
+            const forced = Number(inputIssue || (commentMatch ? commentMatch[1] : 0)) || 0;
+
+            let candidate = null;
+            if (forced) {
+              candidate = (await github.rest.issues.get({ owner, repo, issue_number: forced })).data;
+            } else {
+              const all = await github.paginate(github.rest.issues.listForRepo, {
+                owner, repo, state: 'open', per_page: 100
+              });
+              const cutoff = Date.now() - (45 * 60 * 1000);
+              const eligible = all.filter(i => {
+                if (i.pull_request || i.number === 6 || i.number === 8 || i.number === 22) return false;
+                const body = String(i.body || '');
+                const status = readField(body, 'STATUS', '').toUpperCase();
+                const active = readField(body, 'ACTIVE_OWNER', '').toUpperCase();
+                const to = readField(body, 'TO', '').toUpperCase();
+                const enabled = readField(body, 'GHOST_PERSISTENCE', '').toUpperCase() === 'ENABLED';
+                const attempts = Number(readField(body, 'GHOST_PERSISTENCE_ATTEMPTS', '0')) || 0;
+                const ghostOwned = active.includes('(OR)') || to.includes('(OR)');
+                const recoverable = ['REQUESTED','CLAIMED','EXECUTING','VERIFYING'].includes(status);
+                return enabled && attempts < 1 && ghostOwned && recoverable &&
+                  new Date(i.updated_at).getTime() < cutoff;
+              }).sort((a,b) => new Date(a.updated_at) - new Date(b.updated_at));
+              candidate = eligible[0] || null;
+            }
+
+            if (!candidate) {
+              core.setOutput('found', 'false');
+              core.notice('No eligible stalled ghost task.');
+              return;
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: candidate.number, per_page: 100
+            });
+            const payload = {
+              number: candidate.number,
+              title: candidate.title,
+              body: candidate.body || '',
+              updated_at: candidate.updated_at,
+              comments: comments.slice(-20).map(c => ({
+                author: c.user?.login || '',
+                created_at: c.created_at,
+                body: c.body || ''
+              }))
+            };
+            const out = path.join(process.env.RUNNER_TEMP, 'ghost-candidate.json');
+            fs.writeFileSync(out, JSON.stringify(payload), 'utf8');
+            core.setOutput('found', 'true');
+            core.setOutput('issue_number', String(candidate.number));
+            core.setOutput('candidate_path', out);
+
+      - name: Install free CPU inference runtime
+        if: steps.select.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors sentencepiece
+
+      - name: Run persistence ghost once
+        if: steps.select.outputs.found == 'true'
+        shell: bash
+        env:
+          CANDIDATE_PATH: ${{ steps.select.outputs.candidate_path }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/run_persistence_ghost.py <<'PY'
+          import json, os, pathlib, re, torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+
+          candidate = json.load(open(os.environ["CANDIDATE_PATH"], encoding="utf-8"))
+          keys = ["HV-EXP-044", "shadow", "ghost", "sale #1", "preflight", "evidence", "blocker", "persistence"]
+          chunks = []
+          for filename in ["TRAINING_MATRIX.md", "CHAT_LOG.md", "OPERATING_RULES.md"]:
+              p = pathlib.Path(filename)
+              if not p.exists():
+                  continue
+              lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
+              selected = []
+              for idx, line in enumerate(lines):
+                  if any(k.lower() in line.lower() for k in keys):
+                      selected.extend(lines[max(0, idx-2):min(len(lines), idx+4)])
+              if selected:
+                  chunks.append(f"--- {filename} ---\n" + "\n".join(selected[-220:]))
+
+          training = "\n\n".join(chunks)[-24000:]
+          task = json.dumps(candidate, ensure_ascii=False)[-24000:]
+          prompt = f"""
+          You are the HumanVibe persistence ghost running from the official
+          deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B model on a free GitHub CPU runner.
+
+          Your only job is to eliminate SILENT STALL on one ghost-owned Sale #1 task.
+          Read the canonical training and issue evidence below.
+
+          Do not invent external actions. Do not claim Shopify, Buffer, email, browser,
+          API, or customer-facing effects unless the issue evidence already proves them.
+          If the task can be completed entirely from repository evidence/reasoning, give
+          terminal PASS evidence. If it requires an unavailable external capability,
+          return BLOCKED with the exact first missing capability. If it merely needs a
+          better bounded handoff, RELEASE it and give the smallest ordered breadcrumbs
+          for the next ghost/executor. One automatic recovery attempt only.
+
+          FINAL OUTPUT FORMAT EXACTLY:
+          VERDICT: PASS|BLOCKED|RELEASE
+          EVIDENCE: <one concise paragraph grounded only in supplied evidence>
+          BREADCRUMBS:
+          - <step 1, if needed>
+          - <step 2, if needed>
+          STOP_RULE: <why this issue must not be automatically re-run again>
+
+          CANONICAL TRAINING:
+          {training}
+
+          TARGET ISSUE:
+          {task}
+          """
+
+          model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+          tokenizer = AutoTokenizer.from_pretrained(model_id)
+          model = AutoModelForCausalLM.from_pretrained(
+              model_id, dtype=torch.float32, low_cpu_mem_usage=True
+          )
+          model.eval()
+          rendered = tokenizer.apply_chat_template(
+              [{"role":"user","content":prompt}],
+              tokenize=False,
+              add_generation_prompt=True
+          )
+          inputs = tokenizer(rendered, return_tensors="pt")
+          with torch.inference_mode():
+              generated = model.generate(
+                  **inputs,
+                  max_new_tokens=700,
+                  do_sample=True,
+                  temperature=0.4,
+                  top_p=0.9,
+                  pad_token_id=tokenizer.eos_token_id
+              )
+          new = generated[0][inputs["input_ids"].shape[1]:]
+          raw = tokenizer.decode(new, skip_special_tokens=True).strip()
+          if "</think>" in raw.lower():
+              final = re.split(r"</think>", raw, flags=re.I)[-1].strip()
+          else:
+              final = re.sub(r"<think>[\s\S]*?</think>", "", raw, flags=re.I).strip() or raw
+          if not final:
+              raise SystemExit("Persistence ghost returned no final text")
+          pathlib.Path("/tmp/ghost-persistence-result.txt").write_text(final, encoding="utf-8")
+          PY
+          python /tmp/run_persistence_ghost.py
+
+      - name: Persist ghost result and remove silent stall
+        if: steps.select.outputs.found == 'true'
+        uses: actions/github-script@v8
+        env:
+          ISSUE_NUMBER: ${{ steps.select.outputs.issue_number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const issue_number = Number(process.env.ISSUE_NUMBER);
+            const final = fs.readFileSync('/tmp/ghost-persistence-result.txt', 'utf8').trim();
+            const now = new Date().toISOString();
+
+            const issue = (await github.rest.issues.get({ owner, repo, issue_number })).data;
+            let body = String(issue.body || '');
+            const setField = (name, value) => {
+              const line = '[' + name + '] ' + value;
+              const re = new RegExp('^\\[' + name + '\\]\\s*.*$', 'mi');
+              body = re.test(body) ? body.replace(re, line) : (body.trim() + '\n' + line).trim();
+            };
+
+            const verdictMatch = final.match(/^VERDICT:\s*(PASS|BLOCKED|RELEASE)/mi);
+            const verdict = verdictMatch ? verdictMatch[1].toUpperCase() : 'RELEASE';
+
+            setField('GHOST_PERSISTENCE_ATTEMPTS', '1');
+            setField('GHOST_PERSISTENCE_LAST_RUN', now);
+            if (verdict === 'PASS') {
+              setField('STATUS', 'PASS');
+              setField('ACTIVE_OWNER', 'NONE');
+            } else if (verdict === 'BLOCKED') {
+              setField('STATUS', 'BLOCKED');
+              setField('ACTIVE_OWNER', 'NONE');
+            } else {
+              setField('STATUS', 'REQUESTED');
+              setField('ACTIVE_OWNER', 'NONE');
+            }
+
+            await github.rest.issues.update({ owner, repo, issue_number, body });
+            await github.rest.issues.createComment({
+              owner, repo, issue_number,
+              body: [
+                '[GHOST_PERSISTENCE_RESULT]',
+                'RUNTIME: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
+                'HOST: GitHub public CPU runner · no model API · €0',
+                'AUTOMATIC_ATTEMPT: 1/1',
+                '',
+                final
+              ].join('\n').slice(0, 12000)
+            });
