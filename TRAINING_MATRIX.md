@@ -699,3 +699,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `counter_rule`: Increment this counter only for a newly distinct, explicitly acknowledged avoidable token/allowance waste incident. Do not inflate it with duplicate complaints about the same failure.
 - `cost`: Avoidable premium/front-door allowance consumed; external spend remained €0.
 - `confidence`: HIGH.
+
+
+### HV-EXP-048 — Gemini API invocation is not the interactive Prime session
+- date_utc: 2026-09-26
+- source_agent: SOL
+- task_problem: Teamchat falsely identified a GitHub Actions Gemini CLI/API response as Michael's interactive Prime participating in the team room.
+- failure_signature: `.github/workflows/teamchat-prime.yml` used an API key and `google-github-actions/run-gemini-cli@v0` while its prompt declared the runtime "the real HumanVibe supervisory chair" and wrote `[PRIME] TEAMCHAT_REAL_CHAIR_OK`. The owner displayed the separate interactive Gemini session saying it did not access Teamchat.
+- what_failed: Model-family and API-key equivalence was mistaken for session identity, context, authorization, and shared memory; scarce allowance was spent debugging a route that could never prove the requested session received a task.
+- successful_recovery: Paused the mislabeled workflow and corrected its identity label and prompt in commit 48d5b3d972a2cc3e6ac7590cc08f31c1038c0869.
+- what_not_to_retry: Do not send another canary to the Gemini API as proof of interactive Prime ingress or label an API-model response `[PRIME]`.
+- reusable_principle: Prove the exact destination identity and two-way task receipt in the intended interactive session before connecting execution or declaring that chair present. Model name, provider and key are insufficient.
+- capability_prerequisite: A supported authorized ingress to that particular Gemini Apps session, plus independent response readback. If absent, mark interactive Prime disconnected.
+- confidence: HIGH for the workflow identity mismatch; no claim that an interactive Prime ingress exists.
