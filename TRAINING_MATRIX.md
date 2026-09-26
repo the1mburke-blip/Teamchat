@@ -611,3 +611,15 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `incident_repair_evidence`: Six Threads text-only posts were scheduled through 27 Sep 19:00 Dublin and read back from Buffer. Facebook/Instagram browser repair moved to Teamchat issue #18. Existing Buffer guard was converted to a 48-hour queue-floor controller scheduled twice daily.
 - `what_not_to_retry`: Do not merely re-enable the old hourly guard, do not direct-publish around Buffer, and do not call a configured automation or draft queue continuity proof.
 - `confidence`: HIGH.
+
+
+### HV-EXP-043 — Buffer media wrapper gap is not a Buffer pipeline blocker
+- `experience_id`: HV-EXP-043
+- `scope`: HumanVibe Facebook/Instagram Buffer scheduling when the high-level connector omits media/post-type fields.
+- `incident`: On 26 Sep 2026 the exposed BUFFER_PUBLISH_POSTS wrapper could not create the canonical Facebook/Instagram media formats, while the authenticated Buffer account and underlying Buffer GraphQL API remained available.
+- `root_cause`: The blocker was the abstraction layer, not Buffer itself. Treating the wrapper schema as the whole platform falsely converted a solvable media-post task into a blocked social lane.
+- `reusable_principle`: **When an authorised platform connector wrapper omits required fields but the same authorised platform exposes them through its documented API, use the existing authenticated connection's same-platform proxy/API surface before escalating or declaring the pipeline blocked.**
+- `minimum_repair`: Keep Buffer as the sole publisher; create public media URLs; use Buffer `createPost` with `assets`, channel metadata and `customScheduled`; then physically reread Buffer.
+- `verification_evidence`: Buffer readback showed six Facebook + six Instagram scheduled JPEG posts through 27 Sep 19:00 Europe/Dublin, all with `publishing_error=null`; Threads queue remained intact.
+- `what_not_to_retry`: Do not direct-publish through Facebook/Instagram APIs, do not rebuild the pipeline, do not create another scheduler, do not treat the limited wrapper as a platform-wide capability wall, and do not wait on a browser-only route when the authorised same-platform API path is already available.
+- `cost`: €0 external spend.
