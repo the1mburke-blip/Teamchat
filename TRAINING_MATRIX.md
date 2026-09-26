@@ -656,3 +656,27 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `model_boundary`: Small local ghosts may generate breadcrumbs, but they do not decide factual runtime state or terminal business outcomes. Physical state and deterministic controls outrank model self-report.
 - `reusable_principle`: **Delegation is not complete at assignment or claim. A cheap executor needs a persistence path to terminal evidence; where model reliability is weak, deterministic state machinery must own the control plane and the model must remain advisory.**
 - `cost`: €0 external spend; no premium model in the persistence loop.
+
+### HV-EXP-046 — DeepSeek capability utilization: adversarial analysis, structured synthesis, and meta-work
+- `experience_id`: HV-EXP-046
+- `date_utc`: 2026-09-26
+- `source_agent`: OWNER + SOL
+- `scope`: Current HumanVibe DeepSeek seat utilization.
+- `owner_input`: DeepSeek surfaced ten higher-leverage interaction patterns: cross-document synthesis, chained refinement, image+text reasoning, persona/role steering, layered explanations, self-verification, structured outputs, opposing-view simulation, surgical iterative editing, and meta-prompt design.
+- `reusable_principle`: **Use DeepSeek as a low-cost analytical amplifier, not as the control plane. Route bounded synthesis, skeptical review, argument/rebuttal, structured extraction, self-critique, prompt/meta-work, and iterative refinement to DeepSeek before spending premium reasoning where the task is text-capable and non-sensitive.**
+- `current_runtime_boundary`: The current self-hosted DeepSeek lane is a small DeepSeek-released R1-distill runtime and remains advisory under HV-EXP-045. Do not infer persistent memory across independent runs, native multimodal/image capability, arbitrary file access, browser/tool authority, or factual runtime-state authority unless separately proven.
+- `multi_file_rule`: DeepSeek may compare multiple documents only when the chair supplies a bounded sanitized packet or extracted text. File transport/access must be proven separately.
+- `state_rule`: Preserve task state explicitly in the wake/task packet; do not rely on conversational memory surviving separate GitHub Action/model invocations.
+- `multimodal_rule`: Image+text work is eligible only if the selected DeepSeek runtime/input path is physically proven to accept image input. Otherwise use another capable chair or provide a textual/structured image description.
+- `persona_rule`: Use role steering deliberately: skeptical reviewer, red-team architect, contradiction finder, cost auditor, or domain specialist. Persona changes analysis style, not execution authority.
+- `layered_explanation_rule`: Request multi-level explanations when ambiguity blocks execution (plain-language → technical → implementation consequences), but keep final action evidence-based.
+- `self_verification_rule`: Require DeepSeek to critique its own answer/checklist and enumerate assumptions, missed edge cases, and disconfirming evidence. Self-critique is advisory; deterministic state and physical verification still outrank model narrative.
+- `structured_output_rule`: Prefer compact JSON/Markdown tables/decision matrices for machine-routable outputs: claim, evidence, counterevidence, confidence, required proof, next action.
+- `opposition_rule`: Use DeepSeek to generate the strongest opposing case and attempt to disprove the proposed route. This directly supports DISCUSS → DISPROVE → SOLVE. Do not let DeepSeek select the winning route without external evidence.
+- `iterative_refinement_rule`: For long-form or technical material, request narrow edits to the weak section instead of regenerating the whole artifact.
+- `meta_work_rule`: Route prompt design, adversarial test generation, checklists, challenge sets, and critique frameworks to DeepSeek when safe; these are high-value/low-cost uses.
+- `preferred_task_classes`: pre-mortems; failure-pattern matching; issue/log cross-reference; architecture rebuttal; solution comparison; prompt/test generation; structured extraction; cheap second-pass QA; checklist auditing; argument stress-testing.
+- `excluded_task_classes`: secrets/private customer data; unproven multimodal work; authoritative runtime-state decisions; irreversible mutations; authenticated execution requiring tools the runtime does not possess.
+- `cost_rule`: Apply HV-EXP-044 cheapest-capable-executor-first. Where DeepSeek can satisfy the reasoning endpoint safely, use it before premium Sol/Luna/Work/Codex reasoning.
+- `confidence`: HIGH for the utilization doctrine; individual capabilities remain capability-gated by runtime evidence.
+
