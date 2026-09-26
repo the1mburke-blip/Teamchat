@@ -118,3 +118,28 @@ Before call 1, the active chair must record:
 The chair must search the Training Matrix and relevant prior logs for matching provider, tool, system, and failure signatures. If a known failure exists, it must be surfaced before execution and the proposed route must account for it.
 
 **No attestation = no call.** This is not discretionary and cannot be bypassed by calling the task trivial, treating it as a canary/test, or relying on native model memory.
+
+## DeepSeek utilization profile — HV-EXP-046
+
+Use the current DeepSeek seat as a **bounded analytical/review specialist**, not as the deterministic control plane.
+
+Preferred routes:
+- cross-document/log synthesis from sanitized text packets;
+- skeptical/red-team review and strongest-counterargument generation;
+- DISCUSS → DISPROVE support: claim / evidence / counterevidence / unresolved-proof matrices;
+- self-critique passes that enumerate assumptions, missed edge cases, and disconfirming evidence;
+- structured JSON/Markdown outputs for downstream routing;
+- prompt design, adversarial test generation, checklists, pre-mortems, and other meta-work;
+- surgical refinement of a specific weak section rather than full regeneration;
+- layered explanation when the team needs plain-language, technical, and implementation-level views.
+
+Capability gates:
+- Do not assume memory survives separate wake/model runs; pass explicit state/context.
+- Do not assume image input or multimodal analysis until that exact runtime/path is proven.
+- Do not assume native file access; supply bounded sanitized extracts or proven file inputs.
+- DeepSeek self-verification is advisory. Repository/runtime state and physical endpoint evidence remain authoritative.
+- Do not send secrets, owner-private data, credentials, or protected customer data.
+- Irreversible mutations and authenticated execution require a chair/runtime with the proven tool authority.
+
+Routing rule: when these constraints are satisfied, DeepSeek is a preferred cheap first-pass or second-pass analytical chair before premium reasoning, consistent with HV-EXP-044 and HV-EXP-045.
+
