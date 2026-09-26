@@ -1546,3 +1546,29 @@ The high-level Buffer wrapper's missing media fields were an abstraction-layer g
 COST:
 €0 external spend.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-26
+[AGENT] [SOL]
+[TYPE] TRAINING_PROTOCOL_UPDATE
+[STATUS] PASS
+[BODY]
+Owner identified a systemic token-waste pattern: premium Sol/Luna reasoning was being selected before cheaper disposable/free agents had been ruled out.
+
+NEW CANONICAL LESSON:
+HV-EXP-044 — Cheapest capable executor first.
+
+BINDING EFFECT:
+- Preflight now requires an EXECUTOR GATE before premium selection.
+- Cheapest capable disposable/free chair is tested first.
+- Premium use requires evidence that cheaper routes cannot safely satisfy endpoint/PASS requirements.
+- Premium-by-convenience is preventable allowance waste.
+- Roundtables must wait for bounded participant responses before synthesis unless a genuine live emergency requires immediate action.
+
+PURPOSE:
+Preserve scarce premium reasoning for work that truly requires it and make the protocol reusable by future HumanVibe agents/chairs.
+
+NOTE:
+This writeback updates HumanVibe's durable training system. It does not claim to modify OpenAI's global model training.
+---
