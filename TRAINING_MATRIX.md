@@ -623,3 +623,21 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `verification_evidence`: Buffer readback showed six Facebook + six Instagram scheduled JPEG posts through 27 Sep 19:00 Europe/Dublin, all with `publishing_error=null`; Threads queue remained intact.
 - `what_not_to_retry`: Do not direct-publish through Facebook/Instagram APIs, do not rebuild the pipeline, do not create another scheduler, do not treat the limited wrapper as a platform-wide capability wall, and do not wait on a browser-only route when the authorised same-platform API path is already available.
 - `cost`: €0 external spend.
+
+
+### HV-EXP-044 — Cheapest capable executor first
+- `experience_id`: HV-EXP-044
+- `date_utc`: 2026-09-26
+- `source_agent`: OWNER + SOL
+- `scope`: allowance conservation and executor selection.
+- `incident`: Premium reasoning was used for work that a disposable/free chair could have handled.
+- `root_cause`: Preflight checked whether execution was possible, but did not force selection of the lowest-cost capable executor first.
+- `reusable_principle`: **Premium reasoning is the exception, not the default. Route every eligible task to the cheapest capable disposable executor first. Escalate only after lower-cost routes are evidence-disqualified by capability, safety, privacy, authentication, HUMAN_ELEMENT, or endpoint-quality requirements.**
+- `executor_gate`: Before naming an executor, preflight must identify the lowest-cost viable chair/runtime and either select it or record why it cannot satisfy the endpoint.
+- `selection_order`: history/training scan → cheapest capable executor → capability/auth/quota/privacy check → allowance estimate → endpoint/PASS evidence → execute.
+- `premium_gate`: Sol/Luna/Work/Codex are not selected merely because they are available, convenient, faster, or already in context.
+- `roundtable_rule`: A team roundtable is not complete until the bounded participant responses are received and synthesized, unless a genuine live emergency requires immediate action.
+- `allowance_rule`: Under critical allowance conditions, choosing premium when a proven cheaper route exists is preventable allowance waste even if the task succeeds.
+- `what_not_to_do`: Do not use premium reasoning for deterministic connector work, bounded research, simple rebuttal, status checks, routine queue repair, or low-risk drafting when a proven free/disposable executor can satisfy PASS.
+- `transferable_value`: Capability determines escalation; convenience does not. This protocol is reusable across multi-agent systems with tiered model costs.
+- `confidence`: HIGH.
