@@ -1687,3 +1687,44 @@ CURRENT TERMINAL STATE
 ALLOWANCE_CLOSE
 - Closeout/logging work remained within the <0.3% estimate.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-26T12:36:00Z
+[AGENT] [SOL]
+[TYPE] SIGNATURE_TEE_V2_STORE_AND_PIPELINE
+[STATUS] PASS
+[BODY]
+Owner added a new Printful-backed HumanVibe Signature Tee V2 and requested store merchandising, approved-asset intake, and a V2-specific content-pipeline requirement.
+
+PHYSICAL SOURCE VERIFICATION
+- Shopify already contained Printful-synced product gid://shopify/Product/9412600528950, originally titled Humanvibe V2, ACTIVE, SKU 7241488_9526, one current Printful-linked variant. No duplicate Shopify product was created.
+- Drive source inspection identified V2 artwork humanVibeV2.jpg and four newly-created Printful-native white-shirt V2 mockups.
+- Visual inspection confirmed all four mockups carry the same V2 artwork and are genuine product/model mockup variants.
+
+APPROVED ASSET VAULT
+- Canonical folder: Production Asset Vault, Drive ID 1nPKBFXyBt9kpj6HnfyurRdfjrCaIBlA4.
+- Copied only V2 artwork + the four new V2 Printful mockups into the vault.
+- Verified Drive IDs:
+  - Artwork: 1xoFs-aS43N-ciot_Md30d8DvkFGW8v-P
+  - Mockup 01: 1DbQJE0ef2XuvoCmMOI-OronrhBIquaVJ
+  - Mockup 02: 1VVAY12uuIGznd2eGkf5cCYrK19WBQuWz
+  - Mockup 03: 1ftH5KbMIlYU0U7PEDrIIsBtcMrNzSsw5
+  - Mockup 04: 10Nks2M7JcgtFelzDn2F-bKP3S7OMiGC_
+
+SHOPIFY UPDATE
+- Preserved the existing Printful-linked product and SKU.
+- Renamed product to HumanVibe Signature Tee V2 | Pro-Human Graphic Streetwear.
+- Replaced generic Printful marketing copy with HumanVibe V2 positioning while retaining verified garment/material/disclaimer facts.
+- Uploaded all four Drive-sourced V2 mockups to Shopify and added them to the V2 product gallery.
+- Product remains ACTIVE. Price/variant/SKU/fulfillment linkage were not changed.
+
+PIPELINE CONTROL
+- Added canonical CONTENT_PIPELINE.md with binding V1/V2 version routing, approved-vault provenance, rotation, destination matching, channel rules, and QA gates.
+- README now requires CONTENT_PIPELINE.md review before product/content/social execution.
+- Key rule: V1 and V2 are separate media/destination lanes; V2 imagery may only promote the V2 product and only from the approved Production Asset Vault.
+- No AI-generated or substitute V2 creative is permitted.
+
+COST
+- €0 external spend.
+---

@@ -21,16 +21,18 @@ Roster membership does not grant execution authority. Exactly one active owner m
 - `CHAT_LOG.md` — append-only conversation record.
 - `OPERATING_RULES.md` — immutable coordination and evidence rules.
 - `HANDOFF_PROTOCOL.md` — task ownership, routing, and discuss protocol.
+- `CONTENT_PIPELINE.md` — binding HumanVibe content/asset provenance, version routing, and V1/V2 publishing requirements.
 - GitHub Issues — one issue per executable work item; comments hold discussion and evidence.
 
 ## Start here
 
 1. Read `OPERATING_RULES.md`.
 2. Check open Issues and `CHAT_LOG.md` for an active owner.
-3. Claim work through `HANDOFF_PROTOCOL.md`.
-4. Execute only after duplicate/conflict checks.
-5. Post evidence and terminal status.
-6. Append the material outcome to `CHAT_LOG.md`.
+3. For product/content/social work, read `CONTENT_PIPELINE.md` before selecting media or destinations.
+4. Claim work through `HANDOFF_PROTOCOL.md`.
+5. Execute only after duplicate/conflict checks.
+6. Post evidence and terminal status.
+7. Append the material outcome to `CHAT_LOG.md`.
 
 Initialized: 2026-09-23T16:39:12Z
 
