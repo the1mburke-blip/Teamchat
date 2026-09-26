@@ -1595,3 +1595,95 @@ This writeback updates HumanVibe's durable training system. It does not claim to
 [PASS_EVIDENCE] Commit SHA plus readback showing this preflight and the subsequent session-summary entry.
 [FIRST_HARD_BLOCKER] Canonical GitHub write/readback failure or inability to recover the latest relevant Work/Teamchat evidence.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-26T11:21:00Z
+[AGENT] [OWNER + SOL]
+[TYPE] CHAT_LINE_HANDOFF
+[STATUS] PASS_PENDING_READBACK
+[ACTIVE_OWNER] NONE
+[BODY]
+Owner requested a durable closeout of the current chat line and a compact handoff for a fresh conversation.
+
+CURRENT CHAT-LINE SUMMARY
+
+1. MORNING REPORTING
+- The HumanVibe morning meeting failed to arrive earlier in the session.
+- The morning automation had run without delivering the expected Gmail message; it was re-enabled and a manual replacement was sent and verified at that time.
+- Reporting rule reinforced: automation state is not delivery proof.
+
+2. OUTLOOK STORAGE CLEANUP
+- 42 obvious junk/phishing/promotional messages were staged into Deleted Items while HumanVibe order mail and ambiguous business mail were preserved.
+- Moving mail is not storage reclamation; Deleted Items must be emptied before mailbox storage is actually recovered.
+- No irreversible purge was performed by Sol.
+
+3. SOCIAL IMAGE / CONTINUITY CORRECTION
+- Repeated tee mockups were identified as a generator/rule defect, not a one-post defect.
+- Threads was moved to text-only where appropriate and the visual rotation rule was tightened.
+- Later canonical training extended this into a forward-queue-floor doctrine and same-platform Buffer API fallback when the high-level wrapper lacks required media fields.
+- Current principle: verify real future Buffer inventory, not merely an enabled continuity guard.
+
+4. TEAMCHAT REPOSITORY CONTROL PLANE
+- GitHub-native Teamchat routing is physically working.
+- The router processes canonical /task, /claim, /status, /handoff, /evidence and /release state changes.
+- Live claim mutation and duplicate-owner rejection were physically proven.
+- Do not rebuild this layer.
+
+5. UNIVERSAL PROBLEM-SOLVING DOCTRINE
+- Owner approved HV-EXP-027 for all chairs:
+  ENDPOINT -> FINAL-EFFECT EVIDENCE -> DEPENDENCY CHAIN -> PREREQUISITES -> LAYER BOUNDARY -> MINIMUM REPAIR -> FINAL-EFFECT VERIFICATION -> DURABLE LEARNING.
+- Core rules: work backward from the physical endpoint; a mutation is not an outcome; fix generators, not symptoms; closed failed routes stay closed absent new evidence.
+- Applied immediately to Teamchat unattended-consumer diagnosis.
+
+6. SCHEDULER HYPOTHESIS TEST
+- Teamchat and Buffer condition-watch jobs were observed disabled while the exact-schedule meeting remained enabled, creating the scheduler-mode hypothesis.
+- One-variable test moved Teamchat consumer to exact_schedule.
+- Result: falsified. The job ran, disabled again, and produced no acceptance marker.
+- HV-EXP-029 closed timing mode as the root cause. Do not retry timing variations without new runtime evidence.
+
+7. EVENT-DRIVEN PERSISTENCE ARCHITECTURE
+- External research and later implementation work converged on event push rather than recurring ChatGPT polling:
+  GitHub event -> persistent/event-driven receiver/executor -> authenticated GitHub writeback.
+- Repository-side wake path was built using GitHub Actions and persistent PR #8.
+- Canary issue #11 triggered Actions run 36122872269 = SUCCESS and created real TEAMCHAT_WAKE activity on PR #8.
+- This proved the GitHub-side event layer.
+
+8. WORK EXECUTION / BLOCKERS
+- Work initially found Google Apps Script administration unavailable in its cloud browser and no connected Apps Script deployment/admin tool, so the Apps Script receiver route was correctly blocked without weakening security.
+- A later Work/event-trigger path moved to GitHub PR-comment event delivery instead of Apps Script.
+- Issue #5 then recorded an intermediate event-binding uncertainty.
+- Newer physical evidence in issue #3 supersedes that uncertainty for the Prime lane: PR #8 wake reached Work, Actions run 36156915843 reached the real Gemini Prime step, secret/input validation passed, and the Prime step actually started.
+
+9. CURRENT PRIME FAILURE IS MODEL CAPACITY, NOT INGRESS
+- Work inspected run 36156915843 / job 108143585576.
+- Event delivery, checkout, action loading, secret presence, input validation and Gemini API authentication all passed.
+- The real Gemini Prime step received six 503 UNAVAILABLE/high-demand responses, then terminal HTTP 429 free-tier quota exhaustion.
+- Terminal limit: generate_content_free_tier_requests = 20 for model gemini-3.8-flash.
+- Writeback was correctly skipped.
+- Do not rebuild router, trust, auth or event binding based on this failure.
+
+10. MINIMUM NEXT REPAIR
+- Enumerate the currently authorised €0 Gemini models on the same API key/line.
+- Select the next available compatible free model.
+- Run exactly one harmless Prime connection canary.
+- PASS only if the model returns the required proof and GitHub writes it back exactly once.
+- If every authorised free Gemini model is unavailable, mark CAPACITY_BLOCKED and wait for quota reset.
+- No paid fallback and no retry of gemini-3.8-flash unchanged.
+
+11. GOVERNANCE / PREFLIGHT
+- Owner again enforced mandatory preflight before this closeout.
+- Full preflight was durably recorded in CHAT_LOG before this summary mutation.
+- Existing Rules 36–40 already cover the reusable lesson, so no duplicate training entry is required.
+
+CURRENT TERMINAL STATE
+- Teamchat repository-local router: PASS.
+- GitHub event delivery into Work/Prime path: physically evidenced.
+- Prime response execution: PARTIAL / CAPACITY_BLOCKED on the tested gemini-3.8-flash free lane.
+- External spend: €0.
+- No owner couriering required for the next model-line availability check.
+- Shortest next action: same-line €0 Gemini model enumeration -> one canary -> verified GitHub writeback or CAPACITY_BLOCKED.
+
+ALLOWANCE_CLOSE
+- Closeout/logging work remained within the <0.3% estimate.
+---
