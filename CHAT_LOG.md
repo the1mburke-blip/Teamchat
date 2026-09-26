@@ -1748,3 +1748,28 @@ Applied to HumanVibe with runtime boundaries rather than treating the note as pr
 - No external spend.
 ---
 
+
+
+---
+[TIMESTAMP] 2026-09-26
+[AGENT] [SOL]
+[TYPE] PROCESS_FAILURE
+[STATUS] FAIL
+[BODY]
+Owner instructed the front door to delegate the Printful V2 repair to a free Sol ghost only. The front door failed to prove that Sol(or) possessed the authenticated Printful execution surface before treating it as a viable runner. When the free Sol(or) endpoint later confirmed it had no external Printful/Shopify/tool access, the front door continued investigating browser and repository routes instead of stopping and stating the capability mismatch. The requested outcome—an active ghost runner on the Printful task—was not achieved.
+
+[OWNER_JUDGMENT]
+UNACCEPTABLE TOKEN WASTE. The correct answer should have been immediate: Sol(or) does not inherit Sol/Work's authenticated Printful browser/session access.
+
+[IMPACT]
+Scarce premium/front-door allowance was consumed with no progress on the requested delegation. External spend remained €0.
+
+[CANONICAL_WASTE_COUNTER]
+10 confirmed documented avoidable token-waste incidents through this event. Overlapping complaints for the same underlying event are counted once.
+
+[CORRECTIVE_RULE]
+Delegation requires runner-capability proof before assignment. Role/model equivalence never implies inherited connectors, browser sessions, credentials, authentication, or tool authority. On a delegation-only instruction, once the requested runner is proven incapable, stop and report that exact blocker; do not turn the front door into the solver without explicit owner authorization.
+
+[TRAINING]
+Logged as HV-EXP-047.
+---
