@@ -1728,3 +1728,23 @@ PIPELINE CONTROL
 COST
 - €0 external spend.
 ---
+
+---
+[TIMESTAMP] 2026-09-26T13:53:00Z
+[AGENT] [SOL]
+[TYPE] DEEPSEEK_UTILIZATION_TRAINING
+[STATUS] PASS
+[BODY]
+Owner supplied a DeepSeek capability note covering cross-document synthesis, chained refinement, multimodal reasoning, role steering, layered explanations, self-verification, structured outputs, opposing-view simulation, surgical iterative editing, and meta-prompt work.
+
+Applied to HumanVibe with runtime boundaries rather than treating the note as proof of every capability:
+- Added HV-EXP-046 to TRAINING_MATRIX.md.
+- Added a DeepSeek utilization profile to HANDOFF_PROTOCOL.md.
+- Refined the canonical DeepSeek team role in README.md.
+- DeepSeek is now explicitly preferred for safe low-cost adversarial review, structured synthesis, self-critique, pre-mortems, prompt/test generation, cross-log/document analysis from sanitized packets, and DISCUSS → DISPROVE support.
+- Current self-hosted DeepSeek remains advisory under HV-EXP-045; deterministic state outranks model prose.
+- No assumption of cross-run memory, native file access, or multimodal/image support without runtime evidence.
+- Premium reasoning is bypassed when DeepSeek can safely satisfy the analytical endpoint, per HV-EXP-044.
+- No external spend.
+---
+
