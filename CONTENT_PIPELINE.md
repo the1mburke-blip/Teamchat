@@ -56,8 +56,8 @@ Before any V2 post is drafted, scheduled, repaired, or recycled:
 ## Channel rules
 
 - **Instagram:** fresh approved model/lifestyle media required. Hold the slot rather than recycle stale or repeated imagery.
-- **Facebook:** approved model/lifestyle media or approved text-on-background format only.
-- **Threads:** text-first/text-only by default; use a V2 visual only when it adds real value and remains within the rotation rule.
+- **Facebook:** approved fresh model/lifestyle/product/editorial visual media by default; text-on-background may be used occasionally when the concept genuinely benefits from it, but it must not become the standing format.
+- **Threads:** platform-native text + approved visual media by default; text-only may be used occasionally when the concept genuinely benefits from it, but it must not become the standing format.
 - Maximum one direct commercial pitch per day per platform.
 - Buffer remains the sole authorised publisher/scheduler. Do not bypass through direct social APIs or alternate publishers.
 
