@@ -71,7 +71,7 @@ jobs:
                 const enabled = readField(body, 'GHOST_PERSISTENCE', '').toUpperCase() === 'ENABLED';
                 const attempts = Number(readField(body, 'GHOST_PERSISTENCE_ATTEMPTS', '0')) || 0;
                 const ghostOwned = active.includes('(OR)') || to.includes('(OR)');
-                const recoverable = ['REQUESTED','CLAIMED','EXECUTING','VERIFYING'].includes(status);
+                const recoverable = ['CLAIMED','EXECUTING','VERIFYING'].includes(status);
                 return enabled && attempts < 1 && ghostOwned && recoverable &&
                   new Date(i.updated_at).getTime() < cutoff;
               }).sort((a,b) => new Date(a.updated_at) - new Date(b.updated_at));
@@ -145,7 +145,9 @@ jobs:
           You are the HumanVibe persistence ghost running from the official
           deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B model on a free GitHub CPU runner.
 
-          Your only job is to eliminate SILENT STALL on one ghost-owned Sale #1 task.
+          You are advisory only. The workflow state machine is deterministic.
+          Your only job is to suggest the smallest breadcrumbs for the released ghost task.
+          Do not discuss whether DeepSeek, this runtime, or model inference is available.
           Read the canonical training and issue evidence below.
 
           Do not invent external actions. Do not claim Shopify, Buffer, email, browser,
@@ -186,10 +188,8 @@ jobs:
           with torch.inference_mode():
               generated = model.generate(
                   **inputs,
-                  max_new_tokens=700,
-                  do_sample=True,
-                  temperature=0.4,
-                  top_p=0.9,
+                  max_new_tokens=220,
+                  do_sample=False,
                   pad_token_id=tokenizer.eos_token_id
               )
           new = generated[0][inputs["input_ids"].shape[1]:]
@@ -226,21 +226,15 @@ jobs:
               body = re.test(body) ? body.replace(re, line) : (body.trim() + '\n' + line).trim();
             };
 
-            const verdictMatch = final.match(/^VERDICT:\s*(PASS|BLOCKED|RELEASE)/mi);
-            const verdict = verdictMatch ? verdictMatch[1].toUpperCase() : 'RELEASE';
+            const contradiction = /deepseek.{0,40}(unavailable|not available)|inference.{0,30}(unavailable|not available)/i.test(final);
+            const advisory = contradiction
+              ? '[ADVISORY_REJECTED] Local-model output contradicted physical runtime evidence; no breadcrumb accepted.'
+              : final;
 
             setField('GHOST_PERSISTENCE_ATTEMPTS', '1');
             setField('GHOST_PERSISTENCE_LAST_RUN', now);
-            if (verdict === 'PASS') {
-              setField('STATUS', 'PASS');
-              setField('ACTIVE_OWNER', 'NONE');
-            } else if (verdict === 'BLOCKED') {
-              setField('STATUS', 'BLOCKED');
-              setField('ACTIVE_OWNER', 'NONE');
-            } else {
-              setField('STATUS', 'REQUESTED');
-              setField('ACTIVE_OWNER', 'NONE');
-            }
+            setField('STATUS', 'REQUESTED');
+            setField('ACTIVE_OWNER', 'NONE');
 
             await github.rest.issues.update({ owner, repo, issue_number, body });
             await github.rest.issues.createComment({
@@ -250,7 +244,9 @@ jobs:
                 'RUNTIME: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
                 'HOST: GitHub public CPU runner · no model API · €0',
                 'AUTOMATIC_ATTEMPT: 1/1',
+                'DETERMINISTIC_ACTION: stale ghost ownership released to REQUESTED; ACTIVE_OWNER=NONE',
+                'MODEL_ROLE: advisory breadcrumbs only; never authoritative for state',
                 '',
-                final
+                advisory
               ].join('\n').slice(0, 12000)
             });
