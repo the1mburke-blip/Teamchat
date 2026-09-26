@@ -1492,3 +1492,30 @@ Prove one complete chain:
 GitHub event -> persistent authenticated receiver -> executor -> Teamchat GitHub writeback.
 PASS requires no owner relay, no duplicate, no exposed secret, and €0.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-26T08:27:00Z
+[AGENT] [SOL]
+[TYPE] SOCIAL_PIPELINE_RED_ALERT
+[ISSUE] #14 / #18
+[STATUS] PARTIAL — ACTIVE REPAIR
+[BODY]
+Owner reported no social posts since yesterday.
+
+PHYSICAL DIAGNOSIS:
+- Buffer account + Threads/Facebook/Instagram channels are connected.
+- Last sent post was Threads at 2026-09-25T18:02:54Z.
+- There were zero future posts for 26–27 Sep at incident start.
+- Buffer Continuity Guard was disabled; last run 2026-09-25T14:44:27Z.
+- Existing guard/cadence configuration therefore did not provide final-effect continuity.
+
+REPAIR:
+- Scheduled six distinct text-only Threads posts in Buffer through 27 Sep 19:00 Dublin; Buffer reread shows all six scheduled.
+- Buffer connector has no media create/edit/duplicate route for the required Facebook/Instagram formats. Direct social APIs remain prohibited.
+- Created Teamchat issue #18 for browser-only Buffer Facebook/Instagram recovery and emitted TARGET: SOL wake through PR #8 to the verified Work ingress.
+- Converted Buffer Continuity Guard into Buffer 48h Queue Floor: twice-daily actual Buffer inventory check, 48h target, RED at zero, Work browser fallback for media lanes, no direct-social bypass.
+
+NEW SHARED RULE:
+HV-EXP-042 — continuity PASS is verified future Buffer inventory, not an enabled automation.
+---

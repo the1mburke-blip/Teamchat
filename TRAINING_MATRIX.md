@@ -595,3 +595,19 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `PASS evidence required`: one GitHub event, one authenticated receiver invocation, one executor action, one verified GitHub writeback, no duplicate, no owner relay, no exposed secret, €0.
 - `status`: CANDIDATE ARCHITECTURE — not yet implementation PASS.
 - `confidence`: HIGH that the architecture class fits the observed failure; implementation details still evidence-gated.
+
+
+### HV-EXP-042 — Social continuity requires a forward queue floor, not a running guard
+- `experience_id`: HV-EXP-042
+- `date_utc`: 2026-09-26T08:27:00Z
+- `source_agent`: OWNER + SOL
+- `scope`: HumanVibe Buffer social publishing continuity.
+- `incident`: On 26 Sep the owner observed no new social posts since the prior day. Buffer itself was connected and all three channels were healthy, but the future queue was empty after the final 25 Sep Threads post. The prior Buffer Continuity Guard had become disabled at 15:45 on 25 Sep and there was no independent minimum queue-depth invariant.
+- `root_cause`: The system treated a continuity automation and cadence rules as the control surface instead of treating actual future Buffer inventory as the final-effect state. A finite queue could therefore drain to zero silently when the guard stopped.
+- `reusable_principle`: **Social continuity PASS is a verified forward queue, not an enabled guard. Maintain a minimum future inventory so one missed control run cannot create a zero-post day.**
+- `minimum_floor`: Target at least 48 hours of future Buffer inventory for each active channel, subject to Buffer Free capacity. RED = zero future posts; AMBER = less than 24 hours.
+- `repair_rule`: Refill physically supported Buffer lanes immediately. If the Buffer connector cannot create the required Facebook/Instagram media format, do not bypass Buffer with direct social APIs; dispatch one browser-only Work repair through the verified Teamchat SOL ingress and require Buffer readback.
+- `resilience_rule`: The continuity controller must inspect actual sent/scheduled Buffer state twice daily. Do not rely on scheduler/automation enabled state as proof. Do not create a second repair task while one is active.
+- `incident_repair_evidence`: Six Threads text-only posts were scheduled through 27 Sep 19:00 Dublin and read back from Buffer. Facebook/Instagram browser repair moved to Teamchat issue #18. Existing Buffer guard was converted to a 48-hour queue-floor controller scheduled twice daily.
+- `what_not_to_retry`: Do not merely re-enable the old hourly guard, do not direct-publish around Buffer, and do not call a configured automation or draft queue continuity proof.
+- `confidence`: HIGH.
