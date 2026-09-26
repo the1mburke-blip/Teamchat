@@ -680,3 +680,22 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `cost_rule`: Apply HV-EXP-044 cheapest-capable-executor-first. Where DeepSeek can satisfy the reasoning endpoint safely, use it before premium Sol/Luna/Work/Codex reasoning.
 - `confidence`: HIGH for the utilization doctrine; individual capabilities remain capability-gated by runtime evidence.
 
+
+
+### HV-EXP-047 — Failed delegation must stop at the capability boundary
+- `experience_id`: HV-EXP-047
+- `date_utc`: 2026-09-26
+- `source_agent`: OWNER + SOL
+- `scope`: delegation, ghost execution, allowance conservation.
+- `incident`: The owner explicitly requested that the Printful repair be delegated to a free Sol ghost. The front door prepared the handoff but failed to prove that Sol(or) possessed the authenticated Printful execution surface before spending further reasoning on the route. After Sol(or) reported no external-tool access, the front door continued investigating browser and repository execution paths instead of immediately reporting the capability mismatch. This consumed scarce allowance without advancing the requested delegation.
+- `owner_judgment`: **UNACCEPTABLE TOKEN WASTE.** The correct response was to state immediately that the free Sol(or) ghost did not inherit Sol/Work's authenticated Printful browser/session capability.
+- `root_cause`: Executor identity was conflated with executor capability. A role-equivalent ghost was treated as though it inherited the premium chair's authenticated tools/session.
+- `binding_rule`: **Before delegating, prove that the selected runner itself has every execution capability required by the endpoint. Model/role equivalence does not transfer connectors, browser sessions, credentials, authentication, or tool authority.**
+- `failed_delegation_rule`: If the requested cheap runner lacks a required capability, stop immediately and report that exact fact. Do not spend premium/front-door reasoning searching for workarounds unless the owner explicitly authorizes a new route.
+- `front_door_rule`: When the owner's instruction is DELEGATE, the front door may perform only the minimum capability check and handoff transport. It must not silently become the solver.
+- `preflight_addition`: Delegation preflight must include RUNNER CAPABILITY PROOF: required tool/session/auth surface → evidence it exists on the selected runner → only then claim the runner is "on it."
+- `what_not_to_retry`: Do not infer that Sol(or) inherits Sol/Work browser access; do not call advisory persistence a runner; do not mark CLAIMED unless execution has actually started; do not investigate the business task after a delegation-only request.
+- `token_waste_counter`: **10 confirmed documented avoidable token-waste incidents through this event.** This is a conservative canonical count built from explicit owner/assistant acknowledgements; overlapping complaints about the same event are counted once.
+- `counter_rule`: Increment this counter only for a newly distinct, explicitly acknowledged avoidable token/allowance waste incident. Do not inflate it with duplicate complaints about the same failure.
+- `cost`: Avoidable premium/front-door allowance consumed; external spend remained €0.
+- `confidence`: HIGH.
