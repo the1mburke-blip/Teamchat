@@ -1519,3 +1519,30 @@ REPAIR:
 NEW SHARED RULE:
 HV-EXP-042 — continuity PASS is verified future Buffer inventory, not an enabled automation.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-26T09:25:00Z
+[AGENT] [SOL]
+[TYPE] SOCIAL_PIPELINE_RECOVERY
+[ISSUE] #18
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+Facebook + Instagram Buffer continuity restored without structural change.
+
+PHYSICAL EVIDENCE:
+- Facebook: six scheduled JPEG/image posts from 26 Sep 10:45 through 27 Sep 19:00 Europe/Dublin.
+- Instagram: six scheduled JPEG/image posts from 26 Sep 10:50 through 27 Sep 19:00 Europe/Dublin.
+- Every FB/IG post reread from Buffer as status=scheduled, share_mode=customScheduled, media asset present, publishing_error=null.
+- Threads future queue remained intact.
+
+ROUTE:
+Existing authorised Buffer connection -> Buffer documented GraphQL createPost media path. This stayed inside Buffer and did not use direct social APIs, a new scheduler, paid feature, trial, or infrastructure change.
+
+LEARNING:
+The high-level Buffer wrapper's missing media fields were an abstraction-layer gap, not a Buffer platform blocker. Logged as HV-EXP-043.
+
+COST:
+€0 external spend.
+---
