@@ -61,26 +61,34 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Authenticate Google service account
-        if: steps.gate.outputs.allowed == 'true'
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
-          create_credentials_file: true
-
-      - name: Setup Python
-        if: steps.gate.outputs.allowed == 'true'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Google client
-        if: steps.gate.outputs.allowed == 'true'
-        run: python -m pip install -q google-api-python-client google-auth
-
-      - name: Refresh fixed Prime snapshot
+      - name: Build snapshot payload
         if: steps.gate.outputs.allowed == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          SNAPSHOT_DOC_ID: ${{ vars.PRIME_SNAPSHOT_DOC_ID }}
+          SNAPSHOT_WEBHOOK_SECRET: ${{ secrets.PRIME_SNAPSHOT_WEBHOOK_SECRET }}
         run: python scripts/update_prime_snapshot.py
+
+      - name: Send snapshot to Apps Script
+        if: steps.gate.outputs.allowed == 'true'
+        env:
+          SNAPSHOT_WEBAPP_URL: ${{ secrets.PRIME_SNAPSHOT_WEBAPP_URL }}
+        run: |
+          test -n "$SNAPSHOT_WEBAPP_URL"
+          curl -L --silent --show-error --fail-with-body \
+            -H 'Content-Type: application/json' \
+            --data-binary @prime_snapshot_payload.json \
+            "$SNAPSHOT_WEBAPP_URL" > prime_snapshot_response.json
+
+      - name: Verify Apps Script readback
+        if: steps.gate.outputs.allowed == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          payload = json.load(open("prime_snapshot_payload.json", encoding="utf-8"))
+          response = json.load(open("prime_snapshot_response.json", encoding="utf-8"))
+          if response.get("ok") is not True:
+              raise SystemExit(f"Apps Script rejected update: {response}")
+          if response.get("marker") != payload.get("marker"):
+              raise SystemExit(f"Marker mismatch: {response.get('marker')} != {payload.get('marker')}")
+          print(f"SNAPSHOT_UPDATE_OK document={response.get('documentId')} marker={response.get('marker')}")
+          PY
