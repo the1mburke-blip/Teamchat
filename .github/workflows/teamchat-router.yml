@@ -62,7 +62,7 @@ jobs:
 
             const command = String(comment.body || '').trim();
             const now = new Date().toISOString();
-            const chairs = '(LUNA|SOL|PRIME|GRACE|DEEPSEEK|CLAUDE|CODEX)';
+            const chairs = '(LUNA|SOL|PRIME|DEEPSEEK|CLAUDE|CODEX)';
             const terminal = new Set(['PASS', 'PARTIAL', 'FAIL', 'BLOCKED']);
 
             const fresh = async () => (await github.rest.issues.get({
