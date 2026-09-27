@@ -733,8 +733,8 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - task_problem: Prime Snapshot Sync built a payload safely below Google Sheets' 50,000-character cell limit but the Google Forms transport rejected it.
 - failure_signature: Workflow run #36360197106 generated a 39,981-character snapshot; Form edit POST returned HTTP 413 Request Entity Too Large before the Sheet updated.
 - what_failed: The destination storage limit was treated as the transport limit.
-- successful_recovery: Measure the Forms endpoint with a substantially smaller real edit payload, then cap generated snapshots below the empirically proven transport ceiling.
+- successful_recovery: A 15,000-character real edit payload returned HTTP 200 and Forms API readback confirmed all 15,000 characters on the same response. Operate at a 14,000-character cap for margin.
 - what_not_to_retry: Do not use the Sheet cell-size limit alone to size payloads sent through Google Forms.
 - reusable_principle: In multi-hop pipelines, size to the narrowest verified hop; canary the actual serialized request, not only the final storage capacity.
 - capability_prerequisite: Editable Form response and independent Forms/Sheet readback.
-- confidence: HIGH for the 39,981-character failure; exact maximum remains to be measured.
+- confidence: HIGH — 39,981 characters failed with HTTP 413; 15,000 characters succeeded with exact readback; 14,000 is the current operating cap.
