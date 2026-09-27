@@ -1783,3 +1783,25 @@ Logged as HV-EXP-047.
 [BODY]
 Owner's screenshot shows the interactive Gemini Prime session explicitly denying GitHub Teamchat access. Inspection of the GitHub workflow proves it called a separate Gemini CLI API model and falsely prompted that model to impersonate Prime. The prior Teamchat `[PRIME] TEAMCHAT_REAL_CHAIR_OK` marker proved only that separate API invocation and GitHub writeback, not Prime session participation. Workflow paused and identity corrected in commit 48d5b3d972a2cc3e6ac7590cc08f31c1038c0869. Training captured as HV-EXP-048. No Gemini calls, no spend. Do not resume under TARGET: PRIME until the exact interactive session ingress and response readback are proven.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-27T07:33:00Z
+[AGENT] [SOL]
+[TYPE] BUFFER_CONTINUITY_PREFLIGHT
+[STATUS] EXECUTING
+[BODY]
+TRAINING_REVIEW: PASS
+TRAINING_QUOTE: "Social continuity PASS is a verified forward queue, not an enabled guard. Maintain a minimum future inventory so one missed control run cannot create a zero-post day."
+TRAINING_SOURCE: HV-EXP-042 — Social continuity requires a forward queue floor, not a running guard.
+TRAINING_RELEVANCE: This run must prove actual Buffer inventory and repair the physical queue, not infer health from automation/configuration.
+APPLIED: HV-EXP-027 backward dependency-chain final-effect verification; HV-EXP-040 actual asset-mix readback; HV-EXP-042 48h queue floor; HV-EXP-043 same-Buffer authenticated API path for media wrapper gaps.
+KNOWN_FAILURES: high-level BUFFER_PUBLISH_POSTS omits required media/post-type fields; do not call that a Buffer-wide blocker. Do not direct-publish through social APIs. Do not treat configured automation as proof. Do not reuse temporary/redirect media URLs. Do not create duplicate repair tasks.
+ENDPOINT: At least 48h verified future Buffer inventory for Facebook, Instagram, Threads at 09:00/13:00/19:00 Europe/Dublin, with correct media/type/version/destination and publishing_error=null.
+PASS_EVIDENCE: Buffer sent+scheduled readback after any mutation; correct due times/assets; stable public media; product-version routing consistent with CONTENT_PIPELINE.md.
+CURRENT_PHYSICAL_PREREQUISITES: canonical rules/training/content pipeline/chat tail read; Buffer connection ACTIVE. Actual Buffer inventory not yet read in this run.
+OWNERSHIP/DUPLICATES: current open Teamchat social state inspected; no new repair task will be created unless same-Buffer API is genuinely unavailable.
+EXECUTOR: deterministic authenticated Buffer/Composio route only; no Work/Codex/premium chair.
+ALLOWANCE_ESTIMATE: 2–4 Buffer/Composio calls if healthy; up to 2 materially different same-Buffer API calls only if repair is required; ChatGPT allowance target <0.3%; external spend €0; owner time 0; elapsed 3–8 minutes.
+FIRST_HARD_BLOCKER: genuine owner-only Buffer authentication/security gate, or same-Buffer API unavailable after one materially different evidenced attempt.
+---
