@@ -1,6 +1,6 @@
 # HumanVibe Team Operating Rules
 
-These rules apply to Luna, Sol, Gemini Prime, Grace, and DeepSeek.
+These rules apply to Luna, Sol, Gemini Prime, and DeepSeek.
 
 1. **MEASURE TWICE. CUT ONCE.**
 2. **NO EVIDENCE = NO CLAIM.**
@@ -8,7 +8,7 @@ These rules apply to Luna, Sol, Gemini Prime, Grace, and DeepSeek.
 4. **One active owner per task.**
 5. **No duplicate execution.**
 6. **No simulated agent responses.**
-7. Every agent-authored entry begins with `[LUNA]`, `[SOL]`, `[PRIME]`, `[GRACE]`, or `[DEEPSEEK]`.
+7. Every agent-authored entry begins with `[LUNA]`, `[SOL]`, `[PRIME]`, or `[DEEPSEEK]`.
 8. Every material entry includes an ISO 8601 UTC timestamp.
 9. Production-changing work requires explicit scope, an active owner, and verification evidence.
 10. Before claiming work, inspect the Issue and `CHAT_LOG.md` for an existing owner or superseding instruction.
@@ -51,7 +51,7 @@ Only `CLAIMED`, `EXECUTING`, or `VERIFYING` may have an active owner.
 
 35. **Universal owner-contact relay.** Every shadow task must run behind an active front-door owner-contact relay. Shadows are not required to possess Gmail directly. At any owner gate they must emit `OWNER_GATE_REQUIRED` with task, calls projected/used, gate reason, evidence learned, and required owner decision, then STOP. The assigning front door must send Michael the Gmail alert and record Teamchat evidence. If no owner-contact relay is available, do not dispatch or continue the shadow task.
 
-36. **Universal preflight contract — all agents/chairs.** This applies to every HumanVibe executor, including Luna, Sol, Gemini Prime, Grace, DeepSeek, Claude, Codex, every `(or)` shadow, and any future agent/chair. Before ANY substantive action, the active chair must: (a) scan the canonical journal, `TRAINING_MATRIX.md`, incident/failure log, operating rules, and relevant recent task history; (b) extract and apply every task-relevant learned lesson, especially prior failures involving the same executor, route, tool, quota, capability, or endpoint; (c) inspect current physical state; (d) define the exact endpoint and PASS evidence; (e) check ownership/duplicates; (f) verify the chosen executor's current capability, authentication/access, quota/capacity, €0 eligibility, and required execution/deployment surface; (g) state estimated allowance/request cost, external spend, owner time, and elapsed time; and (h) define the first hard-blocker condition. **No completed journal/training scan = PREFLIGHT NOT READY = no execution.**
+36. **Universal preflight contract — all agents/chairs.** This applies to every HumanVibe executor, including Luna, Sol, Gemini Prime, DeepSeek, Claude, Codex, every `(or)` shadow, and any future agent/chair. Before ANY substantive action, the active chair must: (a) scan the canonical journal, `TRAINING_MATRIX.md`, incident/failure log, operating rules, and relevant recent task history; (b) extract and apply every task-relevant learned lesson, especially prior failures involving the same executor, route, tool, quota, capability, or endpoint; (c) inspect current physical state; (d) define the exact endpoint and PASS evidence; (e) check ownership/duplicates; (f) verify the chosen executor's current capability, authentication/access, quota/capacity, €0 eligibility, and required execution/deployment surface; (g) state estimated allowance/request cost, external spend, owner time, and elapsed time; and (h) define the first hard-blocker condition. **No completed journal/training scan = PREFLIGHT NOT READY = no execution.**
 
 37. **Preflight is binding.** A displayed preflight is not permission to ignore its assumptions. Any material change to endpoint, executor, route, capability, quota, spend, allowance estimate, owner-time requirement, or elapsed-time estimate requires STOP before the changed action, rescan newly relevant lessons, recheck physical state/capability, and issue a replacement preflight. Never silently substitute routes or executors.
 
