@@ -4,12 +4,12 @@ import json
 import os
 import pathlib
 import urllib.request
-from googleapiclient.discovery import build
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "the1mburke-blip/Teamchat")
 TOKEN = os.environ["GITHUB_TOKEN"]
-DOC_ID = os.environ["SNAPSHOT_DOC_ID"]
+WEBHOOK_SECRET = os.environ["SNAPSHOT_WEBHOOK_SECRET"]
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+PAYLOAD_PATH = pathlib.Path(os.environ.get("SNAPSHOT_PAYLOAD_PATH", "prime_snapshot_payload.json"))
 
 def read_text(path, max_chars=None):
     p = ROOT / path
@@ -50,13 +50,14 @@ def recent_comments(issue_number, limit=8):
     return "\n".join(lines)
 
 now = dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+marker = f"SNAPSHOT_GENERATED_UTC: {now}"
 issues = [x for x in gh_get("/issues?state=open&per_page=100") if "pull_request" not in x]
 issues.sort(key=lambda x: x.get("updated_at",""), reverse=True)
 
 sections = [
     "# HumanVibe Prime Snapshot — LIVE",
     "",
-    f"SNAPSHOT_GENERATED_UTC: {now}",
+    marker,
     f"SOURCE_REPOSITORY: {REPO}",
     f"TRIGGER: {os.environ.get('GITHUB_EVENT_NAME','unknown')}",
     f"RUN_ID: {os.environ.get('GITHUB_RUN_ID','unknown')}",
@@ -101,35 +102,12 @@ snapshot = "\n".join(sections).strip() + "\n"
 if len(snapshot) > 450000:
     snapshot = snapshot[:450000] + "\n\n[SNAPSHOT_TRUNCATED_AT_450000_CHARS]\n"
 
-docs = build("docs", "v1")
-doc = docs.documents().get(documentId=DOC_ID).execute()
-content = doc.get("body", {}).get("content", [])
-end_index = content[-1].get("endIndex", 1) if content else 1
-
-requests = []
-if end_index > 2:
-    requests.append({
-        "deleteContentRange": {
-            "range": {"startIndex": 1, "endIndex": end_index - 1}
-        }
-    })
-requests.append({
-    "insertText": {
-        "location": {"index": 1},
-        "text": snapshot
-    }
-})
-docs.documents().batchUpdate(documentId=DOC_ID, body={"requests": requests}).execute()
-
-verify = docs.documents().get(documentId=DOC_ID).execute()
-parts = []
-for item in verify.get("body", {}).get("content", []):
-    p = item.get("paragraph", {})
-    for el in p.get("elements", []):
-        parts.append(el.get("textRun", {}).get("content", ""))
-verify_text = "".join(parts)
-marker = f"SNAPSHOT_GENERATED_UTC: {now}"
-if marker not in verify_text:
-    raise RuntimeError("Drive snapshot readback did not contain the expected generation marker.")
-
-print(f"SNAPSHOT_UPDATE_OK document={DOC_ID} chars={len(snapshot)} marker={marker}")
+payload = {
+    "secret": WEBHOOK_SECRET,
+    "marker": marker,
+    "snapshot": snapshot,
+    "repository": REPO,
+    "runId": os.environ.get("GITHUB_RUN_ID", "unknown"),
+}
+PAYLOAD_PATH.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+print(f"SNAPSHOT_PAYLOAD_READY path={PAYLOAD_PATH} chars={len(snapshot)} marker={marker}")
