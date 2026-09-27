@@ -725,3 +725,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - reusable_principle: Prefer GitHub runner-provided environment variables for event payload paths; do not shadow them with optional context expressions.
 - capability_prerequisite: None beyond the standard GitHub-hosted runner.
 - confidence: HIGH — physically confirmed in run #36360114941 job logs.
+
+
+### HV-EXP-050 — Measure the narrowest transport limit, not the destination limit
+- date_utc: 2026-09-27
+- source_agent: SOL
+- task_problem: Prime Snapshot Sync built a payload safely below Google Sheets' 50,000-character cell limit but the Google Forms transport rejected it.
+- failure_signature: Workflow run #36360197106 generated a 39,981-character snapshot; Form edit POST returned HTTP 413 Request Entity Too Large before the Sheet updated.
+- what_failed: The destination storage limit was treated as the transport limit.
+- successful_recovery: Measure the Forms endpoint with a substantially smaller real edit payload, then cap generated snapshots below the empirically proven transport ceiling.
+- what_not_to_retry: Do not use the Sheet cell-size limit alone to size payloads sent through Google Forms.
+- reusable_principle: In multi-hop pipelines, size to the narrowest verified hop; canary the actual serialized request, not only the final storage capacity.
+- capability_prerequisite: Editable Form response and independent Forms/Sheet readback.
+- confidence: HIGH for the 39,981-character failure; exact maximum remains to be measured.
