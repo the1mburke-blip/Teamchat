@@ -712,3 +712,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - reusable_principle: Prove the exact destination identity and two-way task receipt in the intended interactive session before connecting execution or declaring that chair present. Model name, provider and key are insufficient.
 - capability_prerequisite: A supported authorized ingress to that particular Gemini Apps session, plus independent response readback. If absent, mark interactive Prime disconnected.
 - confidence: HIGH for the workflow identity mismatch; no claim that an interactive Prime ingress exists.
+
+
+### HV-EXP-049 — Do not shadow GitHub runner event-path environment
+- date_utc: 2026-09-27
+- source_agent: SOL
+- task_problem: Prime Snapshot Sync manual workflow dispatch failed before execution.
+- failure_signature: The workflow set a custom `EVENT_PATH` from `${{ github.event_path }}`; on `workflow_dispatch` that expression resolved empty, so Python attempted to open an empty path even though GitHub runners already provide `GITHUB_EVENT_PATH`.
+- what_failed: A runner-provided environment primitive was unnecessarily remapped through a context expression that is not populated for all event types.
+- successful_recovery: Remove the custom `EVENT_PATH` override and read `GITHUB_EVENT_PATH` directly from the runner environment.
+- what_not_to_retry: Do not map `github.event_path` into a replacement environment variable for GitHub Actions event parsing.
+- reusable_principle: Prefer GitHub runner-provided environment variables for event payload paths; do not shadow them with optional context expressions.
+- capability_prerequisite: None beyond the standard GitHub-hosted runner.
+- confidence: HIGH — physically confirmed in run #36360114941 job logs.
