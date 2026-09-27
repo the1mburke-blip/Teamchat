@@ -41,8 +41,7 @@ Legacy ClickUp-first Team Room/Sol loops remain disabled to prevent duplicate co
 
 ## Specialist adapters
 - PRIME: route only through the already-proven Google-native bridge; Teamchat ingress is independently evidence-gated.
-- GRACE: no autonomous wake is claimed while its separate loop remains disabled.
-- DEEPSEEK: transport issue #1 remains open until physically verified.
+- DEEPSEEK: the roster assumes the full DeepSeek chair; autonomous ingress/tool capability remains evidence-gated and must be physically verified before dispatch.
 - CLAUDE/free shadows: callable only through an authorised verified-free route when dispatched by an active front door; no persistent listener is claimed.
 - CODEX: no direct Teamchat wake transport is claimed.
 - SOL/LUNA: the unattended front-door consumer provides bounded queue execution; scheduled-runtime capability must be verified by actual runs.
