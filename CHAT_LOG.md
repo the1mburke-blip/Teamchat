@@ -1805,3 +1805,95 @@ EXECUTOR: deterministic authenticated Buffer/Composio route only; no Work/Codex/
 ALLOWANCE_ESTIMATE: 2–4 Buffer/Composio calls if healthy; up to 2 materially different same-Buffer API calls only if repair is required; ChatGPT allowance target <0.3%; external spend €0; owner time 0; elapsed 3–8 minutes.
 FIRST_HARD_BLOCKER: genuine owner-only Buffer authentication/security gate, or same-Buffer API unavailable after one materially different evidenced attempt.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-27T09:56:00Z
+[AGENT] [SOL]
+[TYPE] NEW_CHAT_HANDOFF
+[STATUS] PASS
+[BODY]
+This entry closes the current long ChatGPT thread and is the canonical handoff for the next chat.
+
+OWNER REQUEST
+- Michael reached the chat-length limit and requested that the full working state be logged so the next chat can continue without re-explaining history.
+- Continue from this handoff plus the latest OPERATING_RULES.md, TRAINING_MATRIX.md, HANDOFF_PROTOCOL.md and newer CHAT_LOG entries. Do not resurrect older blockers that have been superseded.
+
+CORE OPERATING METHOD LEARNED IN THIS THREAD
+- HV-EXP-027 is now universal:
+  ENDPOINT -> FINAL-EFFECT EVIDENCE -> DEPENDENCY CHAIN -> PREREQUISITES -> LAYER BOUNDARY -> MINIMUM REPAIR -> FINAL-EFFECT VERIFICATION -> DURABLE LEARNING.
+- A mutation/configuration is not proof of the final outcome.
+- Fix recurrence generators rather than repeatedly repairing symptoms.
+- Closed failed routes stay closed unless materially new evidence reopens them.
+- Delegation requires proof that the delegated runner itself owns the needed tools/auth/session; role equivalence does not transfer capabilities (HV-EXP-047).
+
+TEAMCHAT / TEAM OS
+- Repository: the1mburke-blip/Teamchat.
+- GitHub-native repository-local router is physically PASS. It handles canonical /task, /claim, /status, /handoff, /evidence and /release commands through GitHub Actions.
+- Team OS GitHub Pages source remains main:/docs.
+- Persistent wake PR is #8. GitHub-side wake generation from canonical issues into PR #8 comments has been physically proven.
+- Timing-mode hypothesis is CLOSED. Both condition_watch and exact_schedule ChatGPT recurring workers failed persistence/acceptance; HV-EXP-029 says do not keep tuning scheduler mode.
+- Work's direct Apps Script receiver route hit a genuine authenticated Apps Script administration boundary. No insecure webhook or browser secret was introduced.
+- A later GitHub event path did reach a Gemini CLI/API execution lane, but HV-EXP-048 corrected a critical identity error: that API invocation is NOT Michael's interactive Gemini Prime session. The workflow that labeled the API model as Prime was paused/corrected.
+- Therefore interactive Gemini Prime must currently be treated as DISCONNECTED from Teamchat until the exact interactive session ingress and two-way response readback are physically proven.
+- Do not claim that a Gemini API/CLI model, GitHub workflow, or model-family-equivalent runtime is the interactive Prime session.
+- Current external-runtime architecture must preserve exact identity boundaries.
+
+WORK / EVENT PATH LESSONS
+- Work found that event-driven push is the right architectural direction: GitHub event -> persistent receiver/executor -> authenticated GitHub writeback, rather than recurring ChatGPT polling.
+- PR #8 is the durable GitHub wake surface.
+- Earlier stored Work task/event binding was not enough by itself; one acceptance test showed last_run_time null and no acceptance marker, so configured task != bound event.
+- Later physical event/API execution evidence superseded the idea that GitHub-side delivery itself was broken, but it did not solve interactive-Prime identity.
+- Never rebuild the working GitHub router when the failing layer is external ingress/runtime identity/capacity.
+
+PRIME / GEMINI
+- Separate two concepts:
+  1. Interactive Gemini Prime session = Michael's intended co-equal Prime chair.
+  2. Gemini API/CLI model = separate runtime with separate identity/context.
+- API/CLI execution previously reached the Gemini model but encountered repeated 503 high-demand responses followed by 429 free-tier quota exhaustion on a tested free Gemini lane.
+- Capacity failure is not an ingress/auth/router failure.
+- No paid fallback.
+- If an API-model lane is intentionally used for a distinct task, enumerate authorised €0 compatible models and use one bounded canary. Never present that lane as the interactive Prime session.
+
+SOCIAL / BUFFER
+- Buffer is the only authorised publisher.
+- The repeated-image problem was traced to the generation/rotation rule, not one isolated post.
+- Threads was shifted to text-only where appropriate; repeated mockups must not be treated as a standing rotation.
+- Binding visual rule: inspect recent live/scheduled posts, avoid adjacent/six-post-window asset reuse, hold Instagram slots rather than recycle repeated media, and preserve V1/V2 product-version routing.
+- High-level Buffer wrapper gaps do not prove Buffer-wide inability; same authenticated Buffer API should be considered before declaring a blocker.
+- Latest canonical social doctrine is the forward-queue floor: social continuity PASS means verified future inventory, not merely an enabled guard.
+- V2 content assets and version routing are governed by CONTENT_PIPELINE.md and the approved Production Asset Vault.
+
+SHOPIFY / HUMANVIBE
+- HumanVibe Signature Tee remains live.
+- Signature Tee V2 was added/merchandised on 26 Sep using the existing Printful-linked Shopify product, not a duplicate.
+- V2 assets are in the Production Asset Vault and V1/V2 media lanes must remain separate.
+- Latest known traffic in the earlier portion of this thread showed very low/zero same-day traffic; do not infer a strategy pivot from tiny samples.
+- No unsupported scarcity/sales/success claims.
+
+OUTLOOK CLEANUP
+- 42 obvious junk/phishing/promotional emails were staged into Deleted Items while HumanVibe order messages and ambiguous business mail were preserved.
+- Important: moving mail to Deleted Items did NOT reclaim storage. Final effect requires Deleted Items to be permanently emptied.
+- Native Outlook connector exposed move but not permanent empty/delete. Do not falsely call storage reclaimed until that external effect is verified.
+
+MORNING MEETING / AUTOMATIONS
+- The missed morning meeting incident showed configured/enabled automation is not delivery proof.
+- Morning meeting was manually recovered and its automation re-enabled at that time.
+- More generally, recurring automation state must be verified by later execution/output, not configuration readback alone.
+
+LATEST TEAMCHAT STATUS FOR NEXT CHAT
+- Repository-local GitHub router: PASS.
+- GitHub-side event/wake mechanics: proven in multiple stages.
+- Interactive Prime Teamchat participation: DISCONNECTED / UNPROVEN after HV-EXP-048 identity correction.
+- Apps Script admin route in Work: previously BLOCKED by authenticated Google/Apps Script administration boundary.
+- ChatGPT recurring scheduler as persistent consumer: CLOSED as unproven/unreliable for this endpoint.
+- External spend: €0.
+- Do not ask Michael to act as courier.
+- Continue by reading the newest Teamchat issues/comments and current training first; use the exact current failing layer, not an older one.
+
+NEW-CHAT START INSTRUCTION
+Read OPERATING_RULES.md, TRAINING_MATRIX.md, HANDOFF_PROTOCOL.md, the latest CHAT_LOG tail, open Teamchat issues, PR #8 comments/workflows, and CONTENT_PIPELINE.md before substantive execution. Apply HV-EXP-027 backward from the requested physical endpoint. State preflight cost/time/endpoint before mutation. Preserve €0, no duplicate execution, no blind retry, no simulated agent identity, and evidence-before-PASS.
+
+ALLOWANCE
+- Logging/handoff only; external spend €0.
+---
