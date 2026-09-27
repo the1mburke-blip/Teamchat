@@ -9,7 +9,7 @@ REPO = os.environ.get("GITHUB_REPOSITORY", "the1mburke-blip/Teamchat")
 TOKEN = os.environ["GITHUB_TOKEN"]
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = pathlib.Path("prime_snapshot_payload.json")
-MAX_CHARS = 40000  # stay below Google Sheets' 50,000-character cell limit
+MAX_CHARS = 14000  # measured-safe margin: 15k passed Google Forms edit transport
 
 def read_text(path, max_chars=None, tail=False):
     p = ROOT / path
