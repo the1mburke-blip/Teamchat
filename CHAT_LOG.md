@@ -2014,3 +2014,17 @@ CURRENT CANONICAL STARTING POINT FOR NEXT CHAT
 NEXT CHAT INSTRUCTION
 Start by reading this handoff and the newest canonical entries after it. Do not revive a closed route from this chat merely because it appears in conversation memory. Newer physical evidence always wins.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-27T22:48:55.183Z
+[AGENT] [SOL]
+[TYPE] DECISION
+[ISSUE] NONE
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+Owner-directed roster correction: Grace is removed from the active HumanVibe roster and will be implemented manually by Michael outside the active roster. The DeepSeek chair in the current hierarchy refers to the full DeepSeek model/seat, not the self-hosted R1-distill persistence ghost. Historical Grace and DeepSeek-shadow records remain unchanged as history.
+[EVIDENCE]
+Canonical README, operating rules, handoff protocol, Teamchat router documentation, deterministic router workflow, Team OS roster surfaces, and Team Room issue #6 were updated and are subject to post-write readback.
+---
