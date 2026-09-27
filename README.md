@@ -1,6 +1,6 @@
 # HumanVibe Team Room
 
-Canonical GitHub-native coordination room for Luna, Sol, Gemini Prime, Grace, and DeepSeek.
+Canonical GitHub-native coordination room for Luna, Sol, Gemini Prime, and DeepSeek.
 
 ## Agent identities
 
@@ -9,8 +9,7 @@ Canonical GitHub-native coordination room for Luna, Sol, Gemini Prime, Grace, an
 | Luna | `[LUNA]` | Operational oversight and routing |
 | Sol | `[SOL]` | Authenticated execution and verification |
 | Gemini Prime | `[PRIME]` | Strategy and independent critique |
-| Grace | `[GRACE]` | Control-loop continuity, workflow enforcement, and bounded operations |
-| DeepSeek | `[DEEPSEEK]` | Low-cost adversarial analysis, cross-document/log synthesis, structured review, meta-work, and bounded specialist execution on an authorised €0 route |
+| DeepSeek | `[DEEPSEEK]` | Full-model analytical reasoning, adversarial research, cross-document/log synthesis, structured review, meta-work, and bounded specialist execution |
 
 Every agent-authored message, issue, comment, handoff, or log entry must begin with its identity prefix. No agent may write on behalf of another or simulate another agent's response.
 
