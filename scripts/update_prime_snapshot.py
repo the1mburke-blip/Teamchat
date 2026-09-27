@@ -7,16 +7,18 @@ import urllib.request
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "the1mburke-blip/Teamchat")
 TOKEN = os.environ["GITHUB_TOKEN"]
-WEBHOOK_SECRET = os.environ["SNAPSHOT_WEBHOOK_SECRET"]
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-PAYLOAD_PATH = pathlib.Path(os.environ.get("SNAPSHOT_PAYLOAD_PATH", "prime_snapshot_payload.json"))
+OUT = pathlib.Path("prime_snapshot_payload.json")
+MAX_CHARS = 40000  # stay below Google Sheets' 50,000-character cell limit
 
-def read_text(path, max_chars=None):
+def read_text(path, max_chars=None, tail=False):
     p = ROOT / path
     if not p.exists():
         return ""
-    text = p.read_text(encoding="utf-8", errors="replace")
-    return text if max_chars is None else text[-max_chars:]
+    value = p.read_text(encoding="utf-8", errors="replace")
+    if max_chars is None or len(value) <= max_chars:
+        return value
+    return value[-max_chars:] if tail else value[:max_chars]
 
 def gh_get(path):
     req = urllib.request.Request(
@@ -31,83 +33,59 @@ def gh_get(path):
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
-def issue_summary(issue):
-    return "\n".join([
-        f"## #{issue['number']} — {issue.get('title','')}",
-        f"State: {issue.get('state','')} | Updated: {issue.get('updated_at','')}",
-        (issue.get("body") or "")[:7000],
-        "",
-    ])
-
-def recent_comments(issue_number, limit=8):
-    comments = gh_get(f"/issues/{issue_number}/comments?per_page=100")
-    lines = []
-    for c in comments[-limit:]:
-        author = (c.get("user") or {}).get("login", "unknown")
-        created = c.get("created_at", "")
-        body = (c.get("body") or "")[:5000]
-        lines.append(f"[{created}] {author}\n{body}\n")
-    return "\n".join(lines)
-
 now = dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
 marker = f"SNAPSHOT_GENERATED_UTC: {now}"
 issues = [x for x in gh_get("/issues?state=open&per_page=100") if "pull_request" not in x]
-issues.sort(key=lambda x: x.get("updated_at",""), reverse=True)
+issues.sort(key=lambda x: x.get("updated_at", ""), reverse=True)
+
+issue_lines = []
+for issue in issues[:20]:
+    issue_lines.extend([
+        f"### #{issue['number']} — {issue.get('title','')}",
+        f"State: {issue.get('state','')} | Updated: {issue.get('updated_at','')}",
+        (issue.get("body") or "")[:1200],
+        "",
+    ])
 
 sections = [
     "# HumanVibe Prime Snapshot — LIVE",
-    "",
     marker,
     f"SOURCE_REPOSITORY: {REPO}",
     f"TRIGGER: {os.environ.get('GITHUB_EVENT_NAME','unknown')}",
     f"RUN_ID: {os.environ.get('GITHUB_RUN_ID','unknown')}",
     "",
-    "## Purpose",
-    "Machine-maintained context bridge from canonical HumanVibe Teamchat to Gemini Prime. The Google Doc ID is intentionally stable; content is refreshed in place.",
-    "",
     "## Canonical roster / operating definition",
-    read_text("README.md", 12000),
+    read_text("README.md", 5000),
     "",
-    "## Operating rules",
-    read_text("OPERATING_RULES.md", 24000),
+    "## Operating rules — core",
+    read_text("OPERATING_RULES.md", 8000),
     "",
-    "## Handoff protocol",
-    read_text("HANDOFF_PROTOCOL.md", 18000),
+    "## Current status",
+    read_text("STATUS.md", 4000),
     "",
     "## Content pipeline",
-    read_text("CONTENT_PIPELINE.md", 16000),
-    "",
-    "## Current repository status",
-    read_text("STATUS.md", 12000),
+    read_text("CONTENT_PIPELINE.md", 3500),
     "",
     "## Recent canonical chat log",
-    read_text("CHAT_LOG.md", 30000),
+    read_text("CHAT_LOG.md", 7000, tail=True),
     "",
     "## Recent shared training",
-    read_text("TRAINING_MATRIX.md", 30000),
-    "",
-    "## Team Room — recent comments",
-    recent_comments(6, 30),
+    read_text("TRAINING_MATRIX.md", 6000, tail=True),
     "",
     "## Open Teamchat work",
+    "\n".join(issue_lines),
 ]
-for issue in issues[:30]:
-    sections.append(issue_summary(issue))
-    if issue["number"] != 6:
-        comments = recent_comments(issue["number"], 6)
-        if comments:
-            sections.extend(["### Recent comments", comments])
 
 snapshot = "\n".join(sections).strip() + "\n"
-if len(snapshot) > 450000:
-    snapshot = snapshot[:450000] + "\n\n[SNAPSHOT_TRUNCATED_AT_450000_CHARS]\n"
+if len(snapshot) > MAX_CHARS:
+    snapshot = snapshot[:MAX_CHARS - 60] + "\n[SNAPSHOT_TRUNCATED_TO_SAFE_CELL_LIMIT]\n"
 
 payload = {
-    "secret": WEBHOOK_SECRET,
+    "run_id": os.environ.get("GITHUB_RUN_ID", "unknown"),
     "marker": marker,
+    "sequence": "1",
+    "total": "1",
     "snapshot": snapshot,
-    "repository": REPO,
-    "runId": os.environ.get("GITHUB_RUN_ID", "unknown"),
 }
-PAYLOAD_PATH.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-print(f"SNAPSHOT_PAYLOAD_READY path={PAYLOAD_PATH} chars={len(snapshot)} marker={marker}")
+OUT.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+print(f"SNAPSHOT_PAYLOAD_READY chars={len(snapshot)} marker={marker}")
