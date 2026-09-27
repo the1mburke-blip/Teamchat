@@ -14,8 +14,8 @@ Example: `[T1] [REQUESTED] Verify storefront checkout`
 
 ```text
 [TIMESTAMP] <ISO-8601 UTC>
-[FROM] [LUNA] | [SOL] | [PRIME] | [GRACE] | [DEEPSEEK]
-[TO] [LUNA] | [SOL] | [PRIME] | [GRACE] | [DEEPSEEK]
+[FROM] [LUNA] | [SOL] | [PRIME] | [DEEPSEEK]
+[TO] [LUNA] | [SOL] | [PRIME] | [DEEPSEEK]
 [STATUS] REQUESTED
 [ACTIVE_OWNER] NONE
 [OBJECTIVE] One testable endpoint
@@ -85,7 +85,7 @@ CHANGES: Exact mutations
 BLOCKER: NONE or exact dependency
 ALLOWANCE_USED: <actual measured usage, or clearly labelled estimate>
 NEXT: One next action
-HANDOFF_TO: LUNA | SOL | PRIME | GRACE | DEEPSEEK | OWNER | NONE
+HANDOFF_TO: LUNA | SOL | PRIME | DEEPSEEK | OWNER | NONE
 ```
 
 A handoff is accepted only when the receiving agent posts a new `CLAIMED` entry. Until then, the current owner remains responsible.
@@ -119,9 +119,9 @@ The chair must search the Training Matrix and relevant prior logs for matching p
 
 **No attestation = no call.** This is not discretionary and cannot be bypassed by calling the task trivial, treating it as a canary/test, or relying on native model memory.
 
-## DeepSeek utilization profile — HV-EXP-046
+## DeepSeek utilization profile — full-model chair
 
-Use the current DeepSeek seat as a **bounded analytical/review specialist**, not as the deterministic control plane.
+Use the full DeepSeek seat as an **analytical reasoning, research, red-team, and bounded specialist-execution chair**. Deterministic repository/runtime state remains authoritative; DeepSeek does not become the control plane.
 
 Preferred routes:
 - cross-document/log synthesis from sanitized text packets;
@@ -141,5 +141,5 @@ Capability gates:
 - Do not send secrets, owner-private data, credentials, or protected customer data.
 - Irreversible mutations and authenticated execution require a chair/runtime with the proven tool authority.
 
-Routing rule: when these constraints are satisfied, DeepSeek is a preferred cheap first-pass or second-pass analytical chair before premium reasoning, consistent with HV-EXP-044 and HV-EXP-045.
+Routing rule: route analytical reasoning, research, adversarial review, synthesis, and suitable bounded specialist execution to the full DeepSeek chair when its current runtime has the required capability. Do not conflate this chair with the separate self-hosted R1-distill persistence ghost documented in historical training.
 
