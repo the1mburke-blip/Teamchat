@@ -39,12 +39,11 @@ jobs:
         id: gate
         env:
           EVENT_NAME: ${{ github.event_name }}
-          EVENT_PATH: ${{ github.event_path }}
         run: |
           python - <<'PY'
           import json, os
           name = os.environ["EVENT_NAME"]
-          event = json.load(open(os.environ["EVENT_PATH"], encoding="utf-8"))
+          event = json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8"))
           allowed = True
           if name == "issue_comment":
               allowed = str(event.get("comment", {}).get("author_association", "")).upper() in {"OWNER","MEMBER","COLLABORATOR"}
