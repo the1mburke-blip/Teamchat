@@ -65,7 +65,7 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
     <div class="controls">
       <input id="search" placeholder="Search tasks">
       <select id="statusFilter"><option value="">All states</option><option>REQUESTED</option><option>CLAIMED</option><option>EXECUTING</option><option>VERIFYING</option><option>BLOCKED</option><option>PASS</option><option>FAIL</option><option>PARTIAL</option><option>SUPERSEDED</option></select>
-      <select id="ownerFilter"><option value="">All owners</option><option>LUNA</option><option>SOL</option><option>PRIME</option><option>GRACE</option><option>DEEPSEEK</option><option>CLAUDE</option><option>CODEX</option><option>OWNER</option><option>NONE</option></select>
+      <select id="ownerFilter"><option value="">All owners</option><option>LUNA</option><option>SOL</option><option>PRIME</option><option>DEEPSEEK</option><option>CLAUDE</option><option>CODEX</option><option>OWNER</option><option>NONE</option></select>
       <span class="pill" id="taskCount">0 tasks</span>
     </div>
     <div id="taskBoard" class="board"><div class="empty">Loading live issues…</div></div>
@@ -89,7 +89,7 @@ footer{text-align:center;color:var(--muted);font-size:10px;margin:20px 0}
       <div class="eyebrow">Dispatch packet</div><h2>Preview</h2><pre id="packet">Complete the objective to preview.</pre>
       <div class="eyebrow">GitHub-native control commands</div>
       <p><code>/claim SOL</code> · <code>/status SOL EXECUTING</code> · <code>/handoff SOL PRIME</code> · <code>/evidence SOL PASS | physical proof</code> · <code>/release SOL</code></p>
-      <div class="eyebrow">External wake boundary</div><p>Repository-local routing/state mutation is handled immediately by GitHub Actions. The unattended Teamchat consumer is not currently verified: its scheduled automation was later observed disabled without a successful new run. Repository-local GitHub routing remains live. Prime, Grace, DeepSeek, Claude and Codex still require physically verified persistent ingress before any wake is claimed.</p>
+      <div class="eyebrow">External wake boundary</div><p>Repository-local routing/state mutation is handled immediately by GitHub Actions. The unattended Teamchat consumer is not currently verified: its scheduled automation was later observed disabled without a successful new run. Repository-local GitHub routing remains live. Prime, DeepSeek, Claude and Codex still require physically verified persistent ingress before any wake is claimed.</p>
     </div>
   </div>
 </section>
