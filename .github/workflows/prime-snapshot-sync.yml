@@ -61,34 +61,77 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build snapshot payload
+      - name: Build compact Prime snapshot
         if: steps.gate.outputs.allowed == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          SNAPSHOT_WEBHOOK_SECRET: ${{ secrets.PRIME_SNAPSHOT_WEBHOOK_SECRET }}
         run: python scripts/update_prime_snapshot.py
 
-      - name: Send snapshot to Apps Script
+      - name: Update fixed Google Form response
         if: steps.gate.outputs.allowed == 'true'
         env:
-          SNAPSHOT_WEBAPP_URL: ${{ secrets.PRIME_SNAPSHOT_WEBAPP_URL }}
-        run: |
-          test -n "$SNAPSHOT_WEBAPP_URL"
-          curl -L --silent --show-error --fail-with-body \
-            -H 'Content-Type: application/json' \
-            --data-binary @prime_snapshot_payload.json \
-            "$SNAPSHOT_WEBAPP_URL" > prime_snapshot_response.json
-
-      - name: Verify Apps Script readback
-        if: steps.gate.outputs.allowed == 'true'
+          PRIME_SNAPSHOT_EDIT_URL: ${{ secrets.PRIME_SNAPSHOT_EDIT_URL }}
         run: |
           python - <<'PY'
+          import html
           import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from html.parser import HTMLParser
+
+          class FormParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.action = None
+                  self.hidden = {}
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  if tag == "form" and attrs.get("action") and self.action is None:
+                      self.action = attrs["action"]
+                  if tag == "input" and attrs.get("type") == "hidden" and attrs.get("name"):
+                      self.hidden[attrs["name"]] = attrs.get("value", "")
+
+          edit_url = os.environ["PRIME_SNAPSHOT_EDIT_URL"]
+          if not edit_url.startswith("https://docs.google.com/forms/"):
+              raise SystemExit("Invalid PRIME_SNAPSHOT_EDIT_URL")
+
+          req = urllib.request.Request(edit_url, headers={"User-Agent":"HumanVibe-Prime-Snapshot/1.0"})
+          with urllib.request.urlopen(req, timeout=30) as resp:
+              page = resp.read().decode("utf-8", errors="replace")
+
+          parser = FormParser()
+          parser.feed(page)
+          if not parser.action:
+              raise SystemExit("Google Form edit page did not expose a form action")
+
           payload = json.load(open("prime_snapshot_payload.json", encoding="utf-8"))
-          response = json.load(open("prime_snapshot_response.json", encoding="utf-8"))
-          if response.get("ok") is not True:
-              raise SystemExit(f"Apps Script rejected update: {response}")
-          if response.get("marker") != payload.get("marker"):
-              raise SystemExit(f"Marker mismatch: {response.get('marker')} != {payload.get('marker')}")
-          print(f"SNAPSHOT_UPDATE_OK document={response.get('documentId')} marker={response.get('marker')}")
+          data = dict(parser.hidden)
+          data.update({
+              "entry.1699301106": payload["run_id"],
+              "entry.807518215": payload["marker"],
+              "entry.465536805": payload["sequence"],
+              "entry.1756592575": payload["total"],
+              "entry.414143502": payload["snapshot"],
+          })
+
+          encoded = urllib.parse.urlencode(data).encode("utf-8")
+          post = urllib.request.Request(
+              parser.action,
+              data=encoded,
+              headers={
+                  "Content-Type":"application/x-www-form-urlencoded",
+                  "User-Agent":"HumanVibe-Prime-Snapshot/1.0",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(post, timeout=60) as resp:
+              body = resp.read().decode("utf-8", errors="replace")
+              status = resp.status
+
+          if status != 200:
+              raise SystemExit(f"Google Form update failed HTTP {status}")
+          if "Your response has been recorded" not in body and "Edit your response" not in body:
+              print("FORM_UPDATE_HTTP_200 confirmation-text-not-detected")
+          print(f"FORM_UPDATE_OK marker={payload['marker']} chars={len(payload['snapshot'])}")
           PY
