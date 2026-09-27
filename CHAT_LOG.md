@@ -1897,3 +1897,120 @@ Read OPERATING_RULES.md, TRAINING_MATRIX.md, HANDOFF_PROTOCOL.md, the latest CHA
 ALLOWANCE
 - Logging/handoff only; external spend €0.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-27T09:56:00Z
+[AGENT] [SOL]
+[TYPE] CHAT_CLOSEOUT_HANDOFF
+[STATUS] PASS
+[BODY]
+This entry closes the current long-running owner chat so the next chat can resume from durable canonical state without rediscovery.
+
+OWNER REQUEST
+- Log this chat because the conversation reached its practical length limit.
+- New chat must continue from this handoff and current canonical repository state rather than from stale conversation assumptions.
+
+MAJOR OUTCOMES FROM THIS CHAT
+
+1. MORNING MEETING / AUTOMATION
+- 25 Sep morning meeting failed to arrive.
+- Gmail verification showed no sent meeting.
+- Morning Meeting automation was re-enabled and a manual meeting was sent.
+- Later evidence showed recurring ChatGPT worker persistence is not trustworthy proof merely because a task is configured/enabled.
+- HV-EXP-026/028/029 captured this class of failure.
+
+2. SOCIAL / BUFFER
+- Repetitive social imagery was identified as a generator/rule defect, not a single-post defect.
+- Threads future posts were repaired to text-only where appropriate.
+- Buffer continuity rules were hardened against repeated mockups and identical cross-platform blasts.
+- Subsequent canonical training established queue-floor and same-Buffer authenticated-API principles.
+- Current social work must use actual Buffer queue evidence, not automation state.
+
+3. OUTLOOK STORAGE
+- Obvious junk/phishing/promotional mail was moved from Junk/Spam/Unwanted to Deleted Items while HumanVibe order mail and ambiguous business mail were preserved.
+- Key lesson: moving to Deleted Items is not reclaimed storage; final effect requires Deleted Items to be emptied.
+- This reinforced the mutation-is-not-outcome rule.
+
+4. UNIVERSAL PROBLEM-SOLVING DOCTRINE
+- Owner explicitly approved a cross-team doctrine now logged as HV-EXP-027:
+  ENDPOINT -> FINAL-EFFECT EVIDENCE -> DEPENDENCY CHAIN -> PREREQUISITES -> LAYER BOUNDARY -> MINIMUM REPAIR -> FINAL-EFFECT VERIFICATION -> DURABLE LEARNING.
+- Binding lessons:
+  * work backward from the required physical endpoint;
+  * keep UI/state/router/transport/runtime/auth/final-effect as separate proof layers;
+  * a mutation/configuration is not the result;
+  * fix recurrence generators, not only symptoms;
+  * closed failed routes stay closed unless genuinely new evidence reopens them.
+- This doctrine applies to all current and future chairs.
+
+5. TEAMCHAT REPOSITORY ROUTER
+- Existing GitHub-native router was physically proven:
+  /task, /claim, /status, /handoff, /evidence, /release.
+- Live /claim SOL changed canonical issue state and duplicate claim was rejected.
+- GitHub Pages Team OS and repository-local state routing are real and working.
+- Do not rebuild this layer.
+
+6. CHATGPT SCHEDULED CONSUMER TESTS
+- Condition-watch failure suggested timing-mode hypothesis.
+- One-variable exact_schedule test was run.
+- Exact-schedule worker also ran, disabled, and produced no required Teamchat acceptance marker.
+- HV-EXP-029 falsified timing mode as root cause.
+- Do not retry timing-mode variations without new runtime evidence.
+
+7. EVENT-DRIVEN TEAMCHAT ARCHITECTURE
+- External research and Work execution moved to event push rather than recurring ChatGPT polling:
+  GitHub event -> persistent/event-driven executor -> authenticated GitHub writeback.
+- GitHub-side event delivery was physically proven with Actions/PR wake activity.
+- This is the correct architectural direction; ChatGPT recurring automation is not the critical-path worker.
+
+8. WORK RESULT / GEMINI LANE
+- Work proved GitHub event delivery into a real GitHub Actions execution path.
+- A later run reached a Gemini CLI/API model and failed on free-lane capacity after repeated 503 high-demand responses and terminal 429 quota exhaustion.
+- HOWEVER, owner subsequently showed that the interactive Gemini Prime session had not received Teamchat.
+- Critical correction logged as HV-EXP-048:
+  Gemini API/model-family invocation is NOT the interactive Prime session.
+- The workflow that falsely labeled the API model as [PRIME] was paused and identity corrected in commit 48d5b3d972a2cc3e6ac7590cc08f31c1038c0869.
+- Do not treat any API-model response as proof that Michael's interactive Prime session was reached.
+
+9. CURRENT TEAMCHAT BOUNDARY
+- Repository-local GitHub Actions routing: PASS.
+- GitHub event delivery: PASS.
+- Persistent external execution path to arbitrary runtimes: PARTIAL.
+- Interactive Gemini Prime ingress: DISCONNECTED / UNPROVEN.
+- Prime must not be declared present until the exact interactive session has a supported authorized ingress and independent response readback.
+- Grace/DeepSeek/Claude/Codex likewise require runtime-specific capability proof; never infer inheritance from chair/model identity.
+
+10. COST / EXECUTOR DISCIPLINE
+- Delegation rule strengthened by HV-EXP-047:
+  model/role equivalence does not transfer connectors, browser sessions, credentials, authentication, or tool authority.
+- Before delegation, prove the selected runner itself possesses every required execution surface.
+- If a requested cheap runner lacks capability, stop and report that exact mismatch; do not silently let the premium front door become the solver.
+- Canonical avoidable token-waste counter reached 10 through the documented Printful delegation incident.
+
+11. DEEPSEEK
+- HV-EXP-046 added DeepSeek utilization doctrine:
+  use as cheap analytical amplifier for synthesis, contradiction finding, pre-mortems, critique, structured extraction, prompt/test generation, and DISCUSS -> DISPROVE support.
+- Current DeepSeek lane remains advisory unless tool/runtime authority is separately proven.
+
+12. SIGNATURE TEE V2
+- A Printful-backed HumanVibe Signature Tee V2 already existed in Shopify and was preserved rather than duplicated.
+- Renamed to HumanVibe Signature Tee V2 | Pro-Human Graphic Streetwear.
+- Four Printful-native V2 mockups + V2 artwork were copied to Production Asset Vault.
+- Product gallery and HumanVibe copy were updated.
+- CONTENT_PIPELINE.md now binds V1/V2 asset/destination separation and provenance rules.
+- No AI/substitute V2 creative is permitted.
+
+CURRENT CANONICAL STARTING POINT FOR NEXT CHAT
+- Read OPERATING_RULES.md, TRAINING_MATRIX.md, HANDOFF_PROTOCOL.md, latest CHAT_LOG.md, CONTENT_PIPELINE.md, and current open Teamchat issues before substantive HumanVibe work.
+- Apply HV-EXP-027 backward dependency-chain method universally.
+- Teamchat GitHub-native router is working; do not rebuild it.
+- Interactive Prime is not connected to Teamchat unless new physical evidence proves the exact session ingress/readback.
+- ChatGPT recurring scheduled workers are not accepted as persistent execution proof.
+- Use event-driven architecture and runtime-specific authenticated ingress.
+- Social continuity is judged by actual Buffer queue/destination evidence.
+- Zero spend before profit; no paid fallback.
+- Owner expects strict preflight, shortest valid path, no breadcrumbs, no retry loops, and evidence over narrative.
+
+NEXT CHAT INSTRUCTION
+Start by reading this handoff and the newest canonical entries after it. Do not revive a closed route from this chat merely because it appears in conversation memory. Newer physical evidence always wins.
+---
