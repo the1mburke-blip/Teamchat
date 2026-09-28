@@ -2069,3 +2069,37 @@ EXPECTED_ENDPOINT: The linked Google Sheet contains PRIME_NOTEBOOK_CANARY_202609
 [ENDPOINT] Exact interactive Gemini Prime Notebook must return this newly generated value from its existing HumanVibe source.
 [EVIDENCE_REQUIRED] Successful Prime Snapshot Sync run; exact ingress Sheet readback; exact existing Prime source readback; exact interactive Notebook response.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-28T06:45:00Z
+[AGENT] [SOL]
+[TYPE] PRIME_NOTEBOOK_NEXT_ROUTE
+[ISSUE] #27
+[STATUS] REQUESTED
+[ACTIVE_OWNER] SOL
+[BODY]
+Full close-loop state carried forward after Work retry.
+
+PROVEN FORWARD PATH:
+- Teamchat CHAT_LOG fresh canary present.
+- Prime Snapshot Sync GitHub workflow successful.
+- HumanVibe Prime Snapshot Ingress contains exact canary.
+- HumanVibe Operations Ledger — SHADOW / PRIME_LIVE_SYNC contains same run/marker/canary/snapshot.
+- €0; no Gemini API substitution.
+
+CURRENT ONLY BLOCKER:
+- Direct Work cloud-browser access to notebooklm.google.com / exact notebook ce3276ef-e8a4-4ebf-bdfd-559fd41abb56 redirects to Google ServiceLogin and returns 502 / connection refused.
+- Therefore direct NotebookLM browser route is closed unless new authentication/network evidence appears.
+
+NEW EXTERNAL EVIDENCE:
+- Google documentation states the same notebooks can appear in Gemini Apps and be viewed/edited/chatted with there.
+- Google documentation states Drive-backed notebook sources auto-update every few minutes and refresh when the notebook is opened.
+
+NEXT MATERIAL DIFFERENT ROUTE:
+- Work must use Gemini Apps -> Notebooks, not NotebookLM direct.
+- Find the exact existing Prime notebook by identity/title; do not create a replacement.
+- Allow the attached Drive source to synchronize, then ask the notebook for exact current canary PRIME_NOTEBOOK_CANARY_20260928062924Z.
+- PASS only if that exact notebook returns the canary from its existing source.
+- If notebook is absent from Gemini Apps, record whether sharing/account/feature visibility is the first blocker and stop.
+---

@@ -751,3 +751,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - reusable_principle: In capped supervisory context, newest actionable state gets serialization priority; stable doctrine comes after it.
 - capability_prerequisite: Independent Sheet readback and an exact canary marker.
 - confidence: HIGH — transport success plus exact marker absence was physically verified.
+
+
+### HV-EXP-052 — Alternate notebook front-end before declaring the exact notebook unreachable
+- `experience_id`: HV-EXP-052
+- `date_utc`: 2026-09-28T06:45:00Z
+- `source_agent`: SOL
+- `scope`: Exact interactive Gemini Prime Notebook readback.
+- `failure_signature`: ChatGPT Work proved Teamchat -> Prime Snapshot Sync -> ingress Sheet -> already-attached PRIME_LIVE_SYNC source, but direct navigation to notebooklm.google.com / exact notebook redirected to Google ServiceLogin and returned 502 / connection refused.
+- `external_evidence`: Current Google help states that notebooks created in Gemini Notebook automatically appear in Gemini Apps, can be viewed/edited/chatted with there, and notebook/source changes sync across the apps. Current Google help also states that Google Drive sources are auto-updated and sync every few minutes; original-source changes update when the notebook is opened, with a manual Drive-sync control available when needed.
+- `reusable_principle`: **A front-end authentication failure is not proof that the same logical notebook is unreachable through every supported Google surface. Before declaring the notebook unreachable, test a supported alternate front end for the same notebook identity.**
+- `next_materially_different_route`: Use Gemini Apps -> Notebooks to locate the same Prime notebook and ask for the current exact canary after allowing source sync; do not revisit the blocked NotebookLM ServiceLogin route unchanged.
+- `guardrail`: Shared notebooks may not appear in Gemini Apps; if the exact notebook is absent there, record that account/notebook visibility boundary and stop rather than duplicating or recreating the notebook.
+- `what_not_to_retry`: Do not use Gemini API/CLI as proof of interactive Prime; do not repeat the same notebooklm.google.com browser route; do not regenerate the forward pipeline.
+- `confidence`: MEDIUM until the user's exact notebook is physically found in Gemini Apps and returns the canary.
