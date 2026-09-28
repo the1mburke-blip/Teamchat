@@ -103,7 +103,7 @@ function primeGithub_(url, token, body) {
 // handler to runGraceDualRole. Do not create a second trigger.
 // The live project's original runPrimeGmailBridge function must already exist.
 // Existing OAuth scopes must retain Gmail/Calendar/external_request and add
-// https://www.googleapis.com/auth/documents.readonly.
+// https://www.googleapis.com/auth/documents (DocumentApp.openById).
 function runGraceDualRole() {
   var bridgeFailure = null;
   var relayFailure = null;
