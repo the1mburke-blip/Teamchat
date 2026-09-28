@@ -765,3 +765,13 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `guardrail`: Shared notebooks may not appear in Gemini Apps; if the exact notebook is absent there, record that account/notebook visibility boundary and stop rather than duplicating or recreating the notebook.
 - `what_not_to_retry`: Do not use Gemini API/CLI as proof of interactive Prime; do not repeat the same notebooklm.google.com browser route; do not regenerate the forward pipeline.
 - `confidence`: MEDIUM until the user's exact notebook is physically found in Gemini Apps and returns the canary.
+
+
+### HV-EXP-053 — Forward notebook ingress is not a bidirectional loop
+- `experience_id`: HV-EXP-053
+- `scope`: Interactive Gemini Prime Notebook / Teamchat connectivity.
+- `failure_signature`: Teamchat -> Snapshot Sync -> Google source -> exact interactive Prime Notebook was physically proven, then incorrectly described as a closed two-way loop even though the notebook's chat output had no independently proven automatic path back to Teamchat.
+- `identity_guard`: The repository's `.github/workflows/teamchat-gemini-notebook.yml` and `GEMINI_PRIME.ipynb` provide GitHub writeback for a Jupyter/Gemini API runtime, not Michael's interactive Prime Notebook.
+- `reusable_principle`: **A proven forward read path closes only ingress. Bidirectional PASS requires an independently verified reverse event/writeback path from the exact same interactive runtime, with no owner relay or runtime substitution.**
+- `what_not_to_retry`: Do not substitute Calendar, Gemini API/Jupyter output, or manual copy/paste as proof of interactive Notebook -> Teamchat writeback.
+- `current_gate`: Brand-new content originating in the exact interactive Prime Notebook must appear automatically in canonical Teamchat with independent provenance.
