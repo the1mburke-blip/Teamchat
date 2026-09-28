@@ -38,6 +38,17 @@ marker = f"SNAPSHOT_GENERATED_UTC: {now}"
 issues = [x for x in gh_get("/issues?state=open&per_page=100") if "pull_request" not in x]
 issues.sort(key=lambda x: x.get("updated_at", ""), reverse=True)
 
+team_room_comments = gh_get("/issues/6/comments?per_page=20")
+team_room_lines = []
+for comment in team_room_comments[-5:]:
+    body = (comment.get("body") or "").strip()
+    if body:
+        team_room_lines.extend([
+            f"### Comment {comment.get('id','')} — @{comment.get('user',{}).get('login','unknown')}",
+            body[:700],
+            "",
+        ])
+
 issue_lines = []
 for issue in issues[:20]:
     issue_lines.extend([
@@ -53,6 +64,9 @@ sections = [
     f"SOURCE_REPOSITORY: {REPO}",
     f"TRIGGER: {os.environ.get('GITHUB_EVENT_NAME','unknown')}",
     f"RUN_ID: {os.environ.get('GITHUB_RUN_ID','unknown')}",
+    "",
+    "## Recent Team Room comments — highest priority",
+    "\n".join(team_room_lines),
     "",
     "## Recent canonical chat log — highest priority",
     read_text("CHAT_LOG.md", 6500, tail=True),
