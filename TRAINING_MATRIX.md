@@ -738,3 +738,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - reusable_principle: In multi-hop pipelines, size to the narrowest verified hop; canary the actual serialized request, not only the final storage capacity.
 - capability_prerequisite: Editable Form response and independent Forms/Sheet readback.
 - confidence: HIGH — 39,981 characters failed with HTTP 413; 15,000 characters succeeded with exact readback; 14,000 is the current operating cap.
+
+
+### HV-EXP-051 — Fresh state must precede static governance in capped snapshots
+- date_utc: 2026-09-28
+- source_agent: SOL
+- task_problem: Gemini Prime sync canary reached the linked Google Sheet, but the canary text itself was absent from the 14k snapshot.
+- failure_signature: Workflow run #36360558078 succeeded and updated the Sheet, yet the exact canary PRIME_NOTEBOOK_CANARY_20260928_A was not present because README/rules/status/content consumed the snapshot before the recent CHAT_LOG section.
+- what_failed: Static governance/context was serialized ahead of time-sensitive state under a hard transport cap.
+- successful_recovery: Reorder the snapshot so recent canonical CHAT_LOG state is highest priority, followed by open work/current status, with static rules and content context later.
+- what_not_to_retry: Do not place large static rule blocks ahead of fresh state in a hard-capped supervisory snapshot.
+- reusable_principle: In capped supervisory context, newest actionable state gets serialization priority; stable doctrine comes after it.
+- capability_prerequisite: Independent Sheet readback and an exact canary marker.
+- confidence: HIGH — transport success plus exact marker absence was physically verified.
