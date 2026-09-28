@@ -2169,3 +2169,16 @@ FINAL EVIDENCE:
 CLASSIFICATION:
 PASS — final owner-confirmed interactive readback matched the canonical current canary. The loop is closed. External spend €0. Allowance usage unverified.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-28
+[AGENT] [SOL]
+[TYPE] LOOP_SCOPE_CORRECTION
+[ISSUE] #3 / #27
+[STATUS] PARTIAL
+[ACTIVE_OWNER] SOL
+[BODY]
+Corrected the Prime Notebook loop classification. Issue #27 remains PASS only for Teamchat -> Snapshot Sync -> Google source -> exact interactive Prime Notebook. No automatic reverse path from the interactive Notebook chat stream to Teamchat has been proven. Calendar and the repository Jupyter/Gemini API workflow are explicitly excluded as substitutes for the exact interactive runtime. Canonical reverse-leg tracking remains issue #3, comment 5865309604.
+[LESSON] HV-EXP-053 — forward ingress PASS is not bidirectional-loop PASS.
+---
