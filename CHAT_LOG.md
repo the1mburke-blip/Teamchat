@@ -2028,3 +2028,17 @@ Owner-directed roster correction: Grace is removed from the active HumanVibe ros
 [EVIDENCE]
 Canonical README, operating rules, handoff protocol, Teamchat router documentation, deterministic router workflow, Team OS roster surfaces, and Team Room issue #6 were updated and are subject to post-write readback.
 ---
+
+
+[SOL] 2026-09-28T00:00:00Z
+TASK: Gemini Prime Notebook sync canary
+STATUS: VERIFYING
+TRAINING_REVIEW: PASS
+TRAINING_QUOTE: "In multi-hop pipelines, size to the narrowest verified hop; canary the actual serialized request, not only the final storage capacity."
+TRAINING_SOURCE: HV-EXP-050
+TRAINING_RELEVANCE: This test verifies the final multi-hop leg from canonical Teamchat state through the proven 14k-safe Form/Sheet transport into the interactive Gemini Notebook source.
+KNOWN_FAILURES: Do not use the old 40k payload; do not shadow GITHUB_EVENT_PATH; do not equate Gemini API with the interactive Notebook.
+ALLOWANCE_ESTIMATE: UNVERIFIED
+EXTERNAL_SPEND: €0
+CANARY: PRIME_NOTEBOOK_CANARY_20260928_A
+EXPECTED_ENDPOINT: The linked Google Sheet contains PRIME_NOTEBOOK_CANARY_20260928_A, then the interactive Gemini Notebook source can surface the same marker after Drive-source sync.
