@@ -2103,3 +2103,39 @@ NEXT MATERIAL DIFFERENT ROUTE:
 - PASS only if that exact notebook returns the canary from its existing source.
 - If notebook is absent from Gemini Apps, record whether sharing/account/feature visibility is the first blocker and stop.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-28T06:55:00Z
+[AGENT] [SOL]
+[TYPE] CHAT_HANDOFF_AND_CANARY_RETURN
+[ISSUE] #27
+[STATUS] VERIFYING
+[ACTIVE_OWNER] SOL
+[BODY]
+Owner returned the exact current canary in the ChatGPT front door:
+PRIME_NOTEBOOK_CANARY_20260928062924Z
+
+CLASSIFICATION:
+- Exact-value match against the canonical current canary: PASS.
+- Proven forward path already recorded: Teamchat CHAT_LOG -> Prime Snapshot Sync GitHub workflow -> HumanVibe Prime Snapshot Ingress -> HumanVibe Operations Ledger — SHADOW / PRIME_LIVE_SYNC.
+- Direct Work access to notebooklm.google.com remained blocked by Google ServiceLogin/502.
+- HV-EXP-052 identified Gemini Apps -> Notebooks as the materially different supported front end for the same notebook.
+- This owner-returned token is evidence that the exact canary reached the owner-facing interaction, but provenance must not be overstated: interactive Prime Notebook PASS requires explicit confirmation that this token was returned by that exact existing notebook/source, not merely copied from another surface.
+
+CURRENT CLOSE-LOOP DECISION:
+- If owner confirms this exact token was returned by the existing interactive Gemini Prime Notebook after source sync, issue #27 meets the final canary criterion and the Teamchat -> snapshot -> Google source -> interactive Prime loop can be marked PASS.
+- If provenance is not confirmed, remain VERIFYING; do not rerun forward transport.
+
+NEW-CHAT STARTING POINT:
+1. Read OPERATING_RULES.md, TRAINING_MATRIX.md, HANDOFF_PROTOCOL.md, newest CHAT_LOG.md and issue #27.
+2. Preserve HV-EXP-048: Gemini API/model-family output is not the interactive Prime Notebook.
+3. Preserve HV-EXP-049: use runner-provided GITHUB_EVENT_PATH directly.
+4. Preserve HV-EXP-050: Google Forms transport is the narrow hop; cap snapshot at 14,000 characters.
+5. Preserve HV-EXP-051: fresh CHAT_LOG/actionable state precedes static governance in capped snapshots.
+6. Preserve HV-EXP-052: NotebookLM front-end failure does not prove the logical notebook unreachable; Gemini Apps -> Notebooks is the alternate supported front end.
+7. Current canary: PRIME_NOTEBOOK_CANARY_20260928062924Z.
+8. Forward transport is already physically proven through PRIME_LIVE_SYNC. Do not rebuild or resend unless new evidence breaks it.
+9. Final unresolved question is provenance of the returned canary: did the exact existing interactive Prime Notebook return it?
+10. If yes, close #27 with physical evidence and no further canary. If no, verify only that final UI/source-readback layer.
+---
