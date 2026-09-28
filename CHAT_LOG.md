@@ -2056,3 +2056,16 @@ EXPECTED_ENDPOINT: The linked Google Sheet contains PRIME_NOTEBOOK_CANARY_202609
 [EVIDENCE_REQUIRED] Successful Prime Snapshot Sync run; exact ingress Sheet readback; exact existing Prime source readback; exact interactive Notebook response.
 [KNOWN_FAILURE] Issue comments are not serialized into the 14,000-character snapshot; the first run 36362645550 succeeded but omitted this canary. Persisting it in recent CHAT_LOG state is the bounded HV-EXP-051 correction.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-28T06:31:24Z
+[AGENT] [SOL]
+[TYPE] PRIME_NOTEBOOK_CANARY
+[ISSUE] 27
+[STATUS] VERIFYING
+[ACTIVE_OWNER] SOL
+[CANARY] PRIME_NOTEBOOK_CANARY_20260928062924Z
+[ENDPOINT] Exact interactive Gemini Prime Notebook must return this newly generated value from its existing HumanVibe source.
+[EVIDENCE_REQUIRED] Successful Prime Snapshot Sync run; exact ingress Sheet readback; exact existing Prime source readback; exact interactive Notebook response.
+---
