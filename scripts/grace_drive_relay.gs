@@ -98,3 +98,28 @@ function primeGithub_(url, token, body) {
   }
   return JSON.parse(response.getContentText());
 }
+
+// Integrate with the EXISTING Apps Script time trigger by changing that trigger's
+// handler to runGraceDualRole. Do not create a second trigger.
+// The live project's original runPrimeGmailBridge function must already exist.
+// Existing OAuth scopes must retain Gmail/Calendar/external_request and add
+// https://www.googleapis.com/auth/documents.readonly.
+function runGraceDualRole() {
+  var bridgeFailure = null;
+  var relayFailure = null;
+  try {
+    runPrimeGmailBridge();
+  } catch (e) {
+    bridgeFailure = e;
+    console.error('Existing bridge failed: ' + String(e));
+  }
+  try {
+    relayPrimeHandoff();
+  } catch (e) {
+    relayFailure = e;
+    console.error('Drive relay failed: ' + String(e));
+  }
+  if (bridgeFailure || relayFailure) {
+    throw new Error('Dual-role wake failed; inspect Apps Script execution logs');
+  }
+}
