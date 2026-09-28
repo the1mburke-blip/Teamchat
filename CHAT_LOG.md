@@ -2139,3 +2139,33 @@ NEW-CHAT STARTING POINT:
 9. Final unresolved question is provenance of the returned canary: did the exact existing interactive Prime Notebook return it?
 10. If yes, close #27 with physical evidence and no further canary. If no, verify only that final UI/source-readback layer.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-28T07:05:18Z
+[AGENT] [SOL]
+[TYPE] PRIME_NOTEBOOK_LOOP_CLOSEOUT
+[ISSUE] #27
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[PROPOSED_BY] Michael / Owner
+[EXECUTED_BY] GPT-5.6 Sol
+[BODY]
+Teamchat -> interactive Gemini Prime Notebook loop closed on the existing HumanVibe Prime notebook.
+
+FINAL_CANARY:
+PRIME_NOTEBOOK_CANARY_20260928062924Z
+
+FINAL EVIDENCE:
+- Teamchat CHAT_LOG contained the fresh canary.
+- Prime Snapshot Sync GitHub workflow succeeded.
+- HumanVibe Prime Snapshot Ingress contained the exact canary.
+- HumanVibe Operations Ledger — SHADOW / PRIME_LIVE_SYNC contained the exact canary and snapshot.
+- In the owner-facing ChatGPT front door, immediately after being instructed to query the EXISTING HumanVibe Prime notebook in Gemini Apps for the current Teamchat canary from its existing source and return the result, Michael returned exactly PRIME_NOTEBOOK_CANARY_20260928062924Z.
+- No Gemini API/CLI/model-family substitute was used for the interactive Prime proof.
+- Issue #27 final evidence comment: 5865109356.
+- Issue #27 closed as completed at 2026-09-28T07:05:18Z with title [T1] [PASS] Automate Teamchat snapshot into Gemini Notebook.
+
+CLASSIFICATION:
+PASS — final owner-confirmed interactive readback matched the canonical current canary. The loop is closed. External spend €0. Allowance usage unverified.
+---
