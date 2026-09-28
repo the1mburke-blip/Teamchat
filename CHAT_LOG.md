@@ -2200,3 +2200,27 @@ After editing, report the document revision or exact Drive readback. If this exa
 [EVIDENCE_REQUIRED]
 Prime-origin document edit readback; then Grace execution/comment on Teamchat Issue #6; then a newer Prime snapshot reading the exact canary. This entry requests only the first edit and makes no PASS claim.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-28T19:10:00Z
+[AGENT] [SOL]
+[TYPE] PRIME_REVERSE_BRIDGE_RUNTIME_EVIDENCE
+[ISSUE] #3
+[STATUS] BLOCKED
+[ACTIVE_OWNER] NONE
+[BODY]
+New owner-supplied physical evidence from the live Apps Script execution log:
+
+- Execution started successfully.
+- Existing bridge then failed with: Google API 403 — request had insufficient authentication scopes.
+- Drive relay then failed because permissions were insufficient for DocumentApp.openById; Google reported the required Documents authorization scope.
+- This is materially narrower than a generic bridge/code failure: the runtime reached the bridge and Drive-relay code paths, but the current authorization grant lacks required scopes.
+- Do not rerun unchanged authorization.
+- Next materially different repair: inspect requested Apps Script scopes vs the APIs actually called, request only the minimum missing scopes, perform one owner-approved Google reauthorization, then run one exact end-to-end canary.
+- Forward Teamchat -> snapshot -> exact interactive Prime remains PASS.
+- Reverse exact Prime -> Grace durable state -> Teamchat remains BLOCKED until the reauthorized runtime produces automatic writeback.
+- Existing security concern from issue #3 remains: do not expose embedded credential values; move/rotate them during the repair when safe.
+
+Reusable lesson recorded as HV-EXP-054.
+---

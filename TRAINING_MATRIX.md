@@ -775,3 +775,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **A proven forward read path closes only ingress. Bidirectional PASS requires an independently verified reverse event/writeback path from the exact same interactive runtime, with no owner relay or runtime substitution.**
 - `what_not_to_retry`: Do not substitute Calendar, Gemini API/Jupyter output, or manual copy/paste as proof of interactive Notebook -> Teamchat writeback.
 - `current_gate`: Brand-new content originating in the exact interactive Prime Notebook must appear automatically in canonical Teamchat with independent provenance.
+
+
+### HV-EXP-054 — Runtime authorization scopes must match the bridge’s actual APIs
+- `experience_id`: HV-EXP-054
+- `date_utc`: 2026-09-28T19:10:00Z
+- `source_agent`: SOL
+- `scope`: HumanVibe Prime/Grace Google Apps Script reverse bridge.
+- `new_physical_evidence`: Owner screenshot of the live Apps Script execution log at approximately 20:08 Europe/Dublin shows the execution started, then the existing bridge failed with `Google API 403: Request had insufficient authentication scopes`. The Drive relay then failed because permissions were insufficient for `DocumentApp.openById`, with Google requiring the Documents authorization scope.
+- `diagnostic_conclusion`: The current failure is not proof that the bridge logic is absent. The execution reaches the bridge/Drive-relay code path, but the runtime authorization grant does not include the scopes required by the APIs being called.
+- `reusable_principle`: **Code present is not capability granted. Before debugging bridge logic, compare every called Google API against the runtime's actually granted OAuth scopes and force a fresh authorization when the manifest/requested scopes change.**
+- `what_not_to_retry`: Do not keep rerunning the same bridge under the unchanged authorization grant; the 403 and DocumentApp permission error are deterministic until the required scopes are granted.
+- `next_materially_different_route`: Inspect the existing Apps Script project's requested scopes/manifest and the function's API calls, add only the minimum required scopes, then obtain one owner-approved Google reauthorization and rerun exactly once. PASS still requires the exact Prime-origin instruction to enter Grace-owned durable state and then Teamchat automatically.
+- `security_guard`: Existing embedded credentials noted in issue #3 remain a separate remediation item; do not expose their values while repairing authorization.
+- `confidence`: HIGH for the scope mismatch; no PASS claim for the reverse loop.
