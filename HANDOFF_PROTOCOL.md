@@ -147,49 +147,49 @@ Routing rule: route analytical reasoning, research, adversarial review, synthesi
 
 ## Twelve-rule governance gates
 
-Every substantive task must pass three separate immutable-rule checks.
+Every substantive task must apply all 12 immutable rules to the actual work at three points: before execution, throughout execution, and at completion.
 
-### Gate 1 — preflight rule weighting
+### Gate 1 — preflight task-specific rule review
 
-Before route selection or substantive execution, record all 12 canonical immutable rules:
+Before substantive execution, review every one of the 12 canonical immutable rules against the exact task.
 
 ```text
-RULE_WEIGHTING:
-R1: <rule name> | WEIGHT: CRITICAL|HIGH|MEDIUM|LOW|N/A | WHY: <task-specific reason>
+RULE_APPLICATION_REVIEW:
+R1: <rule name> | APPLIES: YES|NO | TASK APPLICATION: <how this rule changes or constrains this task, or why it genuinely does not apply>
 R2: ...
 ...
 R12: ...
-RULE_WEIGHTING_STATUS: PASS
+RULE_APPLICATION_STATUS: PASS
 ```
 
-All 12 entries are mandatory. `N/A` requires an explicit reason. Missing weighting = `PREFLIGHT NOT READY`.
+This is not a severity-weighting or scoring exercise. Its purpose is to force the executor to interpret and apply every rule to the task before work starts. Missing rule review = `PREFLIGHT NOT READY`.
 
-### Gate 2 — mapped-route compliance review
+### Gate 2 — mapped-route and in-execution compliance
 
-Once the exact route has been mapped—executor, tools, dependencies, cost, owner boundary, evidence path, and blocker conditions—but before the first substantive execution, review that route against the weighted rules:
+Once the exact route has been mapped—executor, tools, dependencies, cost, owner boundary, evidence path, and blocker conditions—but before substantive execution, check that route against all 12 rules:
 
 ```text
 ROUTE_COMPLIANCE_REVIEW:
-R1: PASS|FAIL | EVIDENCE/CONTROL: <how the mapped route complies>
+R1: PASS|N/A | CONTROL/EVIDENCE: <how the mapped route complies>
 R2: ...
 ...
 R12: ...
 ROUTE_COMPLIANCE_STATUS: PASS|FAIL
 ```
 
-A FAIL on any `CRITICAL` or `HIGH` rule blocks execution. A material route change invalidates the affected review and requires re-preflight before continuing.
+If any applicable rule is not satisfied, execution does not start.
+
+During execution, the same 12 rules remain active controls. Re-check them whenever there is a material decision, failure, retry, escalation, route/executor/tool change, cost/allowance change, scope change, or new blocker. A material change requires STOP → rule review against the changed state → re-preflight where required → continue only if compliant.
 
 ### Gate 3 — separate post-task compliance tracker
 
-When the primary task reaches `PASS | PARTIAL | BLOCKED | FAIL | SUPERSEDED`, create a new compliance-tracker task for that completed run. It is a separate governance work item, not a self-declared note inside the primary task.
+When the primary task reaches `PASS | PARTIAL | BLOCKED | FAIL | SUPERSEDED`, create a new compliance-tracker task for that completed run. It is a separate governance work item.
 
 Required tracker fields:
 
 ```text
 [OBJECTIVE] Audit completed task <task/issue/run ID> against all 12 immutable rules
 [PRIMARY_RESULT] PASS|PARTIAL|BLOCKED|FAIL|SUPERSEDED
-[PRESTART_WEIGHTS] 12-rule weighting snapshot
-[ROUTE_REVIEW] 12-rule route-compliance snapshot
 [FINAL_COMPLIANCE]
 R1: PASS|FAIL|N/A | EVIDENCE: <physical/log evidence> | IMPACT: <if failed>
 ...
@@ -201,4 +201,5 @@ R12: PASS|FAIL|N/A | EVIDENCE: <physical/log evidence> | IMPACT: <if failed>
 [EVIDENCE_REQUIRED] readback proving tracker result and any training write
 ```
 
-The primary task may be operationally complete, but governance closure is incomplete until this compliance-tracker task reaches a verified terminal state.
+The tracker audits what actually happened, not what the preflight intended. The primary task may be operationally complete, but governance closure is incomplete until this tracker reaches a verified terminal state.
+
