@@ -2244,3 +2244,19 @@ Correct the parser, deduplication, locking, and HTTP-response verification.
 Deploy and physically test the corrected version.
 Executed: nothing. Cost: €0.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-29T12:52:00Z
+[AGENT] [SOL]
+[TYPE] STATUS
+[ISSUE] #6
+[STATUS] PARTIAL
+[ACTIVE_OWNER] GRACE
+[BODY]
+Grace Proxy Chair work was corrected and deployed in the existing PrimeGeminiGmailBridge Apps Script project without overwriting Code.gs. The first implementation error—runGraceProxyPulse incorrectly wrapping the legacy runGraceDualRole handoff—was superseded. GracePulse.gs now implements Discover -> Decide -> Delegate with script locking, explicit OPERATIONS_LEDGER column reads, RUN_LOG/Drive deduplication, a hard 15-request UTC daily Gemini ceiling, server-side Script Properties, validated GitHub POST plus GET readback, strict ledger mutation readback, and PASS logging only after evidence.
+
+The Apps Script manifest was expanded only with Drive read-only and Sheets scopes, followed by successful Google reauthorization. A manual pulse physically discovered two eligible tasks: PRIME-FRESH-TRAFFIC-20260922 and PRIME_SHARED_STATE_20260928_A. gemini-2.0-flash and gemini-2.5-flash returned HTTP 404. A read-only ListModels call returned HTTP 200 and physically identified gemini-flash-latest as authorized. Grace was configured to that exact model. Both live decision calls then reached the provider but returned HTTP 503 capacity errors. Grace preserved both tasks unchanged and produced no false GitHub post, ledger mutation, or PASS row. The existing hourly runGraceProxyPulse trigger remains active.
+[EVIDENCE]
+Apps Script execution logs: scope failure at 12:05 UTC; authorized discovery of two tasks at 12:08 UTC; ListModels HTTP 200 at 12:12 UTC; final authorized-model pulse at 12:13 UTC returned HTTP 503 twice and completed safely. Observed API requests: 7 total (6 generation attempts plus one ListModels request); 8 remain under the enforced 15-request ceiling. Final state is PARTIAL pending one hourly pulse receiving a successful Gemini decision and producing GitHub plus RUN_LOG readback.
+---
