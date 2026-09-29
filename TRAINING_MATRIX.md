@@ -933,3 +933,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not convert estimates into arbitrary caps; do not ignore material variance until research is nearly complete.
 - `reusable_principle`: **Estimate → track → compare → re-preflight on material variance. Never cap by guess; never drift without review.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-064 — Estimates are substantive tasks and require preflight before recommendation
+- `experience_id`: HV-EXP-064
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `scope`: Allowance/capacity estimates and build recommendations.
+- `failure`: SOL answered how much Icarus Codex could build with 22 percentage points of weekly allowance and supplied a 14–18% core-build estimate before running the mandatory preflight/history review.
+- `impact`: The answer sounded precise but was not grounded in the recorded Codex/Sol burn history and therefore could not satisfy NO EVIDENCE = NO CLAIM.
+- `canonical_rule`: **A capacity, cost, allowance, or delivery estimate that can influence execution is a substantive task. Retrieve history/training and complete preflight before presenting the estimate.**
+- `recovery`: Withdraw the unsupported estimate, retrieve the measured Sol/Codex benchmarks and Icarus burn history, apply all 12 rules, then issue a bounded endpoint-based estimate.
+- `what_not_to_retry`: Do not infer a build percentage from architecture size alone; do not treat an estimate as exempt from preflight.
+- `confidence`: HIGH.
