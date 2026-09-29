@@ -143,3 +143,62 @@ Capability gates:
 
 Routing rule: route analytical reasoning, research, adversarial review, synthesis, and suitable bounded specialist execution to the full DeepSeek chair when its current runtime has the required capability. Do not conflate this chair with the separate self-hosted R1-distill persistence ghost documented in historical training.
 
+
+
+## Twelve-rule governance gates
+
+Every substantive task must pass three separate immutable-rule checks.
+
+### Gate 1 — preflight rule weighting
+
+Before route selection or substantive execution, record all 12 canonical immutable rules:
+
+```text
+RULE_WEIGHTING:
+R1: <rule name> | WEIGHT: CRITICAL|HIGH|MEDIUM|LOW|N/A | WHY: <task-specific reason>
+R2: ...
+...
+R12: ...
+RULE_WEIGHTING_STATUS: PASS
+```
+
+All 12 entries are mandatory. `N/A` requires an explicit reason. Missing weighting = `PREFLIGHT NOT READY`.
+
+### Gate 2 — mapped-route compliance review
+
+Once the exact route has been mapped—executor, tools, dependencies, cost, owner boundary, evidence path, and blocker conditions—but before the first substantive execution, review that route against the weighted rules:
+
+```text
+ROUTE_COMPLIANCE_REVIEW:
+R1: PASS|FAIL | EVIDENCE/CONTROL: <how the mapped route complies>
+R2: ...
+...
+R12: ...
+ROUTE_COMPLIANCE_STATUS: PASS|FAIL
+```
+
+A FAIL on any `CRITICAL` or `HIGH` rule blocks execution. A material route change invalidates the affected review and requires re-preflight before continuing.
+
+### Gate 3 — separate post-task compliance tracker
+
+When the primary task reaches `PASS | PARTIAL | BLOCKED | FAIL | SUPERSEDED`, create a new compliance-tracker task for that completed run. It is a separate governance work item, not a self-declared note inside the primary task.
+
+Required tracker fields:
+
+```text
+[OBJECTIVE] Audit completed task <task/issue/run ID> against all 12 immutable rules
+[PRIMARY_RESULT] PASS|PARTIAL|BLOCKED|FAIL|SUPERSEDED
+[PRESTART_WEIGHTS] 12-rule weighting snapshot
+[ROUTE_REVIEW] 12-rule route-compliance snapshot
+[FINAL_COMPLIANCE]
+R1: PASS|FAIL|N/A | EVIDENCE: <physical/log evidence> | IMPACT: <if failed>
+...
+R12: PASS|FAIL|N/A | EVIDENCE: <physical/log evidence> | IMPACT: <if failed>
+[SCORE] <rules passed>/<rules applicable>
+[MISSES] exact failed rules
+[ALLOWANCE_WASTE] measured or explicitly UNVERIFIED
+[TRAINING_REQUIRED] YES|NO
+[EVIDENCE_REQUIRED] readback proving tracker result and any training write
+```
+
+The primary task may be operationally complete, but governance closure is incomplete until this compliance-tracker task reaches a verified terminal state.
