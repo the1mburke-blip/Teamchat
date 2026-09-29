@@ -946,3 +946,31 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `recovery`: Withdraw the unsupported estimate, retrieve the measured Sol/Codex benchmarks and Icarus burn history, apply all 12 rules, then issue a bounded endpoint-based estimate.
 - `what_not_to_retry`: Do not infer a build percentage from architecture size alone; do not treat an estimate as exempt from preflight.
 - `confidence`: HIGH.
+
+
+### HV-EXP-065 — Event ledger ordering must not depend on random IDs
+- `experience_id`: HV-EXP-065
+- `date_utc`: 2026-09-29
+- `source_agent`: CODEX + OWNER + SOL
+- `scope`: Icarus durable event-ledger ordering.
+- `trigger`: Stage 4F serial regression returned two completion-related events in reverse order even though both writes succeeded.
+- `failure`: Events with equal timestamps were secondarily ordered by random event ID, making readback order nondeterministic.
+- `root_cause`: A random identifier was being used as an implicit tie-breaker for temporal ordering.
+- `recovery`: Preserve the existing schema and make paired completion-event timestamps strictly ordered before write/readback; rerun the serial regression.
+- `canonical_rule`: **Random IDs are identity, not chronology. Any ordered ledger contract needs a deterministic ordering key or strictly ordered timestamps; equal timestamps plus random IDs cannot prove event sequence.**
+- `what_not_to_retry`: Do not use UUID/event-ID lexical order as a substitute for causal or temporal sequence.
+- `verification`: After the changed fix, the Python regression suite passed and the completion path ended in VERIFYING, never PASS.
+- `confidence`: HIGH.
+
+### HV-EXP-066 — Owner-authorized allowance variance is not an executor lane violation
+- `experience_id`: HV-EXP-066
+- `date_utc`: 2026-09-29
+- `source_agent`: OWNER + CODEX + SOL
+- `scope`: Icarus/Codex allowance governance.
+- `trigger`: Stage 4F began at an owner-observed ~19% weekly allowance with a 2-point budget and 17% floor. Codex stopped at the allowance gate and waited for Michael before continuing.
+- `owner_evidence`: Michael explicitly confirmed that Codex had owner authorization to continue past the originally declared allowance/floor and that Codex remained inside the authorized Stage 4F scope.
+- `final_readback`: Owner-visible weekly allowance was 16% after the run.
+- `canonical_rule`: **A bounded executor that stops at its allowance gate and resumes only after explicit owner authorization has not gone outside its lane merely because the owner changes the allowance boundary. Record the authorization and final meter readback; do not silently self-extend.**
+- `what_not_to_retry`: Do not let an executor guess the owner-visible meter, silently cross a declared floor, or treat owner authorization as permission to change task scope or route.
+- `reusable_principle`: **Stop → owner decision → record authorization → continue only within the same authorized lane.**
+- `confidence`: HIGH.
