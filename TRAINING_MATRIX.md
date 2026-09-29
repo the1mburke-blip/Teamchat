@@ -919,3 +919,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `recovery`: Stop further research calls, durably record the miss, re-preflight from the evidence already collected, and continue only under a new explicit bounded route if more retrieval is genuinely required.
 - `what_not_to_retry`: Do not use batched multi-query calls without incrementing the allowance counter by every query record.
 - `confidence`: HIGH.
+
+
+### HV-EXP-063 — Allowance estimates are forecasts, but material variance must trigger promptly
+- `experience_id`: HV-EXP-063
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `scope`: Research allowance discipline / architecture work.
+- `trigger`: Owner corrected the prior practice of imposing arbitrary hard query caps. The correct control is to estimate expected research usage, track actual usage, and re-preflight only when variance becomes material.
+- `failure`: On the restarted Icarus architecture audit, the estimate was roughly 20–30 focused source checks, but research continued to about 43 search queries plus supporting source opens/finds before the variance was explicitly recognized.
+- `canonical_rule`: **An allowance estimate is not a hard ceiling. Do not stop useful work merely because the estimate is reached. However, once actual use materially exceeds the estimate, stop promptly and re-preflight before continuing.**
+- `impact`: Research remained €0 and productive, but the re-preflight happened later than required.
+- `what_not_to_retry`: Do not convert estimates into arbitrary caps; do not ignore material variance until research is nearly complete.
+- `reusable_principle`: **Estimate → track → compare → re-preflight on material variance. Never cap by guess; never drift without review.**
+- `confidence`: HIGH.
