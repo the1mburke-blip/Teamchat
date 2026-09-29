@@ -891,3 +891,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not approve an agent OS merely because it lists the same model vendors used by the team. Verify separate agent identities, authentication method, subscription reuse, persistent state, inter-agent routing, and the exact connection surface first.
 - `reusable_principle`: **For any multi-agent platform, verify identity + auth + transport + persistence + routing for each named agent before claiming the team can connect.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-061 — Compliance trackers must audit evidence, not intention
+- `experience_id`: HV-EXP-061
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `scope`: Post-task immutable-rule compliance scoring.
+- `failure`: The PokeClaw full-team verification tracker initially scored 12/12 PASS even though required preflight, routing, history/training retrieval, allowance estimation, and material-change re-preflight evidence were missing.
+- `root_cause`: The tracker credited intended or partially performed controls as if they were completed evidence-backed gates.
+- `corrected_result`: **7 PASS / 5 FAIL out of 12 reviewed.** Failed rules: PREFLIGHT FIRST, CORRECT ROUTING, HISTORY/TRAINING FIRST, ALLOWANCE DISCIPLINE, MATERIAL CHANGE = RE-PREFLIGHT.
+- `canonical_rule`: **A post-task compliance tracker audits what physically happened. Missing required evidence is a FAIL, not a PASS, and cannot be repaired retroactively by explaining what should have happened.**
+- `what_not_to_retry`: Do not count `UNVERIFIED` allowance as compliance; do not treat a short preamble as the mandatory preflight; do not claim correct routing when no required delegation/exception evidence exists; do not credit re-preflight when work simply continued after a material route change.
+- `reusable_principle`: **Compliance scoring must be adversarial, evidence-backed, and independent of the executor's intentions.**
+- `confidence`: HIGH.
