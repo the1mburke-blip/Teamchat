@@ -2287,3 +2287,29 @@ Classification: PARTIAL because this supports a product/operating-method distinc
 
 Governance miss: declared research allowance was exceeded because batched search records were incorrectly counted as tool calls. HV-EXP-062 records the correction.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-29
+[AGENT] [SOL]
+[TYPE] ICARUS_GOVERNANCE_PLATFORM_ARCHITECTURE
+[ISSUE] #34
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[PROPOSED_BY] Michael / Owner
+[EXECUTED_BY] GPT-5.6 Sol
+[BODY]
+Icarus architecture reset and completed.
+
+Core decision: Icarus is a neutral governance control plane, not another agent framework. A2A is the agent/task transport; MCP is the governed tool/resource plane; Icarus owns admission, policy, task state, execution permits, evidence validation, shared training and post-task audit.
+
+Persistent agent identity belongs to Icarus, not to a vendor chat session. Vendor runtimes attach through adapters. Full GOVERNED status requires Icarus to control/intercept the effectful action path; otherwise the runtime is SUPERVISED.
+
+Initial adapters: Claude Code, Codex/Sol, controlled Gemini ADK/CLI, controlled DeepSeek API/free-shadow/local route. Ordinary consumer chat/notebook sessions are not assumed externally governable.
+
+MVP sequence: Governance Envelope + Kernel/state machine + evidence ledger + deterministic 12-rule policy + MCP Tool Proxy + MockAdapter canary -> real adapters -> A2A dispatch -> post-task auditor -> owner mobile/PWA console.
+
+Cost: €0.
+Compliance tracker: issue #35 = 11 PASS / 1 FAIL. R7 Allowance Discipline failed because research materially exceeded the estimate before variance was recognized. HV-EXP-063 logged and read back.
+Evidence: Issue #34 terminal architecture comment 5894257327.
+---
