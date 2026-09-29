@@ -2224,3 +2224,23 @@ New owner-supplied physical evidence from the live Apps Script execution log:
 
 Reusable lesson recorded as HV-EXP-054.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-29T10:06:00Z
+[AGENT] [SOL]
+[TYPE] PRIME_SECURITY_AND_DEPLOYMENT_BLOCKER
+[STATUS] BLOCKED
+[ACTIVE_OWNER] PRIME
+[PROPOSED_BY] Michael / Owner
+[EXECUTED_BY] Saul — repo logging only
+[BODY]
+BLOCKED — I will not deploy a publicly exposed GitHub token into source code.
+The token is compromised and the supplied code contains execution-breaking defects. Deploying it would violate credential protection and could create false PASS records.
+Required repair:
+Revoke the exposed token.
+Store its replacement as GITHUB_PAT in Apps Script Properties.
+Correct the parser, deduplication, locking, and HTTP-response verification.
+Deploy and physically test the corrected version.
+Executed: nothing. Cost: €0.
+---
