@@ -2260,3 +2260,30 @@ The Apps Script manifest was expanded only with Drive read-only and Sheets scope
 [EVIDENCE]
 Apps Script execution logs: scope failure at 12:05 UTC; authorized discovery of two tasks at 12:08 UTC; ListModels HTTP 200 at 12:12 UTC; final authorized-model pulse at 12:13 UTC returned HTTP 503 twice and completed safely. Observed API requests: 7 total (6 generation attempts plus one ListModels request); 8 remain under the enforced 15-request ceiling. Final state is PARTIAL pending one hourly pulse receiving a successful Gemini decision and producing GitHub plus RUN_LOG readback.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-29
+[AGENT] [SOL]
+[TYPE] ICARUS_GOVERNANCE_PRIOR_ART_AUDIT
+[ISSUE] #32
+[STATUS] PARTIAL
+[ACTIVE_OWNER] NONE
+[PROPOSED_BY] Michael / Owner
+[EXECUTED_BY] GPT-5.6 Sol under documented DeepSeek-capability exception
+[BODY]
+Deep prior-art audit completed for the Icarus governed multi-agent operations doctrine.
+
+Finding: Icarus is not an original agent architecture. Existing prior art covers multi-agent orchestration/handoffs, SOP-driven roles, task/progress ledgers, persistent state, human approval, runtime policy enforcement, identity/trust, audit lineage, cost budgets, kill switches, shared memory/experience, and post-task workflow review.
+
+Closest governance substrate found: Microsoft Agent Governance Toolkit / Agent SRE.
+Closest orchestration analogue: Microsoft Magentic-One.
+Closest SOP analogue: MetaGPT.
+
+Residual distinctive combination not found as one integrated mandatory doctrine in the reviewed sources:
+pre-task immutable-rule application -> mapped-route compliance gate -> live rule enforcement and material-change re-preflight -> evidence-defined PASS -> separate post-task compliance audit -> durable cross-agent failure training required before future execution, plus prior-art-first, bounded retries, routing/escalation and spend discipline.
+
+Classification: PARTIAL because this supports a product/operating-method distinction, not a legal novelty/patentability claim.
+
+Governance miss: declared research allowance was exceeded because batched search records were incorrectly counted as tool calls. HV-EXP-062 records the correction.
+---
