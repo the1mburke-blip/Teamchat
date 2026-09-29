@@ -2313,3 +2313,45 @@ Cost: €0.
 Compliance tracker: issue #35 = 11 PASS / 1 FAIL. R7 Allowance Discipline failed because research materially exceeded the estimate before variance was recognized. HV-EXP-063 logged and read back.
 Evidence: Issue #34 terminal architecture comment 5894257327.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-29T20:54Z
+[AGENT] [SOL]
+[TYPE] ICARUS_STAGE_4F_OWNER_AUTHORIZATION_CLOSEOUT
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[PROPOSED_BY] Michael / Owner
+[EXECUTED_BY] Codex — Stage 4F; SOL — canonical logging only
+[BODY]
+Stage 4F technical result remains PASS.
+
+Verified run summary supplied by Codex:
+- Gate 0 preflight PASS before mutation.
+- Durable Agent Registry implemented and persisted.
+- MockAdapter tests PASS.
+- Adapter-originated MCP request denied with SCOPE_NOT_ALLOWED, no canary effect, and MCP_TOOL_DENIED only.
+- Completion request ended in VERIFYING, never PASS.
+- Final regression passed after one recorded event-order defect was corrected by making completion-event ordering deterministic without schema change.
+- Build/health/SQLite/settings/Stage 4E canary regression passed.
+- Dependencies changed: none.
+- External mutations: 0.
+- Monetary cost: €0.
+
+ALLOWANCE:
+- Owner-observed Stage 4F start: approximately 19% weekly allowance remaining.
+- Original Stage 4F budget: 2 percentage points; declared floor: 17%.
+- Codex stopped at the allowance gate and waited for Michael rather than estimating or silently extending the budget.
+- Michael explicitly authorized Codex to continue beyond the originally declared allowance/floor while remaining inside the same Stage 4F scope.
+- Final owner-visible readback after completion: 16% remaining.
+- Michael explicitly confirmed Codex did not leave its lane, did not self-expand scope, and followed the owner's instruction.
+
+CLASSIFICATION:
+The 16% final meter is an owner-authorized allowance variance, not an unauthorized executor overrun. Technical PASS is unchanged. Canonical allowance evidence and owner authorization are now durably recorded.
+
+TRAINING:
+HV-EXP-065 records the deterministic event-order lesson.
+HV-EXP-066 records the owner-authorization / allowance-gate lesson.
+
+NO STAGE 4G WORK WAS PERFORMED.
+---
