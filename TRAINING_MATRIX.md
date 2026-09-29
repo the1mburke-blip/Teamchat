@@ -861,3 +861,19 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not use a generic preflight that merely names the rules; do not assume a compliant plan guarantees compliant execution; do not close governance at the same moment the executor declares task completion.
 - `verification_requirement`: The compliance tracker must cite physical/log evidence and itself reach a verified terminal state.
 - `confidence`: HIGH.
+
+
+### HV-EXP-059 — Correction: “weigh the rules” means apply them to the task, not assign severity
+- `experience_id`: HV-EXP-059
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `supersedes`: The severity-weighting interpretation in HV-EXP-058. HV-EXP-058 remains historical evidence of the misunderstanding; this entry is controlling.
+- `scope`: Universal immutable-rule application.
+- `owner_correction`: “Weighed against the task” means review all 12 immutable rules in context and apply every relevant rule to the given task before execution, during execution, and at completion. It does **not** mean assign CRITICAL/HIGH/MEDIUM/LOW weights.
+- `before_start`: As part of preflight, review all 12 rules one by one against the exact task and state how each applicable rule changes or constrains the plan. After the route is mapped, verify that the mapped route complies with all 12 before execution starts.
+- `during_execution`: The rules remain active throughout the task. Re-check them at material decisions, failures, retries, escalations, route/executor/tool changes, cost/allowance changes, scope changes, and new blockers. A material change cannot be acted on until the rules have been reapplied to the changed state.
+- `at_completion`: Review the completed task against all 12 rules using actual evidence, not the intended plan.
+- `post_task_tracker`: After the primary task reaches a terminal state, create a separate compliance-tracker task that scores actual compliance with every applicable rule, identifies misses and impact/allowance waste, and records reusable failures in training.
+- `reusable_principle`: **The immutable rules are live operating controls: interpret them against the task before work, enforce them while work is happening, and audit them after work is done.**
+- `what_not_to_retry`: Do not convert contextual rule application into an abstract severity-ranking exercise. Do not treat preflight compliance as sufficient for the whole run. Do not let the executor’s terminal status substitute for a separate evidence-based compliance audit.
+- `confidence`: HIGH.
