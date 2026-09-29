@@ -974,3 +974,48 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not let an executor guess the owner-visible meter, silently cross a declared floor, or treat owner authorization as permission to change task scope or route.
 - `reusable_principle`: **Stop → owner decision → record authorization → continue only within the same authorized lane.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-067 — Immutable rules are for compliance, not interpretation
+- `experience_id`: HV-EXP-067
+- `date_utc`: 2026-09-29
+- `source_agent`: OWNER + SOL
+- `scope`: Universal agent/task governance.
+- `failure`: SOL narrowed the owner's exact rule **"Every agent, every task, every time."** to **"every substantive task."** That inserted an unauthorized exception.
+- `root_cause`: The agent interpreted and paraphrased an immutable rule instead of executing its literal scope.
+- `owner_doctrine`: **Every agent, every task, every time.**
+- `owner_doctrine_2`: **Immutable rules are not up for interpretation. They are not up for debate. They are only up for compliance.**
+- `canonical_rule`: Do not paraphrase an immutable rule in a way that narrows, softens, qualifies, delays, or creates exceptions to its stated scope.
+- `what_not_to_retry`: Do not replace "every task" with agent-created categories such as "substantive," "important," "execution," or "high-risk" tasks.
+- `reusable_principle`: **Interpretation may explain a rule; it may not change the rule.**
+- `confidence`: HIGH.
+
+### HV-EXP-068 — Self-critique is mandatory; self-judgment is not authoritative
+- `experience_id`: HV-EXP-068
+- `date_utc`: 2026-09-29
+- `source_agent`: OWNER + SOL
+- `scope`: Icarus task adjudication and agent compliance.
+- `trigger`: During a Grace status check, SOL initially awarded itself 12/12 compliance. A later literal rule-by-rule audit corrected that to **5 PASS / 6 FAIL / 1 N/A**.
+- `failure`: The executing agent treated a broad impression of "good process" as if it were evidence for each rule.
+- `recovery`: Re-read the exact canonical rules, score each one independently, downgrade unsupported PASS claims, and expose the result for owner/Icarus challenge.
+- `canonical_rule`: **The agent must critique itself aggressively, report every miss, and provide evidence for every claimed PASS; the agent does not make the final governance judgment.**
+- `scorecard_rule`: A terminal scorecard is a challenge surface, not a ceremonial grade. Unsupported items must be downgraded when challenged.
+- `governance_loop`: **pre-flight → mid-flight compliance check → terminal result → separate scorecard/challenge → governance closure.**
+- `reusable_principle`: **Self-critique improves execution; independent adjudication determines whether the work counts.**
+- `confidence`: HIGH.
+
+### HV-EXP-069 — Icarus is the independent judge above the agent stack
+- `experience_id`: HV-EXP-069
+- `date_utc`: 2026-09-29
+- `source_agent`: OWNER + SOL
+- `scope`: Icarus product role and architecture.
+- `definition`: Agents may propose, execute, report, and self-critique. **They may not certify themselves. Icarus independently checks rules, route, logs, evidence, and scorecard before PASS becomes system truth.**
+- `market_position`: Icarus is not primarily another agent framework, orchestrator, memory layer, or compliance dashboard. It is the independent governance/adjudication layer above heterogeneous agents and existing control stacks.
+- `core_question`: **Who decides whether agent work was allowed, compliant, evidenced, and actually complete? Icarus.**
+- `architectural_boundary`: Icarus must have control at pre-flight, during execution, at material route changes, and before PASS.
+- `future_problem`: Icarus itself cannot be its own final judge.
+- `future_conscience_direction`: A later "digital conscience" should combine a deterministic constitutional kernel that Icarus cannot rewrite, an independent challenger for semantic/reasoning critique, and owner authority for constitutional change or unresolved ambiguity.
+- `deferred_sequence`: **Build the judge → connect agents → prove the judge → then build and adversarially test the judge's conscience.**
+- `what_not_to_do_now`: Do not expand the current MVP into enterprise conscience/constitutional infrastructure before Icarus is operational and connected to real agents.
+- `reusable_principle`: **Agents execute. Icarus judges. Icarus's future conscience constrains the judge; the owner controls the constitution.**
+- `confidence`: HIGH.
