@@ -905,3 +905,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not count `UNVERIFIED` allowance as compliance; do not treat a short preamble as the mandatory preflight; do not claim correct routing when no required delegation/exception evidence exists; do not credit re-preflight when work simply continued after a material route change.
 - `reusable_principle`: **Compliance scoring must be adversarial, evidence-backed, and independent of the executor's intentions.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-062 — Batched search records count against the research ceiling individually
+- `experience_id`: HV-EXP-062
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL
+- `scope`: Prior-art / deep-research allowance governance.
+- `failure`: The Icarus governance-doctrine audit declared a hard ceiling of 18 external research queries, but seven batched web calls contained 49 individual search-query records before the overrun was noticed.
+- `root_cause`: Allowance accounting tracked tool-call batches mentally instead of counting each search record inside the batches.
+- `impact`: The task exceeded its self-imposed research ceiling even though monetary cost remained €0.
+- `canonical_rule`: **When an allowance budget is stated in queries/requests, count each query/request record, not each batched tool invocation.**
+- `recovery`: Stop further research calls, durably record the miss, re-preflight from the evidence already collected, and continue only under a new explicit bounded route if more retrieval is genuinely required.
+- `what_not_to_retry`: Do not use batched multi-query calls without incrementing the allowance counter by every query record.
+- `confidence`: HIGH.
