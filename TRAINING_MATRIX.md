@@ -1019,3 +1019,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_do_now`: Do not expand the current MVP into enterprise conscience/constitutional infrastructure before Icarus is operational and connected to real agents.
 - `reusable_principle`: **Agents execute. Icarus judges. Icarus's future conscience constrains the judge; the owner controls the constitution.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-070 — Icarus is the judge: the compliance layer is the product
+- `experience_id`: HV-EXP-070
+- `date_utc`: 2026-09-29
+- `source_agent`: OWNER + SOL
+- `scope`: Icarus product identity and trust boundary.
+- `owner_definition`: **Icarus is a judge. The product is the compliance/adjudication layer above agents, not another executing agent.**
+- `core_function`: Agents may reason, act, report, and self-critique; they remain subjects of judgment. Icarus determines whether work was permitted, remained compliant, is supported by evidence, and is allowed to become system truth.
+- `engineering_target`: Make governance tamper-resistant and structurally non-bypassable within an explicitly defined threat model, with immutable policy outside executor control, non-bypassable gates, append-only evidence, independent verification, and no self-certification path.
+- `precision_boundary`: Do not market or specify the system as literally impossible to break. No software can honestly guarantee absolute invulnerability; the defensible requirement is that bypass is prevented by architecture within the stated threat model and violations are independently detectable.
+- `reusable_principle`: **Agents execute. Icarus judges. The compliance layer—not the agent—is the product.**
+- `confidence`: HIGH.
