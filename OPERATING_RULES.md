@@ -67,3 +67,17 @@ Only `CLAIMED`, `EXECUTING`, or `VERIFYING` may have an active owner.
 42. **Rule compliance must be maintained before and during execution.** After the task route, executor, tools, dependencies, cost, evidence path, and blocker conditions have been mapped—but before the first substantive execution—the active chair must review the mapped route against all 12 rules and confirm that every applicable rule is satisfied. During execution, the chair must continue applying those rules to each material decision, route change, failure, retry, escalation, cost change, or scope change. If the route materially changes, stop and re-review the 12 rules against the changed route before continuing. A task may not continue through a known rule violation.
 
 43. **Post-task compliance tracker is a separate required task.** After the primary task reaches a terminal state (`PASS | PARTIAL | BLOCKED | FAIL | SUPERSEDED`), create a distinct compliance-tracker task for that completed run. The tracker must review actual execution against all 12 rules, cite evidence for compliance or non-compliance, identify every miss and its impact/allowance waste, and create/update training for reusable failures. The primary task's operational result may be reported, but governance closure is incomplete until the compliance tracker itself reaches a verified terminal state.
+
+
+## Owner constitutional doctrine — literal immutable scope
+
+**Every agent, every task, every time.**
+
+**Immutable rules are not up for interpretation. They are not up for debate. They are only up for compliance.**
+
+This owner doctrine is controlling wherever narrower wording elsewhere could be read to create an exception. An agent may explain an immutable rule, but may not paraphrase it in a way that narrows, softens, qualifies, delays, or creates an exemption from its exact scope.
+
+For task execution, the required governance loop is:
+**pre-flight → mid-flight compliance check → terminal result → separate scorecard/challenge → governance closure.**
+
+The executing agent must self-critique and surface its own misses, but it is not the final judge of its own compliance.
