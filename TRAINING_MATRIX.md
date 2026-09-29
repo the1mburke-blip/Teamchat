@@ -808,3 +808,20 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not equate vendor documentation silence with impossibility; do not re-run the same unsupported native path; do not adopt an unofficial hack solely because it exists.
 - `example`: Personal Notebook wake: official supported wake = CLOSED at €0; community route via an unofficial NotebookLM client/internal RPCs or Playwright = CANDIDATE pending a canary against the exact HumanVibe Prime notebook.
 - `confidence`: HIGH for the problem-solving doctrine; individual unofficial routes remain conditional until physically verified.
+
+
+### HV-EXP-056 — Autonomous proxy pulses require evidence-gated delegation
+- `experience_id`: HV-EXP-056
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + PRIME + OWNER
+- `scope`: Grace Proxy Chair / Apps Script Discover -> Decide -> Delegate automation.
+- `initial_failure`: A newly created `runGraceProxyPulse` incorrectly called the legacy `runGraceDualRole` handoff relay. The proposed replacement code also contained whole-row parsing, regex capture, Gemini response-path, HTTP-validation, deduplication, and false-PASS defects.
+- `repair`: Preserve existing `Code.gs`; isolate Grace logic in `GracePulse.gs`; namespace helpers; read ledger columns A/B/F/G/H/I explicitly; lock the script; deduplicate task/file IDs; store secrets in Script Properties; cap Gemini requests at 15 per UTC day; validate chair values; require GitHub POST 201 plus GET body readback; verify ledger and RUN_LOG writes before PASS.
+- `authorization_lesson`: Adding Drive/Sheets calls requires matching manifest scopes and a fresh Google authorization grant. A successful save is not runtime permission.
+- `model_lesson`: A hard-coded model name is not availability evidence. After model-specific 404s, call ListModels once, select an explicitly authorized generateContent model, and avoid guessing/retrying closed model IDs.
+- `capacity_lesson`: HTTP 503 from an authorized model is provider capacity, not proof of code failure. Preserve task state, write no PASS, and allow the bounded scheduled pulse to retry within the daily ceiling.
+- `physical_evidence`: Drive/Sheets authorization succeeded; Grace discovered two exact tasks; ListModels returned HTTP 200; gemini-flash-latest was physically authorized; final calls returned HTTP 503; no GitHub, ledger, or PASS mutation occurred.
+- `reusable_principle`: **Discovery is not delegation. PASS requires model decision, verified endpoint write, durable-state mutation, and physical readback. Every earlier state is PARTIAL.**
+- `what_not_to_retry`: Do not wrap the legacy handoff relay; do not overwrite working bridge files; do not guess model IDs after a 404; do not log PASS from an attempted or unverified GitHub request; do not spend beyond the 15-request daily ceiling.
+- `current_state`: Correct Grace Proxy engine and hourly trigger are active. Seven API requests were observed today; eight remain under the enforced ceiling. Completion awaits a successful provider response on a future bounded wake.
+- `confidence`: HIGH for code-path, scope, discovery, quota, and failure-preservation evidence; delegation remains unproven until GitHub and RUN_LOG readback pass.
