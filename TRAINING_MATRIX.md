@@ -877,3 +877,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **The immutable rules are live operating controls: interpret them against the task before work, enforce them while work is happening, and audit them after work is done.**
 - `what_not_to_retry`: Do not convert contextual rule application into an abstract severity-ranking exercise. Do not treat preflight compliance as sufficient for the whole run. Do not let the executor’s terminal status substitute for a separate evidence-based compliance audit.
 - `confidence`: HIGH.
+
+
+### HV-EXP-060 — Provider support is not agent connectivity or subscription reuse
+- `experience_id`: HV-EXP-060
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `scope`: Phone-resident agent OS selection / PokeClaw verification.
+- `failure`: PokeClaw was initially recommended after proving standalone Android operation, local inference, and cloud-provider support, but before proving that Michael's existing Saul/Claude/Prime/DeepSeek agents could connect as separate persistent identities using current-plan authentication.
+- `new_evidence`: PokeClaw documents OpenAI, Anthropic, Google, and OpenAI-compatible cloud support through per-provider API keys and mid-session model switching. Repository/code search shows one active model configuration, no multi-agent/profile layer, and no provider OAuth/subscription-auth path. Its External Automation surface exposes local Android RUN_TASK/RUN_CHAT intents for Tasker/MacroDroid/ADB-style callers, not MCP/A2A/shared-agent identity connectivity.
+- `canonical_distinction`: **Model/provider compatibility is not team-agent connectivity. API-key compatibility is not consumer-subscription reuse. Model switching is not multi-agent identity.**
+- `impact`: The earlier PokeClaw PASS selection was superseded because it did not satisfy the full-team requirement.
+- `what_not_to_retry`: Do not approve an agent OS merely because it lists the same model vendors used by the team. Verify separate agent identities, authentication method, subscription reuse, persistent state, inter-agent routing, and the exact connection surface first.
+- `reusable_principle`: **For any multi-agent platform, verify identity + auth + transport + persistence + routing for each named agent before claiming the team can connect.**
+- `confidence`: HIGH.
