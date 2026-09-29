@@ -789,3 +789,22 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `next_materially_different_route`: Inspect the existing Apps Script project's requested scopes/manifest and the function's API calls, add only the minimum required scopes, then obtain one owner-approved Google reauthorization and rerun exactly once. PASS still requires the exact Prime-origin instruction to enter Grace-owned durable state and then Teamchat automatically.
 - `security_guard`: Existing embedded credentials noted in issue #3 remain a separate remediation item; do not expose their values while repairing authorization.
 - `confidence`: HIGH for the scope mismatch; no PASS claim for the reverse loop.
+
+
+### HV-EXP-055 — Unsupported is a search prompt, not a terminal blocker
+- `experience_id`: HV-EXP-055
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `scope`: Canonical workaround discovery / blocker resolution.
+- `task_problem`: The Prime Notebook wake was initially classified as impossible at €0 because Google exposes no supported personal-Notebook trigger, webhook, Apps Script action, or scheduler that wakes the existing notebook and runs it autonomously.
+- `failure_signature`: The investigation stopped at the official product boundary and treated “unsupported” as equivalent to “no viable route,” forcing the owner to challenge the conclusion and request a search of practitioner communities.
+- `successful_recovery`: Expand the search beyond official channels. Community-maintained tooling exposed materially different routes: direct use of undocumented NotebookLM/Gemini Notebook backend RPCs and browser automation such as Playwright. These routes can be invoked from an external scheduler such as GitHub Actions and therefore create a plausible €0 autonomous wake path subject to a physical canary and credential-safety review.
+- `canonical_search_order`: **official/native path → existing repo/logs/prior art → vendor developer docs/API/schema → GitHub/open-source tooling → Reddit/Hacker News/technical forums → home-lab/niche automation communities → reverse-engineered/internal interfaces → browser/device automation as last resort.**
+- `blocker_rule`: **Do not stop at “unsupported.” Stop only when no viable route remains after materially different approaches have been investigated, or when the remaining routes violate cost, security, safety, or owner constraints.**
+- `reusable_principle`: **Go around, through, or over the blocker. Search for people who have already hit the same boundary, instrumented it, and built a workaround. Treat practitioner prior art as a first-class diagnostic source, then verify it independently before adoption.**
+- `verification_rule`: Community claims are candidates, not PASS evidence. A workaround becomes canonical only after one physical canary proves the required endpoint, credentials are protected, and the route respects the €0 constraint.
+- `security_guard`: Never trade away credential hygiene to make an unofficial route work. Secrets stay outside source; prefer scoped/dedicated automation identities; reject plaintext tokens, session cookies, or master credentials in repositories/logs.
+- `efficiency_guard`: Once an official route is proven closed, do not burn allowance retrying cosmetic variations of it. Move immediately to the next materially different layer in the search order.
+- `what_not_to_retry`: Do not equate vendor documentation silence with impossibility; do not re-run the same unsupported native path; do not adopt an unofficial hack solely because it exists.
+- `example`: Personal Notebook wake: official supported wake = CLOSED at €0; community route via an unofficial NotebookLM client/internal RPCs or Playwright = CANDIDATE pending a canary against the exact HumanVibe Prime notebook.
+- `confidence`: HIGH for the problem-solving doctrine; individual unofficial routes remain conditional until physically verified.
