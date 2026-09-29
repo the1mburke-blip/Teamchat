@@ -844,3 +844,20 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not treat a familiar candidate as the search result; do not claim routing that did not physically occur; do not continue across a material scope/route change without re-preflight; do not execute open-ended research without a measurable allowance ceiling where one can be obtained.
 - `verification_evidence`: Owner reviewed the 12-rule applicability set and requested the 7/12 score be logged as training; prior-art search subsequently surfaced already-developed Icarus-class systems including Hermes, Open Jarvis, and AIOPE.
 - `confidence`: HIGH.
+
+
+### HV-EXP-058 — Twelve-rule compliance must be checked three times
+- `experience_id`: HV-EXP-058
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `scope`: Universal task governance / preflight / post-task audit.
+- `trigger`: The Icarus experiment showed that partial rule compliance can still permit large avoidable waste even when several controls are followed.
+- `canonical_rule`: **Every substantive task must evaluate the 12 immutable rules at three distinct stages: before start, after route mapping but before execution, and after the task as a separate compliance-tracker task.**
+- `stage_1_preflight_weighting`: Before work starts, weight every one of the 12 rules against the exact task as `CRITICAL | HIGH | MEDIUM | LOW | N/A`, with a task-specific reason. No omitted rules. `N/A` requires justification.
+- `stage_2_route_review`: After the execution route is fully mapped, review that actual route against all 12 weighted rules before executing. Record PASS/FAIL and the concrete control/evidence for each rule. A CRITICAL/HIGH failure blocks execution. Material route changes require renewed review.
+- `stage_3_post_task_tracker`: After the primary task reaches a terminal result, open a distinct compliance-tracker task. Score actual adherence against all 12 rules, cite evidence, calculate passed/applicable rules, record misses and impact/allowance waste, and write reusable failures into training.
+- `reason_for_separation`: Preflight predicts compliance; route review tests the plan; the post-task tracker audits what actually happened. Collapsing these into one self-assessment allows drift and retrospective rationalization.
+- `reusable_principle`: **Rules are gates, not reminders. Weight them before planning, test the mapped route against them before execution, then independently audit the completed run.**
+- `what_not_to_retry`: Do not use a generic preflight that merely names the rules; do not assume a compliant plan guarantees compliant execution; do not close governance at the same moment the executor declares task completion.
+- `verification_requirement`: The compliance tracker must cite physical/log evidence and itself reach a verified terminal state.
+- `confidence`: HIGH.
