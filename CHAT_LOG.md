@@ -2439,3 +2439,42 @@ TRAINING:
 COST: €0.
 EXTERNAL PRODUCT/SYSTEM MUTATIONS: 0.
 ---
+
+
+---
+[TIMESTAMP] 2026-09-29T21:56:00Z
+[AGENT] [SOL]
+[TYPE] ICARUS_FINAL_PRODUCT_DEFINITION
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[PROPOSED_BY] Michael / Owner
+[EXECUTED_BY] GPT-5.6 Sol — canonical logging only
+[BODY]
+Final owner refinement for the session:
+
+Icarus is the judge.
+
+The product is the compliance/adjudication layer above agents, not another executing agent. Agents may reason, act, report, challenge, and self-critique, but they remain subjects of judgment and cannot make their own claims become system truth.
+
+Icarus decides whether work:
+- was permitted;
+- stayed within the immutable rules;
+- followed the approved route;
+- produced valid evidence;
+- and deserves PASS.
+
+Engineering target:
+immutable policy outside executor control -> non-bypassable gates -> append-only evidence -> independent verification -> no self-certification path.
+
+Owner intent is that the compliance layer must not be bendable by agent interpretation. The precise engineering claim is tamper-resistant and structurally non-bypassable within a defined threat model, rather than an absolute claim that no software can ever be broken.
+
+Canonical formulation:
+"Agents execute. Icarus judges."
+"The compliance layer is the product."
+
+This refines, and does not expand, the current MVP. Immediate priority remains getting Icarus operational as the judge before building the deferred conscience/constitutional-supervision layer.
+
+TRAINING: HV-EXP-070.
+COST: €0.
+NO ICARUS RUNTIME/BUILD MUTATION.
+---
