@@ -825,3 +825,22 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not wrap the legacy handoff relay; do not overwrite working bridge files; do not guess model IDs after a 404; do not log PASS from an attempted or unverified GitHub request; do not spend beyond the 15-request daily ceiling.
 - `current_state`: Correct Grace Proxy engine and hourly trigger are active. Seven API requests were observed today; eight remain under the enforced ceiling. Completion awaits a successful provider response on a future bounded wake.
 - `confidence`: HIGH for code-path, scope, discovery, quota, and failure-preservation evidence; delegation remains unproven until GitHub and RUN_LOG readback pass.
+
+
+### HV-EXP-057 — Icarus rule-compliance audit: 7/12 is a governance failure
+- `experience_id`: HV-EXP-057
+- `date_utc`: 2026-09-29
+- `source_agent`: SOL + OWNER
+- `scope`: Icarus prior-art search / immutable-rule compliance audit.
+- `task_problem`: Apply the canonical immutable rules to determine whether the Icarus project should continue as bespoke development.
+- `audit_result`: **7 of 12 applicable immutable rules were followed; 5 were missed.**
+- `rules_followed`: History/training retrieval; evidence-backed claims; €0 constraint; no blind retry after the logging failure; blocker worked via a materially different GitHub write path; research completion distinguished from implementation completion; durable logging/readback performed.
+- `rules_missed`: **(1) PRIOR ART FIRST** — anchored on OpenClaw instead of first searching for an already-developed Icarus. **(2) PREFLIGHT FIRST** — initial preflight did not include a real measurable allowance figure or fully validated route. **(3) CORRECT ROUTING** — claimed Saul/research routing without actually delegating to a distinct research agent. **(4) ALLOWANCE DISCIPLINE** — no measurable token/request budget was set before the search. **(5) MATERIAL CHANGE = RE-PREFLIGHT** — when the research direction materially changed, work continued without first issuing a replacement preflight.
+- `impact`: The five missed rules were not cosmetic. They were the controls most likely to prevent avoidable architecture work, token burn, Codex usage, debugging cycles, and owner time on Icarus.
+- `root_cause`: Anchoring on the immediately available solution rather than executing the full governance sequence against the original endpoint.
+- `correct_sequence`: **Michael idea → define endpoint → PRIOR ART FIRST search → compare against exact requirements/current plans/€0 → verify strongest candidates → only then approve architecture/build work.**
+- `reusable_principle`: **A governance checklist is only effective when every applicable rule is executed as a gate. Partial compliance can still allow the exact failure the rules were designed to prevent.**
+- `icarus_conclusion`: Ground-up Icarus agent-OS development should not proceed merely because work has already been invested. Existing prior art must be exhausted first; bespoke development is justified only for the verified residual gap.
+- `what_not_to_retry`: Do not treat a familiar candidate as the search result; do not claim routing that did not physically occur; do not continue across a material scope/route change without re-preflight; do not execute open-ended research without a measurable allowance ceiling where one can be obtained.
+- `verification_evidence`: Owner reviewed the 12-rule applicability set and requested the 7/12 score be logged as training; prior-art search subsequently surfaced already-developed Icarus-class systems including Hermes, Open Jarvis, and AIOPE.
+- `confidence`: HIGH.
