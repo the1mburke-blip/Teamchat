@@ -1032,3 +1032,18 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `precision_boundary`: Do not market or specify the system as literally impossible to break. No software can honestly guarantee absolute invulnerability; the defensible requirement is that bypass is prevented by architecture within the stated threat model and violations are independently detectable.
 - `reusable_principle`: **Agents execute. Icarus judges. The compliance layer—not the agent—is the product.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-071 — Prefer an existing authenticated connector over exporting a provider key
+- `experience_id`: HV-EXP-071
+- `date_utc`: 2026-09-30
+- `source_agent`: OWNER + SOL
+- `scope`: Connected-service automation / Buffer queue monitoring.
+- `failure_signature`: A GitHub workflow expected `BUFFER_API_KEY`, but the working Buffer credential existed only inside the authenticated Composio connection and was non-exportable.
+- `failed_route`: Treating the missing repository secret as if the service itself were inaccessible.
+- `verified_recovery`: Use the existing authenticated Buffer connector directly for the live queue read, persist the verified queue state canonically, then propagate that state through the existing Prime source and Grace intake.
+- `evidence`: HumanVibe Buffer connection ACTIVE; isolated Buffer account-context and scheduled-post reads succeeded; commit 1bc98fe6901fd503ec16280f1e33310bfd79f3ee; Prime Snapshot Sync run 36727746461 SUCCESS; PRIME_LIVE_SYNC and Operations Ledger readback verified.
+- `canonical_rule`: **A missing exportable API key is not a provider blocker when an existing authorized connector can perform the required operation. Work the capability boundary first; do not duplicate credentials or force secret export merely to satisfy an implementation assumption.**
+- `what_not_to_retry`: Do not retry the same no-key workflow unchanged, do not ask the owner to export a managed connector credential, and do not add a second publisher or paid route.
+- `reusable_principle`: **Reuse authenticated capability before creating credential infrastructure.**
+- `confidence`: HIGH.
