@@ -1,24 +1,28 @@
 # HumanVibe Buffer Queue State
 
-SNAPSHOT_GENERATED_UTC: 2026-09-30T23:25:46Z
-SOURCE: Buffer live read via connected Composio account `HumanVibe Buffer` (account_id buffer_glisk-theer)
+SNAPSHOT_GENERATED_UTC: 2026-09-30T23:38:22Z
+SOURCE: Buffer live read via connected Composio account `HumanVibe Buffer` using the authenticated same-platform Buffer GraphQL/API route.
 AUTO_REFRESH: CONNECTOR_PATH_PROVEN
-NEEDS_REFILL: YES
+NEEDS_REFILL: NO
 TARGET: 9 scheduled posts per channel
 REFILL_THRESHOLD: below 6 scheduled posts on any channel
 
 | Channel | Scheduled | Target | State | Next due UTC |
 |---|---:|---:|---|---|
-| Facebook | 0 | 9 | CRITICAL | NONE |
-| Instagram | 0 | 9 | CRITICAL | NONE |
-| Threads | 3 | 9 | CRITICAL | 2026-10-01T11:30:00Z |
+| Facebook | 9 | 9 | OK | 2026-10-01T08:00:00Z |
+| Instagram | 9 | 9 | OK | 2026-10-01T08:00:00Z |
+| Threads | 9 | 9 | OK | 2026-10-01T08:00:00Z |
 
-MONITOR_ROUTE: Read live queue through existing authenticated Buffer connector. Do not require or export a BUFFER_API_KEY.
-REFILL_EXECUTION_STATE: PARTIAL — three compliant Threads text/link slots were restored for 2026-10-01 through 2026-10-03. The connected Composio Buffer publisher currently exposes text-only fields and does not expose Buffer's native `assets` or service metadata. Facebook scheduling through this wrapper fails with `Facebook posts require a type (post, story, or reel)`; Instagram media scheduling cannot be performed through this wrapper without bypassing the canonical Buffer-only publishing rule.
-PRIME_ACTION_IF_NEEDS_REFILL: Perform the current daily HumanVibe research/status scan, then route only the unresolved media-capable Buffer refill work through the established Prime -> Grace handoff. Do not bypass Buffer with direct social publishing unless OWNER explicitly supersedes the protected Buffer-only rule.
-GRACE_TASK_ID: BUFFER-QUEUE-REFILL-DAILY
+CADENCE: 09:00 / 13:00 / 19:00 Europe/Dublin for 2026-10-01 through 2026-10-03.
+PUBLISHER: Buffer only.
+EXECUTION_ROUTE: Existing authenticated Composio Buffer connection -> Buffer GraphQL createPost with assets + per-channel metadata + customScheduled.
+ASSET_GATE: Production Asset Vault assets only; three approved model images were copied to stable Shopify CDN URLs for scheduling, with existing approved V2 mockups rotated after the six-post reuse window allowed them.
+VERIFICATION: 27 scheduled posts physically reread from Buffer; every item status=scheduled, share_mode=customScheduled, media asset present, publishing_error=null.
+CORRECTION: The three non-canonical Threads posts created earlier in the failed run were deleted before the canonical 27-post refill.
 
-## Scheduled posts
-- 2026-10-01T11:30:00Z | Threads | 6abd9a515feb60d6345ffede
-- 2026-10-02T11:30:00Z | Threads | 6abd9a5105e9a5c46ab01a02
-- 2026-10-03T11:30:00Z | Threads | 6abd9a529b58fd09c05ce9a2
+PRIME_ACTION_IF_NEEDS_REFILL: Perform the current daily HumanVibe research/status scan, then route refill through the established Prime -> Grace handoff. Keep Buffer as sole publisher and use the same authenticated Buffer API/proxy path when the high-level wrapper lacks required media/type fields.
+
+## Window
+- 2026-10-01: Facebook 3 / Instagram 3 / Threads 3
+- 2026-10-02: Facebook 3 / Instagram 3 / Threads 3
+- 2026-10-03: Facebook 3 / Instagram 3 / Threads 3
