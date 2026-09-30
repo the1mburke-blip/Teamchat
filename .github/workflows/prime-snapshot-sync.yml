@@ -15,6 +15,9 @@ on:
       - 'CONTENT_PIPELINE.md'
       - 'CHAT_LOG.md'
       - 'TRAINING_MATRIX.md'
+      - 'BUFFER_QUEUE_STATE.md'
+      - 'BLOG_QUEUE_STATE.md'
+      - 'scripts/update_prime_snapshot.py'
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
