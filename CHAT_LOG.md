@@ -2716,3 +2716,17 @@ R12 End-flight/evidence closure: PASS | Gmail sent-state readback plus canonical
 [TRAINING_REQUIRED] NO additional reusable lesson from the successful restart; earlier ghost-output failures are already durably captured in training.
 [EVIDENCE_REQUIRED] Gmail message 1a0f79cc48387f9c SENT readback; primary terminal log commit 1ff75685a99e00acc427896c66d5a0a455214046.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:58:00Z
+[AGENT] [SOL]
+[TYPE] DECISION
+[ISSUE] NONE
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+Icarus AAR prior-art/reuse research logged. Live source review established that the proof/receipt layer should be reuse-first: official Frontier Infra AAR v0.02, TechMages Warlock's Python/FastAPI AAR implementation, and Frontier SDK's detached evidence-receipt pattern are all MIT-licensed and materially reusable. Current engineering estimate is ~80–90% of the AAR layer reusable before current-tree integration measurement. Icarus retains the independent adjudication layer: evidence requirements, endpoint checking, policy evaluation, and PASS/FAIL/UNCLEAR judgment. Next Codex scope is capped at 5% and targets one physical L2 end-to-end proof: independent VERIFYING adjudication -> signed AAR -> official verifier PASS -> tamper FAIL -> durable prior-chain storage. L3 external transparency logging, broad connectors, UI/Android, and commodity AAR rebuild are out of scope.
+[EVIDENCE]
+Detailed durable log: logs/2026-10-01-icarus-aar-reuse-and-codex-scope.md. Sources physically inspected: frontier-infra/agentcontrolplane; frontier-infra/frontier-sdk audit package; techmages-org/warlock AAR package and tests. Detailed log creation commit: 533326f47a8612adea2cab563f8c20fec25c02f2.
+---
