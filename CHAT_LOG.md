@@ -2538,3 +2538,19 @@ Issues #39 and #40 closed completed.
 COST: €0.
 TRAINING: HV-EXP-071.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T12:58:00Z
+[AGENT] [SOL]
+[TYPE] FAILURE_CAPTURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Sale #1 Scout ghost attempt 1 used verified-free nvidia/nemotron-3-ultra-550b-a55b:free. The model consumed the 1,800-token output budget largely in reasoning and returned only a partial final JSON, so the required three-target packet was not produced. Cost $0. No outreach mutation occurred.
+[EVIDENCE]
+OpenRouter generation gen-1790859832-LgiqP6hBhcMztJdOI4AE; finish_reason=length; reported cost=0; final content truncated before all three required targets.
+[NEXT]
+Do not resend the same reasoning-heavy payload. Materially different route: use verified-free poolside/laguna-s-2.1:free with a shorter final-only contract and no reasoning output.
+---
