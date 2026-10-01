@@ -1064,3 +1064,22 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **A transformed-looking media URL is not transformed-media evidence; verify the actual asset dimensions before retrying a platform format failure.**
 - `capability_tool_prerequisites`: Approved source asset, deterministic image renderer, stable approved hosting, Buffer same-platform API, post-level readback.
 - `confidence`: HIGH.
+
+
+### HV-EXP-072 — Reasoning-heavy free ghost can consume the final-answer budget
+- `experience_id`: HV-EXP-072
+- `date_utc`: 2026-10-01T12:58:00Z
+- `source_agent`: SOL
+- `task_problem`: Sale #1 Scout required a concise three-target outreach packet from a free research ghost.
+- `environment_context`: OpenRouter `nvidia/nemotron-3-ultra-550b-a55b:free`, 1,800 output-token cap, JSON-only contract.
+- `symptoms_failure_signature`: `finish_reason=length`; model used most output budget on reasoning and final content ended before the three-target contract was complete.
+- `attempts_made`: 1
+- `what_failed`: The final artifact was incomplete despite a successful $0 transport.
+- `why_it_failed`: Reasoning consumed the bounded completion budget.
+- `successful_recovery`: NONE YET
+- `verification_evidence`: generation `gen-1790859832-LgiqP6hBhcMztJdOI4AE`; cost 0; partial JSON only.
+- `what_not_to_retry`: Do not resend the same reasoning-heavy prompt/model/budget combination.
+- `reusable_principle`: For small structured research artifacts, prefer a verified-free model that returns direct final text, or sharply shorten the contract; transport success is not artifact success.
+- `capability_tool_prerequisites`: Verify free status before dispatch; preserve ghost output as advisory; independently verify targets before execution.
+- `confidence`: HIGH
+- `superseded_by`: NONE
