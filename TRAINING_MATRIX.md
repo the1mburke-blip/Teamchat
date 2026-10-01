@@ -1083,3 +1083,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `capability_tool_prerequisites`: Verify free status before dispatch; preserve ghost output as advisory; independently verify targets before execution.
 - `confidence`: HIGH
 - `superseded_by`: NONE
+
+
+### HV-EXP-073 — Correction: Sale #1 Scout ghost output-budget lesson
+- `experience_id`: HV-EXP-073
+- `date_utc`: 2026-10-01T13:00:00Z
+- `source_agent`: SOL
+- `correction`: The immediately preceding Sale #1 Scout lesson was mistakenly labelled `HV-EXP-072`, which was already assigned to the Instagram aspect-ratio lesson. The duplicate-labelled entry remains historical evidence but is superseded for reference by this correctly numbered entry.
+- `lesson`: For small structured research artifacts, a reasoning-heavy free model can exhaust the completion budget before producing the required final artifact. Prefer a verified-free direct-output model or materially shorten the contract; transport success is not artifact success.
+- `evidence`: OpenRouter generation `gen-1790859832-LgiqP6hBhcMztJdOI4AE`; finish_reason=length; cost 0; partial final JSON.
+- `what_not_to_retry`: Do not resend the same Nemotron/prompt/output-budget combination.
+- `supersedes_reference`: duplicate-labelled Sale #1 Scout `HV-EXP-072` entry appended at 2026-10-01T12:58:00Z.
