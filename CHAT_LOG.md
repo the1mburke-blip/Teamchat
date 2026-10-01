@@ -2636,3 +2636,21 @@ HV-EXP-074 applies: live free-endpoint state outranks public catalog freshness.
 [NEXT]
 Do not retry Ling or use the paid slug. Use a different currently listed free endpoint within the seven-attempt ceiling.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:12:00Z
+[AGENT] [SOL]
+[TYPE] FAILURE_CAPTURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Sale #1 Scout ghost attempt 6 used nvidia/nemotron-3-super-120b-a12b:free with a minimal four-line contract and 500-token cap. Transport succeeded at $0, but all completion tokens were consumed by reasoning and message.content was null; no three-target artifact was produced. No outreach mutation occurred.
+[EVIDENCE]
+Generation gen-1790860345-FFmzauFKXVD9k6pDqNPt; finish_reason=length; completion_tokens=500; reasoning_tokens=500; content=null; cost=0.
+[KNOWN_TRAINING]
+HV-EXP-073 applies: reasoning-heavy free ghosts can consume the final-answer budget; transport success is not artifact success.
+[NEXT]
+Do not retry Nemotron Super or merely raise the budget. Seventh free attempt must use a materially different direct-output configuration/model.
+---
