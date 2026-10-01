@@ -2586,3 +2586,19 @@ HV-EXP-008 already covers this failure class: a valid free endpoint can be tempo
 [NEXT]
 Do not retry Poolside now. Switch to a different currently verified-free endpoint with a short final-only contract.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:05:00Z
+[AGENT] [SOL]
+[TYPE] FAILURE_CAPTURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Sale #1 Scout ghost attempt 3 used stealth/space-bunny-alpha:free after current OpenRouter web pages showed it as free. The live OpenRouter API returned HTTP 404 stating the free version was unavailable and only the paid slug remained. No paid fallback was used. Cost $0. No outreach mutation occurred.
+[EVIDENCE]
+OpenRouter API 404: "This model is unavailable for free. The paid version is available now - use this slug instead: stealth/space-bunny-alpha".
+[NEXT]
+Treat live execution availability as authoritative over catalog-page freshness; select a different verified-free endpoint. Do not retry or use the paid slug.
+---
