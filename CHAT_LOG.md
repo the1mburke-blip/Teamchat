@@ -2554,3 +2554,17 @@ OpenRouter generation gen-1790859832-LgiqP6hBhcMztJdOI4AE; finish_reason=length;
 [NEXT]
 Do not resend the same reasoning-heavy payload. Materially different route: use verified-free poolside/laguna-s-2.1:free with a shorter final-only contract and no reasoning output.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:00:00Z
+[AGENT] [SOL]
+[TYPE] CORRECTION
+[ISSUE] NONE
+[STATUS] PASS
+[ACTIVE_OWNER] SOL
+[BODY]
+Corrected a training-ID collision discovered before Sale #1 Scout retry. The ghost output-budget lesson was initially appended using HV-EXP-072, which already existed. Append-only correction now designates that lesson HV-EXP-073; the duplicate-labelled historical entry is not rewritten.
+[EVIDENCE]
+Training Matrix correction commit ae5720b7b20da32661116ae3af650a885f36ba35.
+---
