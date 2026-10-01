@@ -2730,3 +2730,44 @@ Icarus AAR prior-art/reuse research logged. Live source review established that 
 [EVIDENCE]
 Detailed durable log: logs/2026-10-01-icarus-aar-reuse-and-codex-scope.md. Sources physically inspected: frontier-infra/agentcontrolplane; frontier-infra/frontier-sdk audit package; techmages-org/warlock AAR package and tests. Detailed log creation commit: 533326f47a8612adea2cab563f8c20fec25c02f2.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T23:45:00Z
+[AGENT] [SOL]
+[TYPE] ICARUS_HARNESS_DEEPSEEK_SESSION_CLOSEOUT
+[STATUS] PARTIAL_PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+Six-and-a-half-hour Icarus/Harness session closed.
+
+PHYSICAL PROGRESS:
+- Durable checkpoint/idempotency subsystem built and 19/19 tests PASS.
+- Harness root-agent creation contract verified.
+- New profile plugin icarus-supervisor created, registered, HMR-loaded and exposed tool icarus_supervisor_spawn.
+- Smoke test created fresh ROOT session session-845abf3a4aba40fc with parentAgent absent.
+- task_id 0e417d8e-3002-4384-bf05-439b282990ce preserved.
+- Duplicate spawn attempt blocked; no duplicate mutation/session created.
+- Live provider state: deepseek-account/deepseek-flash usable; OpenRouter route blocked by absent credential; Google route not currently usable.
+- Full automatic cross-model A→B failover NOT YET PROVEN because only one live route exists.
+
+COMPOSIO:
+- Harness profile/MCP client path was substantially mapped.
+- Direct external PowerShell initialize against https://connect.composio.dev/mcp with stored consumer key returned HTTP 401 Unauthorized.
+- Park at this exact boundary.
+- Next Composio attempt must start with deep official + unofficial prior-art research, then a maximum 20–30 minute implementation spike.
+
+PROCESS LESSONS:
+- Search official + unofficial sources before serial repair once an integration resists.
+- External models such as DeepSeek do not inherit Teamchat operating rules; include task-specific preflight, blockers, stop conditions and PASS evidence in the prompt.
+- Model/provider failure is not task failure; checkpoint above the model and continue through a new root brain.
+- Never treat simulated traces/model self-report as live evidence.
+- Before telling owner to kill/exit a process, identify the exact active session and persisted state first.
+- DeepSeek is a viable long-run engineering substitute when Codex is unavailable; account-backed usage is low-cost but not zero-cost.
+
+NEXT START:
+1. Do not rebuild checkpointing or supervisor plugin.
+2. Restore/verify a second live model route.
+3. Run physical automatic A→B failover acceptance.
+4. Separately, bounded Composio prior-art spike only.
+---
