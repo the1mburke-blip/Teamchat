@@ -2602,3 +2602,19 @@ OpenRouter API 404: "This model is unavailable for free. The paid version is ava
 [NEXT]
 Treat live execution availability as authoritative over catalog-page freshness; select a different verified-free endpoint. Do not retry or use the paid slug.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:08:00Z
+[AGENT] [SOL]
+[TYPE] FAILURE_CAPTURE
+[ISSUE] NONE
+[STATUS] PARTIAL
+[ACTIVE_OWNER] SOL
+[BODY]
+Sale #1 Scout ghost attempt 4 targeted nvidia/nemotron-3.5-lightning:free. The Composio execution wrapper timed out before returning a provider result. Outcome is UNKNOWN; no model artifact was accepted and no outreach mutation occurred.
+[EVIDENCE]
+Code Mode tool call timed out; no generation ID or provider completion returned to the front door.
+[NEXT]
+Do not resend the same request without new evidence. Use a materially different verified-free endpoint for the bounded three-target artifact.
+---
