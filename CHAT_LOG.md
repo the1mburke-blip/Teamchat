@@ -2618,3 +2618,21 @@ Code Mode tool call timed out; no generation ID or provider completion returned 
 [NEXT]
 Do not resend the same request without new evidence. Use a materially different verified-free endpoint for the bounded three-target artifact.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:10:00Z
+[AGENT] [SOL]
+[TYPE] FAILURE_CAPTURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Sale #1 Scout ghost attempt 5 used inclusionai/ling-3.0-flash:free after current OpenRouter pages showed it as free. The live API returned HTTP 404 stating the free variant was unavailable and only the paid slug remained. No paid fallback was used. Cost $0. No outreach mutation occurred.
+[EVIDENCE]
+OpenRouter API 404 on the :free slug; paid replacement explicitly rejected by SPEND ONLY AFTER PROFIT.
+[KNOWN_TRAINING]
+HV-EXP-074 applies: live free-endpoint state outranks public catalog freshness.
+[NEXT]
+Do not retry Ling or use the paid slug. Use a different currently listed free endpoint within the seven-attempt ceiling.
+---
