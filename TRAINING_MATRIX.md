@@ -1047,3 +1047,20 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not retry the same no-key workflow unchanged, do not ask the owner to export a managed connector credential, and do not add a second publisher or paid route.
 - `reusable_principle`: **Reuse authenticated capability before creating credential infrastructure.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-072 — Shopify CDN resize parameters did not repair an Instagram aspect-ratio rejection
+- `experience_id`: HV-EXP-072
+- `date_utc`: 2026-10-01
+- `source_agent`: SOL automation runtime
+- `scope`: Buffer-only Instagram media repair.
+- `symptoms_failure_signature`: Instagram rejected a scheduled JPEG because its aspect ratio was outside 3:4–1.91:1. Buffer `editPost` accepted a same-platform repair using the same approved Shopify asset URL with `width=1080&height=1350&crop=center`, `type=post`, and `shouldShareToFeed=true`, but post readback remained `status=error` with the identical aspect-ratio message.
+- `attempts_made`: One evidence-matched Buffer edit after the original scheduled-post failure.
+- `what_failed`: Relying on Shopify CDN query parameters to produce a physically different 4:5 image for Buffer ingestion.
+- `why_it_failed`: Buffer/Instagram still evaluated the source as the unsupported original dimensions; URL parameters were not sufficient proof of transformed media.
+- `successful_recovery`: NONE.
+- `verification_evidence`: Buffer post 6abd9d6005e9a5c46ab0768f read back at 2026-10-01T09:09:58.873Z as `error` with the unchanged aspect-ratio rejection.
+- `what_not_to_retry`: Do not repeat URL-parameter-only resize/crop edits on the same asset. Use a physically rendered approved derivative with verified pixel dimensions, upload it to the approved stable asset surface, then perform one Buffer repair and reread.
+- `reusable_principle`: **A transformed-looking media URL is not transformed-media evidence; verify the actual asset dimensions before retrying a platform format failure.**
+- `capability_tool_prerequisites`: Approved source asset, deterministic image renderer, stable approved hosting, Buffer same-platform API, post-level readback.
+- `confidence`: HIGH.
