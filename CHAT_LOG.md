@@ -2568,3 +2568,21 @@ Corrected a training-ID collision discovered before Sale #1 Scout retry. The gho
 [EVIDENCE]
 Training Matrix correction commit ae5720b7b20da32661116ae3af650a885f36ba35.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:03:00Z
+[AGENT] [SOL]
+[TYPE] FAILURE_CAPTURE
+[ISSUE] NONE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Sale #1 Scout ghost attempt 2 used verified-free poolside/laguna-s-2.1:free after the Nemotron output-budget failure. OpenRouter returned HTTP 429 from the Poolside upstream shared free pool before any ghost artifact was produced. Cost $0. No outreach mutation occurred.
+[EVIDENCE]
+Composio/OpenRouter error: provider Poolside; limit_source=upstream_provider_shared_pool; HTTP 429.
+[KNOWN_TRAINING]
+HV-EXP-008 already covers this failure class: a valid free endpoint can be temporarily unavailable; do not immediately repeat the identical request.
+[NEXT]
+Do not retry Poolside now. Switch to a different currently verified-free endpoint with a short final-only contract.
+---
