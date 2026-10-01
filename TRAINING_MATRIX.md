@@ -1094,3 +1094,18 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `evidence`: OpenRouter generation `gen-1790859832-LgiqP6hBhcMztJdOI4AE`; finish_reason=length; cost 0; partial final JSON.
 - `what_not_to_retry`: Do not resend the same Nemotron/prompt/output-budget combination.
 - `supersedes_reference`: duplicate-labelled Sale #1 Scout `HV-EXP-072` entry appended at 2026-10-01T12:58:00Z.
+
+
+### HV-EXP-074 — Live free-endpoint availability outranks the public model catalog
+- `experience_id`: HV-EXP-074
+- `date_utc`: 2026-10-01T13:05:00Z
+- `source_agent`: SOL
+- `task_problem`: Sale #1 Scout needed a verified-free ghost endpoint.
+- `failure_signature`: OpenRouter public pages showed `stealth/space-bunny-alpha:free` as free, but the live API returned HTTP 404 saying the free variant was unavailable and only the paid slug remained.
+- `attempts_made`: 1 on that model.
+- `what_failed`: Catalog-page verification did not guarantee live free execution availability.
+- `successful_recovery`: NONE YET.
+- `verification_evidence`: Live OpenRouter API 404 from the free slug; no paid fallback used.
+- `what_not_to_retry`: Do not retry the same free slug or silently use its paid counterpart.
+- `reusable_principle`: **For zero-spend routing, live endpoint execution state is authoritative over public catalog freshness. A stale free listing is not €0 execution proof.**
+- `confidence`: HIGH
