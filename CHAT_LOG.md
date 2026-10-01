@@ -2685,3 +2685,34 @@ Gmail message ID 1a0f79cc48387f9c; thread ID 1a0f79cc48387f9c; label SENT. Gmail
 [FINAL_STATUS]
 Primary Sale #1 Scout endpoint PASS. Store remains PARTIAL until Sale #1.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-01T13:19:00Z
+[AGENT] [SOL]
+[TYPE] COMPLIANCE_TRACKER
+[ISSUE] NONE
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+[OBJECTIVE] Audit completed Sale #1 Scout restart run against the 12 immutable controls.
+[PRIMARY_RESULT] PASS
+[FINAL_COMPLIANCE]
+R1 Measure twice/cut once: PASS | Target and route were independently verified before sending.
+R2 No evidence=no claim: PASS | No traction, reach, conversion, review, or sale claims were made.
+R3 Spend only after profit: PASS | €0 external spend; no paid placement or paid model fallback.
+R4 History/training first: PASS | Canonical operating rules, training, handoff and prior failures were reviewed before restart execution.
+R5 Preflight every task/agent/time: PASS | Restart preflight fixed endpoint, cost, owner involvement, route and evidence before execution.
+R6 Prior-art/existing-route first: PASS | Existing publication submission routes were used; no bespoke outreach system was built.
+R7 Allowance discipline: PASS | One bounded restart ghost call; no retry loop after its truncated final artifact; verification/execution continued without additional ghost grinding.
+R8 No duplicate execution/one owner: PASS | One outreach email was sent to one target; no duplicate send.
+R9 Agent output cannot self-certify: PASS | Ghost candidate set was independently checked against live public pages before execution.
+R10 Protected-channel/production discipline: PASS | Anonymous Marketer social channels, Buffer, blog, theme, pricing and product configuration were untouched.
+R11 Midflight control/material-route change: PASS | Restart route stayed inside Scout -> verify -> one email execution; no silent route substitution after restart.
+R12 End-flight/evidence closure: PASS | Gmail sent-state readback plus canonical terminal log recorded; this tracker is the separate closeout.
+[SCORE] 12/12 applicable controls passed on the restart run.
+[MISSES] NONE on the restart run. Earlier pre-restart failures remain separately logged and are not erased by this result.
+[ALLOWANCE_WASTE] Restart run: one €0 ghost call whose final artifact truncated; no repeated retry. Exact token cost visible in provider response; monetary cost $0.
+[TRAINING_REQUIRED] NO additional reusable lesson from the successful restart; earlier ghost-output failures are already durably captured in training.
+[EVIDENCE_REQUIRED] Gmail message 1a0f79cc48387f9c SENT readback; primary terminal log commit 1ff75685a99e00acc427896c66d5a0a455214046.
+---
