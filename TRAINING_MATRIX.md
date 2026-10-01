@@ -1109,3 +1109,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not retry the same free slug or silently use its paid counterpart.
 - `reusable_principle`: **For zero-spend routing, live endpoint execution state is authoritative over public catalog freshness. A stale free listing is not €0 execution proof.**
 - `confidence`: HIGH
+
+
+---
+- `experience_id`: HV-EXP-075
+- `date_utc`: 2026-10-01T23:45:00Z
+- `source_agent`: SOL / DeepSeek Harness
+- `task_problem`: Advance Icarus autonomous brain failover without repeating Composio/ASAR rabbit holes.
+- `failure_signature`: Serial inside-the-box Composio debugging before direct external 401 proof; DeepSeek drift into app.asar extraction; simulated router evidence initially mistaken for live runtime proof.
+- `successful_recovery`: Built durable checkpoint/idempotency layer (19/19 tests), verified root-agent contract, built/loaded icarus-supervisor plugin, created a fresh root session with preserved task_id, and blocked duplicate session creation.
+- `verification_evidence`: ROOT_AGENT_CREATED=YES; parentAgent absent; session-845abf3a4aba40fc persisted; task_id 0e417d8e-3002-4384-bf05-439b282990ce preserved; duplicate_prevented=true; direct Composio PowerShell test returned HTTP 401.
+- `what_not_to_retry`: No app.asar extraction; no simulated router PASS; no long Composio repair chain without official+unofficial prior-art and direct external test; no assumption that external models inherit Teamchat rules.
+- `reusable_principle`: **Prior-art from both directions first; persist task state above the brain; treat model exhaustion as recoverable; require physical runtime evidence before PASS.**
+- `confidence`: HIGH
