@@ -1122,3 +1122,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: No app.asar extraction; no simulated router PASS; no long Composio repair chain without official+unofficial prior-art and direct external test; no assumption that external models inherit Teamchat rules.
 - `reusable_principle`: **Prior-art from both directions first; persist task state above the brain; treat model exhaustion as recoverable; require physical runtime evidence before PASS.**
 - `confidence`: HIGH
+
+
+### HV-EXP-076 — Buffer media publishing wrapper gap resolved beneath the wrapper
+- `experience_id`: HV-EXP-076
+- `date_utc`: 2026-10-02
+- `source_agent`: ChatGPT duty manager
+- `task_problem`: Restore Buffer-only image publishing remotely at €0 while owner had no laptop access.
+- `failure_signature`: Composio `BUFFER_PUBLISH_POSTS` omitted Buffer's media `assets` input; re-authentication remained ACTIVE but did not change the wrapper schema.
+- `successful_recovery`: Reused the ACTIVE Buffer OAuth through authenticated `proxy_execute`, called Buffer native GraphQL `createPost` with Shopify CDN image assets, supplied required Instagram/Facebook post-type metadata, repaired the failed Instagram slot, and refilled the queue.
+- `verification_evidence`: Instagram replacement `6abfa8925f7061ee2f1561a8` read back SENT with no publishing error; final scheduled queue readback = 30 total, 10 per channel, 30/30 with media.
+- `what_not_to_retry`: No repeated OAuth reconnects for a schema omission; no browser workaround; no direct-to-social bypass; no text-only substitution; do not conflate auth, wrapper capability, provider capability, and destination media validation.
+- `reusable_principle`: **When a wrapper omits a provider capability, verify the provider contract and reuse the existing authenticated connection at the lowest approved API layer; prove one controlled final effect before scaling.**
+- `cost`: €0.
+- `confidence`: HIGH.
