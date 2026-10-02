@@ -1136,3 +1136,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **When a wrapper omits a provider capability, verify the provider contract and reuse the existing authenticated connection at the lowest approved API layer; prove one controlled final effect before scaling.**
 - `cost`: €0.
 - `confidence`: HIGH.
+
+
+### HV-EXP-077 — Icarus user contract: query in, verified solution out
+- `experience_id`: HV-EXP-077
+- `date_utc`: 2026-10-02
+- `source_agent`: ChatGPT duty manager / owner confirmation
+- `reference_run`: HV-EXP-076 HumanVibe Buffer media recovery.
+- `canonical_product_contract`: **User query → Icarus → verified solution → user.**
+- `user_experience_rule`: Internal research, delegation, retries, tool selection, debugging, verification, and logging remain inside Icarus unless explicit user authorization is genuinely required.
+- `execution_rule`: Icarus owns the full dependency chain and does not hand routine implementation back to the user merely because the obvious route failed.
+- `verification_rule`: Autonomous execution does not permit self-certification; final-effect evidence is required.
+- `reusable_principle`: **The product is the verified outcome, not the implementation workflow the user has to watch.**
+- `confidence`: HIGH.
