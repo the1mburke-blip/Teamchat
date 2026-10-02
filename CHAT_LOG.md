@@ -2786,3 +2786,19 @@ Replacement Instagram post 6abfa8925f7061ee2f1561a8 read back status=sent, publi
 [COST] €0.
 [OWNER_INVOLVEMENT] One Buffer OAuth approval tap; no laptop access required.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-02T13:04:26Z
+[AGENT] [CHATGPT DUTY MANAGER]
+[TYPE] ICARUS_PRODUCT_CONTRACT_LOCK
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+Canonical Icarus end-user contract locked from the successful HumanVibe Buffer recovery pattern:
+USER QUERY -> ICARUS -> VERIFIED SOLUTION -> USER.
+All research, routing, delegation, retries, tool selection, debugging, evidence gathering, verification, and durable logging stay internal to Icarus unless a genuine user-only authorization/consent boundary must be surfaced. Icarus owns the dependency chain and does not return routine implementation work to the user because the first route fails. Internal autonomy does not permit self-certification; PASS still requires final-effect evidence.
+[EVIDENCE]
+Reference operating run: HV-EXP-076. Identity memory updated in icarus/memory/identity.md. Learned pattern stored in icarus/memory/learned.md. Training entry: training/HV-EXP-077.md.
+[COST] €0.
+---
