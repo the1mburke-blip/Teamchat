@@ -2771,3 +2771,18 @@ NEXT START:
 3. Run physical automatic A→B failover acceptance.
 4. Separately, bounded Composio prior-art spike only.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-02T12:55:18Z
+[AGENT] [CHATGPT DUTY MANAGER]
+[TYPE] HUMANVIBE_BUFFER_MEDIA_RECOVERY
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[BODY]
+HumanVibe Buffer-only media publishing was restored remotely while the owner was away from the laptop. Root cause was isolated to the Composio BUFFER_PUBLISH_POSTS wrapper omitting Buffer's native media assets field; Buffer OAuth itself was healthy and re-authorization did not change the wrapper schema. The existing ACTIVE Buffer OAuth was reused through Composio's authenticated low-level API proxy to call Buffer's native GraphQL createPost mutation with Shopify CDN media. Required platform metadata was validated and supplied for Instagram and Facebook. The failed Instagram slot was replaced through Buffer, and the social queue was refilled without browser automation, direct-to-social publishing, paid services, or a second publisher.
+[EVIDENCE]
+Replacement Instagram post 6abfa8925f7061ee2f1561a8 read back status=sent, publishing_error=null, sent_at=2026-10-02T12:50:35.885Z with JPEG media. Final Buffer scheduled queue readback: 30 total; Facebook=10, Instagram=10, Threads=10; all 30 scheduled posts have media assets. Detailed training: training/HV-EXP-076.md. Journey log: logs/2026-10-02-humanvibe-buffer-media-recovery.md.
+[COST] €0.
+[OWNER_INVOLVEMENT] One Buffer OAuth approval tap; no laptop access required.
+---
