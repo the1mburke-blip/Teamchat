@@ -3064,3 +3064,23 @@ Compliance tracker = FAIL. Operational state remains:
 - live Harness Drive credential boundary BLOCKED;
 - no PASS awarded.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T20:59:00Z
+[AGENT] [SOL]
+[TYPE] TOOL_CALL_FAILURE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+While checking whether the existing authorized Google Cloud/Drive tooling could provision the Harness live-Drive credential boundary without changing the runtime architecture, COMPOSIO_SEARCH_TOOLS was called with an invalid schema (used query/search_strategy=fast instead of required use_case/search_strategy=auto|tool_search).
+
+[IMPACT]
+No external mutation occurred. This was a capability-discovery call only.
+
+[CHANGED_APPROACH]
+Retry once using the exact returned schema: queries[].use_case and search_strategy=tool_search.
+
+[WHAT_NOT_TO_RETRY]
+Do not resend the invalid query/search_strategy shape.
+---
