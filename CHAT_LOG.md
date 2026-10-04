@@ -3084,3 +3084,23 @@ Retry once using the exact returned schema: queries[].use_case and search_strate
 [WHAT_NOT_TO_RETRY]
 Do not resend the invalid query/search_strategy shape.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:02:00Z
+[AGENT] [SOL]
+[TYPE] TOOL_CALL_FAILURE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Continuation of the Harness live-Drive blocker capability check: COMPOSIO_SEARCH_TOOLS was called with session_id as a top-level property. The returned schema requires session:{id:"..."}.
+
+[IMPACT]
+No external mutation occurred.
+
+[CHANGED_APPROACH]
+Retry once with session:{id:"came"} and otherwise unchanged use case.
+
+[WHAT_NOT_TO_RETRY]
+Do not use top-level session_id with COMPOSIO_SEARCH_TOOLS.
+---
