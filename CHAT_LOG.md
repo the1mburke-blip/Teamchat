@@ -3384,3 +3384,23 @@ After authorization, Harness must verify ADC without printing secrets and rerun 
 [WHAT_NOT_TO_RETRY]
 Do not keep reopening the same sluggish auto-launched browser flow; do not create a service-account private key; do not insert Composio or another broker into the Harness runtime.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:20:00Z
+[AGENT] [SOL]
+[TYPE] PROCESS_FAILURE_CORRECTION
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Executor handoff defect: SOL used blanket STOP wording for the Harness ADC failure path instead of carrying the owner's blocker rule into the prompt.
+
+[OWNER_RULE]
+A first fixable blocker is not a stop condition. The executor must go around, through, or over it using a materially different route inside the same locked architecture, while logging each failure before retry. Stop only at a genuine hard boundary, a second hard blocker, or when remaining routes violate cost, security, safety, or owner constraints.
+
+[CURRENT_EFFECT]
+Harness independently followed the correct rule by moving from the failed Google CLI bootstrap installer to Google's official archive distribution. Codex remains active on the separate Composio phone lane and should not be interrupted while it is successfully working through errors.
+
+[WHAT_NOT_TO_RETRY]
+Do not write blanket "if X fails, STOP" executor instructions unless X is explicitly the final hard-boundary condition after same-lane alternatives have been exhausted.
+---
