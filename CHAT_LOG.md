@@ -3354,3 +3354,33 @@ No credential value is to be pasted into ChatGPT, Harness prompts, GitHub, sourc
 [CODEX]
 Codex phone pairing lane remains untouched.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:12:00Z
+[AGENT] [SOL]
+[TYPE] HARNESS_ADC_LOGIN_RECOVERY
+[STATUS] READY
+[ACTIVE_OWNER] HARNESS
+[BODY]
+Owner reports the Harness laptop is stuck/sluggish in the browser phase of the Google ADC login. Harness itself is still working; Codex is separately working through Composio errors.
+
+[FAILURE_SIGNATURE]
+Automatic browser-based ADC authorization is not completing reliably on the laptop. No evidence yet of an IAM, Drive-permission, service-account, or architecture failure.
+
+[PRIOR VERIFIED STATE]
+- roles/iam.serviceAccountTokenCreator already present for Michael on the Icarus service account.
+- IAMCredentials signing physically succeeded.
+- Service account has writer permission on crosssave-state.
+- State folder ID: 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP.
+- Locked runtime remains Harness <-> Google Drive.
+
+[CHANGED_APPROACH]
+Use the same gcloud ADC impersonation flow with --no-launch-browser so Google prints the authorization URL and accepts the returned verification code in the terminal. This changes only the browser transport, not the credential model or architecture.
+
+[PASS EVIDENCE]
+After authorization, Harness must verify ADC without printing secrets and rerun the unchanged live-Drive acceptance suite. Browser login alone is not PASS.
+
+[WHAT_NOT_TO_RETRY]
+Do not keep reopening the same sluggish auto-launched browser flow; do not create a service-account private key; do not insert Composio or another broker into the Harness runtime.
+---
