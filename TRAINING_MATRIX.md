@@ -1149,3 +1149,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `verification_rule`: Autonomous execution does not permit self-certification; final-effect evidence is required.
 - `reusable_principle`: **The product is the verified outcome, not the implementation workflow the user has to watch.**
 - `confidence`: HIGH.
+
+
+### HV-EXP-078 — Do not narrow owner-wide immutable rules with assistant-created qualifiers
+- `experience_id`: HV-EXP-078
+- `date_utc`: 2026-10-04
+- `source_agent`: SOL + OWNER
+- `scope`: All user tasks, all agents, all execution and reporting.
+- `failure`: After reviewing the canonical rules and acknowledging repeated non-compliance, SOL again described the preflight gate as applying before "substantive" claims/actions. Michael correctly rejected this because the controlling owner doctrine is **Every agent, every task, every time** and the rules explicitly include **No trivial-task exemption**.
+- `root_cause`: Assistant-created qualifier narrowed the owner's rule and created an unauthorized exemption.
+- `canonical_rule`: **Do not add qualifiers, thresholds, exemptions, or reinterpretations to Michael's immutable rules. Every agent, every task, every time means exactly that.**
+- `required_behavior`: Apply the full applicable gate to every task before action. The assistant may scale effort proportionally, but may not waive the gate or redefine which tasks count.
+- `what_not_to_retry`: Do not use "substantive", "non-trivial", "material enough", "simple task", or similar assistant-created wording to exempt a task from the owner's immutable rule set.
+- `verification_rule`: Compliance is demonstrated by the next task visibly following the gate before action; verbal promises are not evidence.
+- `confidence`: HIGH.
