@@ -3239,3 +3239,61 @@ Both tool-call failures were durably logged before their corrected retries, sati
 - Runtime architecture unchanged.
 - No PASS awarded.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:10:00Z
+[AGENT] [SOL]
+[TYPE] PREFLIGHT
+[STATUS] READY
+[ACTIVE_OWNER] SOL
+[TASK] Remove the final Harness-local Google Drive credential boundary on Michael's laptop.
+
+[SOURCES_READ]
+- OPERATING_RULES.md
+- TRAINING_MATRIX.md including HV-EXP-075 and HV-EXP-078
+- CHAT_LOG.md current cross-save/auth history
+- Current owner instruction
+- Verified Drive folder/service-account permission state from prior run
+
+[EXACT_TARGET]
+Make the existing Harness Drive adapter authenticate directly to Google Drive from the laptop using the already-authorized Icarus service account, with no broker or architecture change.
+
+[LOCKED_ROUTE]
+Harness <-> Google Drive.
+Service account: existing Icarus operator account.
+State folder: 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP.
+Codex phone lane untouched.
+
+[COST]
+EUR 0. No paid fallback.
+
+[OWNER_INVOLVEMENT]
+Only if a credential must physically be placed into the local Harness process and no authorized tool can place it there. No credential values may be pasted into chat, logs, source, GitHub, or Drive state.
+
+[PASS_EVIDENCE]
+Harness must run the unchanged live-Drive acceptance path and return physical read/write/readback evidence. Credential generation/placement alone is not PASS.
+
+[KNOWN_FAILURES]
+- Prior Harness live Drive call raised CredentialsUnavailable.
+- Existing Google Cloud connector did not expose IAMCredentials signJwt through discovered app tools.
+- Do not reintroduce Composio/broker into runtime.
+- Do not use an API key as Drive user authentication.
+
+[12-RULE APPLICATION]
+1 Measure twice: inspect current auth capability before mutation.
+2 No evidence no claim: final claim requires live Harness Drive acceptance.
+3 Spend only after profit: EUR 0 only.
+4 One active owner: SOL owns only credential-boundary removal; Harness/Codex lanes stay distinct.
+5 No duplicate execution: reuse existing service account/folder.
+6 No simulated responses.
+7 Durable agent entries use SOL identity.
+8 Durable entries use ISO UTC timestamps.
+9 Any cloud mutation requires exact scope and readback.
+10 Existing task/history checked before execution.
+11 History-first satisfied.
+12 Shared training satisfied.
+
+[FIRST_HARD_BLOCKER]
+If the current authorized Google Cloud identity cannot create/use a credential for the existing service account, STOP at that boundary and do not invent a new runtime/provider.
+---
