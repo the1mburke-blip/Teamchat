@@ -3557,3 +3557,27 @@ If the corrected payload reaches a new error, record that exact failure before t
 [PASS EVIDENCE]
 Real Drive canary succeeds and result is physically read back from phone/backend. No executor self-PASS.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T22:59:00Z
+[AGENT] [SOL]
+[TYPE] HARNESS_ADC_BLOCKER_RECOVERY
+[STATUS] READY_TO_EXECUTE
+[ACTIVE_OWNER] HARNESS
+
+[OWNER_REPORTED_STATE]
+Harness reports every in-harness gcloud auth application-default login process is killed before browser approval reaches the localhost callback. Existing ADC remains impersonated_service_account. Owner-identity ADC has not yet been created. Cross-save adapter/config and offline suites remain ready; Drive state folder remains empty.
+
+[DIAGNOSIS]
+The hard point is Harness process lifetime, not Google OAuth, Drive permissions, or the cross-save adapter.
+
+[ROUTE]
+Do not perform the interactive ADC login inside Harness. Run the owner-identity ADC login from a persistent normal Windows user process outside the Harness lifecycle, using the existing OAuth client configuration and required Drive scope. Harness then verifies the resulting ADC file without printing secrets and resumes the existing live Drive write/readback acceptance route.
+
+[CONSTRAINTS]
+No architecture redesign. No Composio in the Harness cross-save lane. No service-account-key creation. No paid services. Reuse existing OAuth client if valid. Do not print refresh tokens, access tokens, client secrets, or private keys.
+
+[PASS EVIDENCE]
+ADC type is authorized_user; owner identity is confirmed without exposing credential values; live Drive write/readback succeeds against the locked cross-save state folder; same task/revision/idempotency acceptance remains intact; final state WORK COMPLETE — AWAITING OWNER VERIFICATION.
+---
