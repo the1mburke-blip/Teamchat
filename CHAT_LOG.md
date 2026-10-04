@@ -3581,3 +3581,28 @@ No architecture redesign. No Composio in the Harness cross-save lane. No service
 [PASS EVIDENCE]
 ADC type is authorized_user; owner identity is confirmed without exposing credential values; live Drive write/readback succeeds against the locked cross-save state folder; same task/revision/idempotency acceptance remains intact; final state WORK COMPLETE — AWAITING OWNER VERIFICATION.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T23:42:00+01:00
+[AGENT] [SOL]
+[TYPE] ICARUS_PHONE_UI_REQUIREMENT
+[STATUS] READY_TO_EXECUTE
+[ACTIVE_OWNER] CODEX
+
+[OWNER_DIRECTION]
+Now that the phone execution path is returning real Drive data, Codex should move from raw machine output to the approved Icarus app presentation and add owner-verification controls on the phone.
+
+[UI REQUIREMENTS]
+- Preserve the existing orange Icarus visual identity and the main "Talk to ICARUS" surface.
+- Preserve status indicators; rename legacy "GEMINI: BROKERED" to "REASONING: BROKERED".
+- Do not dump raw JSON/machine payloads to the user for normal successful results.
+- Render human-readable result summary and evidence details, with raw payload available only as a secondary/debug view if useful.
+- When a task reaches WORK COMPLETE — AWAITING OWNER VERIFICATION, surface an owner-verification control in the phone UI.
+- Owner must be able to confirm verification or reject/return the work from the phone; do not allow executor self-PASS.
+- Reuse the existing task/state contract and existing owner-verification states if present; inspect before adding new status names.
+- Verification action must persist against the same task_id and be read back before claiming success.
+
+[CONSTRAINTS]
+No backend redesign, no auth-route change, no Composio redesign, no Harness changes, no paid service.
+---
