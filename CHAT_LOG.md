@@ -2825,3 +2825,116 @@ Owner correction in active conversation; OPERATING_RULES.md owner doctrine and n
 [NEXT]
 Demonstrate compliance through behavior on the next task. No promise-only closure.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04
+[AGENT] [SOL]
+[TYPE] ICARUS_CHAT_CHECKPOINT_2026-10-04_USER_INTENT
+[STATUS] RECORDED
+[ACTIVE_OWNER] MICHAEL
+
+## Purpose
+Durable checkpoint of the current Icarus conversation so later agents/chairs can recover the exact owner intent, active architecture, execution state, and the repeated instruction-adherence failure discussed in this chat without relying on conversational memory.
+
+## Owner doctrine reaffirmed
+- EVERY AGENT. EVERY TASK. EVERY TIME.
+- No trivial-task exemption.
+- MEASURE TWICE. CUT ONCE.
+- NO EVIDENCE = NO CLAIM.
+- SPEND ONLY AFTER PROFIT.
+- Do not add assistant-created qualifiers such as "substantive", "non-trivial", "simple", or "material enough" to narrow owner rules.
+- User instructions remain literal unless an actual higher-priority conflict exists.
+- If a conflict exists, identify the exact conflict rather than silently bending the owner's rule.
+- Executors do not self-award PASS.
+- Until Icarus is the independent verifier, Michael is the final verification authority.
+
+## Repeated failure pattern acknowledged
+The owner identified a recurring execution defect across prior Icarus work:
+1. Michael specifies an exact route/contract.
+2. SOL understands and acknowledges it.
+3. SOL compresses/reinterprets the rule or substitutes a different architecture.
+4. Work proceeds on the substituted route until Michael catches the drift.
+5. The same class of mistake later reappears despite prior acknowledgement.
+
+Historical examples discussed:
+- introducing broker/Cloudflare/extra relay/orchestration paths that were not part of the owner's intended phone-fixer product contract;
+- repeatedly drifting away from the locked direct architecture;
+- describing the immutable rule as applying to "substantive" tasks even though the owner doctrine says every task every time;
+- converting an uncertain owner observation about a possible missing file/path into a BLOCKED issue before evidence existed.
+
+This is recorded as user-intent drift / instruction-adherence failure, not as ambiguity in Michael's instructions.
+
+## Current Icarus architecture lock
+### Phone execution lane — Codex
+Codex owns the phone/APK/Apps Script/Composio execution lane.
+- Current physically observed defect: phone pairing succeeded, but installed APK execution transport still targeted the retired mobile-broker path.
+- Correct repair direction: preserve rollback, repair the existing Apps Script client transport, do not resurrect the broker, rebuild/install only because the APK-side defect is physically proven.
+- Rerun the same read-only canary after repair.
+- Codex remains active and has not stopped.
+
+### Cross-save lane — Harness
+Locked logical path:
+**Phone ⇄ Google Drive ⇄ Harness**
+- Google Drive is the shared meeting point/source of truth.
+- No Grace, Prime, Teamchat, Cloudflare, broker, extra orchestration agent, or new database in this cross-save loop.
+- Apps Script may act only as the thin phone-side HTTPS adapter.
+- Harness owns the Harness/Drive side; Codex owns the phone side.
+- Do not cross the lanes.
+
+## Issue #45 correction
+Michael reported that something appeared to be missing from an expected file/path, but he was unsure of the exact fact.
+Initial SOL handling incorrectly promoted this to a blocker.
+Issue #45 was corrected to:
+- observation only;
+- exact file/path/cause unverified;
+- not a blocker;
+- Harness continued;
+- Codex continued;
+- do not interrupt either executor;
+- only promote the observation if final evidence proves it material.
+
+## Harness acceptance-suite state at this checkpoint
+Latest Harness output reported by Michael:
+- first cross-save acceptance-suite run: **15/15 tests passing**;
+- Harness then started regression-testing the existing checkpoint suite to ensure the `_replace` change did not break the proven layer;
+- Harness also started two additional acceptance-suite runs to check stability/non-flakiness;
+- current state is **TESTING**, not PASS;
+- do not interrupt the Harness while these runs are progressing.
+
+## Verification contract
+For Harness cross-save closure, evidence must support the locked contract, including as applicable:
+- same task_id preserved;
+- revision progression;
+- stale-write rejection;
+- restart/resume without duplicate work;
+- duplicate-session prevention;
+- completion state written back;
+- independent readback;
+- existing checkpoint regression remains green;
+- repeated acceptance-suite runs remain stable;
+- final executor state is WORK COMPLETE — AWAITING OWNER VERIFICATION, not PASS.
+
+For Codex phone-lane closure, evidence must support:
+- repaired client transport reaches Apps Script rather than retired broker;
+- same read-only canary succeeds through the intended route;
+- protected systems unchanged;
+- no new paid route;
+- final state awaits Michael's verification.
+
+## Current execution state
+- Codex: ACTIVE.
+- Harness: ACTIVE / TESTING.
+- Neither is blocked.
+- Do not interrupt either merely to investigate uncertain observations.
+- The two lanes meet at the Drive task/state contract.
+
+## Process-learning references
+- OPERATING_RULES.md: owner doctrine, no-trivial-task exemption, universal preflight, binding route-change rules.
+- TRAINING_MATRIX.md: HV-EXP-078 records the specific failure of narrowing immutable rules with assistant-created qualifiers.
+- CHAT_LOG.md: prior PROCESS_FAILURE_CORRECTION records the same instruction-adherence issue.
+- This checkpoint supersedes any conversational shorthand that conflicts with the literal owner doctrine above.
+
+[NEXT]
+Continue to evaluate Codex and Harness evidence against the locked architecture and owner doctrine. Do not reinterpret or narrow the rules. Do not award PASS; Michael verifies.
+---
