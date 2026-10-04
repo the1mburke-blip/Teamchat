@@ -3404,3 +3404,21 @@ Harness independently followed the correct rule by moving from the failed Google
 [WHAT_NOT_TO_RETRY]
 Do not write blanket "if X fails, STOP" executor instructions unless X is explicitly the final hard-boundary condition after same-lane alternatives have been exhausted.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:58:00Z
+[AGENT] [SOL]
+[TYPE] STATUS_CORRECTION
+[STATUS] CORRECTED
+[ACTIVE_OWNER] SOL
+[BODY]
+Michael corrected executor ownership. The previously discussed "Platform API route has no active Drive connection / continue Platform OAuth configuration repair" output came from CODEX, not Harness.
+
+[CURRENT STATE]
+- Harness: finished. Final Harness evidence/result packet has not yet been handed to SOL by Michael, so no further claim is made about its terminal verification state.
+- Codex: active. Current reported blocker is ICARUS Platform API lacking an active Google Drive connection; Codex is continuing the Platform OAuth configuration repair.
+- Do not attribute Codex Platform OAuth findings to Harness.
+- Do not interrupt Codex while it is actively working around the blocker.
+- No PASS claimed for either lane.
+---
