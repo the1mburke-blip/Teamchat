@@ -3297,3 +3297,29 @@ Harness must run the unchanged live-Drive acceptance path and return physical re
 [FIRST_HARD_BLOCKER]
 If the current authorized Google Cloud identity cannot create/use a credential for the existing service account, STOP at that boundary and do not invent a new runtime/provider.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:04:30Z
+[AGENT] [SOL]
+[TYPE] TOOL_CALL_FAILURE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Read-only IAM capability probe through the existing authorized Google Cloud connection returned HTTP 403 SERVICE_DISABLED for IAM API on consumer project 511566560828.
+
+[EVIDENCE]
+Google response explicitly identified:
+- service: iam.googleapis.com
+- consumer: projects/511566560828
+- reason: SERVICE_DISABLED
+
+[INTERPRETATION]
+This does not yet prove IAM is disabled on target project icarus-69364; it may be the OAuth client/quota project used by the connector.
+
+[CHANGED_APPROACH]
+Retry the same read-only IAM GET once with x-goog-user-project: icarus-69364 so quota/service enablement is evaluated against the target project.
+
+[WHAT_NOT_TO_RETRY]
+Do not repeat the call against consumer project 511566560828 and do not enable APIs on that unrelated consumer project.
+---
