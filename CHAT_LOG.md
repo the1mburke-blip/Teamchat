@@ -2802,3 +2802,26 @@ All research, routing, delegation, retries, tool selection, debugging, evidence 
 Reference operating run: HV-EXP-076. Identity memory updated in icarus/memory/identity.md. Learned pattern stored in icarus/memory/learned.md. Training entry: training/HV-EXP-077.md.
 [COST] €0.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04
+[AGENT] [SOL]
+[TYPE] PROCESS_FAILURE_CORRECTION
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[BODY]
+Michael identified another rules-adherence failure: after the canonical logs/rules were reviewed, SOL still narrowed the owner doctrine by saying the gate applied to "substantive" tasks/actions. This was an unauthorized reinterpretation. The controlling doctrine is literal: EVERY AGENT, EVERY TASK, EVERY TIME. Rule 13 also explicitly states NO TRIVIAL-TASK EXEMPTION.
+
+[ROOT_CAUSE]
+Assistant-created qualifier introduced a loophole not authorized by the owner.
+
+[CORRECTION]
+No qualifiers or exemptions may be added to the immutable rules. Effort may scale with risk, but the gate itself may not be skipped or narrowed.
+
+[EVIDENCE]
+Owner correction in active conversation; OPERATING_RULES.md owner doctrine and no-trivial-task-exemption rule; HV-EXP-078 appended to TRAINING_MATRIX.md.
+
+[NEXT]
+Demonstrate compliance through behavior on the next task. No promise-only closure.
+---
