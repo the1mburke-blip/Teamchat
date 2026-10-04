@@ -3157,3 +3157,52 @@ Harness process still lacks a local supported Drive credential. Keyless IAM sign
 [FIRST_HARD_BLOCKER]
 If Drive rejects the permission create, stop and record the exact failure before any different route.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:01:41Z
+[AGENT] [SOL]
+[TYPE] ICARUS_HARNESS_DRIVE_PERMISSION_REPAIR
+[STATUS] PARTIAL
+[ACTIVE_OWNER] SOL
+
+[RESULT]
+Existing Icarus service account was granted writer access to the dedicated cross-save state folder.
+
+[TARGET]
+Folder: crosssave-state
+Folder ID: 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP
+Service account: chatgpt-operator@icarus-69364.iam.gserviceaccount.com
+
+[PRE-WRITE EVIDENCE]
+Drive permission list showed only the owner permission; the service account permission was absent.
+
+[MUTATION]
+Created Drive permission:
+- type=user
+- role=writer
+- target=existing Icarus service account
+- folder=crosssave-state
+- no runtime architecture change
+- EUR 0
+
+[POST-WRITE READBACK]
+Drive permission list physically returned:
+- owner user permission
+- chatgpt-operator@icarus-69364.iam.gserviceaccount.com role=writer
+Permission ID: 13279083994993128432
+
+[REMAINING HARD BOUNDARY]
+Harness still has no local Drive credential in its process environment. Current accepted adapter boundaries remain:
+- GOOGLE_APPLICATION_CREDENTIALS / service-account JSON
+- OAuth client id + client secret + refresh token
+- ICARUS_DRIVE_ACCESS_TOKEN
+
+The current authorized Google Cloud connector does not expose IAMCredentials signJwt or service-account-key creation. Do not fabricate a keyless route.
+
+[SHORTEST FINISH]
+Use the existing service account, place one service-account JSON credential locally on the Harness machine through a secure local secret mechanism, point GOOGLE_APPLICATION_CREDENTIALS to that file, set the state-folder ID to 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP, then rerun the unchanged drive acceptance demo. Do not paste secret material into chat/GitHub/source/logs.
+
+[CODEX]
+Phone lane remains separate and should not be interrupted.
+---
