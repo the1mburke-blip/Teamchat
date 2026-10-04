@@ -2959,3 +2959,67 @@ Owner-reported only at this checkpoint. Do not convert this status into PASS wit
 - No architecture change inferred.
 - Continue to treat the Harness as TESTING until evidence is reviewed.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04
+[AGENT] [SOL]
+[TYPE] ICARUS_CROSSSAVE_HARNESS_COMPLETION_REVIEW
+[STATUS] PARTIAL
+[ACTIVE_OWNER] SOL
+
+[SOURCES_READ]
+- OPERATING_RULES.md @ 6d1d12c99f264ac667eb0a1418c77c1fcbf3244d
+- TRAINING_MATRIX.md @ 767a98868f0bf68d4e8123875afc20a00bd9c2e7
+- CHAT_LOG.md @ f2251e2c08f6482eec6e17d3866018974185a7fe
+- Issue #44 and Issue #45
+- Owner-supplied Harness completion/blocker report in active conversation
+
+[OWNER_REPORTED_HARNESS_RESULT]
+Harness reported:
+- Cross-save implementation complete enough to run its acceptance path.
+- Live Google Drive leg BLOCKED because no supported Drive credential exists in the Harness process environment.
+- Supported auth boundaries implemented by Harness: service-account JSON / GOOGLE_APPLICATION_CREDENTIALS; OAuth client id + client secret + refresh token; or access token.
+- GoogleDriveBackend construction and first live call raised CredentialsUnavailable.
+- No live-Drive PASS was simulated.
+- Harness-defined on-Drive layout is CONTRACT.md section 2 and is the phone-side mirroring specification.
+- 15 files edited, +5655/-1.
+
+[PREFLIGHT]
+Exact target: resolve only what can be safely resolved from the reported live-Drive boundary without altering the locked Phone <-> Google Drive <-> Harness architecture.
+Cost: EUR 0.
+Owner involvement: none for Drive-folder allocation; credential provisioning remains a genuine secure-secret boundary.
+Protected lane: Codex phone/APK/Apps Script/Composio lane untouched.
+PASS evidence: independent Drive metadata/list readback for any folder mutation. No live-Drive Harness PASS may be claimed without Harness itself authenticating and rerunning the unchanged drive acceptance path.
+Known blocker: Harness has no usable Drive credential in its process environment.
+
+[DUPLICATE CHECK]
+Google Drive search found an existing ICARUS-HARNESS folder:
+- id: 1qh51nkEsumiHKyQghywgFGwJeudhlsjw
+- parent: ICARUS — Autonomy Engineer — NON-PROD
+Its contents were checked and found empty.
+
+[ACTION]
+Created dedicated child folder:
+- title: crosssave-state
+- id: 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP
+- parent_id: 1qh51nkEsumiHKyQghywgFGwJeudhlsjw
+- shared: false
+
+[PHYSICAL_READBACK]
+get_file_metadata confirmed the folder id/title/parent.
+Parent-folder listing independently showed crosssave-state as the only child at readback.
+
+[REMAINING_BLOCKER]
+Live Drive credentials are still absent from the Harness process environment. Do not paste credentials into prompts/chat/source/logs/GitHub. Provision only through the Harness machine's secure local secret mechanism, then run the unchanged drive backend acceptance test.
+
+[PROCESS_FAILURE]
+The first read-only list_folder request incorrectly used a raw folder ID and returned INVALID_ARGUMENT because this connector requires a folder URL. SOL immediately retried with the returned folder URL and succeeded, but the failure was not durably recorded BEFORE the retry. This violates the failure-capture-before-retry rule. The operational Drive state was not mutated by the failed call, but process compliance for this run is therefore not full PASS.
+
+[CURRENT STATE]
+- Harness implementation: WORK COMPLETE / AWAITING OWNER VERIFICATION for the implemented/local-tested portion.
+- Live Google Drive leg: BLOCKED on secure credential availability only.
+- State-folder-ID blocker: RESOLVED with physical readback.
+- Codex: continue independently; do not interrupt pairing.
+- No executor PASS awarded.
+---
