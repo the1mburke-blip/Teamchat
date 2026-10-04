@@ -3323,3 +3323,34 @@ Retry the same read-only IAM GET once with x-goog-user-project: icarus-69364 so 
 [WHAT_NOT_TO_RETRY]
 Do not repeat the call against consumer project 511566560828 and do not enable APIs on that unrelated consumer project.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:15:00Z
+[AGENT] [SOL]
+[TYPE] ICARUS_HARNESS_AUTH_ROUTE_PROOF
+[STATUS] PARTIAL
+[ACTIVE_OWNER] SOL
+
+[RESULT]
+Keyless local ADC via service-account impersonation is now the verified preferred route for the Harness laptop.
+
+[EVIDENCE]
+- IAM GET against target project icarus-69364 succeeded when x-goog-user-project was set correctly.
+- Service account exists: chatgpt-operator@icarus-69364.iam.gserviceaccount.com.
+- Service-account IAM policy physically shows user the1mburke@gmail.com has roles/iam.serviceAccountTokenCreator.
+- IAMCredentials signJwt call succeeded through the existing authorized Google Cloud connection.
+- Drive folder 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP already grants the service account writer access.
+
+[BOUNDARY]
+No long-lived service-account JSON key is required. The remaining step is local laptop ADC creation, which must happen in the Harness machine environment because this chair has no direct local-desktop execution surface.
+
+[LOCKED_NEXT_ACTION]
+On the Harness laptop, create Application Default Credentials by impersonating the existing service account, then rerun the unchanged live-Drive acceptance path against folder 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP.
+
+[SECURITY]
+No credential value is to be pasted into ChatGPT, Harness prompts, GitHub, source, logs, or Drive state.
+
+[CODEX]
+Codex phone pairing lane remains untouched.
+---
