@@ -3422,3 +3422,41 @@ Michael corrected executor ownership. The previously discussed "Platform API rou
 - Do not interrupt Codex while it is actively working around the blocker.
 - No PASS claimed for either lane.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T22:05:00Z
+[AGENT] [SOL]
+[TYPE] OWNER_DECISION
+[STATUS] READY_TO_RESUME
+[ACTIVE_OWNER] HARNESS
+[TASK] Choose the next live-Drive route from Harness decision gate.
+
+[SOURCES_READ]
+- OPERATING_RULES.md
+- TRAINING_MATRIX.md
+- CHAT_LOG.md
+- Owner-supplied Harness evidence/disclosures and decision options
+- Current Google ADC documentation for user credentials, service-account impersonation, and external Google Drive scopes
+
+[ALLOWANCE_ESTIMATE]
+Low: one decision/logging pass; no model dispatch or production mutation by SOL.
+
+[DECISION]
+Choose OWNER-IDENTITY ADC.
+
+[REASONS]
+- Preserves locked Phone <-> Google Drive <-> Harness architecture.
+- Reuses the existing crosssave-state folder and same adapter/CONTRACT.
+- Remains EUR 0.
+- Avoids Workspace/Shared Drive dependency.
+- Avoids changing the record wire format to native Google Docs.
+- Harness states the authorized_user path is already implemented.
+- Current Google documentation supports local user ADC; Drive scopes should be authorized with an OAuth client ID / --client-id-file rather than relying on the generic gcloud OAuth client when external scopes are needed.
+
+[EXECUTION BOUNDARY]
+Harness should resume from its current checkpoint using owner-identity ADC. Do not alter Codex phone lane. Do not reuse the service-account-quota path for live Drive writes if it reproduces the quota boundary. If OAuth client configuration is required for Drive scopes, inspect/reuse the correct existing client before creating another one.
+
+[PASS EVIDENCE]
+Unchanged live-Drive 7-step acceptance path plus existing regression suite, with physical Drive readback and no self-awarded PASS.
+---
