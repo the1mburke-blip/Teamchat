@@ -3206,3 +3206,36 @@ Use the existing service account, place one service-account JSON credential loca
 [CODEX]
 Phone lane remains separate and should not be interrupted.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:02:30Z
+[AGENT] [SOL]
+[TYPE] POST_TASK_COMPLIANCE_TRACKER
+[PRIMARY_TASK] ICARUS_HARNESS_DRIVE_PERMISSION_REPAIR
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+
+[RULE_REVIEW]
+1 MEASURE TWICE CUT ONCE — FAIL: two avoidable read-only Composio request-shape errors occurred during capability discovery.
+2 NO EVIDENCE NO CLAIM — PASS: permission absence and successful grant were both physically read back.
+3 SPEND ONLY AFTER PROFIT — PASS: EUR 0.
+4 One active owner per task — PASS: SOL owned only the Drive-permission repair.
+5 No duplicate execution — PASS: existing permission was checked before create.
+6 No simulated agent responses — PASS.
+7 Agent-authored entry identity — PASS.
+8 ISO 8601 UTC timestamp — PASS.
+9 Production-changing work scoped/owned/verified — PASS.
+10 Issue/CHAT_LOG/current state checked — PASS.
+11 History-first execution — PASS.
+12 Shared training before execution — PASS.
+
+[ADDITIONAL_PROCESS_CHECK]
+Both tool-call failures were durably logged before their corrected retries, satisfying failure-capture-before-retry.
+
+[OPERATIONAL_RESULT]
+- Service-account folder permission: VERIFIED.
+- Harness local credential availability: still BLOCKED.
+- Runtime architecture unchanged.
+- No PASS awarded.
+---
