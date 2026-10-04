@@ -2938,3 +2938,24 @@ For Codex phone-lane closure, evidence must support:
 [NEXT]
 Continue to evaluate Codex and Harness evidence against the locked architecture and owner doctrine. Do not reinterpret or narrow the rules. Do not award PASS; Michael verifies.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04
+[AGENT] [SOL]
+[TYPE] ICARUS_HARNESS_STATUS_UPDATE
+[STATUS] TESTING
+[ACTIVE_OWNER] HARNESS
+[BODY]
+Owner reports that the Harness now has its acceptance/regression results and is running the cross-save implementation against today's demo.
+
+[EVIDENCE_STATUS]
+Owner-reported only at this checkpoint. Do not convert this status into PASS without the Harness result packet and Michael's verification.
+
+[CONSTRAINTS]
+- Harness lane unchanged.
+- Codex lane untouched.
+- €0 route unchanged.
+- No architecture change inferred.
+- Continue to treat the Harness as TESTING until evidence is reviewed.
+---
