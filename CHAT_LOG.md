@@ -3524,3 +3524,36 @@ Harness cross-save lane remains separate and untouched.
 [MATERIAL_CHANGE]
 Any proposal to add another provider, paid route, browser broker, database, or expose tokens requires STOP + re-preflight.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T22:55:00Z
+[AGENT] [SOL]
+[TYPE] CODEX_COMPOSIO_EXECUTION_BLOCKER
+[STATUS] READY_TO_REPAIR
+[ACTIVE_OWNER] CODEX
+
+[OWNER_REPORTED_EVIDENCE]
+Codex reports:
+- Platform Drive OAuth succeeded.
+- Platform Drive connection is ACTIVE.
+- Phone task reached Composio execution.
+- Execution failed with: "The 'account' parameter is not supported for this project. Multi-account selection is not enabled."
+- Error physically read from phone and confirmed in backend logs.
+- Drive canary has not succeeded; no PASS recorded.
+
+[DIAGNOSIS]
+This is no longer an OAuth blocker. It is an execution-payload mismatch: the project has multi-account selection disabled but the tool call still supplies an account selector.
+
+[CURRENT COMPOSIO CONTRACT]
+When multi-account mode is disabled, execution should omit the per-call account selector and use the session/default active connection for the toolkit. If explicit pinning is later required, use the session's connected-account configuration rather than an unsupported per-call account field.
+
+[SHORTEST REPAIR]
+Remove only the unsupported account/account_id selector from the Google Drive execution payload. Preserve the same user, session, active Drive connection, task, and tool arguments. Re-run the same read-only Drive canary.
+
+[BLOCKER RULE]
+If the corrected payload reaches a new error, record that exact failure before the next materially different same-lane repair. Do not restart OAuth, create another auth config, or redesign the route unless evidence requires it.
+
+[PASS EVIDENCE]
+Real Drive canary succeeds and result is physically read back from phone/backend. No executor self-PASS.
+---
