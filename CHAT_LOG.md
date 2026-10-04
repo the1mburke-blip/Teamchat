@@ -3460,3 +3460,67 @@ Harness should resume from its current checkpoint using owner-identity ADC. Do n
 [PASS EVIDENCE]
 Unchanged live-Drive 7-step acceptance path plus existing regression suite, with physical Drive readback and no self-awarded PASS.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T22:45:00Z
+[AGENT] [SOL]
+[TYPE] ICARUS_ARCHITECTURE_DECISION
+[STATUS] READY_TO_EXECUTE
+[ACTIVE_OWNER] CODEX
+[TASK] Pivot Google execution away from the failing Composio OAuth dependency and implement Google-first native authentication/authorization for Icarus.
+
+[MODEL_CHAIR]
+GPT-5.6 Sol.
+
+[HISTORY_REVIEW]
+PASS. Reviewed OPERATING_RULES.md, TRAINING_MATRIX.md, CHAT_LOG.md and prior Composio auth-handoff failures.
+
+[TRAINING_REVIEW]
+PASS.
+
+[TRAINING_QUOTE]
+"Go around, through, or over the blocker."
+
+[TRAINING_SOURCE]
+Canonical blocker-rule lesson in TRAINING_MATRIX.md.
+
+[TRAINING_RELEVANCE]
+The Composio Google authorization route has repeatedly failed; the owner explicitly authorizes a materially different same-product route rather than another cosmetic retry.
+
+[ALLOWANCE_ESTIMATE]
+Low-to-moderate planning cost; implementation belongs to Codex. No paid service or new provider approved.
+
+[LOCKED DECISION]
+Google services use native Google authentication/authorization.
+Non-Google services may continue to use Composio.
+Do not remove or redesign Composio globally.
+
+[GOOGLE FLOW]
+1. Android startup/account connection: Google Sign-In through Credential Manager.
+2. Google API authorization: request only required Google API scopes.
+3. Backend/offline execution: exchange/store refreshable authorization server-side so Icarus can act after initial user consent without repeated prompts.
+4. Initial implementation target: Google Drive first, because Drive is the currently blocked capability.
+5. Add Gmail/Calendar later only when the corresponding Icarus task requires them; do not request blanket account-wide permissions.
+
+[SECURITY]
+No refresh/access tokens, client secrets, or private keys in APK, GitHub, logs, prompts, or Drive state. Confidential OAuth material and refresh tokens remain server-side.
+
+[ARCHITECTURE]
+Google: Icarus -> native Google OAuth -> Google APIs.
+Other services: Icarus -> Composio -> external service.
+Harness cross-save lane remains separate and untouched.
+
+[ACCEPTANCE]
+- fresh app presents Google account connection;
+- user completes Google consent;
+- Icarus obtains authorized Drive capability;
+- backend retains refreshable authorization securely;
+- a real Drive read-only canary succeeds after the initial consent;
+- a second Drive call succeeds without another consent prompt;
+- no Composio Google connection is required for those calls;
+- Codex returns WORK COMPLETE — AWAITING OWNER VERIFICATION, never self-PASS.
+
+[MATERIAL_CHANGE]
+Any proposal to add another provider, paid route, browser broker, database, or expose tokens requires STOP + re-preflight.
+---
