@@ -3104,3 +3104,56 @@ Retry once with session:{id:"came"} and otherwise unchanged use case.
 [WHAT_NOT_TO_RETRY]
 Do not use top-level session_id with COMPOSIO_SEARCH_TOOLS.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T21:05:00Z
+[AGENT] [SOL]
+[TYPE] PREFLIGHT
+[STATUS] READY
+[ACTIVE_OWNER] SOL
+[TASK] Resolve Harness live-Drive blocker without changing locked Phone <-> Google Drive <-> Harness architecture.
+
+[SOURCES_READ]
+- OPERATING_RULES.md
+- TRAINING_MATRIX.md, including HV-EXP-075 and HV-EXP-078
+- CHAT_LOG.md current cross-save entries
+- Owner-supplied Harness completion report
+- Live Google Drive permission readback for crosssave-state
+
+[EXACT_TARGET]
+Grant existing Icarus service account writer access only to Drive folder 19dChOD3pBbdfA1YBBFpalPZjDBn_RyYP (crosssave-state). Do not create a new runtime, broker, database, account, or Drive folder.
+
+[ROUTE]
+Existing authorized Google Drive connection -> Drive permissions API -> crosssave-state folder -> existing Icarus service account.
+Runtime architecture remains Harness <-> Google Drive directly; Composio is used only as the current setup/admin tool, not inserted into runtime execution.
+
+[COST]
+EUR 0. No paid fallback.
+
+[OWNER_INVOLVEMENT]
+None for the folder permission. A secure local credential still must exist inside the Harness machine/runtime; no secret may be pasted into chat/logs/source/GitHub.
+
+[PASS_EVIDENCE_FOR_THIS TASK]
+Post-mutation Drive permission readback must show the existing Icarus service account with role=writer on crosssave-state.
+
+[KNOWN_BLOCKER AFTER THIS TASK]
+Harness process still lacks a local supported Drive credential. Keyless IAM signJwt is not exposed by the currently available Google Cloud connector; do not claim otherwise.
+
+[12-RULE APPLICATION]
+1 MEASURE TWICE CUT ONCE: prior-art/history checked; permission existence read before write.
+2 NO EVIDENCE NO CLAIM: permission grant only claimed after readback.
+3 SPEND ONLY AFTER PROFIT: zero-cost existing connections only.
+4 One active owner per task: SOL owns only this setup permission task; Harness/Codex lanes remain separate.
+5 No duplicate execution: permission absence physically confirmed before create.
+6 No simulated agent responses: no executor output invented.
+7 Agent entries use SOL identity.
+8 Durable entries use ISO 8601 UTC timestamps.
+9 Production-changing work has exact scope, active owner, and readback target.
+10 Issue/CHAT_LOG/current state checked before claiming work.
+11 History-first: prior auth/cross-save failures reviewed.
+12 Shared training: relevant Training Matrix entries reviewed before mutation.
+
+[FIRST_HARD_BLOCKER]
+If Drive rejects the permission create, stop and record the exact failure before any different route.
+---
