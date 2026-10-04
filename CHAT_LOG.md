@@ -3023,3 +3023,44 @@ The first read-only list_folder request incorrectly used a raw folder ID and ret
 - Codex: continue independently; do not interrupt pairing.
 - No executor PASS awarded.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-04T20:52:49Z
+[AGENT] [SOL]
+[TYPE] POST_TASK_COMPLIANCE_TRACKER
+[PRIMARY_TASK] ICARUS_CROSSSAVE_HARNESS_COMPLETION_REVIEW
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+
+[RULE_REVIEW]
+1. MEASURE TWICE. CUT ONCE. — FAIL. A read-only Drive listing request used a raw folder ID despite the connector contract requiring a URL; the corrected retry succeeded, but the first call should have been shaped correctly.
+2. NO EVIDENCE = NO CLAIM. — PASS. Harness claims were kept owner-reported; Drive folder existence/emptiness and the new state folder were physically read back before claims.
+3. SPEND ONLY AFTER PROFIT. — PASS. No paid service, credit, trial, or upgrade was used.
+4. One active owner per task. — PASS. SOL owned this completion-review/resolution task; Harness and Codex execution lanes were not claimed.
+5. No duplicate execution. — PASS. Existing Icarus/Harness Drive folders were searched and inspected before creating one dedicated crosssave-state child.
+6. No simulated agent responses. — PASS. Harness output was supplied by Michael; no synthetic Harness/Codex result was invented.
+7. Agent-authored entry prefix. — PASS. Durable entries use [SOL].
+8. ISO 8601 UTC timestamp. — FAIL for the immediately preceding completion-review entry, which used date-only 2026-10-04 rather than full ISO UTC. This tracker corrects the format prospectively.
+9. Production-changing work requires explicit scope, owner, and verification evidence. — PASS. Scope was limited to a dedicated Drive folder under ICARUS-HARNESS; owner SOL; independent metadata and parent-list readback completed.
+10. Inspect Issue and CHAT_LOG before claiming work. — PASS. Issue #44, Issue #45, and CHAT_LOG were read before action.
+11. History-first execution. — PASS. Relevant rules/log/history and known cross-save state were read before the Drive mutation.
+12. Shared training before execution. — PASS. TRAINING_MATRIX.md was read; HV-EXP-075 and HV-EXP-078 applicability confirmed.
+
+[COMPLIANCE_SCORE]
+10/12 rules passed.
+Misses:
+- Rule 1: incorrect request shape caused one avoidable read-only failure.
+- Rule 8: prior durable entry used date-only timestamp.
+Additional process miss already recorded:
+- failure-capture-before-retry was not durably completed before the corrected list_folder retry.
+
+[IMPACT]
+No protected system was changed, no paid route used, no duplicate folder created, and no Codex/Harness execution was interrupted. Allowance waste: one avoidable connector request plus the compliance repair work.
+
+[TERMINAL]
+Compliance tracker = FAIL. Operational state remains:
+- state-folder-ID blocker RESOLVED with evidence;
+- live Harness Drive credential boundary BLOCKED;
+- no PASS awarded.
+---
