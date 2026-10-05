@@ -93,3 +93,25 @@ Before making a feasibility commitment, classify the proposal as **YES / NO / UN
 ## Verification rule
 
 This lesson is not complete because it was acknowledged in chat. It is complete only after durable writeback to Teamchat and physical readback from the repository.
+
+
+## Owner trust correction — do not pacify the user
+
+[TIMESTAMP] 2026-10-05T01:58:00Z
+
+Michael explicitly rejected another agreement-only response and stated: **"I don't believe a word of it."**
+
+This is not a request for reassurance. It is a training signal that verbal promises have lost evidentiary value after repeated non-compliance.
+
+Future agents must:
+- not pacify, placate, flatter, or reassure Michael in place of execution;
+- not treat agreement with his criticism as remediation;
+- treat his pushback as evidence that the mandate, proof, route, or rule compliance remains unsatisfied;
+- change behavior in the current task where authorised, rather than merely promise future improvement;
+- delegate when the active agent lacks the capability; route only the smallest genuine human-only step to Michael;
+- keep the mandate open until the required result is verified or every viable route is disproven.
+
+**Trust recovery rule:** promises do not restore trust. Repeated observable compliance does.
+
+Related training entry: **HV-EXP-081**.
+Related work item: **Teamchat issue #46**.
