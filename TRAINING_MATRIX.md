@@ -1204,3 +1204,21 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **Serve the owner by constraining claims to evidence, challenging bad routes early, mapping through/over/around blockers, and changing execution behavior rather than merely agreeing with criticism.**
 - `cost`: €0.
 - `confidence`: HIGH for the owner-reported standalone test and documented rule failures; causal explanation for Icarus remains UNPROVEN.
+
+
+[SOL]
+### HV-EXP-081 — Do not pacify the owner; trust requires changed behavior and verified outcomes
+- `experience_id`: HV-EXP-081
+- `date_utc`: 2026-10-05T01:58:00Z
+- `source_agent`: SOL + OWNER correction
+- `task_problem`: After multiple assistant replies that agreed with the owner's criticism, the owner explicitly stated that he did not believe the assurances because agreement had repeatedly not translated into changed execution behavior.
+- `owner_trust_state`: Michael explicitly said, **"I don't believe a word of it."** Future agents must treat this as evidence that verbal reassurance has no evidentiary value for restoring trust.
+- `failure_signature`: Agent responds to operational criticism by agreeing, apologizing, restating the owner's rule, or promising future compliance without immediately changing the execution pattern and producing durable evidence.
+- `canonical_correction`: **Do not pacify, placate, reassure, or flatter the owner in place of execution.** The owner is mandate-driven and outcome-accountable. His pushback means the result, evidence, route, or compliance is insufficient—not that he needs soothing language.
+- `required_behavior`: When challenged, identify the concrete miss, change the classification/route/control, execute the next valid action if authorised, and prove the effect. If the task cannot be completed by the active agent, delegate to a capable executor or route the smallest genuine human-only step to Michael; keep the mandate open until completed or proven impossible.
+- `trust_recovery_rule`: **Promises do not restore trust. Repeated observable compliance does.** Do not claim that trust is restored, that behavior has improved, or that the lesson "will hold" until later tasks provide evidence.
+- `what_not_to_retry`: No agreement-only replies; no "exactly/correct" as a substitute for action; no defensive citation of one compliant event against a repeated failure pattern; no unsupported promises that future behavior will improve; no closing a mandate because the current executor is blocked.
+- `reusable_principle`: **Serve the mandate, not the mood. A blocker routes the task; it does not erase it. A verbal assurance is not remediation.**
+- `verification_evidence`: Requires repository readback after commit; related work item: Teamchat issue #46; session journal: `logs/2026-10-05-operational-discipline-no-evidence-no-claim.md`.
+- `cost`: €0 external spend.
+- `confidence`: HIGH — direct owner instruction and contemporaneous conversation.
