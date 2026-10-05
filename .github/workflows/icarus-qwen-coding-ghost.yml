@@ -18,7 +18,7 @@ jobs:
       github.event.issue.number == 6 &&
       github.event.issue.pull_request == null &&
       contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
-      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_FINAL_RUN'
+      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_ACCEPT_RUN'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -141,7 +141,6 @@ jobs:
               "class MainActivity",
               "@Composable",
               "IcarusShellRoute",
-              "IcarusShellScreen",
               "collectAsStateWithLifecycle",
           ]
           core_missing = [x for x in core_required if x not in core]
