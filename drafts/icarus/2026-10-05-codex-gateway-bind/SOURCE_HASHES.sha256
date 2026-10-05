@@ -1,0 +1,9 @@
+6fc6f7d4db70e528aa350c88ee473128c7bca8a5a753355198b1440ace52b3ad  compile-ready/app/build.gradle.kts
+38d18dfd27ca5980ef1d06ec2b1da1a89524b4bb809ee624b18eac4c0a1b622d  compile-ready/app/src/main/AndroidManifest.xml
+fd7edb9eb18db07c9f5241349dc2174df39acf2e7f71a4f769c738f2989c1af6  compile-ready/app/src/main/java/com/icarus/shell/AppsScriptGateway.kt
+402a2d8031063c45f088dbf71029bbdfb0419832586d4314f7743677dfd7b3b9  compile-ready/app/src/main/java/com/icarus/shell/IcarusCore.kt
+af4a6728f374b6a52e377be511daeb76e79e49b6b6b25f542bde7fd8fb920767  compile-ready/app/src/main/java/com/icarus/shell/IcarusShellScreen.kt
+e7d38adea260575a1152f5252624b935f3042a4d8b2fb1db17afe5ca253cb5ca  compile-ready/app/src/main/java/com/icarus/shell/MainActivity.kt
+373de4fcc35ec218a953bed57dadd85fa97f4279c28c3adb2f4d83375bfac7ad  compile-ready/build.gradle.kts
+3fa2d523a99ec9adf20525409b744efd2e8e3145367f3d3b40849fdea92d1314  compile-ready/gradle.properties
+0ec5df9ae40fbe6aef8bf411b3231afcde2b96368f7ca2be3631ffdacdaef38d  compile-ready/settings.gradle.kts
