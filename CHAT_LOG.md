@@ -3643,3 +3643,17 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [ACTION] Added HV-EXP-080 and full public-safe journal `logs/2026-10-05-operational-discipline-no-evidence-no-claim.md`.
 [PASS_EVIDENCE_REQUIRED] GitHub readback must contain HV-EXP-080 and the journal's NO EVIDENCE = NO CLAIM feasibility lesson.
 ---
+
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-05T01:49:19Z
+[TYPE] TRAINING_WRITEBACK_CLOSEOUT
+[STATUS] PASS
+[ACTIVE_OWNER] NONE
+[TASK] Persist owner corrections from the 5 Oct operational-discipline/Icarus conversation.
+[RESULT] Full session lesson written to journal; HV-EXP-080 added to TRAINING_MATRIX.md; CHAT_LOG pointer added.
+[EVIDENCE] GitHub post-write readback matched all three targets. Primary commits: journal 5ca19ed6bb332e75536f5b1d3a1869ac4afa1b17; training ee71701f108c82625a868948f995d9933488c4d8; chat 594725f7ed15c6f3c605aeea561b1fd26e11d083.
+[COMPLIANCE_TRACKER] logs/2026-10-05-compliance-HV-EXP-080.md
+[COST] €0 external spend.
+---
