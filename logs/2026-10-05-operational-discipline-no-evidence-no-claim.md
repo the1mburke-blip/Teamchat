@@ -115,3 +115,19 @@ Future agents must:
 
 Related training entry: **HV-EXP-081**.
 Related work item: **Teamchat issue #46**.
+
+
+## Owner blocker-rule correction — blockers change route, not mandate
+
+[TIMESTAMP] 2026-10-05
+
+Michael corrected the earlier blocker language. A blocker is **never** itself a reason to stop or close the task. It is a routing event.
+
+Required behaviour:
+- alert Michael with newly accessed, evidence-backed forward-path options;
+- continue through materially different authorised routes rather than blindly retrying the blocked route;
+- preserve one active owner, €0/spend constraints, protected-system boundaries, preflight and evidence gates;
+- if no current route can execute, keep the mandate OPEN/PARTIAL/BLOCKED rather than treating the blocker as terminal;
+- only actual task completion, independently verified to the applicable evidence standard, may be put forward for PASS.
+
+This supersedes any earlier wording that implied a task could terminate because all currently known routes were blocked.
