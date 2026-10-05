@@ -1186,3 +1186,21 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `confidence`: HIGH for observed repairs/readbacks; new Ubersuggest/Canva routing failures remain owner-reported pending exact-task inspection.
 - `superseded_by`: NONE.
 - `journal`: logs/2026-10-05-icarus-phone-session-public-journal.md
+
+
+[SOL]
+### HV-EXP-080 — Feasibility claims require evidence; agreement is not operation
+- `experience_id`: HV-EXP-080
+- `date_utc`: 2026-10-05T01:49:19Z
+- `source_agent`: SOL + OWNER correction
+- `task_problem`: Repeated assistant overclaiming, breadcrumbing and inconsistent governance caused owner time/allowance waste and obscured the true standalone state of Icarus.
+- `failure_signature`: Assistant said proposed capabilities/routes could work before proving them in the actual stack; promised completion windows without end-to-end evidence; omitted required preflight/mid-flight/end-flight controls; answered owner criticism with agreement instead of changed execution behavior.
+- `owner_correction`: **NO EVIDENCE = NO CLAIM applies at feasibility, not only completion.** A capability question must be classified YES, NO, or UNPROVEN. NO requires the nearest viable alternative. UNPROVEN must not be sold as YES.
+- `icarus_specific_learning`: Laptop-off owner test showed weather and Shopify traffic failed and Gmail returned an earlier/stale result. Standalone Icarus therefore remains PARTIAL/UNPROVEN. Codex-as-live-reasoner and disabled-Gemini explanations are hypotheses, not root-cause facts. Re-enable/test Gemini as a diagnostic without claiming it is the fix until runtime evidence exists.
+- `governance_learning`: One correct preflight does not excuse repeated omissions. Every agent, every task, every time. The agent owns its own rule violations; do not dilute them into “we”.
+- `what_not_to_retry`: No optimistic feasibility promises; no breadcrumb route discovery; no completion-date promises without end-to-end evidence; no laptop-connected canary as standalone proof; no agreement-only response to owner correction; no causal/product-intent claims without evidence.
+- `successful_recovery`: Canonical lesson written to Teamchat with explicit YES/NO/UNPROVEN gate, blocker-mapping requirement, and Icarus standalone classification.
+- `verification_evidence`: Repository readback required after commit; full session journal: `logs/2026-10-05-operational-discipline-no-evidence-no-claim.md`.
+- `reusable_principle`: **Serve the owner by constraining claims to evidence, challenging bad routes early, mapping through/over/around blockers, and changing execution behavior rather than merely agreeing with criticism.**
+- `cost`: €0.
+- `confidence`: HIGH for the owner-reported standalone test and documented rule failures; causal explanation for Icarus remains UNPROVEN.
