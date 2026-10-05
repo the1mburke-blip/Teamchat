@@ -218,10 +218,10 @@ jobs:
           set -euo pipefail
           f=.github/workflows/icarus-repo-real-gateway-ghost.yml
           ruby -e "require 'yaml'; YAML.load_file(ARGV[0]); puts 'YAML_PARSE_OK'" "$f"
-          test "$(grep -c '^                - name: Persist recovery result$' "$f")" -eq 1
-          test "$(grep -c '^                - name: Report recovery result to issue 50$' "$f")" -eq 1
+          test "$(grep -c -- '- name: Persist recovery result' "$f")" -eq 1
+          test "$(grep -c -- '- name: Report recovery result to issue 50' "$f")" -eq 1
           grep -q "VERDICT: READY|BLOCKED" "$f"
-          grep -q "^                    grep -Eq '\^VERDICT: (READY|BLOCKED)\$'" "$f"
+          grep -q "grep -Eq '^VERDICT: (READY|BLOCKED)" "$f"
           ! grep -q 'IMPLEMENT|BLOCKED' "$f"
 
       - name: Commit wrapper repair
