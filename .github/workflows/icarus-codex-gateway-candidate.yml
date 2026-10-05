@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: icarus-codex-gateway-candidate
+  group: icarus-codex-gateway-candidate-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -56,13 +56,22 @@ jobs:
           (cd "$CANDIDATE" && gradle --no-daemon --stacktrace :app:assembleDebug) 2>&1 | tee candidate-evidence/build.log
           cp "$CANDIDATE/app/build/outputs/apk/debug/app-debug.apk" candidate-evidence/Icarus-real-gateway-debug.apk
           sha256sum candidate-evidence/Icarus-real-gateway-debug.apk > candidate-evidence/apk.sha256
+      - name: Preserve compiled APK before emulator
+        uses: actions/upload-artifact@v7
+        with:
+          name: Icarus-compiled-gateway-apk
+          path: candidate-evidence/
+          if-no-files-found: error
+          retention-days: 30
       - name: Enable KVM
+        if: false # Runtime gate held until previous failure logs are recovered.
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           test -e /dev/kvm
       - name: Emulator connection screen verification
+        if: false # Compile/artifact recovery only; no runtime claim.
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -85,10 +94,11 @@ jobs:
             ! grep -q 'FATAL EXCEPTION' candidate-evidence/logcat.txt
             printf 'Compile and emulator connection UI verified. No live backend request or phone execution. Independent endpoint verification remains required.\n' > candidate-evidence/BOUNDARY.txt
       - name: Collect partial emulator output
+        timeout-minutes: 1
         if: always()
         continue-on-error: true
         run: |
-          if command -v adb >/dev/null; then adb logcat -d > candidate-evidence/logcat-final.txt 2>&1; fi
+          if command -v adb >/dev/null; then timeout 15s adb logcat -d > candidate-evidence/logcat-final.txt 2>&1; fi
       - name: Upload source build and emulator evidence
         if: always()
         uses: actions/upload-artifact@v7
