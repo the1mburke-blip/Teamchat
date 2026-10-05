@@ -18,7 +18,7 @@ jobs:
       github.event.issue.number == 6 &&
       github.event.issue.pull_request == null &&
       contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
-      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_ACCEPT_RUN'
+      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_SAVEFIX_RUN'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -167,32 +167,32 @@ jobs:
             const { owner, repo } = context.repo;
             const corePath = 'drafts/icarus/2026-10-05-IcarusCore.kt';
             const uiPath = 'drafts/icarus/2026-10-05-IcarusShell.kt';
-            const core = fs.readFileSync('/tmp/IcarusCore.kt', 'utf8');
-            const ui = fs.readFileSync('/tmp/IcarusShell.kt', 'utf8');
+            const coreText = fs.readFileSync('/tmp/IcarusCore.kt', 'utf8');
+            const uiText = fs.readFileSync('/tmp/IcarusShell.kt', 'utf8');
 
             const ref = await github.rest.git.getRef({ owner, repo, ref: 'heads/main' });
             const parent = ref.data.object.sha;
-            const commit = await github.rest.git.getCommit({ owner, repo, commit_sha: parent });
+            const baseCommit = await github.rest.git.getCommit({ owner, repo, commit_sha: parent });
             const [coreBlob, uiBlob] = await Promise.all([
-              github.rest.git.createBlob({ owner, repo, content: core, encoding: 'utf-8' }),
-              github.rest.git.createBlob({ owner, repo, content: ui, encoding: 'utf-8' })
+              github.rest.git.createBlob({ owner, repo, content: coreText, encoding: 'utf-8' }),
+              github.rest.git.createBlob({ owner, repo, content: uiText, encoding: 'utf-8' })
             ]);
             const tree = await github.rest.git.createTree({
               owner, repo,
-              base_tree: commit.data.tree.sha,
+              base_tree: baseCommit.data.tree.sha,
               tree: [
                 { path: corePath, mode: '100644', type: 'blob', sha: coreBlob.data.sha },
                 { path: uiPath, mode: '100644', type: 'blob', sha: uiBlob.data.sha }
               ]
             });
-            const newCommit = await github.rest.git.createCommit({
+            const newCommitResult = await github.rest.git.createCommit({
               owner, repo,
               message: 'draft: save split Qwen Icarus Android shell',
               tree: tree.data.sha,
               parents: [parent]
             });
             await github.rest.git.updateRef({
-              owner, repo, ref: 'heads/main', sha: newCommit.data.sha, force: false
+              owner, repo, ref: 'heads/main', sha: newCommitResult.data.sha, force: false
             });
 
             const base = 'https://github.com/' + owner + '/' + repo + '/blob/main/';
@@ -204,7 +204,7 @@ jobs:
                 'HOST: GitHub public ubuntu-latest CPU runner',
                 'COST: €0 GitHub standard public runner; 0 OpenRouter calls',
                 'STATUS: DRAFT_SAVED_PENDING_EXTERNAL_REVIEW',
-                'COMMIT: ' + newCommit.data.sha,
+                'COMMIT: ' + newCommitResult.data.sha,
                 'CORE: ' + base + corePath,
                 'UI: ' + base + uiPath,
                 'BOUNDARY: structural validation only; not compiled, installed, or runtime-verified.'
