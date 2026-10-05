@@ -18,7 +18,7 @@ jobs:
       github.event.issue.number == 6 &&
       github.event.issue.pull_request == null &&
       contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
-      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_RUN'
+      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_SPLIT_RUN'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -36,106 +36,178 @@ jobs:
           python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install --quiet transformers accelerate safetensors
 
-      - name: Generate Icarus shell with Qwen coder
+      - name: Generate split Icarus shell with Qwen coder
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/run_qwen.py <<'PY'
+          cat > /tmp/run_qwen_split.py <<'PY'
           import pathlib
           import re
           import torch
           from transformers import AutoModelForCausalLM, AutoTokenizer
 
           model_id = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
-          prompt = r"""
-          Create one self-contained Android Kotlin file named IcarusShell.kt for package com.icarus.shell.
-
-          It is a lightweight Jetpack Compose Material 3 shell for Icarus:
-          - Icarus is a fixer: user submits a problem, backend executes elsewhere, phone shows task status and evidence.
-          - Voice-first: large central microphone action. Voice action only toggles UI listening state/callback; DO NOT implement SpeechRecognizer or permissions.
-          - Text fallback: text field + submit.
-          - Show task status, concise result, evidence/proof list, error state, cancel and new-task actions.
-          - States: IDLE, SUBMITTING, EXECUTING, VERIFYING, PASS, FAILED, BLOCKED.
-          - PASS must only be received from the backend interface; UI/ViewModel must never infer or self-award PASS.
-          - Define IcarusGateway interface and FakeIcarusGateway. Fake must visibly label every result/evidence as DEMO and never imply real execution.
-          - Include MainActivity, ViewModel using StateFlow, immutable UI state, event methods, and Compose screen in THIS ONE FILE.
-          - Backend is an interface/stub only. No API keys, OAuth, Composio, relay implementation, browser automation, vendor code, navigation framework, or secrets.
-          - Use common Compose/lifecycle APIs only.
-          - Keep it compact and readable.
-
-          Output ONLY valid Kotlin source. No markdown fences, explanation, reasoning, dependency list, or prose.
-          """
-
           tokenizer = AutoTokenizer.from_pretrained(model_id)
           model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float32)
           model.eval()
-          rendered = tokenizer.apply_chat_template(
-              [{"role": "user", "content": prompt}],
-              tokenize=False,
-              add_generation_prompt=True,
-          )
-          inputs = tokenizer(rendered, return_tensors="pt")
-          with torch.inference_mode():
-              out = model.generate(
-                  **inputs,
-                  max_new_tokens=1800,
-                  do_sample=False,
-                  repetition_penalty=1.03,
-                  pad_token_id=tokenizer.eos_token_id,
-              )
-          new_tokens = out[0][inputs["input_ids"].shape[1]:]
-          text = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
-          text = re.sub(r"^\x60\x60\x60(?:kotlin)?\s*", "", text, flags=re.I)
-          text = re.sub(r"\s*\x60\x60\x60$", "", text).strip()
 
-          required = [
+          def generate(prompt: str, max_new_tokens: int) -> str:
+              rendered = tokenizer.apply_chat_template(
+                  [{"role": "user", "content": prompt}],
+                  tokenize=False,
+                  add_generation_prompt=True,
+              )
+              inputs = tokenizer(rendered, return_tensors="pt")
+              with torch.inference_mode():
+                  out = model.generate(
+                      **inputs,
+                      max_new_tokens=max_new_tokens,
+                      do_sample=False,
+                      repetition_penalty=1.03,
+                      pad_token_id=tokenizer.eos_token_id,
+                  )
+              new_tokens = out[0][inputs["input_ids"].shape[1]:]
+              text = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+              text = re.sub(r"^\x60\x60\x60(?:kotlin)?\s*", "", text, flags=re.I)
+              text = re.sub(r"\s*\x60\x60\x60$", "", text).strip()
+              return text
+
+          core_prompt = r"""
+          Write ONLY valid Kotlin source for one file: IcarusCore.kt
+          Package: com.icarus.shell
+
+          This is the non-UI core of a lightweight Android Icarus shell.
+          Required declarations, all in this file:
+          - enum class TaskStage with IDLE, SUBMITTING, EXECUTING, VERIFYING, PASS, FAILED, BLOCKED
+          - data class ProofItem
+          - data class IcarusUiState with problem text, listening flag, stage, concise result, proof list, error
+          - data class IcarusBackendResult
+          - interface IcarusGateway with suspend submit(problem:String): IcarusBackendResult and suspend cancel()
+          - class FakeIcarusGateway implementing IcarusGateway; all returned result/evidence text must start with "DEMO:"
+          - class IcarusViewModel : ViewModel using MutableStateFlow/StateFlow and viewModelScope
+          ViewModel event methods: onProblemChanged, onVoiceToggle, submit, cancel, newTask.
+          Rules:
+          - Backend interface/stub only. No network/vendor/API/auth/browser code.
+          - ViewModel NEVER invents PASS. It copies TaskStage returned by IcarusGateway.
+          - Empty submit should set a local validation error, not call gateway.
+          - Fake gateway may delay briefly and return DEMO content.
+          - Keep implementation compact and conventional.
+          Output source only. No markdown or prose.
+          """
+
+          ui_prompt = r"""
+          Write ONLY valid Kotlin source for one file: IcarusShell.kt
+          Package: com.icarus.shell
+
+          It is the UI half of a lightweight Jetpack Compose Material 3 Android shell.
+          Assume these types already exist in the same package: IcarusViewModel, IcarusUiState, TaskStage, ProofItem.
+          Required declarations:
+          - class MainActivity : ComponentActivity, setContent { MaterialTheme { IcarusShellRoute() } }
+          - @Composable fun IcarusShellRoute(viewModel: IcarusViewModel = viewModel())
+          - route collects viewModel.uiState using collectAsStateWithLifecycle()
+          - @Composable fun IcarusShellScreen(state: IcarusUiState, callbacks...)
+          UI requirements:
+          - Title/identity "ICARUS"
+          - Large central voice-first Button; label clearly changes when state.listening is true; callback only, no SpeechRecognizer/permissions
+          - OutlinedTextField as text fallback and Submit button
+          - visible task stage/status
+          - concise result section when nonblank
+          - evidence/proof list when nonempty
+          - error text using MaterialTheme.colorScheme.error when nonblank
+          - Cancel action while SUBMITTING/EXECUTING/VERIFYING
+          - New Task action after PASS/FAILED/BLOCKED
+          - No navigation framework, networking, secrets, OAuth, browser automation, backend implementation, or vendor code
+          - Avoid material-icons dependency: use text labels, not Icons.*
+          - Keep compact and readable.
+          Output source only. No markdown or prose.
+          """
+
+          core = generate(core_prompt, 1250)
+          ui = generate(ui_prompt, 1350)
+
+          pathlib.Path("/tmp/IcarusCore.raw.kt").write_text(core + "\n", encoding="utf-8")
+          pathlib.Path("/tmp/IcarusShell.raw.kt").write_text(ui + "\n", encoding="utf-8")
+
+          core_required = [
               "package com.icarus.shell",
-              "class MainActivity",
+              "enum class TaskStage",
               "interface IcarusGateway",
+              "class FakeIcarusGateway",
               "class IcarusViewModel",
-              "@Composable",
               "StateFlow",
           ]
-          missing = [x for x in required if x not in text]
-          if missing:
-              raise SystemExit("Generated shell failed structural validation: " + ", ".join(missing))
-          if len(text) < 2500:
-              raise SystemExit("Generated shell is unexpectedly short")
+          ui_required = [
+              "package com.icarus.shell",
+              "class MainActivity",
+              "@Composable",
+              "IcarusShellRoute",
+              "IcarusShellScreen",
+              "collectAsStateWithLifecycle",
+          ]
+          core_missing = [x for x in core_required if x not in core]
+          ui_missing = [x for x in ui_required if x not in ui]
+          if core_missing or ui_missing:
+              raise SystemExit(
+                  "Split draft validation failed; core missing=" + repr(core_missing) +
+                  "; ui missing=" + repr(ui_missing)
+              )
+          if len(core) < 1800 or len(ui) < 1800:
+              raise SystemExit("Split draft unexpectedly short")
 
-          pathlib.Path("/tmp/IcarusShell.kt").write_text(text + "\n", encoding="utf-8")
+          pathlib.Path("/tmp/IcarusCore.kt").write_text(core + "\n", encoding="utf-8")
+          pathlib.Path("/tmp/IcarusShell.kt").write_text(ui + "\n", encoding="utf-8")
           PY
-          python /tmp/run_qwen.py
+          python /tmp/run_qwen_split.py
 
-      - name: Save ghost draft to repository
+      - name: Save both validated drafts atomically
         uses: actions/github-script@v8
-        env:
-          DRAFT_PATH: drafts/icarus/2026-10-05-IcarusShell.kt
         with:
           github-token: ${{ github.token }}
           script: |
             const fs = require('fs');
             const { owner, repo } = context.repo;
-            const path = process.env.DRAFT_PATH;
-            const source = fs.readFileSync('/tmp/IcarusShell.kt', 'utf8');
-            const created = await github.rest.repos.createOrUpdateFileContents({
-              owner, repo, path,
-              message: 'draft: add Qwen-generated lightweight Icarus Android shell',
-              content: Buffer.from(source, 'utf8').toString('base64'),
-              branch: 'main'
+            const corePath = 'drafts/icarus/2026-10-05-IcarusCore.kt';
+            const uiPath = 'drafts/icarus/2026-10-05-IcarusShell.kt';
+            const core = fs.readFileSync('/tmp/IcarusCore.kt', 'utf8');
+            const ui = fs.readFileSync('/tmp/IcarusShell.kt', 'utf8');
+
+            const ref = await github.rest.git.getRef({ owner, repo, ref: 'heads/main' });
+            const parent = ref.data.object.sha;
+            const commit = await github.rest.git.getCommit({ owner, repo, commit_sha: parent });
+            const [coreBlob, uiBlob] = await Promise.all([
+              github.rest.git.createBlob({ owner, repo, content: core, encoding: 'utf-8' }),
+              github.rest.git.createBlob({ owner, repo, content: ui, encoding: 'utf-8' })
+            ]);
+            const tree = await github.rest.git.createTree({
+              owner, repo,
+              base_tree: commit.data.tree.sha,
+              tree: [
+                { path: corePath, mode: '100644', type: 'blob', sha: coreBlob.data.sha },
+                { path: uiPath, mode: '100644', type: 'blob', sha: uiBlob.data.sha }
+              ]
             });
-            const sha = created.data.commit.sha;
-            const url = 'https://github.com/' + owner + '/' + repo + '/blob/main/' + path;
+            const newCommit = await github.rest.git.createCommit({
+              owner, repo,
+              message: 'draft: save split Qwen Icarus Android shell',
+              tree: tree.data.sha,
+              parents: [parent]
+            });
+            await github.rest.git.updateRef({
+              owner, repo, ref: 'heads/main', sha: newCommit.data.sha, force: false
+            });
+
+            const base = 'https://github.com/' + owner + '/' + repo + '/blob/main/';
             await github.rest.issues.createComment({
               owner, repo, issue_number: 6,
               body: [
-                '[QWEN_CODING_GHOST] ICARUS_SHELL_DRAFT_SAVED',
+                '[QWEN_CODING_GHOST] ICARUS_SPLIT_SHELL_DRAFT_SAVED',
                 'MODEL: Qwen/Qwen2.5-Coder-1.5B-Instruct',
                 'HOST: GitHub public ubuntu-latest CPU runner',
                 'COST: €0 GitHub standard public runner; 0 OpenRouter calls',
                 'STATUS: DRAFT_SAVED_PENDING_EXTERNAL_REVIEW',
-                'PATH: ' + path,
-                'COMMIT: ' + sha,
-                'URL: ' + url,
-                'BOUNDARY: code-generation artifact only; not compiled, installed, or runtime-verified.'
+                'COMMIT: ' + newCommit.data.sha,
+                'CORE: ' + base + corePath,
+                'UI: ' + base + uiPath,
+                'BOUNDARY: structural validation only; not compiled, installed, or runtime-verified.'
               ].join('\n')
             });
