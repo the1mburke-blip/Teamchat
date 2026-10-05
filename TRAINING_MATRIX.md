@@ -1200,7 +1200,7 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `governance_learning`: One correct preflight does not excuse repeated omissions. Every agent, every task, every time. The agent owns its own rule violations; do not dilute them into “we”.
 - `what_not_to_retry`: No optimistic feasibility promises; no breadcrumb route discovery; no completion-date promises without end-to-end evidence; no laptop-connected canary as standalone proof; no agreement-only response to owner correction; no causal/product-intent claims without evidence.
 - `successful_recovery`: Canonical lesson written to Teamchat with explicit YES/NO/UNPROVEN gate, blocker-mapping requirement, and Icarus standalone classification.
-- `verification_evidence`: Repository readback required after commit; full session journal: `logs/2026-10-05-operational-discipline-no-evidence-no-claim.md`.
+- `verification_evidence`: GitHub post-write readback succeeded for the journal, TRAINING_MATRIX.md and CHAT_LOG.md. Commits: journal `5ca19ed6bb332e75536f5b1d3a1869ac4afa1b17`; training `ee71701f108c82625a868948f995d9933488c4d8`; chat `594725f7ed15c6f3c605aeea561b1fd26e11d083`. Full session journal: `logs/2026-10-05-operational-discipline-no-evidence-no-claim.md`.
 - `reusable_principle`: **Serve the owner by constraining claims to evidence, challenging bad routes early, mapping through/over/around blockers, and changing execution behavior rather than merely agreeing with criticism.**
 - `cost`: €0.
 - `confidence`: HIGH for the owner-reported standalone test and documented rule failures; causal explanation for Icarus remains UNPROVEN.
