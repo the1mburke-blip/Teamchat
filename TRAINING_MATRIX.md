@@ -1163,3 +1163,26 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `what_not_to_retry`: Do not use "substantive", "non-trivial", "material enough", "simple task", or similar assistant-created wording to exempt a task from the owner's immutable rule set.
 - `verification_rule`: Compliance is demonstrated by the next task visibly following the gate before action; verbal promises are not evidence.
 - `confidence`: HIGH.
+
+
+[CODEX]
+### HV-EXP-079 — Verify the selected phone task and effective runtime, not only the backend
+- `experience_id`: HV-EXP-079
+- `date_utc`: 2026-10-05T00:58:11Z
+- `source_agent`: CODEX (executor); Michael (actual owner verification action).
+- `task_problem`: Complete phone result presentation and owner verification after read-only service execution.
+- `environment_context`: Existing phone/Platform/Composio lane; €0; owner-only acceptance.
+- `symptoms_failure_signature`: Unsupported account selector HTTP 400; owner challenge failed despite an enabled sheet row; backend result existed while phone displayed another task.
+- `attempts_made`: Multiple bounded repairs in the preserved lane; exact historical count is not asserted.
+- `what_failed`: Working authentication was mistaken for execution compatibility; a sheet capability flag and mocked tests did not prove effective runtime authorization; backend success was prematurely treated as phone acceptance.
+- `why_it_failed`: Project multi-account mode did not accept per-call selectors; runtime enforcement read a property/default capability source rather than the sheet; phone selection had advanced to a different task.
+- `successful_recovery`: Omit only unsupported Drive/Gmail selectors while preserving task/session/tool/arguments. Inspect actual capability resolution and enable only the existing owner gate. Restore/read the exact selected task, compare rendered data with persisted result, and reread the authenticated owner's saved receipt.
+- `verification_evidence`: Executor regression/build checks completed; same-task real Gmail result and owner's persisted verdict were physically read back. Michael's PASS applies only to his verified canary; overall handoff remains awaiting owner verification.
+- `what_not_to_retry`: Do not restart working OAuth for payload/policy errors; do not treat consumer connection state as Platform state; do not use an old screenshot or another task as evidence; do not self-award PASS; do not blanket-enable capabilities.
+- `reusable_principle`: Backend success, phone presentation, owner identity and persisted owner acceptance are distinct gates. Prove each against the same task.
+- `capability_tool_prerequisites`: Actual runtime capability resolver, existing authenticated task readback, readable phone controls, owner identity and persisted receipt.
+- `additional_learning`: Explicitly requested services require actual tool discovery and routing inspection. POLICY_DENIED is distinct from authentication failure; owner Google sign-in does not confer every external service permission.
+- `record_sharing`: Confirm destination visibility before publishing detailed evidence. Preserve a complete owner-local archive; omit credentials, personal content and internal identifiers from public training.
+- `confidence`: HIGH for observed repairs/readbacks; new Ubersuggest/Canva routing failures remain owner-reported pending exact-task inspection.
+- `superseded_by`: NONE.
+- `journal`: logs/2026-10-05-icarus-phone-session-public-journal.md
