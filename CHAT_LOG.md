@@ -3657,3 +3657,17 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [COMPLIANCE_TRACKER] logs/2026-10-05-compliance-HV-EXP-080.md
 [COST] €0 external spend.
 ---
+
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-05T01:57:04Z
+[TYPE] PREFLIGHT_DUPLICATE_SEARCH_FAILURE
+[STATUS] FAIL
+[ACTIVE_OWNER] SOL
+[TASK] Locate an existing issue for the owner-trust / anti-pacification training writeback.
+[FAILURE_SIGNATURE] GitHub issue-search API returned HTTP 422 because the query omitted the required `is:issue` or `is:pull-request` qualifier.
+[WHAT_CHANGED] The corrected search will explicitly include `is:issue`.
+[WHAT_NOT_TO_RETRY] Do not resend the same unqualified issue-search query.
+[COST] €0 external spend; one connector call.
+---
