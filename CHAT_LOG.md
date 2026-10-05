@@ -3671,3 +3671,22 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [WHAT_NOT_TO_RETRY] Do not resend the same unqualified issue-search query.
 [COST] €0 external spend; one connector call.
 ---
+
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-05T01:58:00Z
+[TYPE] OWNER_TRUST_TRAINING_WRITEBACK
+[ISSUE] #46
+[STATUS] VERIFYING
+[ACTIVE_OWNER] SOL
+[TASK] Persist that verbal assurances are not trusted evidence and agents must not pacify/placate the owner.
+[HISTORY_REVIEW] PASS
+[TRAINING_REVIEW] PASS
+[TRAINING_QUOTE] "Compliance is demonstrated by the next task visibly following the gate before action; verbal promises are not evidence."
+[TRAINING_SOURCE] HV-EXP-078
+[KNOWN_FAILURES] Agreement-only replies; pacifying language; assurances without changed execution; task closure when executor rather than mandate is blocked.
+[ACTION] Added HV-EXP-081 and appended the owner-trust correction to the 5 Oct operational-discipline journal.
+[PASS_EVIDENCE_REQUIRED] GitHub reread must contain "I don't believe a word of it", the anti-pacification rule, and the trust-recovery rule.
+[COST] €0 external spend.
+---
