@@ -37,11 +37,18 @@ jobs:
         with:
           gradle-version: '9.3.1'
 
-      - name: Verify/install Android API 37
+      - name: Refresh Android CLI and install API 37
         shell: bash
         run: |
           set -euo pipefail
           SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --install "cmdline-tools;latest" >/dev/null || true
+          if [ -d "$SDK/cmdline-tools/latest-2" ]; then
+            rm -rf "$SDK/cmdline-tools/latest"
+            mv "$SDK/cmdline-tools/latest-2" "$SDK/cmdline-tools/latest"
+          fi
           SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
