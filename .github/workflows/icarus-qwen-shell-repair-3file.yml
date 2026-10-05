@@ -1,0 +1,212 @@
+name: Icarus Qwen Shell Repair 3-File
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: icarus-qwen-shell-repair-3file
+  cancel-in-progress: false
+
+jobs:
+  draft_shell:
+    if: >-
+      github.event.issue.number == 49 &&
+      github.event.issue.pull_request == null &&
+      contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
+      github.event.comment.body == 'ICARUS_QWEN_SHELL_REPAIR_3FILE_RUN'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Teamchat
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install CPU inference runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors
+
+      - name: Generate three bounded Icarus shell files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/run_qwen_icarus_repair.py <<'PY'
+          import pathlib, re, torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+
+          model_id = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+          tokenizer = AutoTokenizer.from_pretrained(model_id)
+          model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float32)
+          model.eval()
+
+          def generate(prompt: str, max_new_tokens: int) -> str:
+              rendered = tokenizer.apply_chat_template(
+                  [{"role":"user","content":prompt}],
+                  tokenize=False,
+                  add_generation_prompt=True,
+              )
+              inputs = tokenizer(rendered, return_tensors="pt")
+              with torch.inference_mode():
+                  out = model.generate(
+                      **inputs,
+                      max_new_tokens=max_new_tokens,
+                      do_sample=False,
+                      repetition_penalty=1.03,
+                      pad_token_id=tokenizer.eos_token_id,
+                  )
+              new_tokens = out[0][inputs["input_ids"].shape[1]:]
+              text = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+              text = re.sub(r"^\x60\x60\x60(?:kotlin)?\s*", "", text, flags=re.I)
+              text = re.sub(r"\s*\x60\x60\x60$", "", text).strip()
+              return text
+
+          core_prompt = r"""
+          Output ONLY valid Kotlin source. File: IcarusCore.kt. Package: com.icarus.shell.
+          Build the minimal non-UI core for the existing Icarus Android phone MVP.
+          Required:
+          enum class TaskStage { IDLE, SUBMITTING, EXECUTING, VERIFYING, PASS, FAILED, BLOCKED }
+          data class TaskRequest(val problem:String)
+          data class ProofItem(val label:String, val value:String)
+          data class TaskResult(val stage:TaskStage, val summary:String, val proof:List<ProofItem> = emptyList())
+          interface ExecutionGateway { suspend fun submit(request:TaskRequest):TaskResult; suspend fun cancel() }
+          class FakeExecutionGateway : ExecutionGateway. Every fake summary/proof value must start with "DEMO:".
+          data class IcarusUiState with problem:String, listening:Boolean, stage:TaskStage, result:String, proof:List<ProofItem>, error:String.
+          class IcarusViewModel(...) : ViewModel using MutableStateFlow/StateFlow and viewModelScope.
+          Methods: onProblemChanged, onVoiceToggle, submit, cancel, newTask.
+          Empty submit sets local error and does not call gateway. ViewModel never invents PASS; copy gateway stage.
+          No networking, auth, browser, vendor SDK, Composio, secrets, or navigation.
+          Include all imports. Keep compact. Source only.
+          """
+
+          activity_prompt = r"""
+          Output ONLY valid Kotlin source. File: MainActivity.kt. Package: com.icarus.shell.
+          Required:
+          class MainActivity : ComponentActivity with onCreate and setContent { MaterialTheme { IcarusShellRoute() } }.
+          @Composable fun IcarusShellRoute(viewModel:IcarusViewModel = viewModel()).
+          Route must collect viewModel.uiState using collectAsStateWithLifecycle() and call IcarusShellScreen with callbacks:
+          onProblemChanged, onVoiceToggle, onSubmit, onCancel, onNewTask.
+          No navigation, networking, auth, icons, or vendor code.
+          Include all imports. Keep under 90 lines. Source only.
+          """
+
+          screen_prompt = r"""
+          Output ONLY valid Kotlin source. File: IcarusShellScreen.kt. Package: com.icarus.shell.
+          Start with the package line, imports, then declare exactly:
+          @Composable
+          fun IcarusShellScreen(
+              state:IcarusUiState,
+              onProblemChanged:(String)->Unit,
+              onVoiceToggle:()->Unit,
+              onSubmit:()->Unit,
+              onCancel:()->Unit,
+              onNewTask:()->Unit
+          )
+          Use Material 3 and a vertically scrollable Column.
+          UI must show:
+          Text("ICARUS") title;
+          large central voice Button whose label changes between "Speak to Icarus" and "Listening…";
+          OutlinedTextField as text fallback;
+          Submit button;
+          visible status Text using state.stage.name;
+          result section when state.result is nonblank;
+          proof/evidence rows when state.proof is nonempty;
+          error Text with MaterialTheme.colorScheme.error when state.error nonblank;
+          Cancel button only for SUBMITTING/EXECUTING/VERIFYING;
+          New Task button only for PASS/FAILED/BLOCKED.
+          No icons, SpeechRecognizer, permissions, navigation, network, auth, browser, vendor SDK, or backend code.
+          Include all imports. Keep compact and compile-oriented. Source only.
+          """
+
+          core = generate(core_prompt, 1300)
+          activity = generate(activity_prompt, 650)
+          screen = generate(screen_prompt, 1100)
+
+          required = {
+              "IcarusCore.kt": (core, [
+                  "package com.icarus.shell","enum class TaskStage","data class TaskRequest",
+                  "data class ProofItem","data class TaskResult","interface ExecutionGateway",
+                  "class FakeExecutionGateway","class IcarusViewModel","StateFlow"
+              ]),
+              "MainActivity.kt": (activity, [
+                  "package com.icarus.shell","class MainActivity","IcarusShellRoute",
+                  "collectAsStateWithLifecycle","IcarusShellScreen"
+              ]),
+              "IcarusShellScreen.kt": (screen, [
+                  "package com.icarus.shell","@Composable","fun IcarusShellScreen",
+                  "OutlinedTextField","Speak to Icarus","state.stage"
+              ]),
+          }
+          missing = {}
+          for name, (content, markers) in required.items():
+              absent = [m for m in markers if m not in content]
+              if absent:
+                  missing[name] = absent
+              pathlib.Path("/tmp/" + name + ".raw").write_text(content + "\n", encoding="utf-8")
+          if missing:
+              raise SystemExit("3-file validation failed: " + repr(missing))
+          if len(core) < 1800 or len(activity) < 700 or len(screen) < 1400:
+              raise SystemExit("3-file validation failed: unexpectedly short output")
+          for name, (content, _) in required.items():
+              pathlib.Path("/tmp/" + name).write_text(content + "\n", encoding="utf-8")
+          PY
+          python /tmp/run_qwen_icarus_repair.py
+
+      - name: Save validated shell packet atomically
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const root = 'drafts/icarus/2026-10-05-lightweight-shell';
+            const files = [
+              ['IcarusCore.kt', fs.readFileSync('/tmp/IcarusCore.kt','utf8')],
+              ['MainActivity.kt', fs.readFileSync('/tmp/MainActivity.kt','utf8')],
+              ['IcarusShellScreen.kt', fs.readFileSync('/tmp/IcarusShellScreen.kt','utf8')]
+            ];
+            const ref = await github.rest.git.getRef({ owner, repo, ref:'heads/main' });
+            const parent = ref.data.object.sha;
+            const commit = await github.rest.git.getCommit({ owner, repo, commit_sha:parent });
+            const blobs = [];
+            for (const [name, content] of files) {
+              const blob = await github.rest.git.createBlob({ owner, repo, content, encoding:'utf-8' });
+              blobs.push({ path: root + '/' + name, mode:'100644', type:'blob', sha:blob.data.sha });
+            }
+            const tree = await github.rest.git.createTree({
+              owner, repo, base_tree:commit.data.tree.sha, tree:blobs
+            });
+            const newCommit = await github.rest.git.createCommit({
+              owner, repo,
+              message:'draft: save repaired 3-file Icarus Android shell',
+              tree:tree.data.sha,
+              parents:[parent]
+            });
+            await github.rest.git.updateRef({
+              owner, repo, ref:'heads/main', sha:newCommit.data.sha, force:false
+            });
+            const base = 'https://github.com/' + owner + '/' + repo + '/blob/main/' + root + '/';
+            await github.rest.issues.createComment({
+              owner, repo, issue_number:49,
+              body:[
+                '[QWEN_CODING_GHOST] ICARUS_3FILE_SHELL_SAVED',
+                'MODEL: Qwen/Qwen2.5-Coder-1.5B-Instruct',
+                'HOST: GitHub public ubuntu-latest CPU runner',
+                'COST: €0; OPENROUTER_CALLS: 0',
+                'STATUS: DRAFT_SAVED_PENDING_BUILD_VERIFICATION',
+                'COMMIT: ' + newCommit.data.sha,
+                'CORE: ' + base + 'IcarusCore.kt',
+                'ACTIVITY: ' + base + 'MainActivity.kt',
+                'SCREEN: ' + base + 'IcarusShellScreen.kt',
+                'BOUNDARY: structural validation only; not compiled/installed/runtime-verified.'
+              ].join('\n')
+            });
