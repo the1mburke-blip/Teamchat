@@ -1,0 +1,7 @@
+ENDPOINT: <exact task endpoint or MISSING>
+AUTH: <exact Android auth handoff or MISSING>
+SUBMIT_REQUEST: <exact request fields or MISSING>
+SUBMIT_RESPONSE: <exact response fields or MISSING>
+STATUS_RESULT: <exact status/result fields or MISSING>
+VERDICT: BLOCKED
+FORWARD_PATH: <one sentence>
