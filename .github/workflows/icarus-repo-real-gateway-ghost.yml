@@ -1,0 +1,174 @@
+name: Icarus Real Gateway Repo Ghost
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: icarus-real-gateway-repo-ghost
+  cancel-in-progress: false
+
+jobs:
+  gateway_ghost:
+    if: >-
+      github.event.issue.number == 50 &&
+      github.event.issue.pull_request == null &&
+      contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
+      github.event.comment.body == 'ICARUS_REPO_GATEWAY_GHOST_RUN'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout Teamchat
+        uses: actions/checkout@v6
+
+      - name: Build bounded evidence packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=/tmp/gateway-context.txt
+          : > "$OUT"
+          for f in             logs/2026-10-05-icarus-phone-session-public-journal.md             icarus/architecture/mobile-composio-auth.md             icarus/architecture/android-broker-auth.md             icarus/architecture/android-composio-oauth.md             icarus/architecture/cloudflare-broker-deployment.md             icarus/architecture/android-task-durability.md             drafts/icarus/2026-10-05-lightweight-shell/compile-ready/app/src/main/java/com/icarus/shell/IcarusCore.kt             drafts/icarus/2026-10-05-lightweight-shell/compile-ready/app/src/main/java/com/icarus/shell/MainActivity.kt             drafts/icarus/2026-10-05-lightweight-shell/compile-ready/app/build.gradle.kts
+          do
+            echo "===== $f =====" >> "$OUT"
+            sed -n '1,320p' "$f" >> "$OUT"
+            echo >> "$OUT"
+          done
+
+          echo "===== REPOSITORY PRIOR-ART SEARCH =====" >> "$OUT"
+          grep -RniE --exclude-dir=.git --exclude='*.png' --exclude='*.apk'             'task[_ -]?id|advance|platform|broker|workers\.dev|composio|session|execute|result|evidence|authorization|bearer|firebase|app check'             icarus logs drafts .github 2>/dev/null | head -n 700 >> "$OUT" || true
+
+      - name: Install local Qwen coding ghost
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors sentencepiece
+
+      - name: Run repo ghost
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/run_gateway_ghost.py <<'PY'
+          import pathlib, re, torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+
+          context = pathlib.Path("/tmp/gateway-context.txt").read_text(encoding="utf-8", errors="replace")
+          prompt = f"""
+          You are the Icarus repo coding ghost. Work only from the supplied Teamchat repository evidence.
+
+          TASK
+          Replace the demo FakeExecutionGateway in the Android shell with the EXISTING already-proven
+          Icarus phone/Platform/Composio execution route.
+
+          HARD RULES
+          - Reuse only the evidenced working route. Do not invent a backend, endpoint, JSON field,
+            OAuth flow, token source, provider, database, or credential.
+          - Never embed a project/provider secret in Android.
+          - Preserve the existing shell behavior and existing auth/Composio/Cloudflare architecture.
+          - Cost must remain €0.
+          - Search the supplied prior-art excerpts before deciding.
+          - A health endpoint alone is NOT enough to infer a task submission contract.
+          - If the exact live submit/status/result contract or Android auth handoff is missing,
+            return BLOCKED. Name the exact missing artifact/contract and shortest recovery route.
+          - Only return IMPLEMENT when the repo evidence proves enough exact fields to write the adapter
+            without guessing.
+
+          OUTPUT EXACTLY:
+          VERDICT: IMPLEMENT|BLOCKED
+          CONFIDENCE: HIGH|MEDIUM|LOW
+          SOURCES_READ:
+          - <repo path + exact fact used>
+          ROUTE_CONTRACT:
+          - endpoint: <exact evidenced endpoint or MISSING>
+          - auth: <exact evidenced Android-to-route auth handoff or MISSING>
+          - submit_request: <exact evidenced fields or MISSING>
+          - submit_response: <exact evidenced fields or MISSING>
+          - status_result: <exact evidenced fields or MISSING>
+          BLOCKER_OR_IMPLEMENTATION:
+          <concise technical finding>
+          SHORTEST_FORWARD_PATH:
+          <bounded next action using existing assets only>
+
+          If and only if VERDICT is IMPLEMENT, append:
+          === BrokerExecutionGateway.kt ===
+          <complete Kotlin source implementing the evidenced contract, no secrets>
+          === IcarusCore.patch ===
+          <minimal human-readable patch instructions to wire the adapter>
+          === END ===
+
+          REPOSITORY EVIDENCE:
+          {context[-52000:]}
+          """
+
+          model_id="Qwen/Qwen2.5-Coder-1.5B-Instruct"
+          tok=AutoTokenizer.from_pretrained(model_id)
+          model=AutoModelForCausalLM.from_pretrained(model_id,dtype=torch.float32,low_cpu_mem_usage=True)
+          model.eval()
+          rendered=tok.apply_chat_template([{"role":"user","content":prompt}],tokenize=False,add_generation_prompt=True)
+          inputs=tok(rendered,return_tensors="pt")
+          with torch.inference_mode():
+              out=model.generate(**inputs,max_new_tokens=1400,do_sample=False,pad_token_id=tok.eos_token_id)
+          new=out[0][inputs["input_ids"].shape[1]:]
+          raw=tok.decode(new,skip_special_tokens=True).strip()
+          if "</think>" in raw.lower():
+              raw=re.split(r"</think>",raw,flags=re.I)[-1].strip()
+          if not raw:
+              raise SystemExit("Gateway ghost returned no output")
+          pathlib.Path("/tmp/gateway-ghost-result.md").write_text(raw+"\n",encoding="utf-8")
+          print(raw)
+          PY
+          python /tmp/run_gateway_ghost.py
+
+      - name: Validate anti-fabrication verdict
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^VERDICT: (IMPLEMENT|BLOCKED)$' /tmp/gateway-ghost-result.md
+          grep -q '^ROUTE_CONTRACT:' /tmp/gateway-ghost-result.md
+          if grep -q '^VERDICT: IMPLEMENT$' /tmp/gateway-ghost-result.md; then
+            grep -q '^=== BrokerExecutionGateway.kt ===$' /tmp/gateway-ghost-result.md
+            grep -q '^=== IcarusCore.patch ===$' /tmp/gateway-ghost-result.md
+          fi
+
+      - name: Persist ghost output
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="drafts/icarus/2026-10-05-real-gateway-ghost"
+          mkdir -p "$DEST"
+          cp /tmp/gateway-ghost-result.md "$DEST/GATEWAY_GHOST_RESULT.md"
+          git config user.name "icarus-repo-ghost"
+          git config user.email "actions@users.noreply.github.com"
+          git add "$DEST/GATEWAY_GHOST_RESULT.md"
+          git commit -m "ghost: investigate evidenced Icarus real gateway contract"
+          git push origin HEAD:main
+
+      - name: Report to issue
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs=require('fs');
+            const result=fs.readFileSync('/tmp/gateway-ghost-result.md','utf8').trim();
+            const verdict=(result.match(/^VERDICT:\s*(IMPLEMENT|BLOCKED)/m)||[])[1] || 'UNKNOWN';
+            const {owner,repo}=context.repo;
+            await github.rest.issues.createComment({
+              owner,repo,issue_number:50,
+              body:[
+                '[REPO_GATEWAY_GHOST_RESULT]',
+                'MODEL: Qwen/Qwen2.5-Coder-1.5B-Instruct',
+                'HOST: GitHub public CPU runner',
+                'COST: €0',
+                'VERDICT: '+verdict,
+                'ARTIFACT: drafts/icarus/2026-10-05-real-gateway-ghost/GATEWAY_GHOST_RESULT.md',
+                'RUN: https://github.com/'+owner+'/'+repo+'/actions/runs/'+context.runId,
+                '',
+                result.slice(0,9000)
+              ].join('\n')
+            });
