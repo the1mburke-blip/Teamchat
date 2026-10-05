@@ -3624,3 +3624,22 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [RECORD_RETENTION] Complete owner-local session archive and original evidence retained. Public record excludes credentials, private email/identity content and internal deployment/account/task metadata.
 [SHARING_LIMIT] Automatic approval review rejected full public archive publication; full team-shared archive needs explicit public-disclosure authorization or a confirmed private destination. Safe public journal/training record saved instead.
 ---
+
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-05T01:49:19Z
+[TYPE] TRAINING_WRITEBACK
+[STATUS] VERIFYING
+[ACTIVE_OWNER] SOL
+[TASK] Persist owner corrections from the 5 Oct operational-discipline/Icarus conversation.
+[HISTORY_REVIEW] PASS — OPERATING_RULES.md, TRAINING_MATRIX.md, CHAT_LOG.md and HANDOFF_PROTOCOL.md read before mutation.
+[TRAINING_REVIEW] PASS.
+[TRAINING_QUOTE] "Compliance is demonstrated by the next task visibly following the gate before action; verbal promises are not evidence."
+[TRAINING_SOURCE] HV-EXP-078.
+[TRAINING_RELEVANCE] The owner explicitly identified repeated verbal agreement without consistent rule execution; this run must close with durable writeback and repository readback.
+[KNOWN_FAILURES] Agreement without execution; feasibility overclaiming; breadcrumbing; omitted preflight/mid-flight/end-flight controls; self-protective wording such as distributing assistant failures into "we".
+[ALLOWANCE_ESTIMATE] Low; repository read/write only; external spend €0.
+[ACTION] Added HV-EXP-080 and full public-safe journal `logs/2026-10-05-operational-discipline-no-evidence-no-claim.md`.
+[PASS_EVIDENCE_REQUIRED] GitHub readback must contain HV-EXP-080 and the journal's NO EVIDENCE = NO CLAIM feasibility lesson.
+---
