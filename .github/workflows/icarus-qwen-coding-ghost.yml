@@ -1,0 +1,141 @@
+name: Icarus Qwen Coding Ghost
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: icarus-qwen-coding-ghost
+  cancel-in-progress: false
+
+jobs:
+  draft_shell:
+    if: >-
+      github.event.issue.number == 6 &&
+      github.event.issue.pull_request == null &&
+      contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
+      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_RUN'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Teamchat
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install CPU inference runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors
+
+      - name: Generate Icarus shell with Qwen coder
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/run_qwen.py <<'PY'
+          import pathlib
+          import re
+          import torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+
+          model_id = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+          prompt = r"""
+          Create one self-contained Android Kotlin file named IcarusShell.kt for package com.icarus.shell.
+
+          It is a lightweight Jetpack Compose Material 3 shell for Icarus:
+          - Icarus is a fixer: user submits a problem, backend executes elsewhere, phone shows task status and evidence.
+          - Voice-first: large central microphone action. Voice action only toggles UI listening state/callback; DO NOT implement SpeechRecognizer or permissions.
+          - Text fallback: text field + submit.
+          - Show task status, concise result, evidence/proof list, error state, cancel and new-task actions.
+          - States: IDLE, SUBMITTING, EXECUTING, VERIFYING, PASS, FAILED, BLOCKED.
+          - PASS must only be received from the backend interface; UI/ViewModel must never infer or self-award PASS.
+          - Define IcarusGateway interface and FakeIcarusGateway. Fake must visibly label every result/evidence as DEMO and never imply real execution.
+          - Include MainActivity, ViewModel using StateFlow, immutable UI state, event methods, and Compose screen in THIS ONE FILE.
+          - Backend is an interface/stub only. No API keys, OAuth, Composio, relay implementation, browser automation, vendor code, navigation framework, or secrets.
+          - Use common Compose/lifecycle APIs only.
+          - Keep it compact and readable.
+
+          Output ONLY valid Kotlin source. No markdown fences, explanation, reasoning, dependency list, or prose.
+          """
+
+          tokenizer = AutoTokenizer.from_pretrained(model_id)
+          model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float32)
+          model.eval()
+          rendered = tokenizer.apply_chat_template(
+              [{"role": "user", "content": prompt}],
+              tokenize=False,
+              add_generation_prompt=True,
+          )
+          inputs = tokenizer(rendered, return_tensors="pt")
+          with torch.inference_mode():
+              out = model.generate(
+                  **inputs,
+                  max_new_tokens=1800,
+                  do_sample=False,
+                  repetition_penalty=1.03,
+                  pad_token_id=tokenizer.eos_token_id,
+              )
+          new_tokens = out[0][inputs["input_ids"].shape[1]:]
+          text = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+          text = re.sub(r"^\x60\x60\x60(?:kotlin)?\s*", "", text, flags=re.I)
+          text = re.sub(r"\s*\x60\x60\x60$", "", text).strip()
+
+          required = [
+              "package com.icarus.shell",
+              "class MainActivity",
+              "interface IcarusGateway",
+              "class IcarusViewModel",
+              "@Composable",
+              "StateFlow",
+          ]
+          missing = [x for x in required if x not in text]
+          if missing:
+              raise SystemExit("Generated shell failed structural validation: " + ", ".join(missing))
+          if len(text) < 2500:
+              raise SystemExit("Generated shell is unexpectedly short")
+
+          pathlib.Path("/tmp/IcarusShell.kt").write_text(text + "\n", encoding="utf-8")
+          PY
+          python /tmp/run_qwen.py
+
+      - name: Save ghost draft to repository
+        uses: actions/github-script@v8
+        env:
+          DRAFT_PATH: drafts/icarus/2026-10-05-IcarusShell.kt
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const path = process.env.DRAFT_PATH;
+            const source = fs.readFileSync('/tmp/IcarusShell.kt', 'utf8');
+            const created = await github.rest.repos.createOrUpdateFileContents({
+              owner, repo, path,
+              message: 'draft: add Qwen-generated lightweight Icarus Android shell',
+              content: Buffer.from(source, 'utf8').toString('base64'),
+              branch: 'main'
+            });
+            const sha = created.data.commit.sha;
+            const url = 'https://github.com/' + owner + '/' + repo + '/blob/main/' + path;
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: 6,
+              body: [
+                '[QWEN_CODING_GHOST] ICARUS_SHELL_DRAFT_SAVED',
+                'MODEL: Qwen/Qwen2.5-Coder-1.5B-Instruct',
+                'HOST: GitHub public ubuntu-latest CPU runner',
+                'COST: €0 GitHub standard public runner; 0 OpenRouter calls',
+                'STATUS: DRAFT_SAVED_PENDING_EXTERNAL_REVIEW',
+                'PATH: ' + path,
+                'COMMIT: ' + sha,
+                'URL: ' + url,
+                'BOUNDARY: code-generation artifact only; not compiled, installed, or runtime-verified.'
+              ].join('\n')
+            });
