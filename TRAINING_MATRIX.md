@@ -1222,3 +1222,13 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `verification_evidence`: Requires repository readback after commit; related work item: Teamchat issue #46; session journal: `logs/2026-10-05-operational-discipline-no-evidence-no-claim.md`.
 - `cost`: €0 external spend.
 - `confidence`: HIGH — direct owner instruction and contemporaneous conversation.
+
+
+[SOL]
+### HV-EXP-081 addendum — blockers route work; they never terminate the mandate
+- `owner_correction_2026-10-05`: **A blocker is never itself a reason to stop or close a task.**
+- `required_response`: Alert Michael with newly accessed, evidence-backed forward-path options, then continue rerouting through materially different authorised routes.
+- `state_rule`: If no currently accessible route can execute, the mandate remains **OPEN / PARTIAL / BLOCKED**. It is not terminal.
+- `pass_rule`: **Only actual task completion, independently verified to the applicable evidence standard, may be put forward for PASS.**
+- `controls_preserved`: No blind retries; no duplicate active owner; €0/spend controls; protected-system boundaries; preflight and evidence requirements remain in force.
+- `reusable_principle`: A blocker changes the route, not the mandate.
