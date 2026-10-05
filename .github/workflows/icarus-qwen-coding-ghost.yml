@@ -18,7 +18,7 @@ jobs:
       github.event.issue.number == 6 &&
       github.event.issue.pull_request == null &&
       contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
-      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_SPLIT_RUN'
+      github.event.comment.body == 'ICARUS_QWEN_CODING_GHOST_FINAL_RUN'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -105,7 +105,7 @@ jobs:
           - class MainActivity : ComponentActivity, setContent { MaterialTheme { IcarusShellRoute() } }
           - @Composable fun IcarusShellRoute(viewModel: IcarusViewModel = viewModel())
           - route collects viewModel.uiState using collectAsStateWithLifecycle()
-          - @Composable fun IcarusShellScreen(state: IcarusUiState, callbacks...)
+          - Include a screen-level @Composable that renders the supplied IcarusUiState and callbacks; function name is your choice
           UI requirements:
           - Title/identity "ICARUS"
           - Large central voice-first Button; label clearly changes when state.listening is true; callback only, no SpeechRecognizer/permissions
