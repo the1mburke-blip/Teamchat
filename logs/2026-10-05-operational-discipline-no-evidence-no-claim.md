@@ -109,7 +109,7 @@ Future agents must:
 - treat his pushback as evidence that the mandate, proof, route, or rule compliance remains unsatisfied;
 - change behavior in the current task where authorised, rather than merely promise future improvement;
 - delegate when the active agent lacks the capability; route only the smallest genuine human-only step to Michael;
-- keep the mandate open until the required result is verified or every viable route is disproven.
+- keep the mandate open until the required result is completed and verified; if current routes are blocked, alert Michael with newly accessed evidence-backed forward paths and continue rerouting.
 
 **Trust recovery rule:** promises do not restore trust. Repeated observable compliance does.
 
