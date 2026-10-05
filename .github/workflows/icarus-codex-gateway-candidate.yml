@@ -27,6 +27,20 @@ jobs:
           mkdir -p candidate-evidence
           git rev-parse HEAD > candidate-evidence/source-commit.txt
           date -u +%FT%TZ > candidate-evidence/start-utc.txt
+          cat > candidate-evidence/emulator-check.sh <<'ICARUS_CHECK'
+          set -euo pipefail
+          adb logcat -c
+          adb install -r candidate-evidence/Icarus-real-gateway-debug.apk
+          adb shell am start -W -n com.icarus.shell/.MainActivity | tee candidate-evidence/launch.log
+          adb shell uiautomator dump /sdcard/window.xml
+          adb pull /sdcard/window.xml candidate-evidence/window.xml
+          adb shell screencap -p /sdcard/screen.png
+          adb pull /sdcard/screen.png candidate-evidence/screen.png
+          adb logcat -d > candidate-evidence/logcat.txt
+          python -c 'import xml.etree.ElementTree as E; r=E.parse("candidate-evidence/window.xml"); texts=[n.attrib.get("text","") for n in r.iter()]; required=["ICARUS","Apps Script HTTPS endpoint","One-time pairing code","Voice input unavailable"]; assert all(any(x in t for t in texts) for x in required), texts; assert not any("DEMO:" in t for t in texts); submit=[n for n in r.iter() if n.attrib.get("text")=="Submit"]; assert submit and all(n.attrib.get("enabled")=="false" for n in submit), "Submit must be disabled before pairing"; print("Connection UI, disabled Submit, demo absence verified")'
+          ! grep -q 'FATAL EXCEPTION' candidate-evidence/logcat.txt
+          printf 'Compile and emulator connection UI verified. No live backend request or phone execution. Independent endpoint verification remains required.\n' > candidate-evidence/BOUNDARY.txt
+          ICARUS_CHECK
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -64,14 +78,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Enable KVM
-        if: false # Runtime gate held until previous failure logs are recovered.
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           test -e /dev/kvm
       - name: Emulator connection screen verification
-        if: false # Compile/artifact recovery only; no runtime claim.
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -80,19 +92,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
-          script: |
-            set -euo pipefail
-            adb logcat -c
-            adb install -r candidate-evidence/Icarus-real-gateway-debug.apk
-            adb shell am start -W -n com.icarus.shell/.MainActivity | tee candidate-evidence/launch.log
-            adb shell uiautomator dump /sdcard/window.xml
-            adb pull /sdcard/window.xml candidate-evidence/window.xml
-            adb shell screencap -p /sdcard/screen.png
-            adb pull /sdcard/screen.png candidate-evidence/screen.png
-            adb logcat -d > candidate-evidence/logcat.txt
-            python -c 'import xml.etree.ElementTree as E; r=E.parse("candidate-evidence/window.xml"); texts=[n.attrib.get("text","") for n in r.iter()]; required=["ICARUS","Apps Script HTTPS endpoint","One-time pairing code","Voice input unavailable"]; assert all(any(x in t for t in texts) for x in required), texts; assert not any("DEMO:" in t for t in texts); submit=[n for n in r.iter() if n.attrib.get("text")=="Submit"]; assert submit and all(n.attrib.get("enabled")=="false" for n in submit), "Submit must be disabled before pairing"; print("Connection UI, disabled Submit, demo absence verified")'
-            ! grep -q 'FATAL EXCEPTION' candidate-evidence/logcat.txt
-            printf 'Compile and emulator connection UI verified. No live backend request or phone execution. Independent endpoint verification remains required.\n' > candidate-evidence/BOUNDARY.txt
+          script: bash candidate-evidence/emulator-check.sh
       - name: Collect partial emulator output
         timeout-minutes: 1
         if: always()
