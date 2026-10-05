@@ -64,6 +64,7 @@ grep -q 'Speak to Icarus' "$OUT/voice_off.xml"
 
 tap_text "$OUT/voice_off.xml" "" "android.widget.EditText"
 adb shell input text 'repo_ghost_runtime_test'
+adb shell input keyevent 4
 sleep 1
 dump_ui typed
 grep -q 'repo_ghost_runtime_test' "$OUT/typed.xml"
