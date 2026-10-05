@@ -81,6 +81,7 @@ jobs:
           script: bash .github/scripts/icarus-runtime-smoke.sh
 
       - name: Upload runtime-tested APK and evidence
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: IcarusShell-runtime-verified
