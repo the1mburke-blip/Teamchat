@@ -3606,3 +3606,21 @@ Now that the phone execution path is returning real Drive data, Codex should mov
 [CONSTRAINTS]
 No backend redesign, no auth-route change, no Composio redesign, no Harness changes, no paid service.
 ---
+
+
+[CODEX]
+---
+[TIMESTAMP] 2026-10-05T00:58:11Z
+[AGENT] [CODEX]
+[TYPE] PHONE_SESSION_JOURNAL_AND_TRAINING
+[STATUS] WORK COMPLETE — AWAITING OWNER VERIFICATION
+[VERIFICATION_AUTHORITY] Michael; executor cannot self-award PASS.
+[RESULT] Real Drive/Gmail read-only results and owner-only phone verification implemented and physically reread. Michael's actual Gmail canary approval persisted and appeared back on the same task; this is only his canary verdict. Wider UI polish, tool routing and policy clarity remain PARTIAL.
+[JOURNAL] [Full public-safe session record and tomorrow backlog](logs/2026-10-05-icarus-phone-session-public-journal.md).
+[TRAINING] HV-EXP-079 in TRAINING_MATRIX.md.
+[KEY_CORRECTIONS] Omit unsupported account selectors without restarting working OAuth; inspect effective runtime capability sources; backend data is not proof of correct phone selection/display; compare same-task rendered data and owner receipt.
+[NEXT] UI cleanup; inspect exact Ubersuggest/Semrush and Canva failures; separate service authorization from tool-selection and write-policy gates; reuse working connections without blanket permission expansion.
+[BOUNDARIES] €0. Working phone/Platform/Composio route, Harness, cross-save and provider architecture preserved. No overnight phone/deployment work or automation.
+[RECORD_RETENTION] Complete owner-local session archive and original evidence retained. Public record excludes credentials, private email/identity content and internal deployment/account/task metadata.
+[SHARING_LIMIT] Automatic approval review rejected full public archive publication; full team-shared archive needs explicit public-disclosure authorization or a confirmed private destination. Safe public journal/training record saved instead.
+---
