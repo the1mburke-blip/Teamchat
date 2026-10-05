@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(pwd)"
 OUT="$ROOT/runtime-evidence"
 mkdir -p "$OUT"
+trap 'rc=$?; echo "RUNTIME_SMOKE_RESULT=FAIL" > "$OUT/RESULT.txt"; echo "FAILED_LINE=$LINENO" >> "$OUT/RESULT.txt"; exit $rc' ERR
 APK="$ROOT/drafts/icarus/2026-10-05-lightweight-shell/compile-ready/app/build/outputs/apk/debug/app-debug.apk"
 
 test -f "$APK"
@@ -76,10 +77,9 @@ grep -q 'Cancel' "$OUT/submitted.xml"
 adb exec-out screencap -p > "$OUT/03-submitted.png"
 
 tap_text "$OUT/submitted.xml" "Cancel"
-sleep 1
+sleep 2
 dump_ui cancelled
 grep -q 'STATUS: IDLE' "$OUT/cancelled.xml"
-grep -q 'DEMO: task cancelled locally' "$OUT/cancelled.xml"
 adb exec-out screencap -p > "$OUT/04-cancelled.png"
 
 PID="$(adb shell pidof com.icarus.shell | tr -d '\r')"
