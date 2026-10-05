@@ -1,0 +1,378 @@
+name: Icarus TaskHub v0 Repo Ghost
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: icarus-taskhub-v0-repo-ghost
+  cancel-in-progress: false
+
+jobs:
+  build_taskhub:
+    if: >-
+      github.event.issue.number == 52 &&
+      github.event.issue.pull_request == null &&
+      contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
+      github.event.comment.body == 'ICARUS_TASKHUB_V0_GHOST_RUN'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout Teamchat
+        uses: actions/checkout@v6
+
+      - name: Prepare bounded architecture context
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=/tmp/taskhub-context.txt
+          : > "$OUT"
+          for f in OPERATING_RULES.md TRAINING_MATRIX.md logs/2026-10-05-icarus-phone-session-public-journal.md; do
+            if [ -f "$f" ]; then
+              echo "===== $f =====" >> "$OUT"
+              case "$f" in
+                TRAINING_MATRIX.md) grep -nE 'HV-EXP-075|HV-EXP-077|HV-EXP-079|HV-EXP-080|HV-EXP-081|checkpoint|self-cert|PASS' "$f" | head -n 220 >> "$OUT" || true ;;
+                *) sed -n '1,260p' "$f" >> "$OUT" ;;
+              esac
+              echo >> "$OUT"
+            fi
+          done
+
+      - name: Install local Qwen coding ghost
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors sentencepiece
+
+      - name: Generate TaskHub core
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/run_taskhub_ghost.py <<'PY'
+          import pathlib, re, torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+
+          context=pathlib.Path('/tmp/taskhub-context.txt').read_text(encoding='utf-8',errors='replace')
+          prompt=f'''
+          Write ONLY valid Python source for one file named taskhub.py.
+          No markdown fences or prose.
+          Standard library only, Python 3.11+.
+
+          PRODUCT
+          Icarus TaskHub v0 is a durable repository-backed task-state protocol. Phone, desktop and workers reconnect to the same canonical task instead of syncing devices directly.
+
+          REQUIRED API
+          - class TaskHubError(Exception)
+          - enum TaskState(str, Enum): REQUESTED, CLAIMED, EXECUTING, CHECKPOINTED, VERIFYING, PASS, FAIL, BLOCKED, RE_PREFLIGHT_REQUIRED
+          - class TaskHub(root: str | pathlib.Path)
+          - create_task(task_id, target_repo, target_branch, base_commit, evidence_required)
+          - read_task(task_id) -> dict
+          - events(task_id) -> list[dict]
+          - claim(task_id, executor)
+          - start(task_id, executor)
+          - checkpoint(task_id, executor, commit_sha, artifacts=None)
+          - request_verification(task_id, executor, evidence_refs)
+          - finalize_pass(task_id, controller, evidence_refs)
+          - mark_fail(task_id, controller, reason)
+          - mark_blocked(task_id, controller, reason)
+
+          STORAGE CONTRACT
+          root/tasks/<task_id>/task.json is current state.
+          root/tasks/<task_id>/events.jsonl is append-only event history.
+          root/tasks/<task_id>/checkpoints/<sequence>.json stores checkpoint metadata.
+          Writes must be atomic using temporary file + os.replace for task.json/checkpoint files.
+          Never rewrite or truncate events.jsonl.
+
+          GOVERNANCE
+          - create_task begins REQUESTED with active_owner None.
+          - exactly one active owner while CLAIMED/EXECUTING/CHECKPOINTED/VERIFYING.
+          - claim only from REQUESTED or RE_PREFLIGHT_REQUIRED and requires no active owner.
+          - start requires matching active executor.
+          - checkpoint requires matching executor and a 40-hex git commit SHA; records target_repo, target_branch, base_commit, current_commit, sequence, artifacts, timestamp.
+          - request_verification requires matching executor, non-empty evidence refs and at least one checkpoint. It moves to VERIFYING but keeps active_owner set to executor.
+          - executors can never call finalize_pass. finalize_pass controller must be different from active_owner and requires all evidence_required strings to appear in evidence_refs. On PASS active_owner becomes None.
+          - worker methods must never directly assign PASS.
+          - terminal controller methods clear active_owner.
+          - every transition/appended checkpoint emits one event with monotonically increasing integer seq, UTC ISO timestamp, actor, action, from_state, to_state, and details.
+          - reject duplicate task IDs and illegal transitions.
+          - validate task_id conservatively to letters, digits, dash, underscore only.
+          - use deterministic concise code, type hints where useful, no network access, no database, no secrets.
+
+          CONTEXT PRINCIPLES
+          Persist state above the brain; model exhaustion is recoverable; worker execution and Icarus adjudication are separate; NO EVIDENCE = NO CLAIM.
+
+          Return source only.
+          '''
+          model_id='Qwen/Qwen2.5-Coder-1.5B-Instruct'
+          tok=AutoTokenizer.from_pretrained(model_id)
+          model=AutoModelForCausalLM.from_pretrained(model_id,dtype=torch.float32,low_cpu_mem_usage=True)
+          model.eval()
+          rendered=tok.apply_chat_template([{'role':'user','content':prompt}],tokenize=False,add_generation_prompt=True)
+          inputs=tok(rendered,return_tensors='pt')
+          with torch.inference_mode():
+              out=model.generate(**inputs,max_new_tokens=2200,do_sample=False,repetition_penalty=1.03,pad_token_id=tok.eos_token_id)
+          new=out[0][inputs['input_ids'].shape[1]:]
+          raw=tok.decode(new,skip_special_tokens=True).strip()
+          raw=re.sub(r'^\`\`\`(?:python)?\\s*','',raw,flags=re.I)
+          raw=re.sub(r'\\s*\`\`\`$','',raw).strip()
+          if 'class TaskHub' not in raw or 'class TaskState' not in raw:
+              raise SystemExit('TaskHub ghost output missing required classes')
+          pathlib.Path('/tmp/taskhub.py').write_text(raw+'\\n',encoding='utf-8')
+          PY
+          python /tmp/run_taskhub_ghost.py
+
+      - name: Write deterministic protocol tests and repo metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST='drafts/icarus/taskhub-v0'
+          mkdir -p "$DEST/src" "$DEST/tests" "$DEST/schema"
+          cp /tmp/taskhub.py "$DEST/src/taskhub.py"
+
+          cat > "$DEST/tests/test_taskhub.py" <<'PY'
+          import json
+          import pathlib
+          import tempfile
+          import unittest
+          import sys
+
+          HERE=pathlib.Path(__file__).resolve().parents[1]
+          sys.path.insert(0,str(HERE/'src'))
+          from taskhub import TaskHub, TaskHubError, TaskState
+
+          COMMIT='a'*40
+          BASE='b'*40
+
+          class TaskHubTests(unittest.TestCase):
+              def setUp(self):
+                  self.tmp=tempfile.TemporaryDirectory()
+                  self.h=TaskHub(self.tmp.name)
+                  self.h.create_task('TASK_1','owner/repo','task/TASK_1',BASE,['build','runtime'])
+
+              def tearDown(self):
+                  self.tmp.cleanup()
+
+              def test_full_handoff_and_controller_only_pass(self):
+                  self.h.claim('TASK_1','worker-A')
+                  self.h.start('TASK_1','worker-A')
+                  self.h.checkpoint('TASK_1','worker-A',COMMIT,['artifact.apk'])
+                  self.h.request_verification('TASK_1','worker-A',['build','runtime'])
+                  with self.assertRaises(TaskHubError):
+                      self.h.finalize_pass('TASK_1','worker-A',['build','runtime'])
+                  self.h.finalize_pass('TASK_1','icarus-controller',['build','runtime'])
+                  t=self.h.read_task('TASK_1')
+                  self.assertEqual(t['state'],TaskState.PASS.value)
+                  self.assertIsNone(t['active_owner'])
+                  self.assertEqual(t['current_commit'],COMMIT)
+
+              def test_missing_required_evidence_denies_pass(self):
+                  self.h.claim('TASK_1','worker-A')
+                  self.h.start('TASK_1','worker-A')
+                  self.h.checkpoint('TASK_1','worker-A',COMMIT,[])
+                  self.h.request_verification('TASK_1','worker-A',['build'])
+                  with self.assertRaises(TaskHubError):
+                      self.h.finalize_pass('TASK_1','icarus-controller',['build'])
+
+              def test_wrong_executor_denied(self):
+                  self.h.claim('TASK_1','worker-A')
+                  with self.assertRaises(TaskHubError):
+                      self.h.start('TASK_1','worker-B')
+
+              def test_checkpoint_is_durable_and_event_log_monotonic(self):
+                  self.h.claim('TASK_1','worker-A')
+                  self.h.start('TASK_1','worker-A')
+                  self.h.checkpoint('TASK_1','worker-A',COMMIT,['x'])
+                  t=self.h.read_task('TASK_1')
+                  cp=pathlib.Path(self.tmp.name)/'tasks'/'TASK_1'/'checkpoints'/f"{t['checkpoint_sequence']:06d}.json"
+                  self.assertTrue(cp.exists())
+                  payload=json.loads(cp.read_text())
+                  self.assertEqual(payload['current_commit'],COMMIT)
+                  events=self.h.events('TASK_1')
+                  self.assertEqual([e['seq'] for e in events],list(range(1,len(events)+1)))
+
+              def test_events_append_only_behavior(self):
+                  self.h.claim('TASK_1','worker-A')
+                  p=pathlib.Path(self.tmp.name)/'tasks'/'TASK_1'/'events.jsonl'
+                  before=p.read_bytes()
+                  self.h.start('TASK_1','worker-A')
+                  after=p.read_bytes()
+                  self.assertTrue(after.startswith(before))
+                  self.assertGreater(len(after),len(before))
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+
+          cat > "$DEST/schema/task.schema.json" <<'JSON'
+          {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "https://icarus.local/schema/task-v0.json",
+            "title": "Icarus TaskHub v0 Task",
+            "type": "object",
+            "required": ["task_id","state","target_repo","target_branch","base_commit","active_owner","evidence_required"],
+            "properties": {
+              "task_id": {"type":"string","pattern":"^[A-Za-z0-9_-]+$"},
+              "state": {"enum":["REQUESTED","CLAIMED","EXECUTING","CHECKPOINTED","VERIFYING","PASS","FAIL","BLOCKED","RE_PREFLIGHT_REQUIRED"]},
+              "target_repo": {"type":"string"},
+              "target_branch": {"type":"string"},
+              "base_commit": {"type":"string"},
+              "current_commit": {"type":["string","null"]},
+              "active_owner": {"type":["string","null"]},
+              "checkpoint_sequence": {"type":"integer","minimum":0},
+              "evidence_required": {"type":"array","items":{"type":"string"}}
+            }
+          }
+          JSON
+
+          cat > "$DEST/README.md" <<'MD'
+          # Icarus TaskHub v0
+
+          Repo-ready proof of the shared task/checkpoint layer for Icarus.
+
+          ## Purpose
+          Phone, desktop and workers reconnect to one canonical task state rather than synchronizing devices directly.
+
+          ## Durable truth
+          - `task.json`: current task state.
+          - `events.jsonl`: append-only event history.
+          - `checkpoints/*.json`: durable references to real target-repository commits/artifacts.
+          - Actual source/artifact bytes remain in their target repositories; TaskHub stores references and governance state.
+
+          ## Governance
+          Workers may claim, execute, checkpoint and request verification. They cannot award themselves PASS. A distinct Icarus controller/adjudicator must verify required evidence and finalize PASS.
+
+          ## v0 boundary
+          This is staged inside Teamchat to prove the protocol with the existing repository-scoped GitHub token. Moving it to a separate top-level repository and adding cross-repo authentication is a later, separately preflighted migration.
+
+          ## Test
+          `python -m unittest discover -s tests -v`
+          MD
+
+      - name: Run deterministic tests
+        id: test1
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          cd drafts/icarus/taskhub-v0
+          python -m unittest discover -s tests -v 2>&1 | tee /tmp/taskhub-test1.txt
+
+      - name: One bounded model repair if tests failed
+        if: steps.test1.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/repair_taskhub.py <<'PY'
+          import pathlib, re, torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+          code=pathlib.Path('drafts/icarus/taskhub-v0/src/taskhub.py').read_text(encoding='utf-8')
+          failure=pathlib.Path('/tmp/taskhub-test1.txt').read_text(encoding='utf-8',errors='replace')[-12000:]
+          prompt=f'''
+          Repair this Python file so the supplied deterministic unittest suite passes.
+          Preserve the required TaskHub API and governance. Standard library only.
+          Do not weaken tests, do not let an executor self-award PASS, do not delete append-only event behavior.
+          Return ONLY the complete corrected Python source, no markdown.
+
+          CURRENT SOURCE:
+          {code}
+
+          TEST FAILURE:
+          {failure}
+          '''
+          model_id='Qwen/Qwen2.5-Coder-1.5B-Instruct'
+          tok=AutoTokenizer.from_pretrained(model_id)
+          model=AutoModelForCausalLM.from_pretrained(model_id,dtype=torch.float32,low_cpu_mem_usage=True)
+          model.eval()
+          rendered=tok.apply_chat_template([{'role':'user','content':prompt}],tokenize=False,add_generation_prompt=True)
+          inputs=tok(rendered,return_tensors='pt')
+          with torch.inference_mode():
+              out=model.generate(**inputs,max_new_tokens=2200,do_sample=False,repetition_penalty=1.03,pad_token_id=tok.eos_token_id)
+          new=out[0][inputs['input_ids'].shape[1]:]
+          raw=tok.decode(new,skip_special_tokens=True).strip()
+          raw=re.sub(r'^\`\`\`(?:python)?\\s*','',raw,flags=re.I)
+          raw=re.sub(r'\\s*\`\`\`$','',raw).strip()
+          pathlib.Path('drafts/icarus/taskhub-v0/src/taskhub.py').write_text(raw+'\\n',encoding='utf-8')
+          PY
+          python /tmp/repair_taskhub.py
+
+      - name: Final tests and canary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd drafts/icarus/taskhub-v0
+          python -m unittest discover -s tests -v 2>&1 | tee /tmp/taskhub-final-tests.txt
+          python - <<'PY' | tee /tmp/taskhub-canary.txt
+          import pathlib, tempfile, sys
+          sys.path.insert(0,str(pathlib.Path('src').resolve()))
+          from taskhub import TaskHub, TaskHubError
+          with tempfile.TemporaryDirectory() as d:
+              h=TaskHub(d)
+              h.create_task('CANARY_20261005','the1mburke-blip/Icarus','task/CANARY_20261005','b'*40,['compile','runtime'])
+              h.claim('CANARY_20261005','repo-worker')
+              h.start('CANARY_20261005','repo-worker')
+              h.checkpoint('CANARY_20261005','repo-worker','c'*40,['app-debug.apk'])
+              h.request_verification('CANARY_20261005','repo-worker',['compile','runtime'])
+              denied=False
+              try:
+                  h.finalize_pass('CANARY_20261005','repo-worker',['compile','runtime'])
+              except TaskHubError:
+                  denied=True
+              if not denied:
+                  raise SystemExit('SELF_PASS_NOT_DENIED')
+              h.finalize_pass('CANARY_20261005','icarus-controller',['compile','runtime'])
+              t=h.read_task('CANARY_20261005')
+              print('CANARY_STATUS='+t['state'])
+              print('SELF_PASS_DENIED='+str(denied).lower())
+              print('CURRENT_COMMIT='+str(t['current_commit']))
+              print('EVENT_COUNT='+str(len(h.events('CANARY_20261005'))))
+          PY
+          grep -q '^CANARY_STATUS=PASS$' /tmp/taskhub-canary.txt
+          grep -q '^SELF_PASS_DENIED=true$' /tmp/taskhub-canary.txt
+
+      - name: Persist repo-ready TaskHub candidate
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/taskhub-final-tests.txt drafts/icarus/taskhub-v0/TEST_EVIDENCE.txt
+          cp /tmp/taskhub-canary.txt drafts/icarus/taskhub-v0/CANARY_EVIDENCE.txt
+          git config user.name 'icarus-taskhub-repo-ghost'
+          git config user.email 'actions@users.noreply.github.com'
+          git add drafts/icarus/taskhub-v0
+          git commit -m 'ghost: build Icarus TaskHub v0 protocol candidate'
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Report TaskHub result
+        uses: actions/github-script@v8
+        env:
+          COMMIT_SHA: ${{ steps.commit.outputs.sha }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs=require('fs');
+            const canary=fs.readFileSync('/tmp/taskhub-canary.txt','utf8').trim();
+            const {owner,repo}=context.repo;
+            await github.rest.issues.createComment({
+              owner,repo,issue_number:52,
+              body:[
+                '[TASKHUB_V0_REPO_GHOST]',
+                'STATUS: CANDIDATE_BUILT_TESTED_SAVED_PENDING_OWNER_VERIFICATION',
+                'MODEL: Qwen/Qwen2.5-Coder-1.5B-Instruct',
+                'HOST: GitHub public CPU runner',
+                'COST: €0',
+                'COMMIT: '+process.env.COMMIT_SHA,
+                'TREE: drafts/icarus/taskhub-v0/',
+                'TESTS: python unittest final suite PASS',
+                'CANARY:',
+                canary,
+                'BOUNDARY: protocol/repo candidate only; separate top-level repo and Android/Desktop adapters not yet created.'
+              ].join('\n')
+            });
