@@ -3705,3 +3705,17 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [WHAT_NOT_TO_RETRY] Do not resend the same large combined mutation batch.
 [COST] €0 external spend.
 ---
+
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-05T09:00:00Z
+[TYPE] IMMUTABLE_BLOCKER_RULE_CORRECTION
+[ISSUE] #46
+[STATUS] VERIFYING
+[OWNER] Michael
+[RULE] A blocker is never itself a reason to stop or close the task. It triggers an owner alert containing newly accessed, evidence-backed forward-path options and continued rerouting through materially different authorised routes.
+[STATE] If no current route is executable, task remains OPEN/PARTIAL/BLOCKED.
+[PASS] Only actual task completion, independently verified to the applicable evidence standard, may be put forward for PASS.
+[CONTROLS] No blind retry; no duplicate active owner; €0/spend gate; protected-system boundaries; preflight and evidence rules unchanged.
+---
