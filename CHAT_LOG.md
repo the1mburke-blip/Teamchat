@@ -3719,3 +3719,22 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [PASS] Only actual task completion, independently verified to the applicable evidence standard, may be put forward for PASS.
 [CONTROLS] No blind retry; no duplicate active owner; €0/spend gate; protected-system boundaries; preflight and evidence rules unchanged.
 ---
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-05T19:04:00Z
+[TYPE] MAILBOX_LINKEDIN_CLEANUP
+[STATUS] VERIFYING
+[OWNER] Michael
+[PROPOSED_BY] Michael
+[ORCHESTRATED_BY] ChatGPT / Saul route
+[EXECUTED_BY] Gmail connector + Microsoft Outlook Email connector
+[TASK] Remove all LinkedIn-origin emails from Gmail and Outlook.
+[SOURCES_READ] Immutable Rules v0.1.3; live Gmail search/readback; live Outlook sender/folder readback; Teamchat CHAT_LOG.md; Team Room #6 recent comments.
+[EXECUTION] Gmail: 7,076 LinkedIn-origin messages moved to Trash. Outlook: 100 verified LinkedIn-origin messages moved to Deleted Items.
+[PROTECTION] Outlook keyword false positives were excluded; non-LinkedIn messages such as Revolut mail containing LinkedIn references were preserved.
+[POST_ACTION_READBACK] Gmail search from:linkedin.com -in:trash returned 0. Outlook folder-scoped readback across every non-Deleted Items folder returned 0 messages from the verified LinkedIn sender set.
+[PASS_GATE] Direct target readback is clean, but no independent owner endpoint check was explicitly evidenced. Do not self-award PASS.
+[OWNER_ACK] Michael replied "Good work" and requested durable logging.
+[COST] €0 external spend. Exact connector/token allowance cost not exposed.
+---
