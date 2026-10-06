@@ -1,6 +1,10 @@
 name: Icarus Clean Recovery Build
 
 on:
+  push:
+    branches: ['main']
+    paths:
+      - '.github/workflows/icarus-clean-recovery.yml'
   issue_comment:
     types: [created]
 
@@ -11,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    if: github.event.issue.number == 50 && github.event.comment.body == '[ICARUS_CLEAN_RECOVERY_BUILD]'
+    if: github.event_name == 'push' || (github.event.issue.number == 50 && github.event.comment.body == '[ICARUS_CLEAN_RECOVERY_BUILD]')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
