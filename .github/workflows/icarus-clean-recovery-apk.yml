@@ -54,7 +54,7 @@ jobs:
           grep -q 'ICARUS_QUEUE_V1' "$ROOT/app/src/main/java/com/icarus/shell/IcarusApiClient.kt"
           grep -q 'No pairing code is required' "$ROOT/app/src/main/java/com/icarus/shell/IcarusShellScreen.kt"
           grep -q 'fun resetUi' "$ROOT/app/src/main/java/com/icarus/shell/IcarusCore.kt"
-          test "$(grep -R --exclude='RecoveryStore.kt' -c '0lk5RZU92fAPW7YIdimImum5IzAmH19blNW0tideK6I' "$ROOT" || true)" = "0"
+          ! grep -R -E 'RECOVERY_TOKEN[[:space:]]*=' "$ROOT/app/src/main" || (echo "embedded recovery token forbidden" && exit 1)
 
       - name: Compile APK
         working-directory: drafts/icarus/2026-10-05-lightweight-shell/compile-ready
