@@ -46,17 +46,17 @@ function advanceTaskLocked_(taskId, explicitResume) {
   try {
     if (status === 'QUEUED') {
       transitionTask_(taskId,'INSPECTING');
-      appendLog_(taskId,'INSPECTING','IN_PROGRESS','Loaded durable task state.','TASK_QUEUE:'+taskId,'route=COMPOSIO_V31');
+      appendLog_(taskId,'INSPECTING','IN_PROGRESS','Loaded durable task state.','TASK_QUEUE:'+taskId,'route=GEMINI_DIRECT_REASONING_ONLY');
     }
     let current = String(getTask_(taskId).status || '');
-    const mode=PropertiesService.getScriptProperties().getProperty('PROVIDER_MODE') || 'NONE';
+    const mode='GEMINI_DIRECT';
     if (current === 'WAITING_REASONING_CAPACITY') {
       if (!explicitResume) return taskForClient_(taskId);
       transitionTask_(taskId,'REASONING');
       current='REASONING';
     }
     if (current === 'INSPECTING') {
-      transitionTask_(taskId,mode === 'NONE' ? 'EXECUTING' : 'REASONING');
+      transitionTask_(taskId,'REASONING');
       current=String(getTask_(taskId).status);
     }
     let reasoning=taskReasoningLog_(taskId);
@@ -74,17 +74,18 @@ function advanceTaskLocked_(taskId, explicitResume) {
         return taskForClient_(taskId);
       }
       if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
-      transitionTask_(taskId,'EXECUTING');
+      updateTaskFields_(taskId,{evidence_ref:reasoning.evidence});
+      return taskForClient_(taskId);
     }
-    return executeComposioTask_(taskId,reasoning && reasoning.executionRequest);
+    return taskForClient_(taskId);
   } catch (err) {
     const current = getTask_(taskId);
     const state = current ? String(current.status || '') : '';
     const reasoningFailure=state === 'REASONING';
     if (ICARUS.TASK_TERMINAL.indexOf(state) < 0 && state !== 'PENDING_AUTH') {
-      try { transitionTask_(taskId,'BLOCKED',{evidence_ref:(reasoningFailure ? 'REASONING_BLOCKED ' : 'COMPOSIO_BLOCKED ') + String(err.message || err).slice(0,1000)}); } catch (_) {}
+      try { transitionTask_(taskId,'BLOCKED',{evidence_ref:'REASONING_BLOCKED ' + String(err.message || err).slice(0,1000)}); } catch (_) {}
     }
-    appendLog_(taskId,reasoningFailure ? 'REASONING' : 'EXECUTING','BLOCKED',reasoningFailure ? 'Reasoning blocked.' : 'Composio v3.1 execution blocked.','COMPOSIO_TASK_STATE:'+taskId,String(err.message || err));
+    appendLog_(taskId,'REASONING','BLOCKED','Reasoning blocked.','TASK_QUEUE:'+taskId,String(err.message || err));
     return taskForClient_(taskId);
   }
 }
@@ -99,7 +100,7 @@ function resumePendingTasks_() {
   const statusIdx = headers.indexOf('status');
   if (idIdx < 0 || statusIdx < 0) throw new Error('TASK_QUEUE_SCHEMA_INVALID');
   // PENDING_AUTH is intentionally not polled by the timer; phone resume/status drives it after authorization.
-  const eligible = ['QUEUED','INSPECTING','EXECUTING','VERIFYING'];
+  const eligible = ['QUEUED','INSPECTING'];
   data.slice(1).forEach(function(row) {
     if (eligible.indexOf(String(row[statusIdx])) >= 0) {
       try { advanceTask_(String(row[idIdx])); }
