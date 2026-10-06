@@ -1,11 +1,26 @@
-# Codex real gateway candidate — PARTIAL
-Michael proposed; actual Codex workspace executor implemented, 2026-10-05.
-Source: compile-ready/. Reused existing shell and recovered live contract.
-Pair/submit/status envelopes, configurable HTTPS endpoint, AndroidKeyStore AES-GCM token storage, real task status/evidence mapping, bounded polling and local-only stop implemented.
-Voice capture disabled because existing shell only toggled a boolean. No owner-verdict endpoint invented.
-No fake gateway, no secrets/deployed endpoint, no backend/production changes or live request.
-Compile NOT RUN: JDK17 exists; no Gradle executable/cache, Android SDK platforms or build-tools. Raw toolchain.log records physical inspection. No APK created; APK hash UNKNOWN.
-Compiler/emulator/Redmi runtime evidence remains missing. Source review is not compile/runtime proof. Cost €0; user percentage quota unobservable.
-Sources read: Immutable Rules, OPERATING_RULES, TRAINING_MATRIX, CHAT_LOG, recovered contract, existing bind workflow and existing shell.
-Training quote HV-EXP-001: A strong model without the required read/write/verification capability is the wrong execution chair.
-Preflight sent parent before source mutation. Parent independently reviewing source; final endpoint unverified.
+# Icarus clean recovery candidate — BUILD REQUESTED
+
+Date: 2026-10-06
+Branch: fix/icarus-clean-install-20261006
+Cost: €0
+
+Changes included before build:
+- current package id: com.aistudio.icarus.appsscript
+- signed-v1 envelope using ICARUS_QUEUE_V1
+- no plaintext token in signed submit/status payloads
+- REASONING and READY_FOR_EXECUTION treated as progressing states
+- WAITING/PENDING_AUTH and unknown terminal states release the local composer
+- 60-second local wait timeout returns a releasable VERIFYING state
+- New Task can cancel stale local UI state
+- force-stop/relaunch does not restore a persisted current-task pointer
+- secure token remains AndroidKeyStore AES-GCM backed
+
+Boundary:
+- no credential embedded in source/APK
+- no live backend mutation
+- fresh pairing is still required because the prior app was uninstalled
+- server-side Google Sheets 50k persistence defect is not claimed fixed by this APK
+
+PASS gate for this artifact:
+compile + static signed-v1 gates + emulator launch + APK hash.
+Physical Redmi/backend execution remains separate.
