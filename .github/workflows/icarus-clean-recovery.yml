@@ -1,0 +1,111 @@
+name: Icarus Clean Recovery Build
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  build:
+    if: github.event.issue.number == 50 && github.event.comment.body == '[ICARUS_CLEAN_RECOVERY_BUILD]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CANDIDATE: drafts/icarus/2026-10-05-codex-gateway-bind/compile-ready
+      SOURCE_BRANCH: fix/icarus-clean-install-20261006
+    steps:
+      - name: Announce
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment 50 --repo "${{ github.repository }}"             --body "[ICARUS_CLEAN_RECOVERY] STATUS=RUNNING RUN=${{ github.run_id }} REF=$SOURCE_BRANCH"
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+
+      - name: Static contract gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          GATEWAY="$CANDIDATE/app/src/main/java/com/icarus/shell/AppsScriptGateway.kt"
+          CORE="$CANDIDATE/app/src/main/java/com/icarus/shell/IcarusCore.kt"
+          SCREEN="$CANDIDATE/app/src/main/java/com/icarus/shell/IcarusShellScreen.kt"
+          BUILD="$CANDIDATE/app/build.gradle.kts"
+
+          grep -q 'ICARUS_QUEUE_V1' "$GATEWAY"
+          grep -q 'HmacSHA256' "$GATEWAY"
+          grep -q 'READY_FOR_EXECUTION' "$GATEWAY"
+          grep -q 'REASONING' "$GATEWAY"
+          grep -q 'Local wait ended after 60 seconds' "$GATEWAY"
+          grep -q 'taskJob = null' "$CORE"
+          grep -q 'TaskStage.VERIFYING' "$SCREEN"
+          grep -q 'Text("New Task")' "$SCREEN"
+          grep -q 'applicationId = "com.aistudio.icarus.appsscript"' "$BUILD"
+          grep -q 'versionName = "0.4.1-clean-recovery"' "$BUILD"
+
+          if grep -q 'put("token", store.token)' "$GATEWAY"; then
+            echo "plaintext-token transport detected"
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Install SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-37" "build-tools;36.0.0"
+
+      - name: Build APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          (cd "$CANDIDATE" && gradle --no-daemon --stacktrace :app:assembleDebug) | tee out/build.log
+          cp "$CANDIDATE/app/build/outputs/apk/debug/app-debug.apk" out/Icarus-0.4.1-clean-recovery.apk
+          sha256sum out/Icarus-0.4.1-clean-recovery.apk | tee out/apk.sha256
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          "$SDK/build-tools/36.0.0/aapt2" dump badging out/Icarus-0.4.1-clean-recovery.apk             | tee out/apk-badging.txt
+          grep -q "package: name='com.aistudio.icarus.appsscript'" out/apk-badging.txt
+          grep -q "versionName='0.4.1-clean-recovery'" out/apk-badging.txt
+          git rev-parse HEAD > out/source-commit.txt
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: Icarus-0.4.1-clean-recovery
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Report success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="$(cut -d' ' -f1 out/apk.sha256)"
+          COMMIT="$(cat out/source-commit.txt)"
+          gh issue comment 50 --repo "${{ github.repository }}"             --body "[ICARUS_CLEAN_RECOVERY] STATUS=SUCCESS RUN=${{ github.run_id }} SHA256=$SHA SOURCE=$COMMIT ARTIFACT=Icarus-0.4.1-clean-recovery"
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment 50 --repo "${{ github.repository }}"             --body "[ICARUS_CLEAN_RECOVERY] STATUS=FAIL RUN=${{ github.run_id }}"
