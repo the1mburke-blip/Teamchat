@@ -1,0 +1,352 @@
+name: Icarus Standalone Reasoning Repo Worker
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: icarus-standalone-reasoning-repo-worker
+  cancel-in-progress: false
+
+jobs:
+  patch_reasoning:
+    if: >-
+      github.event.issue.number == 55 &&
+      github.event.issue.pull_request == null &&
+      contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
+      github.event.comment.body == 'ICARUS_REASONING_STANDALONE_REPO_WORKER_RUN'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Teamchat
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Prepare isolated live-source candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC='drafts/icarus/2026-10-06-standalone-reasoning/live-source'
+          DEST='drafts/icarus/2026-10-06-standalone-reasoning/candidate'
+          test -f "$SRC/Code.gs"
+          test -f "$SRC/Runtime.gs"
+          test -f "$SRC/Provider.gs"
+          test -f "$SRC/Setup.gs"
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          cp "$SRC"/*.gs "$DEST"/
+          sha256sum "$SRC"/*.gs | sort > /tmp/live-source-sha256.txt
+
+      - name: Install bounded Qwen coding worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors sentencepiece
+
+      - name: Patch submit and autonomous continuation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/patch_reasoning.py <<'PY'
+          import pathlib, re, torch
+          from transformers import AutoTokenizer, AutoModelForCausalLM
+
+          root=pathlib.Path('drafts/icarus/2026-10-06-standalone-reasoning/candidate')
+          code=(root/'Code.gs').read_text()
+          runtime=(root/'Runtime.gs').read_text()
+          setup=(root/'Setup.gs').read_text()
+          evidence=pathlib.Path('drafts/icarus/2026-10-06-standalone-reasoning/EVIDENCE.md').read_text()
+
+          model_id='Qwen/Qwen2.5-Coder-1.5B-Instruct'
+          tok=AutoTokenizer.from_pretrained(model_id)
+          model=AutoModelForCausalLM.from_pretrained(model_id,dtype=torch.float32,low_cpu_mem_usage=True)
+          model.eval()
+
+          def gen(prompt,max_new=2600):
+              rendered=tok.apply_chat_template([{'role':'user','content':prompt}],tokenize=False,add_generation_prompt=True)
+              inp=tok(rendered,return_tensors='pt')
+              with torch.inference_mode():
+                  out=model.generate(**inp,max_new_tokens=max_new,do_sample=False,repetition_penalty=1.04,pad_token_id=tok.eos_token_id)
+              txt=tok.decode(out[0][inp['input_ids'].shape[1]:],skip_special_tokens=True).strip()
+              txt=re.sub(r'^\x60\x60\x60(?:javascript|js)?\s*','',txt,flags=re.I)
+              txt=re.sub(r'\s*\x60\x60\x60$','',txt).strip()
+              return txt
+
+          code_prompt=f"""
+          Output ONLY the complete corrected Code.gs source. No markdown.
+
+          GOAL: Android submit must no longer depend on one long synchronous reasoning/execution HTTP request.
+          Current evidence says Gemini itself reaches READY_FOR_EXECUTION when the backend request reaches it.
+
+          Exact required change:
+          - Preserve every existing operation/auth rule.
+          - In op === 'submit': createTask_ exactly as today.
+          - Do NOT call advanceTask_ inline from submit.
+          - Call scheduleTaskAdvance_() after persistence.
+          - Immediately return taskForClient_(task.task_id), so Android receives canonical task_id even if reasoning/execution later takes time.
+          - Do not alter status/resume semantics.
+          - No new endpoint, auth, provider, database, credential or task state.
+          - Do not touch pair/owner verification/runtime/tool operations.
+
+          EVIDENCE:
+          {evidence}
+
+          CURRENT Code.gs:
+          {code}
+          """
+          new_code=gen(code_prompt,2200)
+          if "function doPost" not in new_code or "scheduleTaskAdvance_" not in new_code:
+              raise SystemExit("CODE_GENERATION_INVALID")
+          (root/'Code.gs').write_text(new_code+'\n')
+
+          runtime_prompt=f"""
+          Output ONLY the complete corrected Runtime.gs source. No markdown.
+
+          GOAL: make persisted Android tasks advance server-side without Codex/ADB/laptop.
+
+          Required minimal contract:
+          - Preserve the existing state machine, reasoning/provider call, execution handoff, failure classification, taskReasoningLog_, and resumePendingTasks_ logic unless the exact change below requires an addition.
+          - Add function scheduleTaskAdvance_().
+          - scheduleTaskAdvance_ must be idempotent: if a project trigger already exists for handler resumePendingTasksSoon_, do not create another.
+          - Otherwise create a one-shot time-based trigger for resumePendingTasksSoon_ using ScriptApp.newTrigger(...).timeBased().after(1000).create().
+          - Add function resumePendingTasksSoon_(). It must call resumePendingTasks_() inside try/finally, then delete project triggers whose handler is resumePendingTasksSoon_ so the one-shot cannot accumulate.
+          - DO NOT add REASONING or WAITING_REASONING_CAPACITY to automatic resumePendingTasks_ eligibility.
+          - DO NOT add any direct Gemini/provider call outside advanceTaskLocked_.
+          - No new backend/auth/provider/database or credentials.
+          - Existing original task objective remains immutable.
+          - Keep executor non-self-certification.
+
+          EVIDENCE:
+          {evidence}
+
+          CURRENT Runtime.gs:
+          {runtime}
+          """
+          new_runtime=gen(runtime_prompt,3300)
+          if "function scheduleTaskAdvance_" not in new_runtime or "function resumePendingTasksSoon_" not in new_runtime:
+              raise SystemExit("RUNTIME_GENERATION_INVALID")
+          (root/'Runtime.gs').write_text(new_runtime+'\n')
+
+          setup_prompt=f"""
+          Output ONLY the complete corrected Setup.gs source. No markdown.
+
+          Required minimal change:
+          - Preserve setupIcarusRuntime_.
+          - Preserve installResumeTrigger_ semantics of deleting prior resumePendingTasks_ recurring triggers before reinstall.
+          - Change recurring fallback cadence from everyMinutes(5) to everyMinutes(1).
+          - Do not add any other service/backend/provider/auth behavior.
+
+          CURRENT Setup.gs:
+          {setup}
+          """
+          new_setup=gen(setup_prompt,900)
+          if "everyMinutes(1)" not in new_setup or "installResumeTrigger_" not in new_setup:
+              raise SystemExit("SETUP_GENERATION_INVALID")
+          (root/'Setup.gs').write_text(new_setup+'\n')
+          PY
+          python /tmp/patch_reasoning.py
+
+      - name: Deterministic independent verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC='drafts/icarus/2026-10-06-standalone-reasoning/live-source'
+          DEST='drafts/icarus/2026-10-06-standalone-reasoning/candidate'
+
+          for f in Code Runtime Provider Setup StateStore SignedAuth; do
+            cp "$DEST/$f.gs" "/tmp/$f.js"
+            node --check "/tmp/$f.js"
+          done
+
+          python - <<'PY'
+          import pathlib,re,hashlib
+          src=pathlib.Path('drafts/icarus/2026-10-06-standalone-reasoning/live-source')
+          dst=pathlib.Path('drafts/icarus/2026-10-06-standalone-reasoning/candidate')
+          code=(dst/'Code.gs').read_text()
+          rt=(dst/'Runtime.gs').read_text()
+          setup=(dst/'Setup.gs').read_text()
+
+          start=code.index("if (op === 'submit')")
+          end=code.index("if (op === 'status')",start)
+          submit=code[start:end]
+          assert 'createTask_' in submit
+          assert 'scheduleTaskAdvance_' in submit
+          assert 'taskForClient_' in submit
+          assert 'advanceTask_' not in submit
+
+          assert 'function scheduleTaskAdvance_' in rt
+          assert "newTrigger('resumePendingTasksSoon_')" in rt
+          assert '.timeBased().after(1000).create()' in rt.replace(' ','')
+          assert 'function resumePendingTasksSoon_' in rt
+          assert 'resumePendingTasks_();' in rt
+          assert "getHandlerFunction() === 'resumePendingTasksSoon_'" in rt
+
+          m=re.search(r"const eligible\s*=\s*\[([^\]]+)\]",rt)
+          assert m, 'eligible list missing'
+          eligible=m.group(1)
+          assert 'QUEUED' in eligible and 'INSPECTING' in eligible
+          assert 'REASONING' not in eligible
+          assert 'WAITING_REASONING_CAPACITY' not in eligible
+
+          assert 'everyMinutes(1).create()' in setup.replace(' ','')
+          assert 'everyMinutes(5)' not in setup
+
+          for f in ['Provider.gs','StateStore.gs','SignedAuth.gs']:
+              a=(src/f).read_bytes(); b=(dst/f).read_bytes()
+              assert a==b, f+' changed unexpectedly'
+
+          forbidden=['cloudflare','firebase','supabase']
+          joined=(code+'\n'+rt+'\n'+setup).lower()
+          for word in forbidden:
+              assert word not in joined, 'new backend reference '+word
+
+          print('STANDALONE_REASONING_CONTRACT=PASS')
+          print('SUBMIT_RETURNS_TASK_ID_BEFORE_REASONING=PASS')
+          print('SERVER_SIDE_CONTINUATION=PASS')
+          print('DUPLICATE_REASONING_TIMER_RETRY_DENIED=PASS')
+          print('PROVIDER_STATE_AUTH_UNCHANGED=PASS')
+          PY
+
+      - name: Persist candidate evidence
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='drafts/icarus/2026-10-06-standalone-reasoning'
+          CAND="$ROOT/candidate"
+          {
+            echo '# Standalone reasoning repo-worker candidate'
+            echo
+            echo "- Worker: Qwen/Qwen2.5-Coder-1.5B-Instruct"
+            echo "- Host: GitHub Actions public CPU runner"
+            echo "- Run: $GITHUB_RUN_ID"
+            echo "- Cost: €0"
+            echo "- Scope: Code.gs, Runtime.gs, Setup.gs only"
+            echo "- Live deployment: NOT PERFORMED"
+            echo "- Phone/ADB: NOT TOUCHED"
+            echo
+            echo '## Verification'
+            echo '- JavaScript syntax: PASS'
+            echo '- submit returns persisted task ID without inline advanceTask_: PASS'
+            echo '- idempotent one-shot server continuation: PASS'
+            echo '- recurring fallback trigger 1 minute: PASS'
+            echo '- blind REASONING/WAITING timer retries remain excluded: PASS'
+            echo '- Provider.gs unchanged: PASS'
+            echo '- StateStore.gs unchanged: PASS'
+            echo '- SignedAuth.gs unchanged: PASS'
+            echo
+            echo '## Live-source SHA-256'
+            cat /tmp/live-source-sha256.txt
+          } > "$ROOT/WORKER_EVIDENCE.md"
+
+          git diff --no-index -- "$ROOT/live-source/Code.gs" "$CAND/Code.gs" > "$ROOT/Code.diff" || true
+          git diff --no-index -- "$ROOT/live-source/Runtime.gs" "$CAND/Runtime.gs" > "$ROOT/Runtime.diff" || true
+          git diff --no-index -- "$ROOT/live-source/Setup.gs" "$CAND/Setup.gs" > "$ROOT/Setup.diff" || true
+
+      - name: Commit isolated worker branch
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH='repo-worker/icarus-reasoning-standalone-55'
+          git config user.name 'icarus-reasoning-repo-worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git checkout -B "$BRANCH"
+          git add drafts/icarus/2026-10-06-standalone-reasoning
+          git commit -m 'ghost: patch standalone Icarus reasoning continuation'
+          git push --force-with-lease origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update draft PR
+        id: pr
+        uses: actions/github-script@v8
+        env:
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const {owner,repo}=context.repo;
+            const head=process.env.BRANCH;
+            const existing=await github.rest.pulls.list({owner,repo,state:'open',head:owner+':'+head,base:'main'});
+            let pr;
+            const body=[
+              'Issue #55 repo-worker candidate.',
+              '',
+              'Target: make phone submit return the persisted task immediately, then continue reasoning server-side without Codex/ADB/laptop.',
+              '',
+              'Changed live-derived candidate files: Code.gs, Runtime.gs, Setup.gs.',
+              'Provider/Auth/StateStore preserved byte-for-byte.',
+              'No live Apps Script deployment or phone mutation.',
+              'Worker commit: '+process.env.SHA,
+              'Evidence: drafts/icarus/2026-10-06-standalone-reasoning/WORKER_EVIDENCE.md',
+              '',
+              'Do not merge/deploy until independent review. Executor cannot self-award PASS.'
+            ].join('\n');
+            if (existing.data.length) {
+              pr=existing.data[0];
+              await github.rest.pulls.update({owner,repo,pull_number:pr.number,title:'Icarus standalone reasoning continuation — repo worker',body});
+            } else {
+              pr=(await github.rest.pulls.create({owner,repo,title:'Icarus standalone reasoning continuation — repo worker',head,base:'main',body,draft:true})).data;
+            }
+            core.setOutput('number',String(pr.number));
+            core.setOutput('url',pr.html_url);
+
+      - name: Report to issue 55
+        uses: actions/github-script@v8
+        env:
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          SHA: ${{ steps.commit.outputs.sha }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const {owner,repo}=context.repo;
+            await github.rest.issues.createComment({
+              owner,repo,issue_number:55,
+              body:[
+                '[ICARUS_REASONING_REPO_WORKER]',
+                'STATUS: CANDIDATE_BUILT_TESTED_PENDING_INDEPENDENT_REVIEW',
+                'WORKER: Qwen/Qwen2.5-Coder-1.5B-Instruct',
+                'HOST: GitHub Actions public CPU runner',
+                'RUN: '+context.runId,
+                'RUN_URL: https://github.com/'+owner+'/'+repo+'/actions/runs/'+context.runId,
+                'BRANCH: '+process.env.BRANCH,
+                'COMMIT: '+process.env.SHA,
+                'PR: '+process.env.PR_URL,
+                'TESTS: syntax + standalone-submit contract + autonomous continuation + unchanged provider/auth/state PASS',
+                'BOUNDARY: no live deployment; no phone/ADB mutation; no router/failover work',
+                'COST: €0',
+                'NEXT_GATE: independent diff/test review, then SAME Apps Script deployment and owner standalone phone canary.'
+              ].join('\n')
+            });
+
+      - name: Report worker failure
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const {owner,repo}=context.repo;
+            await github.rest.issues.createComment({
+              owner,repo,issue_number:55,
+              body:[
+                '[ICARUS_REASONING_REPO_WORKER]',
+                'STATUS: FAIL',
+                'RUN: '+context.runId,
+                'RUN_URL: https://github.com/'+owner+'/'+repo+'/actions/runs/'+context.runId,
+                'ACTION: no blind retry; inspect the exact failing step before any materially different retry.',
+                'COST: €0'
+              ].join('\n')
+            });
