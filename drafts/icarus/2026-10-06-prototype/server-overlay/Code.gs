@@ -28,6 +28,7 @@ function doPost(e) {
     const auth = authenticateSigned_(envelope);
     const body = JSON.parse(envelope.payload);
     const op = String(body.op || '');
+    if (op === 'google_connections' || op === 'google_authorize') return jsonResponse_({ok:true,data:googlePluginConnections_(auth,body,op==='google_authorize')});
     if (op === 'owner_challenge') return jsonResponse_({ok:true,data:ownerVerificationChallenge_(auth,body)});
     if (op === 'owner_verify') return jsonResponse_({ok:true,data:verifyOwnerTask_(auth,body)});
     if (op === 'claim' || op === 'result') throw new Error('PC_STAGED_DISCONNECTED');

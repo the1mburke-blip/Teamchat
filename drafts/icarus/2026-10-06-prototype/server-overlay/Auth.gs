@@ -71,6 +71,9 @@ function authenticate_(body) {
 // Shared token minting preserves pairing behavior; fresh owner enrollment never replaces a device.
 function registerDeviceToken_(deviceId, clientVersion, ownerIdentity, allowReplacement) {
     const sh = sheet_(ICARUS.SHEETS.DEVICES);
+    if (ownerIdentity && ownerIdentity.verified) {
+      ['google_owner_subject','google_owner_email_hash'].forEach(function(name){const h=deviceHeaders_();if(h.indexOf(name)<0){if(sh.getMaxColumns()<h.length+1)sh.insertColumnsAfter(sh.getMaxColumns(),1);sh.getRange(1,h.length+1).setValue(name);SpreadsheetApp.flush();}});
+    }
     const values = sh.getDataRange().getValues();
     const headers = values.length ? values[0].map(String) : deviceHeaders_();
     const idIdx = deviceColumn_(headers, 'device_id');
@@ -95,6 +98,7 @@ function registerDeviceToken_(deviceId, clientVersion, ownerIdentity, allowRepla
     row[pairedIdx] = nowIso_();
     row[seenIdx] = nowIso_();
     row[buildIdx] = String(clientVersion || '');
+    if (ownerIdentity && ownerIdentity.verified) {row[headers.indexOf('google_owner_subject')]=ownerIdentity.subject;row[headers.indexOf('google_owner_email_hash')]=ownerIdentity.email_hash;}
     sh.appendRow(row);
 
     SpreadsheetApp.flush();

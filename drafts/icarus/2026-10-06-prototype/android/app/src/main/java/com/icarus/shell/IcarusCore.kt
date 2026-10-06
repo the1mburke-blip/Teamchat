@@ -31,7 +31,11 @@ interface ExecutionGateway {
     suspend fun cancel()
 }
 
+data class GoogleConnection(val service: String, val state: String, val reason: String)
+
 data class IcarusUiState(
+    val googleConnections: List<GoogleConnection> = emptyList(),
+    val googleConnectionMessage: String = "Refresh to check Google API authorization.",
     val backendUrl: String = "",
     val deviceId: String = "",
     val recoveryToken: String = "",
@@ -61,6 +65,32 @@ class IcarusViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         if (executionGateway.isProvisioned() && executionGateway.lastTaskId().isNotBlank()) refreshTask()
+    }
+
+    fun refreshGoogleConnections() {
+        if (!_uiState.value.provisioned) return
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(googleConnections = executionGateway.googleConnections(),
+                    googleConnectionMessage = "Server scopes and configured Google owner checked. Sign-in alone does not grant API access.")
+            } catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(googleConnections = emptyList(), googleConnectionMessage = "Google status UNKNOWN; refresh again.")
+            }
+        }
+    }
+
+    fun authorizeGoogle(activity: Activity, service: String) {
+        if (!_uiState.value.provisioned) return
+        viewModelScope.launch {
+            try {
+                val url = executionGateway.googleAuthorization(service)
+                require(validGoogleAuthorizationUrl(url))
+                activity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                _uiState.value = _uiState.value.copy(googleConnectionMessage = "Finish Google owner consent, then refresh connections and the saved task.")
+            } catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(googleConnectionMessage = "Google consent is unavailable. Refresh for the server reason; owner deployment authorization may be required.")
+            }
+        }
     }
 
     fun refreshTask() {

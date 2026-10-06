@@ -76,15 +76,16 @@ function advanceTaskLocked_(taskId, explicitResume) {
       if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
       transitionTask_(taskId,'EXECUTING');
     }
+    if (googlePluginService_(task.objective)) return executeGooglePluginTask_(taskId,reasoning && reasoning.executionRequest);
     return executeComposioTask_(taskId,reasoning && reasoning.executionRequest);
   } catch (err) {
     const current = getTask_(taskId);
     const state = current ? String(current.status || '') : '';
     const reasoningFailure=state === 'REASONING';
     if (ICARUS.TASK_TERMINAL.indexOf(state) < 0 && state !== 'PENDING_AUTH') {
-      try { transitionTask_(taskId,'BLOCKED',{evidence_ref:(reasoningFailure ? 'REASONING_BLOCKED ' : 'COMPOSIO_BLOCKED ') + String(err.message || err).slice(0,1000)}); } catch (_) {}
+      try { transitionTask_(taskId,'BLOCKED',{evidence_ref:(reasoningFailure ? 'REASONING_BLOCKED ' : 'EXECUTION_BLOCKED ') + String(err.message || err).slice(0,1000)}); } catch (_) {}
     }
-    appendLog_(taskId,reasoningFailure ? 'REASONING' : 'EXECUTING','BLOCKED',reasoningFailure ? 'Reasoning blocked.' : 'Composio v3.1 execution blocked.','COMPOSIO_TASK_STATE:'+taskId,String(err.message || err));
+    appendLog_(taskId,reasoningFailure ? 'REASONING' : 'EXECUTING','BLOCKED',reasoningFailure ? 'Reasoning blocked.' : 'Service execution blocked.','COMPOSIO_TASK_STATE:'+taskId,String(err.message || err));
     return taskForClient_(taskId);
   }
 }

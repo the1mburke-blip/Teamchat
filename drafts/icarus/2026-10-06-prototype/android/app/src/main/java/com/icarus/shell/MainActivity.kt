@@ -34,6 +34,8 @@ fun IcarusShellRoute(viewModel: IcarusViewModel = viewModel()) {
         onSubmit = viewModel::submit,
         onCancel = viewModel::cancel,
         onNewTask = viewModel::newTask,
+        onGoogleRefresh = viewModel::refreshGoogleConnections,
+        onGoogleAuthorize = { service -> viewModel.authorizeGoogle(activity, service) },
         onRefresh = viewModel::refreshTask
     )
 }

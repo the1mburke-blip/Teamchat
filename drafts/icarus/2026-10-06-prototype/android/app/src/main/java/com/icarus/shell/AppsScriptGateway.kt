@@ -140,6 +140,13 @@ class IcarusApiClient(private val endpointProvider: () -> String) {
     }
 }
 
+fun validGoogleAuthorizationUrl(value: String): Boolean = try {
+    val uri = URI(value)
+    uri.scheme == "https" && uri.userInfo == null && uri.port == -1 && uri.fragment == null &&
+        ((uri.host == "accounts.google.com" && uri.path in setOf("/o/oauth2/auth", "/o/oauth2/v2/auth")) ||
+         (uri.host == "script.google.com" && uri.path == "/oauthcallback"))
+} catch (_: Exception) { false }
+
 class AppsScriptExecutionGateway(private val app: Application) : ExecutionGateway {
     private val store = SecureStore(app)
     private val client = IcarusApiClient { store.backendUrl }
@@ -156,6 +163,23 @@ class AppsScriptExecutionGateway(private val app: Application) : ExecutionGatewa
         val data = postSigned(JSONObject().put("op", "status").put("taskId", store.taskId))
         require(data.getString("task_id") == store.taskId) { "Status response task mismatch." }
         return snapshot(data)
+    }
+
+    suspend fun googleConnections(): List<GoogleConnection> {
+        val rows = postSigned(JSONObject().put("op", "google_connections")).getJSONArray("connections")
+        return (0 until rows.length()).map { index ->
+            val row = rows.getJSONObject(index)
+            GoogleConnection(row.getString("service"), row.getString("state"), row.optString("reason"))
+        }
+    }
+
+    suspend fun googleAuthorization(service: String): String {
+        require(service in setOf("gmail", "drive")) { "Unsupported Google service." }
+        val data = postSigned(JSONObject().put("op", "google_authorize").put("service", service))
+        require(data.getString("service") == service) { "Google status mismatch." }
+        val url = data.optString("authorizationUrl")
+        require(validGoogleAuthorizationUrl(url)) { data.optString("reason", "Google authorization unavailable; refresh status.") }
+        return url
     }
 
     suspend fun enrollWithGoogle(activity: Activity): String {
@@ -289,7 +313,7 @@ class AppsScriptExecutionGateway(private val app: Application) : ExecutionGatewa
             ProofItem("Backend status", status)
         )
         data.optString("evidence_fingerprint").takeIf { it.isNotBlank() }?.let { proof += ProofItem("Evidence fingerprint", it) }
-        data.optString("composio_tool").takeIf { it.isNotBlank() }?.let { proof += ProofItem("Tool", it) }
+        data.optString("google_tool", data.optString("composio_tool")).takeIf { it.isNotBlank() }?.let { proof += ProofItem("Tool", it) }
         data.optString("auth_url").takeIf { it.isNotBlank() }?.let { proof += ProofItem("Authorization", it.take(1000)) }
         if (evidence.isNotBlank()) proof += ProofItem("Evidence", evidence.take(4000))
         return TaskResult(stage, summary, proof)

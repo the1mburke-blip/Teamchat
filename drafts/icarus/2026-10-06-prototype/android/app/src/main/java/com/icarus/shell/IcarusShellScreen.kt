@@ -38,6 +38,8 @@ fun IcarusShellScreen(
     onSubmit: () -> Unit,
     onCancel: () -> Unit,
     onNewTask: () -> Unit,
+    onGoogleRefresh: () -> Unit,
+    onGoogleAuthorize: (String) -> Unit,
     onRefresh: () -> Unit
 ) {
     Column(
@@ -64,6 +66,20 @@ fun IcarusShellScreen(
         }
 
 
+
+        if (state.provisioned) {
+            Text("Google connections", fontWeight = FontWeight.Bold)
+            Text(state.googleConnectionMessage)
+            Button(onClick = onGoogleRefresh) { Text("Refresh Google connections") }
+            state.googleConnections.forEach { connection ->
+                Text("${connection.service}: ${connection.state} ${connection.reason}")
+                if (connection.service in setOf("gmail", "drive") && connection.state in setOf("MISSING", "EXPIRED", "REVOKED")) {
+                    Button(onClick = { onGoogleAuthorize(connection.service) }) {
+                        Text(if (connection.state == "MISSING") "Authorize ${connection.service}" else "Reconnect ${connection.service}")
+                    }
+                }
+            }
+        }
 
         OutlinedTextField(value = state.problem, onValueChange = onProblemChanged, label = { Text("Task") }, placeholder = { Text("Describe the problem") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
 

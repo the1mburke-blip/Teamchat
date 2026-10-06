@@ -322,10 +322,12 @@ function composioResultSummary_(obj) {
 function taskForClient_(taskId) {
   const task=getTask_(taskId);
   if (!task) throw new Error('TASK_NOT_FOUND');
-  const c=composioState_(taskId) || {};
+  const c=googlePluginEvidence_(taskId);
   const out=Object.assign({},task);
   out.evidence_fingerprint=ownerEvidenceFingerprint_(taskId);
   out.owner_verification=ownerVerificationRecord_(task);
+  if (task.google_plugin_service) out.google_tool=task.google_plugin_tool || googlePluginRegistry_()[task.google_plugin_service].tool;
+  if (task.google_plugin_service) out.google_tool=task.google_plugin_tool || googlePluginRegistry_()[task.google_plugin_service].tool;
   if (c.auth_url) out.auth_url=String(c.auth_url);
   if (c.tool_slug) out.composio_tool=String(c.tool_slug);
   if (c.account_id) out.composio_account_id=String(c.account_id);

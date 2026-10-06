@@ -3,7 +3,7 @@ const dir=path.resolve(__dirname,'..','server-overlay');
 let calls=0,seq=0,reasonCalls=0,triggerSeq=0;
 const sheets={};
 function sheet(name,rows=[]){
- const s={rows,getLastRow(){return this.rows.length},getLastColumn(){return Math.max(...this.rows.map(r=>r.length),1)},appendRow(row){this.rows.push([...row])},getDataRange(){return {getValues:()=>this.rows.map(r=>[...r])}},getRange(r,c,n=1,m=1){return {getValues:()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>s.rows[r+i-1]?.[c+j-1]??'')),setValue(v){s.rows[r-1]??=[];s.rows[r-1][c-1]=v;return this}}}};
+ const s={rows,getMaxColumns(){return 100},insertColumnsAfter(){},getLastRow(){return this.rows.length},getLastColumn(){return Math.max(...this.rows.map(r=>r.length),1)},appendRow(row){this.rows.push([...row])},getDataRange(){return {getValues:()=>this.rows.map(r=>[...r])}},getRange(r,c,n=1,m=1){return {getValues:()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>s.rows[r+i-1]?.[c+j-1]??'')),setValue(v){s.rows[r-1]??=[];s.rows[r-1][c-1]=v;return this}}}};
  sheets[name]=s;return s;
 }
 sheet('TASK_QUEUE',[['task_id','status','source','objective','payload_ref','evidence_ref','created_utc']]);
@@ -16,6 +16,7 @@ const context={console,Date,JSON,Object,Array,String,Number,Math,Error,Boolean,I
 vm.createContext(context);
 // Existing StateStore/SignedAuth supplied as exact repository baseline fixtures by validation workflow.
 for(const name of ['StateStore.gs','SignedAuth.gs'])vm.runInContext(fs.readFileSync(path.join(__dirname,'fixtures',name),'utf8'),context,{filename:name});
+context.googlePluginService_=()=>'';context.googlePluginRegistry_=()=>({});context.googlePluginEvidence_=id=>context.composioState_(id)||{};
 for(const name of ['Code.gs','Runtime.gs','Provider.gs','ComposioV31.gs'])vm.runInContext(fs.readFileSync(path.join(dir,name),'utf8'),context,{filename:name});
 context.UrlFetchApp={fetch(){reasonCalls++;return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({candidates:[{content:{parts:[{functionCall:{name:'execute_authorized_task',args:{objective:'Check Gmail mailbox counts without modifying messages'}}}]}}]})}}};
 context.composioCreateSession_=id=>'trs_synthetic_'+id;
@@ -85,3 +86,5 @@ const envelope={v:1,deviceId:enrolled.deviceId,timestamp,nonce,payload:inner,sig
 const runtime=context.doPost({postData:{contents:JSON.stringify(envelope)}});assert(runtime.ok);assert.equal(runtime.data.runtimeVersion,'synthetic');
 assert(!JSON.stringify(sheets.LOGS.rows).includes(enrolled.token));assert(!JSON.stringify(sheets.LOGS.rows).includes('synthetic_google_id_token'));
 console.log('Enrollment negative gates and fresh owner token -> enrolled device -> signed runtime readback completed with mocked Google HTTP only; no physical Google consent or live device evidence.');
+
+module.exports={context,sheets,props,enrolled,request,cache};

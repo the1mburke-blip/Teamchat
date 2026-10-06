@@ -16,7 +16,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Deterministic server integration tests
-        run: node drafts/icarus/2026-10-06-prototype/tests/runtime.test.cjs
+        run: node drafts/icarus/2026-10-06-prototype/tests/google-plugin.test.cjs
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
