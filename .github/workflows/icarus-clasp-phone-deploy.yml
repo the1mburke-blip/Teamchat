@@ -1,10 +1,6 @@
 name: Icarus phone-only clasp deploy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/icarus-clasp-phone-deploy.yml'
   issue_comment:
     types: [created]
 
@@ -14,7 +10,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' || (github.event.issue.number == 55 && github.event.comment.body == 'ICARUS_CLASP_PHONE_DEPLOY_RUN' && github.event.comment.author_association == 'OWNER') }}
+    if: ${{ github.event.issue.number == 55 && github.event.comment.body == 'ICARUS_CLASP_PHONE_DEPLOY_RUN' && github.event.comment.author_association == 'OWNER' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -47,6 +43,8 @@ jobs:
           openssl rsa -pubout -in /tmp/icarus_oauth_private.pem -out /tmp/icarus_oauth_public.pem >/dev/null 2>&1
           python <<'PY'
           import os, re, time, json, base64, subprocess, pexpect, sys
+          from cryptography.hazmat.primitives import serialization, hashes
+          from cryptography.hazmat.primitives.asymmetric import padding
           repo=os.environ["REPO"]; issue=os.environ["ISSUE"]
           child=pexpect.spawn("clasp", ["login","--no-localhost","--user","icarus-phone"], encoding="utf-8", timeout=120)
           auth_url=None
@@ -74,7 +72,7 @@ jobs:
               f"RUN_ID: {os.environ.get('GITHUB_RUN_ID','')}\\n"
               f"AUTH_URL: {auth_url}\\n"
               f"PUBLIC_KEY_B64: {pub64}\\n"
-              f"INSTRUCTION: Open AUTH_URL on the phone. After Google redirects to the localhost page, copy the FULL address-bar URL back to ChatGPT. Do not post it publicly.\\n"
+              f"INSTRUCTION: Open AUTH_URL on the phone. After Google redirects to localhost, copy the FULL address-bar URL back to ChatGPT. ChatGPT must encrypt it in RSA-OAEP-SHA256 chunks of at most 180 bytes joined by dots; never post plaintext publicly.\\n"
           )
           subprocess.run(["gh","api",f"repos/{repo}/issues/{issue}/comments","-f",f"body={body}"],check=True,stdout=subprocess.DEVNULL)
           marker=f"[ICARUS_CLASP_OAUTH_CIPHERTEXT:{os.environ.get('GITHUB_RUN_ID','')}]"
@@ -92,10 +90,22 @@ jobs:
           if not encrypted:
               subprocess.run(["gh","api",f"repos/{repo}/issues/{issue}/comments","-f","body=[ICARUS_CLASP_PHONE_DEPLOY] STATUS: BLOCKED — encrypted OAuth callback not received before timeout."],check=True,stdout=subprocess.DEVNULL)
               sys.exit(3)
-          open("/tmp/cipher.b64","w").write(encrypted)
-          subprocess.run("base64 -d /tmp/cipher.b64 > /tmp/cipher.bin",shell=True,check=True)
-          subprocess.run("openssl pkeyutl -decrypt -inkey /tmp/icarus_oauth_private.pem -in /tmp/cipher.bin -out /tmp/callback.txt -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256",shell=True,check=True)
-          callback=open("/tmp/callback.txt").read().strip()
+          parts=[p for p in encrypted.split(".") if p]
+          if not parts:
+              print("EMPTY_CIPHERTEXT")
+              sys.exit(5)
+          private_key=serialization.load_pem_private_key(open("/tmp/icarus_oauth_private.pem","rb").read(),password=None)
+          callback_bytes=b""
+          for part in parts:
+              callback_bytes += private_key.decrypt(
+                  base64.b64decode(part),
+                  padding.OAEP(
+                      mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                      algorithm=hashes.SHA256(),
+                      label=None,
+                  ),
+              )
+          callback=callback_bytes.decode("utf-8").strip()
           child.sendline(callback)
           child.expect(pexpect.EOF, timeout=120)
           rc=child.exitstatus
