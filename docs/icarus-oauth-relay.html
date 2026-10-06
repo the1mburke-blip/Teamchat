@@ -1,0 +1,60 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Icarus Google Auth Relay</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:760px;margin:32px auto;padding:0 18px;line-height:1.45}
+button,a{font-size:1rem;padding:12px 14px;margin:6px 0;display:inline-block}
+textarea{width:100%;min-height:120px;font:13px monospace}
+.ok{font-weight:700}.warn{font-weight:700}
+</style>
+<h1>Icarus Google Auth Relay</h1>
+<p>This page encrypts the Google localhost callback <strong>inside this browser</strong>. Callback plaintext is never uploaded by this page.</p>
+<p id="status">Loading the current #55 authorization request…</p>
+<p><a id="auth" hidden>1. Authorize Google</a></p>
+<label>2. After Google redirects to localhost, paste the full localhost URL here:</label>
+<textarea id="callback" autocomplete="off" spellcheck="false"></textarea>
+<p><button id="encrypt" disabled>3. Encrypt locally</button></p>
+<label>4. Copy this ciphertext-only issue comment:</label>
+<textarea id="out" readonly></textarea>
+<p><button id="copy" disabled>Copy ciphertext</button> <a href="https://github.com/the1mburke-blip/Teamchat/issues/55" target="_blank" rel="noopener">Open Issue #55</a></p>
+<script>
+let runId="", publicKeyB64="";
+const statusEl=document.getElementById("status"), auth=document.getElementById("auth");
+function b64ToBytes(s){const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function bytesToB64(a){let s="";for(const b of new Uint8Array(a))s+=String.fromCharCode(b);return btoa(s)}
+async function load(){
+  const r=await fetch("https://api.github.com/repos/the1mburke-blip/Teamchat/issues/55/comments?per_page=100",{cache:"no-store"});
+  if(!r.ok) throw new Error("GitHub read failed");
+  const comments=await r.json();
+  const c=[...comments].reverse().find(x=>String(x.body||"").includes("[ICARUS_CLASP_PHONE_AUTH]")&&String(x.body||"").includes("STATUS: OWNER_AUTH_REQUIRED"));
+  if(!c) throw new Error("No active owner-auth request found");
+  const body=c.body;
+  runId=(body.match(/RUN_ID:\s*(\d+)/)||[])[1]||"";
+  const authUrl=(body.match(/AUTH_URL:\s*(https:\/\/accounts\.google\.com\/[^\s]+)/)||[])[1]||"";
+  publicKeyB64=(body.match(/PUBLIC_KEY_B64:\s*([A-Za-z0-9+/=]+)/)||[])[1]||"";
+  if(!runId||!authUrl||!publicKeyB64) throw new Error("Auth request incomplete");
+  auth.href=authUrl;auth.hidden=false;auth.textContent="1. Authorize Google — run "+runId;
+  document.getElementById("encrypt").disabled=false;
+  statusEl.textContent="Ready for run "+runId+".";
+}
+async function encrypt(){
+  const callback=document.getElementById("callback").value.trim();
+  if(!callback.startsWith("http://localhost:8888/")) throw new Error("Expected the full localhost:8888 callback URL");
+  const pem=new TextDecoder().decode(b64ToBytes(publicKeyB64));
+  const der=b64ToBytes(pem.replace(/-----[^-]+-----/g,"").replace(/\s+/g,""));
+  const key=await crypto.subtle.importKey("spki",der,{name:"RSA-OAEP",hash:"SHA-256"},false,["encrypt"]);
+  const bytes=new TextEncoder().encode(callback), parts=[];
+  for(let i=0;i<bytes.length;i+=180){
+    const ct=await crypto.subtle.encrypt({name:"RSA-OAEP"},key,bytes.slice(i,i+180));
+    parts.push(bytesToB64(ct));
+  }
+  document.getElementById("out").value="[ICARUS_CLASP_OAUTH_CIPHERTEXT:"+runId+"]"+parts.join(".");
+  document.getElementById("copy").disabled=false;
+  document.getElementById("callback").value="";
+  statusEl.textContent="Encrypted locally. Only ciphertext is in the output box.";
+}
+document.getElementById("encrypt").onclick=()=>encrypt().catch(e=>statusEl.textContent="ERROR: "+e.message);
+document.getElementById("copy").onclick=async()=>{await navigator.clipboard.writeText(document.getElementById("out").value);statusEl.textContent="Ciphertext copied. Paste it as a new comment on Issue #55.";};
+load().catch(e=>statusEl.textContent="ERROR: "+e.message);
+</script>
