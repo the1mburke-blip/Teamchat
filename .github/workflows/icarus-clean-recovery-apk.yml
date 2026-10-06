@@ -1,0 +1,83 @@
+name: Icarus clean recovery APK
+
+on:
+  push:
+    branches:
+      - repo-worker/icarus-clean-recovery-apk-58
+    paths:
+      - "drafts/icarus/2026-10-05-lightweight-shell/compile-ready/**"
+      - ".github/workflows/icarus-clean-recovery-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "9.3.1"
+
+      - name: Install Android SDK API 37
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-37" "build-tools;36.0.0"
+
+      - name: Static recovery guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="drafts/icarus/2026-10-05-lightweight-shell/compile-ready"
+          grep -q 'applicationId = "com.aistudio.icarus.appsscript"' "$ROOT/app/build.gradle.kts"
+          grep -q 'ICARUS_QUEUE_V1' "$ROOT/app/src/main/java/com/icarus/shell/IcarusApiClient.kt"
+          grep -q 'No pairing code is required' "$ROOT/app/src/main/java/com/icarus/shell/IcarusShellScreen.kt"
+          grep -q 'fun resetUi' "$ROOT/app/src/main/java/com/icarus/shell/IcarusCore.kt"
+          test "$(grep -R --exclude='RecoveryStore.kt' -c '0lk5RZU92fAPW7YIdimImum5IzAmH19blNW0tideK6I' "$ROOT" || true)" = "0"
+
+      - name: Compile APK
+        working-directory: drafts/icarus/2026-10-05-lightweight-shell/compile-ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle --no-daemon :app:assembleDebug
+
+      - name: Verify APK identity
+        id: verify
+        working-directory: drafts/icarus/2026-10-05-lightweight-shell/compile-ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          AAPT="$SDK/build-tools/36.0.0/aapt"
+          "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
+          grep -q "package: name='com.aistudio.icarus.appsscript'" /tmp/badging.txt
+          SHA="$(sha256sum "$APK" | awk '{print $1}')"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "$SHA  app-debug.apk" > APK_SHA256.txt
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: Icarus-clean-recovery-0.5.0
+          path: |
+            drafts/icarus/2026-10-05-lightweight-shell/compile-ready/app/build/outputs/apk/debug/app-debug.apk
+            drafts/icarus/2026-10-05-lightweight-shell/compile-ready/APK_SHA256.txt
+          if-no-files-found: error
