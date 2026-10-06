@@ -14,13 +14,7 @@ permissions:
 
 jobs:
   deploy:
-    if: >
-      github.event_name == 'push' ||
-      (
-        github.event.issue.number == 55 &&
-        github.event.comment.body == 'ICARUS_CLASP_PHONE_DEPLOY_RUN' &&
-        github.event.comment.author_association == 'OWNER'
-      )
+    if: ${{ github.event_name == 'push' || (github.event.issue.number == 55 && github.event.comment.body == 'ICARUS_CLASP_PHONE_DEPLOY_RUN' && github.event.comment.author_association == 'OWNER') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -74,13 +68,14 @@ jobs:
               sys.exit(2)
           pub=open("/tmp/icarus_oauth_public.pem","rb").read()
           pub64=base64.b64encode(pub).decode()
-          body=f"""[ICARUS_CLASP_PHONE_AUTH]
-STATUS: OWNER_AUTH_REQUIRED
-RUN_ID: {os.environ.get('GITHUB_RUN_ID','')}
-AUTH_URL: {auth_url}
-PUBLIC_KEY_B64: {pub64}
-INSTRUCTION: Open AUTH_URL on the phone. After Google redirects to the localhost page, copy the FULL address-bar URL back to ChatGPT. Do not post it publicly.
-"""
+          body=(
+              f"[ICARUS_CLASP_PHONE_AUTH]\\n"
+              f"STATUS: OWNER_AUTH_REQUIRED\\n"
+              f"RUN_ID: {os.environ.get('GITHUB_RUN_ID','')}\\n"
+              f"AUTH_URL: {auth_url}\\n"
+              f"PUBLIC_KEY_B64: {pub64}\\n"
+              f"INSTRUCTION: Open AUTH_URL on the phone. After Google redirects to the localhost page, copy the FULL address-bar URL back to ChatGPT. Do not post it publicly.\\n"
+          )
           subprocess.run(["gh","api",f"repos/{repo}/issues/{issue}/comments","-f",f"body={body}"],check=True,stdout=subprocess.DEVNULL)
           marker=f"[ICARUS_CLASP_OAUTH_CIPHERTEXT:{os.environ.get('GITHUB_RUN_ID','')}]"
           encrypted=None
@@ -146,17 +141,18 @@ INSTRUCTION: Open AUTH_URL on the phone. After Google redirects to the localhost
           test "$(sha256sum "$RUNTIME_RB" | awk '{print $1}')" = "$CAND_RUNTIME_SHA"
 
           EMAIL="$(echo "$AUTH_JSON" | jq -r '.email')"
-          BODY="[ICARUS_CLASP_PHONE_DEPLOY]
-STATUS: READY_FOR_OWNER_STANDALONE_CANARY
-RUN_ID: $GITHUB_RUN_ID
-EXECUTOR: GitHub-hosted repo worker via clasp 3.2.0
-SCRIPT_ID: $SCRIPT_ID
-DEPLOYMENT_ID: $DEPLOYMENT_ID
-AUTHORIZED_USER: $EMAIL
-CODE_SHA256: $CAND_CODE_SHA
-RUNTIME_SHA256: $CAND_RUNTIME_SHA
-SOURCE_READBACK: MATCH
-ANDROID/PAIRING/SIGNING: UNTOUCHED
-COST: €0
-PASS: NOT CLAIMED — requires fresh standalone Redmi canary with laptop/Codex/ADB absent."
+          BODY="$(printf '%s\\n' \
+            '[ICARUS_CLASP_PHONE_DEPLOY]' \
+            'STATUS: READY_FOR_OWNER_STANDALONE_CANARY' \
+            "RUN_ID: $GITHUB_RUN_ID" \
+            'EXECUTOR: GitHub-hosted repo worker via clasp 3.2.0' \
+            "SCRIPT_ID: $SCRIPT_ID" \
+            "DEPLOYMENT_ID: $DEPLOYMENT_ID" \
+            "AUTHORIZED_USER: $EMAIL" \
+            "CODE_SHA256: $CAND_CODE_SHA" \
+            "RUNTIME_SHA256: $CAND_RUNTIME_SHA" \
+            'SOURCE_READBACK: MATCH' \
+            'ANDROID/PAIRING/SIGNING: UNTOUCHED' \
+            'COST: €0' \
+            'PASS: NOT CLAIMED — requires fresh standalone Redmi canary with laptop/Codex/ADB absent.')"
           gh api "repos/$REPO/issues/$ISSUE/comments" -f "body=$BODY" >/dev/null
