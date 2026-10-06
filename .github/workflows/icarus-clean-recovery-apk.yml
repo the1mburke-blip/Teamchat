@@ -35,7 +35,7 @@ jobs:
         with:
           gradle-version: "9.3.1"
 
-      - name: Install Android SDK API 37
+      - name: Install Android SDK API 36
         shell: bash
         run: |
           set -euo pipefail
@@ -43,7 +43,7 @@ jobs:
           SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "platforms;android-37" "build-tools;36.0.0"
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Static recovery guards
         shell: bash
