@@ -5,7 +5,7 @@ import android.content.Context
 class RecoveryStore(context: Context) {
     companion object {
         const val DEFAULT_ENDPOINT = "https://script.google.com/macros/s/AKfycbw7k-w7MVQt81U8vB3tJfLNsa3vvglvl1ANR2eIzsx2YJMJeifn5DrbnVWVy7rxocwJXw/exec"
-        const val DEVICE_ID = "99d0944a-c6fb-49e2-95e8-a295ea3349f5"
+        const val DEVICE_ID = "8f64655c-9eff-43fd-aba6-c624073995ca"
     }
 
     private val prefs = context.getSharedPreferences("icarus_recovery_v1", Context.MODE_PRIVATE)
