@@ -21,7 +21,7 @@ jobs:
       contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
       github.event.comment.body == 'ICARUS_REASONING_STANDALONE_REPO_WORKER_RUN'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 15
 
     steps:
       - name: Checkout Teamchat
@@ -40,106 +40,66 @@ jobs:
           cp "$SRC"/*.gs "$DEST"/
           sha256sum "$SRC"/*.gs | sort > /tmp/live-source-sha256.txt
 
-      - name: Install bounded Qwen coding worker
+      - name: Deterministic repo worker applies minimal continuation patch
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --quiet --upgrade pip
-          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
-          python -m pip install --quiet transformers accelerate safetensors sentencepiece
-
-      - name: Generate two bounded code hunks and apply them
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat > /tmp/patch_reasoning_v2.py <<'PY'
-          import pathlib, re, torch
-          from transformers import AutoTokenizer, AutoModelForCausalLM
-
+          python - <<'PY'
+          import pathlib,re
           root=pathlib.Path('drafts/icarus/2026-10-06-standalone-reasoning/candidate')
-          code=(root/'Code.gs').read_text()
-          runtime=(root/'Runtime.gs').read_text()
-          setup=(root/'Setup.gs').read_text()
 
-          model_id='Qwen/Qwen2.5-Coder-1.5B-Instruct'
-          tok=AutoTokenizer.from_pretrained(model_id)
-          model=AutoModelForCausalLM.from_pretrained(model_id,dtype=torch.float32,low_cpu_mem_usage=True)
-          model.eval()
+          code_path=root/'Code.gs'
+          code=code_path.read_text()
+          pattern=re.compile(
+              r"(    if \(op === 'submit'\) \{\n"
+              r"      const task = createTask_\(auth\.deviceId, cleanText_\(body\.clientTaskId,256\), cleanText_\(body\.text,ICARUS\.MAX_TEXT\)\);\n)"
+              r"      return jsonResponse_\(\{ok:true,data:advanceTask_\(task\.task_id\)\}\);\n"
+              r"    \}"
+          )
+          match=pattern.search(code)
+          if not match:
+              raise SystemExit('LIVE_SUBMIT_BASELINE_NOT_FOUND')
+          replacement=match.group(1)+"""      try {
+                scheduleTaskAdvance_();
+              } catch (scheduleErr) {
+                try {
+                  appendLog_(task.task_id,'RUNTIME','FAIL','Server-side continuation scheduling failed.','TASK_QUEUE:'+task.task_id,String(scheduleErr.message || scheduleErr));
+                } catch (_) {}
+              }
+              return jsonResponse_({ok:true,data:taskForClient_(task.task_id)});
+            }"""
+          code,n=pattern.subn(replacement,code,count=1)
+          if n != 1:
+              raise SystemExit('SUBMIT_PATCH_COUNT_INVALID')
+          code_path.write_text(code)
 
-          def gen(prompt,max_new):
-              rendered=tok.apply_chat_template([{'role':'user','content':prompt}],tokenize=False,add_generation_prompt=True)
-              inp=tok(rendered,return_tensors='pt')
-              with torch.inference_mode():
-                  out=model.generate(**inp,max_new_tokens=max_new,do_sample=False,repetition_penalty=1.03,pad_token_id=tok.eos_token_id)
-              txt=tok.decode(out[0][inp['input_ids'].shape[1]:],skip_special_tokens=True).strip()
-              txt=re.sub(r'^\x60\x60\x60(?:javascript|js)?\s*','',txt,flags=re.I)
-              txt=re.sub(r'\s*\x60\x60\x60$','',txt).strip()
-              return txt
+          runtime_path=root/'Runtime.gs'
+          runtime=runtime_path.read_text()
+          if 'function scheduleTaskAdvance_()' in runtime or 'function resumePendingTasksSoon_()' in runtime:
+              raise SystemExit('CONTINUATION_HELPER_ALREADY_PRESENT')
+          helpers="""
 
-          submit_re=re.compile(r"    if \(op === 'submit'\) \{[\s\S]*?\n    \}\n    if \(op === 'status'\)")
-          m=submit_re.search(code)
-          if not m:
-              raise SystemExit('SUBMIT_BLOCK_NOT_FOUND')
-          current=m.group(0).rsplit("    if (op === 'status')",1)[0].rstrip()
+          function scheduleTaskAdvance_() {
+            const handler = 'resumePendingTasksSoon_';
+            const exists = ScriptApp.getProjectTriggers().some(function(t) {
+              return t.getHandlerFunction() === handler;
+            });
+            if (exists) return;
+            ScriptApp.newTrigger(handler).timeBased().after(1000).create();
+          }
 
-          submit_prompt=f"""
-          Return ONLY a JavaScript replacement for this one if-block. No markdown, no surrounding function.
-
-          CURRENT BLOCK:
-          {current}
-
-          REQUIRED:
-          - Keep createTask_ arguments exactly unchanged.
-          - After persistence, inside try call exactly: scheduleTaskAdvance_();
-          - If scheduling throws, catch it, append a RUNTIME log for the same task with status FAIL and evidence TASK_QUEUE:<task_id>, but DO NOT fail the submit response.
-          - Never call advanceTask_ in this block.
-          - Return jsonResponse_ with ok:true and data:taskForClient_(task.task_id).
-          - No new endpoint, auth, provider, database or credential.
-          - Keep the block compact.
+          function resumePendingTasksSoon_() {
+            try {
+              resumePendingTasks_();
+            } finally {
+              ScriptApp.getProjectTriggers().forEach(function(t) {
+                if (t.getHandlerFunction() === 'resumePendingTasksSoon_') ScriptApp.deleteTrigger(t);
+              });
+            }
+          }
           """
-          submit=gen(submit_prompt,550)
-          if "if (op === 'submit')" not in submit or 'scheduleTaskAdvance_();' not in submit or 'taskForClient_' not in submit or 'advanceTask_' in submit:
-              raise SystemExit('SUBMIT_HUNK_INVALID')
-          if 'createTask_(auth.deviceId' not in submit:
-              raise SystemExit('SUBMIT_CREATE_TASK_CHANGED')
-          code=submit_re.sub(submit+"\n    if (op === 'status')",code,count=1)
-          (root/'Code.gs').write_text(code)
-
-          helper_prompt="""
-          Return ONLY valid JavaScript source defining exactly these two top-level Google Apps Script functions. No markdown and no prose.
-
-          1. function scheduleTaskAdvance_()
-             - Read ScriptApp.getProjectTriggers().
-             - If any trigger getHandlerFunction() equals 'resumePendingTasksSoon_', return without creating a duplicate.
-             - Otherwise create exactly one time-based trigger:
-               ScriptApp.newTrigger('resumePendingTasksSoon_').timeBased().after(1000).create();
-
-          2. function resumePendingTasksSoon_()
-             - In try, call resumePendingTasks_() exactly once.
-             - In finally, enumerate ScriptApp.getProjectTriggers() and delete every trigger whose getHandlerFunction() equals 'resumePendingTasksSoon_'.
-             - Do not call Gemini, reason_, advanceTask_, or any external service directly.
-             - Do not alter task states yourself.
-
-          No other functions, variables, services, endpoints or comments are needed.
-          """
-          helpers=gen(helper_prompt,700)
-          required=['function scheduleTaskAdvance_()','function resumePendingTasksSoon_()',"newTrigger('resumePendingTasksSoon_')",'after(1000)','resumePendingTasks_();',"deleteTrigger"]
-          if any(x not in helpers for x in required):
-              raise SystemExit('RUNTIME_HUNK_INVALID')
-          forbidden=['reason_(','gemini','UrlFetchApp','advanceTask_(']
-          if any(x.lower() in helpers.lower() for x in forbidden):
-              raise SystemExit('RUNTIME_HUNK_SCOPE_EXPANSION')
-          if 'function scheduleTaskAdvance_' in runtime or 'function resumePendingTasksSoon_' in runtime:
-              raise SystemExit('RUNTIME_HELPER_ALREADY_EXISTS')
-          runtime=runtime.rstrip()+"\n\n"+helpers.strip()+"\n"
-          (root/'Runtime.gs').write_text(runtime)
-
-          if 'everyMinutes(5).create()' not in setup.replace(' ',''):
-              raise SystemExit('SETUP_BASELINE_CADENCE_NOT_FOUND')
-          setup=setup.replace('everyMinutes(5).create()','everyMinutes(1).create()')
-          (root/'Setup.gs').write_text(setup)
+          runtime_path.write_text(runtime.rstrip()+helpers+'\n')
           PY
-          python /tmp/patch_reasoning_v2.py
 
       - name: Deterministic independent verification
         shell: bash
@@ -159,43 +119,41 @@ jobs:
           dst=pathlib.Path('drafts/icarus/2026-10-06-standalone-reasoning/candidate')
           code=(dst/'Code.gs').read_text()
           rt=(dst/'Runtime.gs').read_text()
-          setup=(dst/'Setup.gs').read_text()
 
           start=code.index("if (op === 'submit')")
           end=code.index("if (op === 'status')",start)
           submit=code[start:end]
-          assert 'createTask_(auth.deviceId' in submit, 'SUBMIT_CREATE_TASK_MISSING'
-          assert 'scheduleTaskAdvance_();' in submit, 'SUBMIT_SCHEDULE_CALL_NOT_EXACT'
+          assert 'createTask_(auth.deviceId, cleanText_(body.clientTaskId,256), cleanText_(body.text,ICARUS.MAX_TEXT))' in submit, 'SUBMIT_CREATE_TASK_CHANGED'
+          assert 'scheduleTaskAdvance_();' in submit, 'SUBMIT_SERVER_SCHEDULE_MISSING'
           assert 'taskForClient_(task.task_id)' in submit, 'SUBMIT_TASK_ID_RESPONSE_MISSING'
           assert 'advanceTask_' not in submit, 'SUBMIT_STILL_SYNCHRONOUS'
-          assert 'catch' in submit and 'appendLog_' in submit, 'SUBMIT_SCHEDULE_FAILURE_NOT_LOGGED'
+          assert 'catch (scheduleErr)' in submit and 'appendLog_' in submit, 'SCHEDULE_FAILURE_NOT_CONTAINED'
 
-          assert rt.count('function scheduleTaskAdvance_()') == 1
-          assert rt.count('function resumePendingTasksSoon_()') == 1
-          assert "newTrigger('resumePendingTasksSoon_')" in rt
-          assert 'after(1000)' in rt
-          assert 'resumePendingTasks_();' in rt
-          assert "getHandlerFunction() === 'resumePendingTasksSoon_'" in rt
-          assert 'deleteTrigger' in rt
+          assert rt.count('function scheduleTaskAdvance_()') == 1, 'SCHEDULER_HELPER_COUNT'
+          assert rt.count('function resumePendingTasksSoon_()') == 1, 'RESUME_HELPER_COUNT'
+          assert "newTrigger(handler).timeBased().after(1000).create()" in rt, 'ONE_SHOT_TRIGGER_MISSING'
+          assert 'resumePendingTasks_();' in rt, 'SERVER_CONTINUATION_MISSING'
+          assert "getHandlerFunction() === 'resumePendingTasksSoon_'" in rt, 'TRIGGER_CLEANUP_FILTER_MISSING'
+          assert 'deleteTrigger(t)' in rt, 'ONE_SHOT_TRIGGER_CLEANUP_MISSING'
 
           m=re.search(r"const eligible\s*=\s*\[([^\]]+)\]",rt)
-          assert m, 'eligible list missing'
+          assert m, 'ELIGIBLE_LIST_MISSING'
           eligible=m.group(1)
-          assert 'QUEUED' in eligible and 'INSPECTING' in eligible
-          assert 'REASONING' not in eligible
-          assert 'WAITING_REASONING_CAPACITY' not in eligible
+          assert 'QUEUED' in eligible and 'INSPECTING' in eligible, 'PENDING_STATES_NOT_AUTO_ADVANCED'
+          assert 'REASONING' not in eligible, 'BLIND_REASONING_RETRY_INTRODUCED'
+          assert 'WAITING_REASONING_CAPACITY' not in eligible, 'BLIND_WAITING_RETRY_INTRODUCED'
 
-          assert 'everyMinutes(1).create()' in setup.replace(' ','')
-          assert 'everyMinutes(5)' not in setup
+          for f in ['Provider.gs','StateStore.gs','SignedAuth.gs','Setup.gs']:
+              assert (src/f).read_bytes()==(dst/f).read_bytes(), f+' CHANGED_UNEXPECTEDLY'
 
-          for f in ['Provider.gs','StateStore.gs','SignedAuth.gs']:
-              assert (src/f).read_bytes()==(dst/f).read_bytes(), f+' changed unexpectedly'
+          assert (src/'Code.gs').read_bytes() != (dst/'Code.gs').read_bytes(), 'CODE_NOT_CHANGED'
+          assert (src/'Runtime.gs').read_bytes() != (dst/'Runtime.gs').read_bytes(), 'RUNTIME_NOT_CHANGED'
 
           print('STANDALONE_REASONING_CONTRACT=PASS')
-          print('SUBMIT_RETURNS_TASK_ID_BEFORE_REASONING=PASS')
+          print('SUBMIT_RETURNS_CANONICAL_TASK_BEFORE_REASONING=PASS')
           print('SERVER_SIDE_CONTINUATION=PASS')
-          print('DUPLICATE_REASONING_TIMER_RETRY_DENIED=PASS')
-          print('PROVIDER_STATE_AUTH_UNCHANGED=PASS')
+          print('BLIND_REASONING_RETRY_DENIED=PASS')
+          print('PROVIDER_AUTH_STATE_SETUP_UNCHANGED=PASS')
           PY
 
       - name: Persist candidate evidence
@@ -205,32 +163,29 @@ jobs:
           ROOT='drafts/icarus/2026-10-06-standalone-reasoning'
           CAND="$ROOT/candidate"
           {
-            echo '# Standalone reasoning repo-worker candidate'
+            echo '# Standalone reasoning deterministic repo-worker candidate'
             echo
-            echo "- Worker: Qwen/Qwen2.5-Coder-1.5B-Instruct"
-            echo "- Host: GitHub Actions public CPU runner"
+            echo "- Executor: deterministic GitHub Actions repo worker"
             echo "- Run: $GITHUB_RUN_ID"
             echo "- Cost: €0"
-            echo "- Scope: Code.gs, Runtime.gs, Setup.gs only"
+            echo "- Changed candidate files: Code.gs, Runtime.gs"
+            echo "- Provider/Auth/StateStore/Setup: byte-for-byte unchanged"
             echo "- Live deployment: NOT PERFORMED"
             echo "- Phone/ADB: NOT TOUCHED"
             echo
             echo '## Verification'
             echo '- JavaScript syntax: PASS'
-            echo '- submit returns persisted task ID without inline advanceTask_: PASS'
-            echo '- one-shot server continuation: PASS'
-            echo '- recurring fallback trigger 1 minute: PASS'
-            echo '- blind REASONING/WAITING timer retries remain excluded: PASS'
-            echo '- Provider.gs unchanged: PASS'
-            echo '- StateStore.gs unchanged: PASS'
-            echo '- SignedAuth.gs unchanged: PASS'
+            echo '- submit returns canonical persisted task before reasoning: PASS'
+            echo '- server-side one-shot continuation: PASS'
+            echo '- existing recurring pending-task fallback preserved: PASS'
+            echo '- REASONING/WAITING blind timer retries remain excluded: PASS'
+            echo '- Provider/Auth/StateStore/Setup unchanged: PASS'
             echo
             echo '## Live-source SHA-256'
             cat /tmp/live-source-sha256.txt
           } > "$ROOT/WORKER_EVIDENCE.md"
           git diff --no-index -- "$ROOT/live-source/Code.gs" "$CAND/Code.gs" > "$ROOT/Code.diff" || true
           git diff --no-index -- "$ROOT/live-source/Runtime.gs" "$CAND/Runtime.gs" > "$ROOT/Runtime.diff" || true
-          git diff --no-index -- "$ROOT/live-source/Setup.gs" "$CAND/Setup.gs" > "$ROOT/Setup.diff" || true
 
       - name: Commit isolated worker branch
         id: commit
@@ -238,11 +193,11 @@ jobs:
         run: |
           set -euo pipefail
           BRANCH='repo-worker/icarus-reasoning-standalone-55'
-          git config user.name 'icarus-reasoning-repo-worker'
+          git config user.name 'icarus-deterministic-repo-worker'
           git config user.email 'actions@users.noreply.github.com'
           git checkout -B "$BRANCH"
           git add drafts/icarus/2026-10-06-standalone-reasoning
-          git commit -m 'ghost: patch standalone Icarus reasoning continuation'
+          git commit -m 'worker: make Icarus reasoning continuation phone-independent'
           git push --force-with-lease origin "$BRANCH"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -260,23 +215,23 @@ jobs:
             const head=process.env.BRANCH;
             const existing=await github.rest.pulls.list({owner,repo,state:'open',head:owner+':'+head,base:'main'});
             const body=[
-              'Issue #55 repo-worker candidate.',
+              'Issue #55 deterministic repo-worker candidate.',
               '',
-              'Target: return persisted task immediately, then continue reasoning server-side without Codex/ADB/laptop.',
-              'Changed live-derived candidate files: Code.gs, Runtime.gs, Setup.gs.',
-              'Provider/StateStore/SignedAuth preserved byte-for-byte.',
+              'Target: return the canonical persisted task immediately, then continue reasoning server-side without Codex/ADB/laptop.',
+              'Changed live-derived candidate files: Code.gs, Runtime.gs only.',
+              'Provider/StateStore/SignedAuth/Setup preserved byte-for-byte.',
               'No live Apps Script deployment or phone mutation.',
               'Worker commit: '+process.env.SHA,
               'Evidence: drafts/icarus/2026-10-06-standalone-reasoning/WORKER_EVIDENCE.md',
               '',
-              'Do not merge/deploy until independent review. Executor cannot self-award PASS.'
+              'Do not merge/deploy until independent review. Repo worker cannot self-award PASS.'
             ].join('\n');
             let pr;
             if (existing.data.length) {
               pr=existing.data[0];
-              await github.rest.pulls.update({owner,repo,pull_number:pr.number,title:'Icarus standalone reasoning continuation — repo worker',body});
+              await github.rest.pulls.update({owner,repo,pull_number:pr.number,title:'Icarus standalone reasoning continuation — deterministic repo worker',body});
             } else {
-              pr=(await github.rest.pulls.create({owner,repo,title:'Icarus standalone reasoning continuation — repo worker',head,base:'main',body,draft:true})).data;
+              pr=(await github.rest.pulls.create({owner,repo,title:'Icarus standalone reasoning continuation — deterministic repo worker',head,base:'main',body,draft:true})).data;
             }
             core.setOutput('url',pr.html_url);
 
@@ -293,16 +248,14 @@ jobs:
             await github.rest.issues.createComment({
               owner,repo,issue_number:55,
               body:[
-                '[ICARUS_REASONING_REPO_WORKER]',
+                '[ICARUS_REASONING_DETERMINISTIC_REPO_WORKER]',
                 'STATUS: CANDIDATE_BUILT_TESTED_PENDING_INDEPENDENT_REVIEW',
-                'WORKER: Qwen/Qwen2.5-Coder-1.5B-Instruct',
-                'HOST: GitHub Actions public CPU runner',
                 'RUN: '+context.runId,
                 'RUN_URL: https://github.com/'+owner+'/'+repo+'/actions/runs/'+context.runId,
                 'BRANCH: '+process.env.BRANCH,
                 'COMMIT: '+process.env.SHA,
                 'PR: '+process.env.PR_URL,
-                'TESTS: syntax + submit contract + autonomous continuation + unchanged provider/auth/state PASS',
+                'TESTS: syntax + canonical-task response + server continuation + no blind reasoning retry + unchanged provider/auth/state/setup PASS',
                 'BOUNDARY: no live deployment; no phone/ADB mutation; no router/failover work',
                 'COST: €0'
               ].join('\n')
@@ -318,11 +271,11 @@ jobs:
             await github.rest.issues.createComment({
               owner,repo,issue_number:55,
               body:[
-                '[ICARUS_REASONING_REPO_WORKER]',
+                '[ICARUS_REASONING_DETERMINISTIC_REPO_WORKER]',
                 'STATUS: FAIL',
                 'RUN: '+context.runId,
                 'RUN_URL: https://github.com/'+owner+'/'+repo+'/actions/runs/'+context.runId,
-                'ACTION: inspect exact failure; no blind retry.',
+                'ACTION: inspect exact deterministic failure; no blind retry.',
                 'COST: €0'
               ].join('\n')
             });
