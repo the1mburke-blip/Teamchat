@@ -1,4 +1,4 @@
-package com.icarus.shell
+package com.aistudio.icarus.appsscript
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,14 +18,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun IcarusShellScreen(
     state: IcarusUiState,
     onBackendUrlChanged: (String) -> Unit,
-    onPairingCodeChanged: (String) -> Unit,
-    onPair: () -> Unit,
+    onDeviceIdChanged: (String) -> Unit,
+    onRecoveryTokenChanged: (String) -> Unit,
+    onRecover: () -> Unit,
     onProblemChanged: (String) -> Unit,
     onVoiceToggle: () -> Unit,
     onSubmit: () -> Unit,
@@ -33,118 +35,48 @@ fun IcarusShellScreen(
     onNewTask: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(8.dp))
-        Text(
-            text = "ICARUS",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "State a problem. Icarus handles the execution behind this shell.",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Text("ICARUS", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text("State a problem. Icarus handles the execution behind this shell.", style = MaterialTheme.typography.bodyMedium)
 
         Text("Connection: ${state.connectionStatus}")
-        if (!state.paired) {
+        if (!state.provisioned) {
             OutlinedTextField(value = state.backendUrl, onValueChange = onBackendUrlChanged, label = { Text("Apps Script HTTPS endpoint") }, modifier = Modifier.fillMaxWidth(), enabled = !state.connecting)
-            OutlinedTextField(value = state.pairingCode, onValueChange = onPairingCodeChanged, label = { Text("One-time pairing code") }, visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), enabled = !state.connecting)
-            Button(onClick = onPair, enabled = !state.connecting) { Text("Pair") }
-        }
-        Button(
-            onClick = onVoiceToggle,
-            enabled = false,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-        ) {
-            Text("Voice input unavailable")
+            OutlinedTextField(value = state.deviceId, onValueChange = onDeviceIdChanged, label = { Text("Device ID") }, modifier = Modifier.fillMaxWidth(), enabled = !state.connecting)
+            OutlinedTextField(value = state.recoveryToken, onValueChange = onRecoveryTokenChanged, label = { Text("Recovery token") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), enabled = !state.connecting)
+            Button(onClick = onRecover, enabled = !state.connecting, modifier = Modifier.fillMaxWidth()) { Text("Recover connection") }
         }
 
-        OutlinedTextField(
-            value = state.problem,
-            onValueChange = onProblemChanged,
-            label = { Text("Text fallback") },
-            placeholder = { Text("Describe the problem") },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 3
-        )
+        Button(onClick = onVoiceToggle, enabled = false, modifier = Modifier.fillMaxWidth().height(72.dp)) { Text("Voice input unavailable") }
 
-        Button(
-            onClick = onSubmit,
-            enabled = state.paired && state.problem.isNotBlank() && !state.connecting && state.stage !in setOf(
-                TaskStage.SUBMITTING,
-                TaskStage.EXECUTING,
-                TaskStage.VERIFYING
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Submit")
-        }
+        OutlinedTextField(value = state.problem, onValueChange = onProblemChanged, label = { Text("Text fallback") }, placeholder = { Text("Describe the problem") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
 
-        Text(
-            text = "STATUS: ${state.stage.name}",
-            style = MaterialTheme.typography.titleMedium
-        )
+        val active = state.stage in setOf(TaskStage.SUBMITTING, TaskStage.EXECUTING)
+        Button(onClick = onSubmit, enabled = state.provisioned && state.problem.isNotBlank() && !state.connecting && !active, modifier = Modifier.fillMaxWidth()) { Text("Submit") }
 
-        if (state.result.isNotBlank()) {
-            Text(
-                text = state.result,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        Text("STATUS: ${state.stage.name}", style = MaterialTheme.typography.titleMedium)
+
+        if (state.result.isNotBlank()) Text(state.result, modifier = Modifier.fillMaxWidth())
 
         if (state.proof.isNotEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Proof", fontWeight = FontWeight.Bold)
-                state.proof.forEach { proof ->
-                    Text("${proof.label}: ${proof.value}")
-                }
+                state.proof.forEach { proof -> Text("${proof.label}: ${proof.value}") }
             }
         }
 
-        if (state.error.isNotBlank()) {
-            Text(
-                text = state.error,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        if (state.error.isNotBlank()) Text(state.error, color = MaterialTheme.colorScheme.error, modifier = Modifier.fillMaxWidth())
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (state.stage in setOf(
-                    TaskStage.SUBMITTING,
-                    TaskStage.EXECUTING,
-                    TaskStage.VERIFYING
-                )
-            ) {
-                Button(onClick = onCancel, modifier = Modifier.weight(1f)) {
-                    Text("Stop waiting")
-                }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (state.stage in setOf(TaskStage.SUBMITTING, TaskStage.EXECUTING)) {
+                Button(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Stop waiting") }
             }
-
-            if (state.stage in setOf(
-                    TaskStage.VERIFYING,
-                    TaskStage.PASS,
-                    TaskStage.FAILED,
-                    TaskStage.BLOCKED
-                )
-            ) {
-                Button(onClick = onNewTask, modifier = Modifier.weight(1f)) {
-                    Text("New Task")
-                }
+            if (state.stage in setOf(TaskStage.VERIFYING, TaskStage.PASS, TaskStage.FAILED, TaskStage.BLOCKED, TaskStage.OUTCOME_UNKNOWN)) {
+                Button(onClick = onNewTask, modifier = Modifier.weight(1f)) { Text("New Task") }
             }
         }
     }
