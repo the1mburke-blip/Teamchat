@@ -1,0 +1,21 @@
+diff --git a/drafts/icarus/2026-10-06-standalone-reasoning/live-source/Code.gs b/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Code.gs
+index 3296266..59ac757 100644
+--- a/drafts/icarus/2026-10-06-standalone-reasoning/live-source/Code.gs
++++ b/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Code.gs
+@@ -31,8 +31,15 @@ function doPost(e) {
+     if (op === 'claim' || op === 'result') throw new Error('PC_STAGED_DISCONNECTED');
+     if (op === 'submit') {
+       const task = createTask_(auth.deviceId, cleanText_(body.clientTaskId,256), cleanText_(body.text,ICARUS.MAX_TEXT));
+-      return jsonResponse_({ok:true,data:advanceTask_(task.task_id)});
++      try {
++      scheduleTaskAdvance_();
++    } catch (scheduleErr) {
++      try {
++        appendLog_(task.task_id,'RUNTIME','FAIL','Server-side continuation scheduling failed.','TASK_QUEUE:'+task.task_id,String(scheduleErr.message || scheduleErr));
++      } catch (_) {}
+     }
++    return jsonResponse_({ok:true,data:taskForClient_(task.task_id)});
++  }
+     if (op === 'status') {
+       const task = getTask_(cleanText_(body.taskId,256));
+       if (!task) throw new Error('TASK_NOT_FOUND');
