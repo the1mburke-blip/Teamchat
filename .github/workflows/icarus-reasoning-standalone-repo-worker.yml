@@ -90,7 +90,7 @@ jobs:
 
           REQUIRED:
           - Keep createTask_ arguments exactly unchanged.
-          - After persistence, try scheduleTaskAdvance_().
+          - After persistence, inside try call exactly: scheduleTaskAdvance_();
           - If scheduling throws, catch it, append a RUNTIME log for the same task with status FAIL and evidence TASK_QUEUE:<task_id>, but DO NOT fail the submit response.
           - Never call advanceTask_ in this block.
           - Return jsonResponse_ with ok:true and data:taskForClient_(task.task_id).
@@ -98,7 +98,7 @@ jobs:
           - Keep the block compact.
           """
           submit=gen(submit_prompt,550)
-          if "if (op === 'submit')" not in submit or 'scheduleTaskAdvance_' not in submit or 'taskForClient_' not in submit or 'advanceTask_' in submit:
+          if "if (op === 'submit')" not in submit or 'scheduleTaskAdvance_();' not in submit or 'taskForClient_' not in submit or 'advanceTask_' in submit:
               raise SystemExit('SUBMIT_HUNK_INVALID')
           if 'createTask_(auth.deviceId' not in submit:
               raise SystemExit('SUBMIT_CREATE_TASK_CHANGED')
@@ -164,11 +164,11 @@ jobs:
           start=code.index("if (op === 'submit')")
           end=code.index("if (op === 'status')",start)
           submit=code[start:end]
-          assert 'createTask_(auth.deviceId' in submit
-          assert 'scheduleTaskAdvance_()' in submit
-          assert 'taskForClient_(task.task_id)' in submit
-          assert 'advanceTask_' not in submit
-          assert 'catch' in submit and 'appendLog_' in submit
+          assert 'createTask_(auth.deviceId' in submit, 'SUBMIT_CREATE_TASK_MISSING'
+          assert 'scheduleTaskAdvance_();' in submit, 'SUBMIT_SCHEDULE_CALL_NOT_EXACT'
+          assert 'taskForClient_(task.task_id)' in submit, 'SUBMIT_TASK_ID_RESPONSE_MISSING'
+          assert 'advanceTask_' not in submit, 'SUBMIT_STILL_SYNCHRONOUS'
+          assert 'catch' in submit and 'appendLog_' in submit, 'SUBMIT_SCHEDULE_FAILURE_NOT_LOGGED'
 
           assert rt.count('function scheduleTaskAdvance_()') == 1
           assert rt.count('function resumePendingTasksSoon_()') == 1
