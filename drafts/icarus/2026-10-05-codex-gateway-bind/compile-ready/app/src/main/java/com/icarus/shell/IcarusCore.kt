@@ -1,11 +1,10 @@
-package com.icarus.shell
+package com.aistudio.icarus.appsscript
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.CancellationException
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,18 +17,13 @@ enum class TaskStage {
     VERIFYING,
     PASS,
     FAILED,
-    BLOCKED
+    BLOCKED,
+    OUTCOME_UNKNOWN
 }
 
 data class TaskRequest(val problem: String)
-
 data class ProofItem(val label: String, val value: String)
-
-data class TaskResult(
-    val stage: TaskStage,
-    val summary: String,
-    val proof: List<ProofItem> = emptyList()
-)
+data class TaskResult(val stage: TaskStage, val summary: String, val proof: List<ProofItem> = emptyList())
 
 interface ExecutionGateway {
     suspend fun submit(request: TaskRequest): TaskResult
@@ -38,9 +32,10 @@ interface ExecutionGateway {
 
 data class IcarusUiState(
     val backendUrl: String = "",
-    val pairingCode: String = "",
-    val paired: Boolean = false,
-    val connectionStatus: String = "Not paired",
+    val deviceId: String = "",
+    val recoveryToken: String = "",
+    val provisioned: Boolean = false,
+    val connectionStatus: String = "Recovery required",
     val connecting: Boolean = false,
     val problem: String = "",
     val listening: Boolean = false,
@@ -53,28 +48,63 @@ data class IcarusUiState(
 class IcarusViewModel(app: Application) : AndroidViewModel(app) {
     private val executionGateway = AppsScriptExecutionGateway(app)
     private var taskJob: Job? = null
-    private val _uiState = MutableStateFlow(IcarusUiState(backendUrl = executionGateway.backendUrl(), paired = executionGateway.isPaired(), connectionStatus = if (executionGateway.isPaired()) "Paired" else "Not paired"))
-    fun onBackendUrlChanged(value: String) { if (taskJob?.isActive != true) _uiState.value = _uiState.value.copy(backendUrl = value, paired = false) }
-    fun onPairingCodeChanged(value: String) { _uiState.value = _uiState.value.copy(pairingCode = value) }
-    fun pair() {
-        if (_uiState.value.connecting || taskJob?.isActive == true) return
-        val state = _uiState.value
-        val uri = runCatching { java.net.URI(state.backendUrl.trim()) }.getOrNull()
-        if (uri == null || uri.scheme != "https" || uri.host.isNullOrBlank() || state.pairingCode.isBlank()) {
-            _uiState.value = state.copy(error = "HTTPS endpoint and pairing code required."); return
+    private val _uiState = MutableStateFlow(
+        IcarusUiState(
+            backendUrl = executionGateway.backendUrl(),
+            deviceId = executionGateway.deviceId(),
+            provisioned = executionGateway.isProvisioned(),
+            connectionStatus = if (executionGateway.isProvisioned()) "Recovered" else "Recovery required"
+        )
+    )
+    val uiState: StateFlow<IcarusUiState> = _uiState.asStateFlow()
+
+    fun onBackendUrlChanged(value: String) {
+        if (!_uiState.value.provisioned && taskJob?.isActive != true) {
+            _uiState.value = _uiState.value.copy(backendUrl = value, error = "")
         }
-        _uiState.value = state.copy(connecting = true, error = "")
+    }
+
+    fun onDeviceIdChanged(value: String) {
+        if (!_uiState.value.provisioned && taskJob?.isActive != true) {
+            _uiState.value = _uiState.value.copy(deviceId = value, error = "")
+        }
+    }
+
+    fun onRecoveryTokenChanged(value: String) {
+        if (!_uiState.value.provisioned && taskJob?.isActive != true) {
+            _uiState.value = _uiState.value.copy(recoveryToken = value, error = "")
+        }
+    }
+
+    fun recover() {
+        if (_uiState.value.connecting || taskJob?.isActive == true || _uiState.value.provisioned) return
+        val state = _uiState.value
+        if (state.backendUrl.isBlank() || state.deviceId.isBlank() || state.recoveryToken.isBlank()) {
+            _uiState.value = state.copy(error = "Endpoint, device ID and recovery token are required.")
+            return
+        }
+        _uiState.value = state.copy(connecting = true, error = "", connectionStatus = "Verifying recovery...")
         viewModelScope.launch {
             try {
-                executionGateway.setBackendUrl(state.backendUrl)
-                executionGateway.pair(state.pairingCode.trim())
-                _uiState.value = _uiState.value.copy(paired = true, pairingCode = "", connecting = false, connectionStatus = "Paired")
+                val runtime = executionGateway.recover(state.backendUrl, state.deviceId, state.recoveryToken)
+                _uiState.value = _uiState.value.copy(
+                    provisioned = true,
+                    recoveryToken = "",
+                    connecting = false,
+                    connectionStatus = "Recovered - $runtime",
+                    error = ""
+                )
             } catch (_: Exception) {
-                _uiState.value = _uiState.value.copy(paired = executionGateway.isPaired(), connecting = false, error = "Pair failed; inspect gateway logs.")
+                _uiState.value = _uiState.value.copy(
+                    provisioned = false,
+                    recoveryToken = "",
+                    connecting = false,
+                    connectionStatus = "Recovery failed",
+                    error = "Recovery verification failed. Check the three recovery values before retrying."
+                )
             }
         }
     }
-    val uiState: StateFlow<IcarusUiState> = _uiState.asStateFlow()
 
     fun onProblemChanged(problem: String) {
         _uiState.value = _uiState.value.copy(problem = problem, error = "")
@@ -85,13 +115,12 @@ class IcarusViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun submit() {
-        if (taskJob?.isActive == true || !_uiState.value.paired || _uiState.value.connecting) return
+        if (taskJob?.isActive == true || !_uiState.value.provisioned || _uiState.value.connecting) return
         val problem = _uiState.value.problem.trim()
         if (problem.isEmpty()) {
             _uiState.value = _uiState.value.copy(error = "Describe the problem first.")
             return
         }
-
         _uiState.value = _uiState.value.copy(
             listening = false,
             stage = TaskStage.SUBMITTING,
@@ -99,21 +128,22 @@ class IcarusViewModel(app: Application) : AndroidViewModel(app) {
             proof = emptyList(),
             error = ""
         )
-
         taskJob = viewModelScope.launch {
             try {
                 val result = executionGateway.submit(TaskRequest(problem))
                 _uiState.value = _uiState.value.copy(
                     stage = result.stage,
                     result = result.summary,
-                    proof = result.proof
+                    proof = result.proof,
+                    error = ""
                 )
             } catch (t: CancellationException) {
                 throw t
-            } catch (_: Exception) {
+            } catch (t: Exception) {
                 _uiState.value = _uiState.value.copy(
                     stage = TaskStage.FAILED,
-                    error = "Gateway request failed; remote task outcome may be unknown. Inspect server logs before resubmitting."
+                    result = "",
+                    error = t.message ?: "Gateway request failed."
                 )
             }
         }
@@ -125,8 +155,8 @@ class IcarusViewModel(app: Application) : AndroidViewModel(app) {
             taskJob?.cancel()
             _uiState.value = _uiState.value.copy(
                 listening = false,
-                stage = TaskStage.IDLE,
-                result = "Stopped waiting locally; remote task may continue.",
+                stage = TaskStage.OUTCOME_UNKNOWN,
+                result = "Stopped waiting locally; the remote task may still continue.",
                 proof = emptyList(),
                 error = ""
             )
@@ -136,6 +166,11 @@ class IcarusViewModel(app: Application) : AndroidViewModel(app) {
     fun newTask() {
         if (taskJob?.isActive == true || _uiState.value.connecting) return
         val old = _uiState.value
-        _uiState.value = IcarusUiState(backendUrl = old.backendUrl, paired = old.paired, connectionStatus = old.connectionStatus)
+        _uiState.value = IcarusUiState(
+            backendUrl = old.backendUrl,
+            deviceId = old.deviceId,
+            provisioned = old.provisioned,
+            connectionStatus = old.connectionStatus
+        )
     }
 }
