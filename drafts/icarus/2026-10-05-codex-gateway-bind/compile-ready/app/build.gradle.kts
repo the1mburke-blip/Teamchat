@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.icarus.shell"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.aistudio.icarus.appsscript"
