@@ -1,5 +1,5 @@
 function reason_(task) {
-  const mode = PropertiesService.getScriptProperties().getProperty('PROVIDER_MODE') || 'NONE';
+  const mode = 'GEMINI_DIRECT'; // Recovery stage: Google reasoning is primary; provider.reason remains the kill switch.
   const genome = runtimeGenome_();
   const context = reasoningContext_(task);
   if (mode === 'NONE') {
