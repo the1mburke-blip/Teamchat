@@ -31,15 +31,15 @@ jobs:
           set -euo pipefail
           adb logcat -c
           adb install -r candidate-evidence/Icarus-real-gateway-debug.apk
-          adb shell am start -W -n com.icarus.shell/.MainActivity | tee candidate-evidence/launch.log
+          adb shell am start -W -n com.aistudio.icarus.appsscript/.MainActivity | tee candidate-evidence/launch.log
           adb shell uiautomator dump /sdcard/window.xml
           adb pull /sdcard/window.xml candidate-evidence/window.xml
           adb shell screencap -p /sdcard/screen.png
           adb pull /sdcard/screen.png candidate-evidence/screen.png
           adb logcat -d > candidate-evidence/logcat.txt
-          python -c 'import xml.etree.ElementTree as E; r=E.parse("candidate-evidence/window.xml"); texts=[n.attrib.get("text","") for n in r.iter()]; required=["ICARUS","Apps Script HTTPS endpoint","One-time pairing code","Voice input unavailable"]; assert all(any(x in t for t in texts) for x in required), texts; assert not any("DEMO:" in t for t in texts); submit=[n for n in r.iter() if n.attrib.get("text")=="Submit"]; parents={c:p for p in r.iter() for c in p}; buttons=[parents[n] for n in submit]; assert buttons and all(n.attrib.get("clickable")=="true" and n.attrib.get("enabled")=="false" for n in buttons), "Submit button must be disabled before pairing"; print("Connection UI, disabled Submit, demo absence verified")'
+          python -c 'import xml.etree.ElementTree as E; r=E.parse("candidate-evidence/window.xml"); texts=[n.attrib.get("text","") for n in r.iter()]; required=["ICARUS","Apps Script HTTPS endpoint","Device ID","Recovery token","Voice input unavailable"]; assert all(any(x in t for t in texts) for x in required), texts; assert not any("DEMO:" in t for t in texts); submit=[n for n in r.iter() if n.attrib.get("text")=="Submit"]; parents={c:p for p in r.iter() for c in p}; buttons=[parents[n] for n in submit]; assert buttons and all(n.attrib.get("clickable")=="true" and n.attrib.get("enabled")=="false" for n in buttons), "Submit button must be disabled before recovery"; print("Recovery UI, disabled Submit, demo absence verified")'
           ! grep -q 'FATAL EXCEPTION' candidate-evidence/logcat.txt
-          printf 'Compile and emulator connection UI verified. No live backend request or phone execution. Independent endpoint verification remains required.\n' > candidate-evidence/BOUNDARY.txt
+          printf 'Compile and emulator recovery UI verified. No live backend request or phone execution. Recovery credential registration and physical Redmi verification remain required.\n' > candidate-evidence/BOUNDARY.txt
           ICARUS_CHECK
       - uses: actions/setup-java@v5
         with:
@@ -73,7 +73,7 @@ jobs:
       - name: Preserve compiled APK before emulator
         uses: actions/upload-artifact@v7
         with:
-          name: Icarus-compiled-gateway-apk
+          name: Icarus-clean-recovery-apk
           path: candidate-evidence/
           if-no-files-found: error
           retention-days: 30
@@ -83,7 +83,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           test -e /dev/kvm
-      - name: Emulator connection screen verification
+      - name: Emulator recovery screen verification
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -103,7 +103,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Icarus-codex-real-gateway-candidate
+          name: Icarus-codex-clean-recovery-candidate
           path: candidate-evidence/
           if-no-files-found: error
           retention-days: 30
