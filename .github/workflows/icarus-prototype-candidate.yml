@@ -1,0 +1,48 @@
+name: Icarus isolated prototype validation
+on:
+  push:
+    branches: ['codex/icarus-prototype-20261006']
+    paths:
+      - 'drafts/icarus/2026-10-06-prototype/**'
+      - '.github/workflows/icarus-prototype-candidate.yml'
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Deterministic server integration tests
+        run: node drafts/icarus/2026-10-06-prototype/tests/runtime.test.cjs
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.3.1'
+      - name: Existing stable SDK
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+      - name: Compile unsigned inspection APK
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          (cd drafts/icarus/2026-10-06-prototype/android && gradle --no-daemon :app:assembleRelease) | tee out/build.log
+          cp drafts/icarus/2026-10-06-prototype/android/app/build/outputs/apk/release/app-release-unsigned.apk out/Icarus-prototype-unsigned.apk
+          sha256sum out/Icarus-prototype-unsigned.apk > out/apk.sha256
+          git rev-parse HEAD > out/source-commit.txt
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          "$SDK/build-tools/36.0.0/aapt2" dump badging out/Icarus-prototype-unsigned.apk > out/apk-badging.txt
+          grep -q "package: name='com.aistudio.icarus.appsscript'" out/apk-badging.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Icarus-prototype-UNSIGNED-inspection-only
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
