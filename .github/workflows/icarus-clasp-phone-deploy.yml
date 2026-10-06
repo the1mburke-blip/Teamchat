@@ -1,6 +1,10 @@
 name: Icarus phone-only clasp deploy
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/icarus-clasp-phone-deploy.yml'
   issue_comment:
     types: [created]
 
@@ -11,9 +15,12 @@ permissions:
 jobs:
   deploy:
     if: >
-      github.event.issue.number == 55 &&
-      github.event.comment.body == 'ICARUS_CLASP_PHONE_DEPLOY_RUN' &&
-      github.event.comment.author_association == 'OWNER'
+      github.event_name == 'push' ||
+      (
+        github.event.issue.number == 55 &&
+        github.event.comment.body == 'ICARUS_CLASP_PHONE_DEPLOY_RUN' &&
+        github.event.comment.author_association == 'OWNER'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
