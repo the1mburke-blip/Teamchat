@@ -405,5 +405,3 @@ function executeComposioTask_(taskId, objectiveOverride) {
   appendLog_(taskId,'VERIFYING','WORK_COMPLETE_AWAITING_OWNER_VERIFICATION','Executor repeat-read matched; Michael verification required.','COMPOSIO_SESSION:'+sessionId,'tool='+route.toolSlug+';account='+accountId+';execute='+executeLog+';verify='+verifyLog+';fingerprint='+fp2);
   return taskForClient_(taskId);
 }
-
-
