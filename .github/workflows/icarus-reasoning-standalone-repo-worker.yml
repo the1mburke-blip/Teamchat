@@ -1,4 +1,4 @@
-name: Icarus Standalone Reasoning Repo Worker
+name: Icarus Reasoning-Only Repo Worker
 
 on:
   issue_comment:
@@ -75,6 +75,18 @@ jobs:
 
           runtime_path=root/'Runtime.gs'
           runtime=runtime_path.read_text()
+          stop_old="""      if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
+      transitionTask_(taskId,'EXECUTING');
+    }
+    return executeComposioTask_(taskId,reasoning && reasoning.executionRequest);"""
+          stop_new="""      if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
+      transitionTask_(taskId,'REASONING',{evidence_ref:reasoning.evidence});
+      return taskForClient_(taskId);
+    }
+    return taskForClient_(taskId);"""
+          if stop_old not in runtime:
+              raise SystemExit('REASONING_TO_COMPOSIO_BASELINE_NOT_FOUND')
+          runtime=runtime.replace(stop_old,stop_new,1)
           if 'function scheduleTaskAdvance_()' in runtime or 'function resumePendingTasksSoon_()' in runtime:
               raise SystemExit('CONTINUATION_HELPER_ALREADY_PRESENT')
           helpers="""
@@ -133,6 +145,11 @@ jobs:
           assert rt.count('function resumePendingTasksSoon_()') == 1, 'RESUME_HELPER_COUNT'
           assert "newTrigger(handler).timeBased().after(1000).create()" in rt, 'ONE_SHOT_TRIGGER_MISSING'
           assert 'resumePendingTasks_();' in rt, 'SERVER_CONTINUATION_MISSING'
+          advance=rt[rt.index('function advanceTaskLocked_'):rt.index('function resumePendingTasks_')]
+          assert 'executeComposioTask_' not in advance, 'COMPOSIO_CALL_REMAINS_IN_REASONING_PATH'
+          assert "transitionTask_(taskId,'REASONING',{evidence_ref:reasoning.evidence})" in advance, 'REASONING_EVIDENCE_NOT_PERSISTED'
+          assert advance.count('return taskForClient_(taskId);') >= 2, 'REASONING_ONLY_STOP_MISSING'
+          assert "transitionTask_(taskId,'EXECUTING')" not in advance, 'REASONING_STILL_TRANSITIONS_TO_EXECUTING'
           assert "getHandlerFunction() === 'resumePendingTasksSoon_'" in rt, 'TRIGGER_CLEANUP_FILTER_MISSING'
           assert 'deleteTrigger(t)' in rt, 'ONE_SHOT_TRIGGER_CLEANUP_MISSING'
 
@@ -177,6 +194,8 @@ jobs:
             echo '- JavaScript syntax: PASS'
             echo '- submit returns canonical persisted task before reasoning: PASS'
             echo '- server-side one-shot continuation: PASS'
+            echo '- successful Gemini reasoning persists evidence and stops in REASONING: PASS'
+            echo '- Composio call absent from advanceTaskLocked_: PASS'
             echo '- existing recurring pending-task fallback preserved: PASS'
             echo '- REASONING/WAITING blind timer retries remain excluded: PASS'
             echo '- Provider/Auth/StateStore/Setup unchanged: PASS'
@@ -217,7 +236,7 @@ jobs:
             const body=[
               'Issue #55 deterministic repo-worker candidate.',
               '',
-              'Target: return the canonical persisted task immediately, then continue reasoning server-side without Codex/ADB/laptop.',
+              'Target: return the canonical persisted task immediately, continue Google/Gemini reasoning server-side, persist sanitized reasoning evidence, and stop before Composio.',
               'Changed live-derived candidate files: Code.gs, Runtime.gs only.',
               'Provider/StateStore/SignedAuth/Setup preserved byte-for-byte.',
               'No live Apps Script deployment or phone mutation.',
@@ -255,8 +274,8 @@ jobs:
                 'BRANCH: '+process.env.BRANCH,
                 'COMMIT: '+process.env.SHA,
                 'PR: '+process.env.PR_URL,
-                'TESTS: syntax + canonical-task response + server continuation + no blind reasoning retry + unchanged provider/auth/state/setup PASS',
-                'BOUNDARY: no live deployment; no phone/ADB mutation; no router/failover work',
+                'TESTS: syntax + canonical-task response + server continuation + reasoning evidence persisted + hard stop before Composio + no blind reasoning retry + unchanged provider/auth/state/setup PASS',
+                'BOUNDARY: no live deployment; no phone/ADB mutation; Composio excluded; no router/failover work',
                 'COST: €0'
               ].join('\n')
             });
