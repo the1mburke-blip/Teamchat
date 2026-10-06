@@ -42,3 +42,46 @@ scheduleFailure=true;const queued=context.doPost(request({op:'submit',clientTask
 // Submissions while a fired trigger is draining must retain their new continuation.
 context.scheduleTaskAdvance_();const original=context.resumePendingTasks_;context.resumePendingTasks_=()=>{assert.equal(triggers.length,0);context.scheduleTaskAdvance_()};context.resumePendingTasksSoon_();assert.equal(triggers.length,1);context.resumePendingTasks_=original;
 console.log('12 integration assertions groups completed: actual signed intake/replay, durable idempotency, async reasoning, real executor state machine with mock transport, repeat-read, terminal no-reexecute, owner gate, service/write constraints, provider gate, argument guard, scheduler fallback, concurrent scheduling. No live API/phone evidence.');
+
+// Enrollment uses the exact existing GoogleIdentity/Auth/Utils functions; only Google HTTP is mocked.
+const cache=new Map();
+context.CacheService={getScriptCache:()=>({put:(k,v)=>cache.set(k,v),get:k=>cache.get(k)??null,remove:k=>cache.delete(k)})};
+context.Utilities.DigestAlgorithm={SHA_256:'sha256'};
+context.Utilities.computeDigest=(algorithm,value)=>[...crypto.createHash('sha256').update(value).digest()];
+context.Utilities.base64EncodeWebSafe=bytes=>Buffer.from(bytes).toString('base64url');
+const response=context.jsonResponse_;
+for(const name of ['Utils.gs','GoogleIdentity.gs'])vm.runInContext(fs.readFileSync(path.join(__dirname,'fixtures',name),'utf8'),context,{filename:name});
+context.jsonResponse_=response;
+for(const name of ['Auth.gs','Enrollment.gs'])vm.runInContext(fs.readFileSync(path.join(dir,name),'utf8'),context,{filename:name});
+let denyOwnerCapability=false;
+context.requireCapability_=cap=>{if(cap==='owner.google_identity'&&denyOwnerCapability)throw Error('OWNER_CAPABILITY_DENIED')};
+context.gatewayRows_=()=>[];context.experienceRows_=()=>[];
+props.GOOGLE_OAUTH_CLIENT_ID='synthetic_web_client';props.OWNER_GOOGLE_EMAIL_SHA256=context.sha256Hex_('owner@example.invalid');
+function claims(challenge,changes={}){return {iss:'https://accounts.google.com',exp:Math.floor(Date.now()/1000)+300,sub:'synthetic_subject',nonce:challenge.nonce,aud:props.GOOGLE_OAUTH_CLIENT_ID,email_verified:'true',email:'owner@example.invalid',...changes}}
+let tokenClaims={};
+context.UrlFetchApp={fetch(url){assert(url.startsWith('https://oauth2.googleapis.com/tokeninfo?id_token='));return {getResponseCode:()=>200,getContentText:()=>JSON.stringify(tokenClaims)}}};
+let uuidCounter=100;
+function deviceUuid(){return '12345678-1234-4abc-8def-'+String(++uuidCounter).padStart(12,'0')}
+function challenge(){return context.enrollmentChallenge_({deviceId:deviceUuid()})}
+function enroll(c,overrides={}){return context.enrollOwnerDevice_({deviceId:c.deviceId,challengeId:c.id,googleIdToken:'synthetic_google_id_token',clientVersion:'test',...overrides})}
+const initialDevices=sheets.DEVICES.rows.length;
+let c=challenge();tokenClaims=claims(c,{email:'wrong@example.invalid'});assert.throws(()=>enroll(c),/GOOGLE_OWNER_IDENTITY_DENIED/);
+tokenClaims=claims(c,{nonce:'wrong'});assert.throws(()=>enroll(c),/GOOGLE_ID_TOKEN_NONCE_DENIED/);
+tokenClaims=claims(c,{aud:'wrong'});assert.throws(()=>enroll(c),/GOOGLE_ID_TOKEN_AUDIENCE_DENIED/);
+tokenClaims=claims(c,{iss:'https://wrong.invalid'});assert.throws(()=>enroll(c),/GOOGLE_ID_TOKEN_ISSUER_DENIED/);
+tokenClaims=claims(c,{exp:1});assert.throws(()=>enroll(c),/GOOGLE_ID_TOKEN_EXPIRED/);
+tokenClaims=claims(c,{email_verified:'false'});assert.throws(()=>enroll(c),/GOOGLE_EMAIL_NOT_VERIFIED/);
+assert.equal(sheets.DEVICES.rows.length,initialDevices);
+props.GOOGLE_OAUTH_CLIENT_ID='';assert.throws(()=>challenge(),/NOT_CONFIGURED/);props.GOOGLE_OAUTH_CLIENT_ID='synthetic_web_client';
+denyOwnerCapability=true;assert.throws(()=>challenge(),/OWNER_CAPABILITY_DENIED/);denyOwnerCapability=false;
+tokenClaims=claims(c);assert.throws(()=>enroll(c,{deviceId:deviceUuid()}),/CHALLENGE_TARGET_DENIED/);
+const expired=challenge(),raw=JSON.parse(cache.get('ENROLL:'+expired.id));raw.expiresAt=Date.now()-1;cache.set('ENROLL:'+expired.id,JSON.stringify(raw));assert.throws(()=>enroll(expired),/EXPIRED_OR_USED/);
+const enrolled=enroll(c);assert(enrolled.googleIdentityVerified);assert.equal(enrolled.deviceId,c.deviceId);assert(enrolled.token.length>24);assert.equal(sheets.DEVICES.rows.length,initialDevices+1);
+assert.throws(()=>enroll(c),/EXPIRED_OR_USED/);
+const conflict=context.enrollmentChallenge_({deviceId:c.deviceId});tokenClaims=claims(conflict);assert.throws(()=>enroll(conflict),/DEVICE_ALREADY_ACTIVE/);assert.equal(sheets.DEVICES.rows.length,initialDevices+1);
+const originalActive=sheets.DEVICES.rows.find(r=>r[0]===device);assert.equal(originalActive[2],'ACTIVE');
+const inner=JSON.stringify({op:'runtime',deviceId:enrolled.deviceId}),timestamp=Date.now(),nonce='synthetic_enrolled_nonce';
+const envelope={v:1,deviceId:enrolled.deviceId,timestamp,nonce,payload:inner,signature:crypto.createHmac('sha256',context.sha256Hex_(enrolled.token)).update(['ICARUS_QUEUE_V1',enrolled.deviceId,timestamp,nonce,inner].join('\n')).digest('hex')};
+const runtime=context.doPost({postData:{contents:JSON.stringify(envelope)}});assert(runtime.ok);assert.equal(runtime.data.runtimeVersion,'synthetic');
+assert(!JSON.stringify(sheets.LOGS.rows).includes(enrolled.token));assert(!JSON.stringify(sheets.LOGS.rows).includes('synthetic_google_id_token'));
+console.log('Enrollment negative gates and fresh owner token -> enrolled device -> signed runtime readback completed with mocked Google HTTP only; no physical Google consent or live device evidence.');

@@ -1,6 +1,12 @@
 package com.aistudio.icarus.appsscript
 
 import android.app.Application
+import android.app.Activity
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -29,10 +35,13 @@ private fun hmacSha256Hex(keyText: String, message: String): String {
 }
 
 class SecureStore(app: Application) {
+    companion object {
+        const val DEFAULT_BACKEND = "https://script.google.com/macros/s/AKfycbw7k-w7MVQt81U8vB3tJfLNsa3vvglvl1ANR2eIzsx2YJMJeifn5DrbnVWVy7rxocwJXw/exec"
+    }
     private val prefs = app.getSharedPreferences("icarus_signed_v1", 0)
     private val alias = "icarus_recovery_token"
 
-    val backendUrl: String get() = prefs.getString("backend_url", "") ?: ""
+    val backendUrl: String get() = prefs.getString("backend_url", DEFAULT_BACKEND) ?: DEFAULT_BACKEND
     val deviceId: String get() = prefs.getString("device_id", "") ?: ""
 
     private fun key(): SecretKey {
@@ -102,7 +111,7 @@ class SecureStore(app: Application) {
 class IcarusApiClient(private val endpointProvider: () -> String) {
     suspend fun post(body: JSONObject): JSONObject = withContext(Dispatchers.IO) {
         val uri = URI(endpointProvider())
-        require(uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null) {
+        require(uri.toString() == SecureStore.DEFAULT_BACKEND && uri.scheme == "https" && uri.userInfo == null) {
             "Valid HTTPS endpoint required."
         }
         val connection = uri.toURL().openConnection() as HttpURLConnection
@@ -149,12 +158,37 @@ class AppsScriptExecutionGateway(private val app: Application) : ExecutionGatewa
         return snapshot(data)
     }
 
+    suspend fun enrollWithGoogle(activity: Activity): String {
+        require(!isProvisioned()) { "This device is already connected." }
+        val deviceId = UUID.randomUUID().toString()
+        val challenge = client.post(JSONObject().put("op", "enrollment_challenge").put("deviceId", deviceId))
+        require(challenge.getString("deviceId") == deviceId) { "Enrollment device mismatch." }
+        val option = GetSignInWithGoogleOption.Builder(challenge.getString("clientId"))
+            .setNonce(challenge.getString("nonce"))
+            .build()
+        val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
+        val result = CredentialManager.create(activity).getCredential(context = activity, request = request)
+        val credential = result.credential
+        require(credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            "Google identity credential required."
+        }
+        val idToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
+        val enrolled = client.post(JSONObject()
+            .put("op", "enroll").put("deviceId", deviceId)
+            .put("challengeId", challenge.getString("id"))
+            .put("googleIdToken", idToken).put("clientVersion", "0.5.0-prototype"))
+        require(enrolled.getString("deviceId") == deviceId && enrolled.optBoolean("googleIdentityVerified")) {
+            "Owner enrollment verification failed."
+        }
+        return recover(SecureStore.DEFAULT_BACKEND, deviceId, enrolled.getString("token"))
+    }
+
     suspend fun recover(endpoint: String, deviceId: String, token: String): String {
         val cleanEndpoint = endpoint.trim()
         val cleanDeviceId = deviceId.trim()
         val cleanToken = token.trim()
         val uri = URI(cleanEndpoint)
-        require(uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null) { "Valid HTTPS endpoint required." }
+        require(uri.toString() == SecureStore.DEFAULT_BACKEND && uri.scheme == "https" && uri.userInfo == null) { "Valid HTTPS endpoint required." }
         require(cleanDeviceId.matches(Regex("[A-Za-z0-9_-]{16,128}"))) { "Valid recovery device ID required." }
         require(cleanToken.length in 24..2048) { "Valid recovery token required." }
         store.saveRecovery(cleanEndpoint, cleanDeviceId, cleanToken)

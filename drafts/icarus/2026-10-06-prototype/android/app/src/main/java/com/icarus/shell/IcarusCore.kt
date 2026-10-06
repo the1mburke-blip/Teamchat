@@ -1,6 +1,7 @@
 package com.aistudio.icarus.appsscript
 
 import android.app.Application
+import android.app.Activity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -74,6 +75,26 @@ class IcarusViewModel(app: Application) : AndroidViewModel(app) {
                 _uiState.value = _uiState.value.copy(stage = TaskStage.OUTCOME_UNKNOWN, error = "Could not refresh the saved task; no new task was submitted.")
             } finally {
                 taskJob = null
+            }
+        }
+    }
+
+    fun connectWithGoogle(activity: Activity) {
+        if (_uiState.value.connecting || taskJob?.isActive == true || _uiState.value.provisioned) return
+        _uiState.value = _uiState.value.copy(connecting = true, error = "", connectionStatus = "Connecting with Google...")
+        viewModelScope.launch {
+            try {
+                val runtime = executionGateway.enrollWithGoogle(activity)
+                _uiState.value = _uiState.value.copy(
+                    backendUrl = executionGateway.backendUrl(), deviceId = executionGateway.deviceId(),
+                    provisioned = true, recoveryToken = "", connecting = false,
+                    connectionStatus = "Connected - $runtime", error = "")
+            } catch (t: CancellationException) {
+                _uiState.value = _uiState.value.copy(connecting = false, connectionStatus = "Connection cancelled")
+                throw t
+            } catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(connecting = false, connectionStatus = "Connection incomplete",
+                    error = "Google connection could not be verified. No task was submitted.")
             }
         }
     }

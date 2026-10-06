@@ -1,6 +1,8 @@
 package com.aistudio.icarus.appsscript
 
 import android.os.Bundle
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -19,12 +21,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun IcarusShellRoute(viewModel: IcarusViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val activity = LocalContext.current as Activity
     IcarusShellScreen(
         state = state,
         onBackendUrlChanged = viewModel::onBackendUrlChanged,
         onDeviceIdChanged = viewModel::onDeviceIdChanged,
         onRecoveryTokenChanged = viewModel::onRecoveryTokenChanged,
         onRecover = viewModel::recover,
+        onGoogleConnect = { viewModel.connectWithGoogle(activity) },
         onProblemChanged = viewModel::onProblemChanged,
         onVoiceToggle = viewModel::onVoiceToggle,
         onSubmit = viewModel::submit,

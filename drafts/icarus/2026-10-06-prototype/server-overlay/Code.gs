@@ -22,6 +22,8 @@ function doGet(e) {
 function doPost(e) {
   try {
     const envelope = parseJsonBody_(e);
+    if (envelope.op === 'enrollment_challenge') return jsonResponse_({ok:true,data:enrollmentChallenge_(envelope)});
+    if (envelope.op === 'enroll') return jsonResponse_({ok:true,data:enrollOwnerDevice_(envelope)});
     if (envelope.op === 'pair') return jsonResponse_({ok:true, data:pairDevice_(envelope)});
     const auth = authenticateSigned_(envelope);
     const body = JSON.parse(envelope.payload);

@@ -15,6 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +32,7 @@ fun IcarusShellScreen(
     onDeviceIdChanged: (String) -> Unit,
     onRecoveryTokenChanged: (String) -> Unit,
     onRecover: () -> Unit,
+    onGoogleConnect: () -> Unit,
     onProblemChanged: (String) -> Unit,
     onVoiceToggle: () -> Unit,
     onSubmit: () -> Unit,
@@ -46,10 +51,16 @@ fun IcarusShellScreen(
 
         Text("Connection: ${state.connectionStatus}")
         if (!state.provisioned) {
+            Button(onClick = onGoogleConnect, enabled = !state.connecting, modifier = Modifier.fillMaxWidth()) { Text("Sign in with Google") }
+            Text("Use your authorized Google account to connect this phone.")
+            var showRecovery by remember { mutableStateOf(false) }
+            Button(onClick = { showRecovery = !showRecovery }, enabled = !state.connecting) { Text("Existing device recovery") }
+            if (showRecovery) {
             OutlinedTextField(value = state.backendUrl, onValueChange = onBackendUrlChanged, label = { Text("Apps Script HTTPS endpoint") }, modifier = Modifier.fillMaxWidth(), enabled = !state.connecting)
             OutlinedTextField(value = state.deviceId, onValueChange = onDeviceIdChanged, label = { Text("Device ID") }, modifier = Modifier.fillMaxWidth(), enabled = !state.connecting)
             OutlinedTextField(value = state.recoveryToken, onValueChange = onRecoveryTokenChanged, label = { Text("Recovery token") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), enabled = !state.connecting)
             Button(onClick = onRecover, enabled = !state.connecting, modifier = Modifier.fillMaxWidth()) { Text("Recover connection") }
+            }
         }
 
 
