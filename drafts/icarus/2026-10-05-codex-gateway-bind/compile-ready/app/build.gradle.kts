@@ -9,11 +9,11 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.icarus.shell"
+        applicationId = "com.aistudio.icarus.appsscript"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1-shell"
+        versionCode = 5
+        versionName = "0.4.1-clean-recovery"
     }
 
     buildFeatures {
