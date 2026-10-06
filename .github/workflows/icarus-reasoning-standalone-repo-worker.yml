@@ -75,15 +75,19 @@ jobs:
 
           runtime_path=root/'Runtime.gs'
           runtime=runtime_path.read_text()
-          stop_old="""      if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
-      transitionTask_(taskId,'EXECUTING');
-    }
-    return executeComposioTask_(taskId,reasoning && reasoning.executionRequest);"""
-          stop_new="""      if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
-      transitionTask_(taskId,'REASONING',{evidence_ref:reasoning.evidence});
-      return taskForClient_(taskId);
-    }
-    return taskForClient_(taskId);"""
+          stop_old=(
+              "      if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');\\n"
+              "      transitionTask_(taskId,'EXECUTING');\\n"
+              "    }\\n"
+              "    return executeComposioTask_(taskId,reasoning && reasoning.executionRequest);"
+          )
+          stop_new=(
+              "      if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');\\n"
+              "      transitionTask_(taskId,'REASONING',{evidence_ref:reasoning.evidence});\\n"
+              "      return taskForClient_(taskId);\\n"
+              "    }\\n"
+              "    return taskForClient_(taskId);"
+          )
           if stop_old not in runtime:
               raise SystemExit('REASONING_TO_COMPOSIO_BASELINE_NOT_FOUND')
           runtime=runtime.replace(stop_old,stop_new,1)
