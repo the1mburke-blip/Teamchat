@@ -7,6 +7,12 @@ on:
     paths:
       - "drafts/icarus/2026-10-05-lightweight-shell/compile-ready/**"
       - ".github/workflows/icarus-clean-recovery-apk.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "drafts/icarus/2026-10-05-lightweight-shell/compile-ready/**"
+      - ".github/workflows/icarus-clean-recovery-apk.yml"
 
 permissions:
   contents: read
