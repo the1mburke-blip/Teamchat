@@ -17,7 +17,7 @@ jobs:
       - name: Checkout verified candidate
         uses: actions/checkout@v4
         with:
-          ref: repo-worker/icarus-reasoning-standalone-55
+          ref: 2dab19008399570d31238cd62e885e163f2aa3a6
           persist-credentials: false
 
       - name: Install clasp and pexpect
@@ -35,8 +35,6 @@ jobs:
           DEPLOYMENT_ID: "AKfycbw7k-w7MVQt81U8vB3tJfLNsa3vvglvl1ANR2eIzsx2YJMJeifn5DrbnVWVy7rxocwJXw"
           BASE_CODE_SHA: "31254738eeb5f4537a0efffb16dd2adaa10bdf529bd4797038fc833203c94af1"
           BASE_RUNTIME_SHA: "d9049f33ed869329572acc2b713ccc8d32c42fab06a4af560f33e14e09a53f90"
-          CAND_CODE_SHA: "4d1e50ed7e30fad55307032bbcda7278b83221dcaea09d8a0f95f739758852f9"
-          CAND_RUNTIME_SHA: "0d672dc5c01e09b79df77ce0c190f68e154cff40b7c7b42f12c1f1c7459593ea"
         run: |
           set -euo pipefail
           openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/icarus_oauth_private.pem >/dev/null 2>&1
@@ -72,7 +70,7 @@ jobs:
               f"RUN_ID: {os.environ.get('GITHUB_RUN_ID','')}\\n"
               f"AUTH_URL: {auth_url}\\n"
               f"PUBLIC_KEY_B64: {pub64}\\n"
-              f"INSTRUCTION: Open AUTH_URL on the phone. After Google redirects to localhost, copy the FULL address-bar URL back to ChatGPT. ChatGPT must encrypt it in RSA-OAEP-SHA256 chunks of at most 180 bytes joined by dots; never post plaintext publicly.\\n"
+              f"INSTRUCTION: Use the Teamchat phone OAuth relay page. It fetches this public key, encrypts the localhost callback locally in the browser, and outputs only ciphertext for this issue. Never send callback plaintext to ChatGPT or GitHub.\\n"
           )
           subprocess.run(["gh","api",f"repos/{repo}/issues/{issue}/comments","-f",f"body={body}"],check=True,stdout=subprocess.DEVNULL)
           marker=f"[ICARUS_CLASP_OAUTH_CIPHERTEXT:{os.environ.get('GITHUB_RUN_ID','')}]"
@@ -128,15 +126,19 @@ jobs:
           test "$(sha256sum "$CODE_FILE" | awk '{print $1}')" = "$BASE_CODE_SHA"
           test "$(sha256sum "$RUNTIME_FILE" | awk '{print $1}')" = "$BASE_RUNTIME_SHA"
 
-          cp "$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Code.gs" "$CODE_FILE"
-          cp "$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Runtime.gs" "$RUNTIME_FILE"
-          test "$(sha256sum "$CODE_FILE" | awk '{print $1}')" = "$CAND_CODE_SHA"
-          test "$(sha256sum "$RUNTIME_FILE" | awk '{print $1}')" = "$CAND_RUNTIME_SHA"
+          CAND_CODE_SRC="$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Code.gs"
+          CAND_RUNTIME_SRC="$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Runtime.gs"
+          CAND_CODE_SHA="$(sha256sum "$CAND_CODE_SRC" | awk '{print $1}')"
+          CAND_RUNTIME_SHA="$(sha256sum "$CAND_RUNTIME_SRC" | awk '{print $1}')"
+          grep -q "execution intentionally disabled" "$CAND_RUNTIME_SRC"
+          ! grep -q "executeComposioTask_(taskId" "$CAND_RUNTIME_SRC"
+          cp "$CAND_CODE_SRC" "$CODE_FILE"
+          cp "$CAND_RUNTIME_SRC" "$RUNTIME_FILE"
 
           clasp --user icarus-phone show-file-status --json > /tmp/status-before-push.json
           clasp --user icarus-phone push --force
           BEFORE="$(clasp --user icarus-phone --json list-deployments)"
-          clasp --user icarus-phone create-deployment --deploymentId "$DEPLOYMENT_ID" --description "Icarus standalone reasoning PR56"
+          clasp --user icarus-phone create-deployment --deploymentId "$DEPLOYMENT_ID" --description "Icarus Google reasoning-only restore"
           AFTER="$(clasp --user icarus-phone --json list-deployments)"
           echo "$AFTER" | jq -e --arg id "$DEPLOYMENT_ID" '.. | objects | select(.deploymentId? == $id)' >/dev/null
 
