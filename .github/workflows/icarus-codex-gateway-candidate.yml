@@ -1,8 +1,8 @@
-name: Icarus Codex Gateway Candidate Build
+name: Icarus Clean Recovery APK
 
 on:
   push:
-    branches: ['codex/icarus-real-gateway-bind-20261005']
+    branches: ['fix/icarus-clean-install-20261006']
     paths:
       - 'drafts/icarus/2026-10-05-codex-gateway-bind/**'
       - '.github/workflows/icarus-codex-gateway-candidate.yml'
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: icarus-codex-gateway-candidate-${{ github.sha }}
+  group: icarus-clean-recovery-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -22,33 +22,52 @@ jobs:
       CANDIDATE: drafts/icarus/2026-10-05-codex-gateway-bind/compile-ready
     steps:
       - uses: actions/checkout@v6
-      - name: Initialize raw evidence
+
+      - name: Initialize evidence
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p candidate-evidence
           git rev-parse HEAD > candidate-evidence/source-commit.txt
           date -u +%FT%TZ > candidate-evidence/start-utc.txt
-          cat > candidate-evidence/emulator-check.sh <<'ICARUS_CHECK'
+
+      - name: Contract and release-state static gates
+        shell: bash
+        run: |
           set -euo pipefail
-          adb logcat -c
-          adb install -r candidate-evidence/Icarus-real-gateway-debug.apk
-          adb shell am start -W -n com.icarus.shell/.MainActivity | tee candidate-evidence/launch.log
-          adb shell uiautomator dump /sdcard/window.xml
-          adb pull /sdcard/window.xml candidate-evidence/window.xml
-          adb shell screencap -p /sdcard/screen.png
-          adb pull /sdcard/screen.png candidate-evidence/screen.png
-          adb logcat -d > candidate-evidence/logcat.txt
-          python -c 'import xml.etree.ElementTree as E; r=E.parse("candidate-evidence/window.xml"); texts=[n.attrib.get("text","") for n in r.iter()]; required=["ICARUS","Apps Script HTTPS endpoint","One-time pairing code","Voice input unavailable"]; assert all(any(x in t for t in texts) for x in required), texts; assert not any("DEMO:" in t for t in texts); submit=[n for n in r.iter() if n.attrib.get("text")=="Submit"]; parents={c:p for p in r.iter() for c in p}; buttons=[parents[n] for n in submit]; assert buttons and all(n.attrib.get("clickable")=="true" and n.attrib.get("enabled")=="false" for n in buttons), "Submit button must be disabled before pairing"; print("Connection UI, disabled Submit, demo absence verified")'
-          ! grep -q 'FATAL EXCEPTION' candidate-evidence/logcat.txt
-          printf 'Compile and emulator connection UI verified. No live backend request or phone execution. Independent endpoint verification remains required.\n' > candidate-evidence/BOUNDARY.txt
-          ICARUS_CHECK
+          GATEWAY="$CANDIDATE/app/src/main/java/com/icarus/shell/AppsScriptGateway.kt"
+          CORE="$CANDIDATE/app/src/main/java/com/icarus/shell/IcarusCore.kt"
+          SCREEN="$CANDIDATE/app/src/main/java/com/icarus/shell/IcarusShellScreen.kt"
+          BUILD="$CANDIDATE/app/build.gradle.kts"
+
+          grep -q 'ICARUS_QUEUE_V1' "$GATEWAY"
+          grep -q 'HmacSHA256' "$GATEWAY"
+          grep -q 'READY_FOR_EXECUTION' "$GATEWAY"
+          grep -q 'REASONING' "$GATEWAY"
+          grep -q 'Local wait ended after 60 seconds' "$GATEWAY"
+          grep -q 'taskJob = null' "$CORE"
+          grep -q 'TaskStage.VERIFYING' "$SCREEN"
+          grep -q 'Text("New Task")' "$SCREEN"
+          grep -q 'applicationId = "com.aistudio.icarus.appsscript"' "$BUILD"
+          grep -q 'versionName = "0.4.1-clean-recovery"' "$BUILD"
+
+          if grep -q 'put("token", store.token)' "$GATEWAY"; then
+            echo "FAIL: plaintext token transport found"
+            exit 1
+          fi
+
+          printf 'signed-v1 transport markers, release-state path, package and version verified\n'             > candidate-evidence/static-gates.txt
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
+
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
-      - name: Install proven compile SDK
+
+      - name: Install Android SDK
         shell: bash
         run: |
           set -euo pipefail
@@ -63,27 +82,57 @@ jobs:
           SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-37" "build-tools;36.0.0"
-      - name: Compile saved candidate
+
+      - name: Compile clean recovery APK
         shell: bash
         run: |
           set -euo pipefail
-          (cd "$CANDIDATE" && gradle --no-daemon --stacktrace :app:assembleDebug) 2>&1 | tee candidate-evidence/build.log
-          cp "$CANDIDATE/app/build/outputs/apk/debug/app-debug.apk" candidate-evidence/Icarus-real-gateway-debug.apk
-          sha256sum candidate-evidence/Icarus-real-gateway-debug.apk > candidate-evidence/apk.sha256
-      - name: Preserve compiled APK before emulator
+          (cd "$CANDIDATE" && gradle --no-daemon --stacktrace :app:assembleDebug)             2>&1 | tee candidate-evidence/build.log
+          cp "$CANDIDATE/app/build/outputs/apk/debug/app-debug.apk"             candidate-evidence/Icarus-0.4.1-clean-recovery.apk
+          sha256sum candidate-evidence/Icarus-0.4.1-clean-recovery.apk             > candidate-evidence/apk.sha256
+
+      - name: Upload compiled APK immediately
         uses: actions/upload-artifact@v7
         with:
-          name: Icarus-compiled-gateway-apk
+          name: Icarus-0.4.1-clean-recovery-apk
           path: candidate-evidence/
           if-no-files-found: error
           retention-days: 30
+
       - name: Enable KVM
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"'             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           test -e /dev/kvm
-      - name: Emulator connection screen verification
+
+      - name: Create emulator verification script
+        shell: bash
+        run: |
+          cat > candidate-evidence/emulator-check.sh <<'ICARUS_CHECK'
+          set -euo pipefail
+          adb logcat -c
+          adb install -r candidate-evidence/Icarus-0.4.1-clean-recovery.apk
+          adb shell am start -W -n com.aistudio.icarus.appsscript/com.icarus.shell.MainActivity             | tee candidate-evidence/launch.log
+          adb shell uiautomator dump /sdcard/window.xml
+          adb pull /sdcard/window.xml candidate-evidence/window.xml
+          adb shell screencap -p /sdcard/screen.png
+          adb pull /sdcard/screen.png candidate-evidence/screen.png
+          adb logcat -d > candidate-evidence/logcat.txt
+          python - <<'PY'
+          import xml.etree.ElementTree as E
+          r=E.parse("candidate-evidence/window.xml")
+          texts=[n.attrib.get("text","") for n in r.iter()]
+          required=["ICARUS","Apps Script HTTPS endpoint","One-time pairing code","Voice input unavailable"]
+          assert all(any(x in t for t in texts) for x in required), texts
+          assert not any("DEMO:" in t for t in texts)
+          print("Clean recovery connection UI verified")
+          PY
+          ! grep -q 'FATAL EXCEPTION' candidate-evidence/logcat.txt
+          printf 'Compile + emulator launch verified. No live backend pairing/task attempted.\n'             > candidate-evidence/BOUNDARY.txt
+          ICARUS_CHECK
+
+      - name: Emulator launch verification
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -93,17 +142,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: bash candidate-evidence/emulator-check.sh
-      - name: Collect partial emulator output
-        timeout-minutes: 1
-        if: always()
-        continue-on-error: true
-        run: |
-          if command -v adb >/dev/null; then timeout 15s adb logcat -d > candidate-evidence/logcat-final.txt 2>&1; fi
-      - name: Upload source build and emulator evidence
+
+      - name: Upload complete evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Icarus-codex-real-gateway-candidate
+          name: Icarus-0.4.1-clean-recovery-evidence
           path: candidate-evidence/
           if-no-files-found: error
           retention-days: 30
