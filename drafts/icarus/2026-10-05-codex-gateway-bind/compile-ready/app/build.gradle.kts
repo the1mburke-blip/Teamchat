@@ -5,20 +5,18 @@ plugins {
 }
 
 android {
-    namespace = "com.icarus.shell"
+    namespace = "com.aistudio.icarus.appsscript"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.icarus.shell"
+        applicationId = "com.aistudio.icarus.appsscript"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1-shell"
+        versionCode = 5
+        versionName = "0.5.0-clean-recovery"
     }
 
-    buildFeatures {
-        compose = true
-    }
+    buildFeatures { compose = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
