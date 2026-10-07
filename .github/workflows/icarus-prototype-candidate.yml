@@ -36,20 +36,22 @@ jobs:
           set -euo pipefail
           SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-      - name: Compile unsigned inspection APK
+      - name: Compile installable debug APK
         run: |
           set -euo pipefail
           mkdir -p out
-          (cd drafts/icarus/2026-10-06-prototype/android && gradle --no-daemon :app:assembleRelease) | tee out/build.log
-          cp drafts/icarus/2026-10-06-prototype/android/app/build/outputs/apk/release/app-release-unsigned.apk out/Icarus-prototype-unsigned.apk
-          sha256sum out/Icarus-prototype-unsigned.apk > out/apk.sha256
+          (cd drafts/icarus/2026-10-06-prototype/android && gradle --no-daemon :app:assembleDebug) | tee out/build.log
+          cp drafts/icarus/2026-10-06-prototype/android/app/build/outputs/apk/debug/app-debug.apk out/Icarus-Hermes-Mobile-debug-installable.apk
+          sha256sum out/Icarus-Hermes-Mobile-debug-installable.apk > out/apk.sha256
           git rev-parse HEAD > out/source-commit.txt
           SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          "$SDK/build-tools/36.0.0/aapt2" dump badging out/Icarus-prototype-unsigned.apk > out/apk-badging.txt
+          "$SDK/build-tools/36.0.0/aapt2" dump badging out/Icarus-Hermes-Mobile-debug-installable.apk > out/apk-badging.txt
           grep -q "package: name='com.aistudio.icarus.appsscript'" out/apk-badging.txt
+          "$SDK/build-tools/36.0.0/apksigner" verify --print-certs out/Icarus-Hermes-Mobile-debug-installable.apk > out/apk-signing.txt
+          grep -q "Signer #1 certificate DN" out/apk-signing.txt
       - uses: actions/upload-artifact@v7
         with:
-          name: Icarus-prototype-UNSIGNED-inspection-only
+          name: Icarus-Hermes-Mobile-DEBUG-installable
           path: out/
           if-no-files-found: error
           retention-days: 1
