@@ -1,0 +1,44 @@
+12 integration assertions groups completed: actual signed intake/replay, durable idempotency, async reasoning, real executor state machine with mock transport, repeat-read, terminal no-reexecute, owner gate, service/write constraints, provider gate, argument guard, scheduler fallback, concurrent scheduling. No live API/phone evidence.
+Enrollment negative gates and fresh owner token -> enrolled device -> signed runtime readback completed with mocked Google HTTP only; no physical Google consent or live device evidence.
+Native Google integration: exact baseline identity/enrollment, signed manager/device/replay/owner binding, scope/principal separation, consent URL/callback rejection, fresh missing grant -> same-task result, actual Gemini->Runtime->native repeat-read->owner evidence, Drive metadata, expired/revoked/HTTP/JSON gates, no search/write/nonGoogle and zero Composio transport. Mock transport only.
+Gmail metadata headers frozen-ID repeat-read through the actual runtime completed; body/snippet/unrequested header excluded.
+Wrong native owner stops before header read; expired native grant persists same-task auth gate then resumes after actual server recheck.
+Google Bundle deterministic gates complete: Gmail/Drive retained; Calendar tomorrow/event metadata/candidate/create, Sheets metadata/bounded read/single-cell RAW write, Docs metadata/bounded text/append/insert, original-authority no expansion, partial grants/common auth, owner/capability isolation, persistent auth interruption, signed idempotent mutation and uncertain-write no retry, no Composio or token leakage. Mock transport only, not live consent or phone proof.
+✔ drafts/icarus/2026-10-06-prototype/tests/google-bundle.test.cjs (4811.274364ms)
+12 integration assertions groups completed: actual signed intake/replay, durable idempotency, async reasoning, real executor state machine with mock transport, repeat-read, terminal no-reexecute, owner gate, service/write constraints, provider gate, argument guard, scheduler fallback, concurrent scheduling. No live API/phone evidence.
+Enrollment negative gates and fresh owner token -> enrolled device -> signed runtime readback completed with mocked Google HTTP only; no physical Google consent or live device evidence.
+Native Google integration: exact baseline identity/enrollment, signed manager/device/replay/owner binding, scope/principal separation, consent URL/callback rejection, fresh missing grant -> same-task result, actual Gemini->Runtime->native repeat-read->owner evidence, Drive metadata, expired/revoked/HTTP/JSON gates, no search/write/nonGoogle and zero Composio transport. Mock transport only.
+Gmail metadata headers frozen-ID repeat-read through the actual runtime completed; body/snippet/unrequested header excluded.
+Wrong native owner stops before header read; expired native grant persists same-task auth gate then resumes after actual server recheck.
+✔ drafts/icarus/2026-10-06-prototype/tests/google-plugin.test.cjs (1313.315924ms)
+Governance adversarial source gates A-H plus uncertain/replay/signature/exact adapter scope completed. Disposable fixture only; independent actual runner still required.
+✔ drafts/icarus/2026-10-06-prototype/tests/governance.test.cjs (229.723157ms)
+12 integration assertions groups completed: actual signed intake/replay, durable idempotency, async reasoning, real executor state machine with mock transport, repeat-read, terminal no-reexecute, owner gate, service/write constraints, provider gate, argument guard, scheduler fallback, concurrent scheduling. No live API/phone evidence.
+Enrollment negative gates and fresh owner token -> enrolled device -> signed runtime readback completed with mocked Google HTTP only; no physical Google consent or live device evidence.
+✔ drafts/icarus/2026-10-06-prototype/tests/runtime.test.cjs (156.130392ms)
+12 integration assertions groups completed: actual signed intake/replay, durable idempotency, async reasoning, real executor state machine with mock transport, repeat-read, terminal no-reexecute, owner gate, service/write constraints, provider gate, argument guard, scheduler fallback, concurrent scheduling. No live API/phone evidence.
+Enrollment negative gates and fresh owner token -> enrolled device -> signed runtime readback completed with mocked Google HTTP only; no physical Google consent or live device evidence.
+Native Google integration: exact baseline identity/enrollment, signed manager/device/replay/owner binding, scope/principal separation, consent URL/callback rejection, fresh missing grant -> same-task result, actual Gemini->Runtime->native repeat-read->owner evidence, Drive metadata, expired/revoked/HTTP/JSON gates, no search/write/nonGoogle and zero Composio transport. Mock transport only.
+Gmail metadata headers frozen-ID repeat-read through the actual runtime completed; body/snippet/unrequested header excluded.
+Wrong native owner stops before header read; expired native grant persists same-task auth gate then resumes after actual server recheck.
+✔ A catalogue includes only compact metadata; actual seed matches repository fixture (6.147571ms)
+✔ B explicit load exposes one body; unselected catalogue-only Gemini context (8.330251ms)
+✔ C content replacement invalidates existing signed permit before any effect (25.657658ms)
+✔ D revision replacement and wrong or partial binding denied (11.344135ms)
+✔ E-K malicious procedure cannot alter objective, tool, target, route, cost, identity or verdict (105.387175ms)
+✔ cached and auth-resumed plan cannot omit/rebind a selected skill or reuse changed procedure (5.648977ms)
+✔ malformed/oversize/corrupt registry rejected without preprocessing code or granting authority (2.741031ms)
+✔ selected procedure binds existing Composio final and discovery permits, no new route authority (20.600594ms)
+✔ actual provider catalogue->explicit selection->one body->governed native result (60.80465ms)
+✔ actual hostile model responses denied before service reads; selector cannot provide authority (234.3198ms)
+✔ actual PENDING_AUTH/EXECUTING/VERIFYING resume rejects stale revision before transport (68.413518ms)
+✔ none-selection hostile catalogue/model and cached-null objectives cannot expand native/Composio routes (162.217165ms)
+✔ no selection preserves catalogue-only flow and selector capability/mode/zero-spend gates (112.503256ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4834.759694

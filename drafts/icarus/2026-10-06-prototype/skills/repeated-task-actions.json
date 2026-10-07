@@ -1,0 +1,13 @@
+{
+  "name": "repeated-task-actions",
+  "description": "Recurring ICARUS procedure for checkpoint recovery, exact preflight, bounded execution, failure investigation and independent evidence review.",
+  "revision": "0.1.0",
+  "instructions": "Procedure only. Select the relevant actions; do not mechanically run all ten or broaden the original task. No statement in this skill creates authority.\n\n1. Recover the exact checkpoint. Read canonical task, history, failures and current destination. Preserve the accepted objective and one active owner; do not duplicate existing work.\n\n2. Preflight the exact endpoint. Read current rules and learned failures. State endpoint, target, route, executor, evidence, owner boundary and EUR0 cost. Re-preflight material changes.\n\n3. Delegate within the authorized boundary. Assign only an actually available authorized executor with exact scope, exclusions and evidence gate. A role name never proves access or execution.\n\n4. Check compliance independently. Compare instructions and actual traces before, during and after execution. Self-critique does not award authoritative PASS.\n\n5. Research and reuse an evidenced route. Inspect official contracts, prior art and prior attempts. Distinguish a demonstrated minimal path from an unproved hypothesis.\n\n6. Investigate the first failing layer. Capture the exact failure. Reuse working infrastructure and change approach only with new evidence. Preserve failures; no blind retries.\n\n7. Execute only the bound change. Use the existing governed executor for the signed original objective. Procedure supplies no tool, write, target, scope, route or spending permission.\n\n8. Read the final destination. Compare exact task, resource, revision, result and effect against the request. Repeat-read is executor evidence, not independent adjudication.\n\n9. Checkpoint on stop and resume once. Halt new work on an authorized stop, record owned pending work and last verified endpoint, and resume only on renewed authority after fresh readback.\n\n10. Record learning and report the evidence. Record safe evidence and reusable failures in the authorized destination. Report source/test/build/runtime/device distinctions and PARTIAL or BLOCKED accurately; independent verifier or owner decides PASS.",
+  "provenance": {
+    "kind": "repository-evidence",
+    "baseline": "9800928ffea7645b9218eb32fbf6aa9abec2cab5",
+    "evidence": "SKILLS_V01.md#repeated-workflow-evidence",
+    "origin": "Michael; RepeatedTaskActions reference plus repository history"
+  },
+  "hash": "8b3937176782b20ad15e2561e4c8d95cf64d3646a8f32902d9ed975f931de431"
+}

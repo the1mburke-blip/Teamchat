@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),crypto=require('crypto'),path=require('path');
 const dir=path.resolve(__dirname,'..','server-overlay');
-let calls=0,seq=0,reasonCalls=0,triggerSeq=0;
+let calls=0,seq=0,reasonCalls=0,selectionCalls=0,triggerSeq=0;
 const sheets={};
 function sheet(name,rows=[]){
  const s={rows,getMaxColumns(){return 100},insertColumnsAfter(){},getLastRow(){return this.rows.length},getLastColumn(){return Math.max(...this.rows.map(r=>r.length),1)},appendRow(row){this.rows.push([...row])},getDataRange(){return {getValues:()=>this.rows.map(r=>[...r])}},getRange(r,c,n=1,m=1){return {getValues:()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>s.rows[r+i-1]?.[c+j-1]??'')),setValue(v){s.rows[r-1]??=[];s.rows[r-1][c-1]=v;return this}}}};
@@ -17,8 +17,8 @@ vm.createContext(context);
 // Existing StateStore/SignedAuth supplied as exact repository baseline fixtures by validation workflow.
 for(const name of ['StateStore.gs','SignedAuth.gs'])vm.runInContext(fs.readFileSync(path.join(__dirname,'fixtures',name),'utf8'),context,{filename:name});
 context.googlePluginService_=()=>'';context.googlePluginRegistry_=()=>({});context.googlePluginEvidence_=id=>context.composioState_(id)||{};
-for(const name of ['GovernanceKernel.gs','Code.gs','Runtime.gs','Provider.gs','ComposioV31.gs'])vm.runInContext(fs.readFileSync(path.join(dir,name),'utf8'),context,{filename:name});
-context.UrlFetchApp={fetch(){reasonCalls++;return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({candidates:[{content:{parts:[{functionCall:{name:'execute_authorized_task',args:{objective:'Check Gmail mailbox counts without modifying messages'}}}]}}]})}}};
+for(const name of ['Skills.gs','GovernanceKernel.gs','Code.gs','Runtime.gs','Provider.gs','ComposioV31.gs'])vm.runInContext(fs.readFileSync(path.join(dir,name),'utf8'),context,{filename:name});
+context.UrlFetchApp={fetch(url,options){if(JSON.parse(options.payload).toolConfig.functionCallingConfig.allowedFunctionNames[0]==='select_procedural_skill'){selectionCalls++;return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({candidates:[{content:{parts:[{functionCall:{name:'select_procedural_skill',args:{name:'',revision:''}}}]}}]})};}reasonCalls++;return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({candidates:[{content:{parts:[{functionCall:{name:'execute_authorized_task',args:{objective:'Check Gmail mailbox counts without modifying messages'}}}]}}]})}}};
 context.composioCreateSession_=id=>'trs_synthetic_'+id;
 context.composioSearch_=()=>({data:{results:[{primary_tool_slugs:['GMAIL_LIST_MESSAGES'],toolkits:['gmail']}],toolkit_connection_statuses:[{toolkit:'gmail',has_active_connection:true}]}});
 context.composioManage_=()=>({data:{results:{gmail:{status:'active',accounts:[{id:'synthetic',status:'ACTIVE'}]}}}});
@@ -32,7 +32,7 @@ const accepted=context.doPost(e);assert(accepted.ok);assert.equal(accepted.data.
 assert.equal(context.doPost(e).error,'REPLAY_DENIED');
 const duplicate=context.doPost(request({op:'submit',clientTaskId:'one',text:'Check Gmail mailbox counts without modifying messages'},'synthetic_nonce_0002'));
 assert.equal(duplicate.data.task_id,accepted.data.task_id);assert.equal(sheets.TASK_QUEUE.rows.length,2);assert.equal(triggers.length,1);
-context.resumePendingTasksSoon_();assert.equal(triggers.length,0);assert.equal(reasonCalls,1);assert.equal(calls,2);
+context.resumePendingTasksSoon_();assert.equal(triggers.length,0);assert.equal(reasonCalls,1);assert.equal(selectionCalls,1);assert.equal(calls,2);
 const status=context.doPost(request({op:'status',taskId:accepted.data.task_id},'synthetic_nonce_0003'));assert.equal(status.data.status,'WORK_COMPLETE_AWAITING_OWNER_VERIFICATION');assert.equal(status.data.result.count,3);assert.equal(status.data.task_id,accepted.data.task_id);
 context.resumePendingTasks_();assert.equal(calls,2);assert.throws(()=>context.transitionTask_(accepted.data.task_id,'PASS'),/OWNER_VERIFICATION_REQUIRED/);
 for(const slug of ['GMAIL_DELETE_MESSAGE','GOOGLEDRIVE_CREATE_FILE','SHOPIFY_GET_PRODUCT','PASSCREATOR_LIST_PASSES'])assert.equal(context.composioToolMode_(slug),'DENY');assert.equal(context.composioToolMode_('GOOGLEDRIVE_LIST_FILES'),'READ');

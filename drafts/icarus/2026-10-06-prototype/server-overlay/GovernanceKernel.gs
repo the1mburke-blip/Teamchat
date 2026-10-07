@@ -18,15 +18,17 @@ const IcarusGovernance = (function() {
   function specValidate(spec){
     const s=JSON.parse(JSON.stringify(spec));
     const fields=['agentId','tool','service','operation','target','scopes','route','budgetEUR','write','payloadHash','evidenceContract'];
-    if(Object.keys(s).some(function(k){return fields.indexOf(k)<0;})||fields.some(function(k){return s[k]===undefined;}))fail('SPEC_INVALID');
+    const skillFields=['skillName','skillRevision','skillHash'];
+    if(Object.keys(s).some(function(k){return fields.concat(skillFields).indexOf(k)<0;})||fields.some(function(k){return s[k]===undefined;}))fail('SPEC_INVALID');
     if(s.budgetEUR!==0||!s.route||!s.target||!s.tool||!s.operation||!s.service||!s.agentId||typeof s.write!=='boolean')fail('PREFLIGHT_DENIED');
     if(!Array.isArray(s.scopes)||!s.scopes.length||s.scopes.some(function(v){return typeof v!=='string'||!v;}))fail('SCOPE_DENIED');
     if(!s.evidenceContract||!s.evidenceContract.readPath||!s.evidenceContract.expectedHash)fail('EVIDENCE_REQUIRED');
+    skillsSpecBinding_(s);
     return canon(s);
   }
   function prepare(id,spec,p){
-    const agent=principal(p,'executor'),task=getTask_(id.replace(/:reasoning$/, '').replace(/:discovery:[^:]+$/, ''));if(!task)fail('TASK_NOT_FOUND');
-    const s=specValidate(spec);if(s.agentId!==agent)fail('AGENT_DENIED');
+    const agent=principal(p,'executor'),task=getTask_(id.replace(/:(reasoning|skill-selection)$/, '').replace(/:discovery:[^:]+$/, ''));if(!task)fail('TASK_NOT_FOUND');
+    const s=specValidate(spec);skillsAssertTaskSpec_(task,s);if(s.agentId!==agent)fail('AGENT_DENIED');
     const old=read(id);
     if(old&&['OUTCOME_UNKNOWN','WORKING','WORK_COMPLETE_AWAITING_VERIFICATION','PASS','FAIL'].indexOf(old.state)>=0)fail('REPLAY_OR_RECONCILIATION_REQUIRED');
     if(old&&old.state==='READY'&&hash(old.spec)===hash(s))return old.permit;
@@ -38,20 +40,23 @@ const IcarusGovernance = (function() {
   }
   function invalidate(id,reason){const r=read(id);if(r&&r.state==='READY'){r.state='REQUIRES_PREFLIGHT';r.revision++;delete r.permit;r.reason=reason;append(id,r,'permit.revoked');}}
   function run(permit,spec,p,call){
-    const agent=principal(p,'executor'),s=specValidate(spec),payload=permit&&permit.payload;
+    const agent=principal(p,'executor'),payload=permit&&permit.payload;
     if(!payload||!constantTimeEquals_(String(permit.signature||''),mac(payload)))fail('PERMIT_SIGNATURE_DENIED');
-    const id=payload.taskId,r=read(id),task=getTask_(id.replace(/:reasoning$/, '').replace(/:discovery:[^:]+$/, ''));
+    const id=payload.taskId,r=read(id),task=getTask_(id.replace(/:(reasoning|skill-selection)$/, '').replace(/:discovery:[^:]+$/, ''));
     if(!r||r.state!=='READY'||r.revision!==payload.taskRevision||r.permit.signature!==permit.signature)fail('REPLAY_DENIED');
-    if(payload.agentId!==agent||s.agentId!==agent)fail('AGENT_DENIED');
+    if(payload.agentId!==agent)fail('AGENT_DENIED');
+    let s;try{s=specValidate(spec);}catch(e){invalidate(id,'skill_or_spec_change');throw e;}
+    if(s.agentId!==agent)fail('AGENT_DENIED');
     if(payload.expiry<=Date.now()||payload.policyVersion!==policy){invalidate(id,'expiry_or_policy');fail('EXPIRED_OR_POLICY_CHANGED');}
     if(!task||payload.objectiveHash!==hash(task.objective)||hash(payload.spec)!==hash(s)){invalidate(id,'material_change');fail('MATERIAL_CHANGE_PREFLIGHT_REQUIRED');}
+    try{skillsAssertTaskSpec_(task,s);}catch(e){invalidate(id,'skill_binding_change');throw e;}
     if(active)fail('NESTED_GATEWAY_DENIED');
     // Durable consumption and mutation intent precede ANY adapter/transport invocation.
     r.state='WORKING';r.revision++;r.intent={nonce:payload.nonce,fingerprint:hash(s),mutation:s.write,targetHash:hash(s.target),payloadHash:s.payloadHash};delete r.permit;append(id,r,'gateway.intent.persisted');
     const guard={taskId:id,spec:s,subject:agent};active=guard;
     try {
       const result=call();
-      const after=read(id);after.state=(s.operation==='reasoning'&&result.status==='WAITING_REASONING_CAPACITY')?'REQUIRES_PREFLIGHT':'WORK_COMPLETE_AWAITING_VERIFICATION';after.revision++;after.resultHash=hash(result);after.evidenceRef='GOVERNANCE_EVENTS:'+id+':'+after.revision;append(id,after,'execution.completed');
+      const after=read(id);after.state=(['reasoning','skill_selection'].indexOf(s.operation)>=0&&result.status==='WAITING_REASONING_CAPACITY')?'REQUIRES_PREFLIGHT':'WORK_COMPLETE_AWAITING_VERIFICATION';after.revision++;after.resultHash=hash(result);after.evidenceRef='GOVERNANCE_EVENTS:'+id+':'+after.revision;append(id,after,'execution.completed');
       return result;
     }catch(e){const after=read(id);after.state=s.write?'OUTCOME_UNKNOWN':'FAIL';after.revision++;after.reason='ADAPTER_OUTCOME_UNVERIFIED';append(id,after,s.write?'mutation.outcome_unknown':'execution.failed');throw e;}
     finally{active=null;}
@@ -140,7 +145,7 @@ const IcarusGovernance = (function() {
     active.headerIds=(data.messages||[]).slice(0,3).map(function(m){if(!m||!/^[A-Za-z0-9_-]{1,128}$/.test(String(m.id||'')))fail('HEADER_SELECTION_DENIED');return m.id;});
   }
   function providerWire(task,model,body){
-    if(!active||active.taskId!==task.task_id+':reasoning'||active.spec.service!=='gemini'||active.spec.target.model!==model||active.spec.payloadHash!==hash(body))fail('DIRECT_PROVIDER_BYPASS_DENIED');
+    if(!active||[task.task_id+':reasoning',task.task_id+':skill-selection'].indexOf(active.taskId)<0||active.spec.service!=='gemini'||active.spec.target.model!==model||active.spec.payloadHash!==hash(body))fail('DIRECT_PROVIDER_BYPASS_DENIED');
   }
   function ownerPrevalidate(id){const r=read(id);if(r&&r.state!=='WORK_COMPLETE_AWAITING_VERIFICATION')fail('VERIFICATION_STATE_DENIED');return r;}
   function ownerVerified(id,record){
@@ -173,6 +178,7 @@ const IcarusGovernance = (function() {
       (method==='post'&&/^\/tools\/execute\/(GMAIL|GOOGLEDRIVE)_[A-Z_]+\/input$/.test(path));
     if(!discovery)fail('DISCOVERY_OPERATION_DENIED');
     const p=governanceRuntimePrincipal_(),id=composioTask+':discovery:'+Utilities.getUuid(),s={agentId:p.id,tool:'COMPOSIO_DISCOVERY',service:'composio',operation:'discovery',target:{method:method,path:path},scopes:['composio.discovery'],route:'COMPOSIO_V31',budgetEUR:0,write:false,payloadHash:hash(body||null),evidenceContract:{readPath:'discovery-response',expectedHash:'owner_required'}};
+    skillsAttachSpec_(getTask_(composioTask),s);
     return run(prepare(id,s,p),s,p,function(){return composioTransport(method,path,body,call);});
   }
   return Object.freeze({ownerPrevalidate:ownerPrevalidate,withComposioTask:withComposioTask,composioTransport:composioTransport,captureMetadataList:captureMetadataList,nativeMetadataWire:nativeMetadataWire,providerWire:providerWire,ownerVerified:ownerVerified,prepare:prepare,run:run,guard:guard,wire:wire,bindWire:bindWire,composioWire:composioWire,verdict:verdict,snapshot:read,invalidate:invalidate,hash:hash,policyVersion:policy});
@@ -182,18 +188,29 @@ function governanceGoogleSpec_(task,plan){
   const d=googlePluginRegistry_()[plan.service],write=d.writeOperations.indexOf(plan.operation)>=0&&!plan.candidate;
   const target=plan.service==='calendar'?{calendar:'primary',eventId:plan.eventId|| (write?sha256Hex_('ICARUS:'+task.task_id):''),window:!plan.eventId?googleBundleWindow_(task,plan):null}:{resourceId:plan.resourceId||'owner',range:plan.range||''};
   const expected=write?IcarusGovernance.hash({plan:plan,target:target}):'executor_read_requires_owner';
-  return {agentId:'icarus-runtime',tool:d.tool,service:plan.service,operation:plan.operation,target:target,scopes:googlePluginRequiredScopes_(plan.service,plan.operation),route:'GOOGLE_NATIVE',budgetEUR:0,write:write,payloadHash:IcarusGovernance.hash(plan),evidenceContract:{readPath:'native:'+plan.service+':'+plan.operation,expectedHash:expected}};
+  return skillsAttachSpec_(task,{agentId:'icarus-runtime',tool:d.tool,service:plan.service,operation:plan.operation,target:target,scopes:googlePluginRequiredScopes_(plan.service,plan.operation),route:'GOOGLE_NATIVE',budgetEUR:0,write:write,payloadHash:IcarusGovernance.hash(plan),evidenceContract:{readPath:'native:'+plan.service+':'+plan.operation,expectedHash:expected}});
 }
 function governanceExecuteGoogle_(task,plan,call){const s=governanceGoogleSpec_(task,plan),p=governanceRuntimePrincipal_();const permit=IcarusGovernance.prepare(task.task_id,s,p);return IcarusGovernance.run(permit,s,p,call);}
 function governanceExecuteComposio_(task,session,tool,args,account,call){
   if(PropertiesService.getScriptProperties().getProperty('COMPOSIO_ZERO_COST_VERIFIED')!=='true')throw new Error('GOVERNANCE_ZERO_COST_UNVERIFIED');
   const p=governanceRuntimePrincipal_(),s={agentId:p.id,tool:tool,service:tool.indexOf('GMAIL_')===0?'gmail':'drive',operation:'read',target:{session:session,account:account},scopes:['READ:'+tool],route:'COMPOSIO_V31',budgetEUR:0,write:false,payloadHash:IcarusGovernance.hash(args),evidenceContract:{readPath:'composio:'+tool,expectedHash:'executor_read_requires_owner'}};
+  skillsAttachSpec_(task,s);
   return IcarusGovernance.run(IcarusGovernance.prepare(task.task_id,s,p),s,p,call);
 }
 
 function governanceReason_(task,call){
   if(PropertiesService.getScriptProperties().getProperty('GEMINI_ZERO_COST_VERIFIED')!=='true')throw new Error('GOVERNANCE_ZERO_COST_UNVERIFIED');
-  const model=geminiModel_(),body=geminiRequestBody_(task,runtimeGenome_(),reasoningContext_(task));
+  const model=geminiModel_(),body=geminiRequestBody_(task,runtimeGenome_(),skillsReasoningContext_(task));
   const p=governanceRuntimePrincipal_(),s={agentId:p.id,tool:'GEMINI_REASON',service:'gemini',operation:'reasoning',target:{model:model},scopes:['provider.reason'],route:'GEMINI_DIRECT',budgetEUR:0,write:false,payloadHash:IcarusGovernance.hash(body),evidenceContract:{readPath:'reasoning-log',expectedHash:'owner_required'}};
+  skillsAttachSpec_(task,s);
   return IcarusGovernance.run(IcarusGovernance.prepare(task.task_id+':reasoning',s,p),s,p,call);
+}
+
+function governanceSkillSelection_(task,call){
+  if(PropertiesService.getScriptProperties().getProperty('PROVIDER_MODE')!=='GEMINI_DIRECT')throw new Error('PROTOTYPE_GEMINI_DIRECT_REQUIRED');
+  if(PropertiesService.getScriptProperties().getProperty('GEMINI_ZERO_COST_VERIFIED')!=='true')throw new Error('GOVERNANCE_ZERO_COST_UNVERIFIED');
+  requireCapability_('provider.reason');
+  const model=geminiModel_(),body=geminiSkillSelectionBody_(task);
+  const p=governanceRuntimePrincipal_(),s={agentId:p.id,tool:'GEMINI_SKILL_SELECTION',service:'gemini',operation:'skill_selection',target:{model:model},scopes:['provider.reason'],route:'GEMINI_DIRECT',budgetEUR:0,write:false,payloadHash:IcarusGovernance.hash(body),evidenceContract:{readPath:'skill-selection-log',expectedHash:'owner_required'}};
+  return IcarusGovernance.run(IcarusGovernance.prepare(task.task_id+':skill-selection',s,p),s,p,call);
 }
