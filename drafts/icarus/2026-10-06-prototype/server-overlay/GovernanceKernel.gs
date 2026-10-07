@@ -27,7 +27,7 @@ const IcarusGovernance = (function() {
     return canon(s);
   }
   function prepare(id,spec,p){
-    const agent=principal(p,'executor'),task=getTask_(id.replace(/:(reasoning|skill-selection)$/, '').replace(/:discovery:[^:]+$/, ''));if(!task)fail('TASK_NOT_FOUND');
+    const agent=principal(p,'executor'),task=getTask_(id.replace(/:(reasoning|skill-selection)$/, '').replace(/:discovery:[^:]+$/, '').replace(/:child:[A-Za-z0-9._-]{1,64}$/, ''));if(!task)fail('TASK_NOT_FOUND');
     const s=specValidate(spec);skillsAssertTaskSpec_(task,s);if(s.agentId!==agent)fail('AGENT_DENIED');
     const old=read(id);
     if(old&&['OUTCOME_UNKNOWN','WORKING','WORK_COMPLETE_AWAITING_VERIFICATION','PASS','FAIL'].indexOf(old.state)>=0)fail('REPLAY_OR_RECONCILIATION_REQUIRED');
@@ -42,7 +42,7 @@ const IcarusGovernance = (function() {
   function run(permit,spec,p,call){
     const agent=principal(p,'executor'),payload=permit&&permit.payload;
     if(!payload||!constantTimeEquals_(String(permit.signature||''),mac(payload)))fail('PERMIT_SIGNATURE_DENIED');
-    const id=payload.taskId,r=read(id),task=getTask_(id.replace(/:(reasoning|skill-selection)$/, '').replace(/:discovery:[^:]+$/, ''));
+    const id=payload.taskId,r=read(id),task=getTask_(id.replace(/:(reasoning|skill-selection)$/, '').replace(/:discovery:[^:]+$/, '').replace(/:child:[A-Za-z0-9._-]{1,64}$/, ''));
     if(!r||r.state!=='READY'||r.revision!==payload.taskRevision||r.permit.signature!==permit.signature)fail('REPLAY_DENIED');
     if(payload.agentId!==agent)fail('AGENT_DENIED');
     let s;try{s=specValidate(spec);}catch(e){invalidate(id,'skill_or_spec_change');throw e;}
