@@ -71,13 +71,11 @@ fun IcarusShellScreen(
             Text("Google connections", fontWeight = FontWeight.Bold)
             Text(state.googleConnectionMessage)
             Button(onClick = onGoogleRefresh) { Text("Refresh Google connections") }
+            Button(onClick = { onGoogleAuthorize("read") }) { Text("Authorize Google reads") }
+            Button(onClick = { onGoogleAuthorize("write") }) { Text("Authorize supported Google writes") }
             state.googleConnections.forEach { connection ->
                 Text("${connection.service}: ${connection.state} ${connection.reason}")
-                if (connection.service in setOf("gmail", "drive") && connection.state in setOf("MISSING", "EXPIRED", "REVOKED")) {
-                    Button(onClick = { onGoogleAuthorize(connection.service) }) {
-                        Text(if (connection.state == "MISSING") "Authorize ${connection.service}" else "Reconnect ${connection.service}")
-                    }
-                }
+                Text("Write authorization: ${connection.writeAuthorization}")
             }
         }
 
