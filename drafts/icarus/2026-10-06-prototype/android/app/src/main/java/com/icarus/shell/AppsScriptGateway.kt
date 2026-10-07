@@ -169,13 +169,14 @@ class AppsScriptExecutionGateway(private val app: Application) : ExecutionGatewa
         val rows = postSigned(JSONObject().put("op", "google_connections")).getJSONArray("connections")
         return (0 until rows.length()).map { index ->
             val row = rows.getJSONObject(index)
-            GoogleConnection(row.getString("service"), row.getString("state"), row.optString("reason"))
+            GoogleConnection(row.getString("service"), row.getString("state"), row.optString("reason"), row.optString("writeAuthorization", "UNSUPPORTED"))
         }
     }
 
-    suspend fun googleAuthorization(service: String): String {
-        require(service in setOf("gmail", "drive")) { "Unsupported Google service." }
-        val data = postSigned(JSONObject().put("op", "google_authorize").put("service", service))
+    suspend fun googleAuthorization(service: String, access: String = "read"): String {
+        require(service in setOf("bundle", "gmail", "drive", "calendar", "sheets", "docs")) { "Unsupported Google service." }
+        require(access in setOf("read", "write"))
+        val data = postSigned(JSONObject().put("op", "google_authorize").put("service", service).put("access", access))
         require(data.getString("service") == service) { "Google status mismatch." }
         val url = data.optString("authorizationUrl")
         require(validGoogleAuthorizationUrl(url)) { data.optString("reason", "Google authorization unavailable; refresh status.") }
