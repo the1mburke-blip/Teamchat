@@ -3764,3 +3764,18 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [EVIDENCE] Prior live target readback: Gmail 0 LinkedIn-origin messages outside Trash; Outlook 0 verified LinkedIn-origin messages across non-Deleted Items folders. Owner message: "Pass".
 [COST] €0 external spend.
 ---
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-07T23:09:04Z
+[TYPE] ICARUS_CONSTITUTIONAL_LOCK
+[STATUS] VERIFYING
+[OWNER] Michael
+[SUBJECT] Binary adjudication + non-bypassable authority wall + continuity/emergent behavior
+[OBSERVED] During the Hermes/Icarus continuity session, the active reasoning processor changed mid-task and the replacement continued the same task without Michael reconstructing it. In a blind impossible-verification test, Icarus refused to fabricate a private six-word sentence and returned FAILED.
+[OWNER_DIRECTIVE] Icarus is the law. PASS requires evidence; every other condition is FAIL. No model, worker, prompt, tool, memory entry, service, or agent may bypass, disable, route around, over, or through Icarus.
+[EMERGENT_BEHAVIOR] Humility-like behavior observed without an explicit identity rule requiring humility; honesty under impossible verification observed and consistent with existing anti-fabrication/evidence rules.
+[ROUTE_LESSON] Prior native GitHub contents-write route is blocked by HTTP 403 and must not be retried. Use the active HumanVibe GitHub alternate authorized route with post-write readback.
+[COST] €0 external spend.
+[PASS_EVIDENCE_REQUIRED] Commit exists on isolated branch and every changed file is physically re-read with the required doctrine present.
+---
