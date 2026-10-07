@@ -7,14 +7,14 @@ Proposed by Michael; actual implementation executor ChatGPT Work/Codex worker; 6
 
 Signed Android -> existing task store -> autonomous continuation -> mandatory Gemini Direct -> explicit native Google plugin for Gmail/Drive -> repeat-read -> persisted same-task result and owner verification. Google tasks make no Composio request. Unsupported legacy objectives retain their existing transport; mixed-service or unsupported Google requests block. This is a module inside the existing prototype, not an installed ChatGPT plugin/MCP server.
 
-`server-overlay` contains nine source overlays including the preserved manifest with two added native Google scopes. Overlay on a fresh export of the SAME Apps Script project. Unchanged GoogleIdentity/SignedAuth/StateStore/Genome and other runtime files remain required; this directory is not a new Apps Script project.
+`server-overlay` contains ten source overlays including the preserved manifest with the native Google scopes documented below. Overlay on a fresh export of the SAME Apps Script project. Unchanged GoogleIdentity/SignedAuth/StateStore/Genome and other runtime files remain required; this directory is not a new Apps Script project.
 
 - Code: persist signed intake and return the canonical task before remote reasoning; scheduling failure logged without destroying task.
 - Runtime: Gemini mandatory; lock-coalesced trigger; remove fired trigger before draining so a concurrent submit can schedule continuation. Recover timer-eligible reasoning/execution/verification tasks; interrupted reasoning becomes explicit BLOCKED instead of permanently polling.
 - Provider: existing function-call contract and capability gate; deny NONE/mock provider for prototype.
 - GooglePlugin: single configured owner only. Verified enrollment persists server-trusted subject/email hash; scheduled execution rechecks ACTIVE device/owner capability/hash. Legacy devices without this marker must reenroll; recovery alone does not create it. Native `ScriptApp.getAuthorizationInfo(FULL, [service scope])` checks actual grants; null/errors return UNKNOWN. Backend OAuth token never leaves Apps Script. Fixed GET profile/about validates API principal against the configured owner hash before mailbox/file metadata. No Session effective-user caller authorization.
 - Gmail: mailbox counts, or three selected messages’ From/Subject/Date headers via `format=metadata`; frozen IDs for repeat-read, no bodies/snippets/search/q. Drive: five recent file metadata records (id/name/mimeType/modifiedTime), no contents. Two reads must match before WORK_COMPLETE_AWAITING_OWNER_VERIFICATION; no worker PASS.
-- Connections: signed status/authorize operations, strict native Google consent URL allowlist, Android external consent and explicit signed refresh. Callback success parameters have no authority. Missing/expired/denied grant stays PENDING_AUTH; unknown or wrong owner becomes BLOCKED. Calendar/Sheets are UNAVAILABLE.
+- Connections: signed status/authorize operations, strict native Google consent URL allowlist, Android external consent and explicit signed refresh. Callback success parameters have no authority. Missing/expired/denied grant stays PENDING_AUTH; unknown or wrong owner becomes BLOCKED. Calendar/Sheets/Docs are implemented by GoogleBundle v1 below.
 - OwnerVerification: native stored result/log IDs participate in the existing same-task owner evidence fingerprint and challenge; strict original Google validator remains unchanged.
 - Composio: restrict to Gmail/Drive read tools, deny mutation slugs before explicit allowlists; preserve existing active-connection/account-selector repair and repeat-read. Permit read-only verification recovery.
 - Enrollment/Auth: reuse strict existing Google owner ID-token validator and nonce challenge pattern; configured identity/capability mandatory, device UUID-bound 300s single-use nonce, active UUID replacement denied, shared token mint/hash helper preserves legacy pairing behavior. No Session effective-user authorization.
@@ -49,3 +49,47 @@ Known further runtime limitation: Apps Script one-shot trigger timing is not gua
 - https://developers.google.com/workspace/drive/api/reference/rest/v3/files/list
 
 Google-managed authorization is the backend deploying owner’s authorization; the ID token establishes the configured request owner, not API permission. No live consent, provider execution, deployment or signing performed by this source unit.
+
+
+## Google Capability Bundle v1 — 7 October 2026
+
+Status VERIFYING: isolated source, mocked deterministic transports, unsigned compilation candidate. Michael proposed; actual Codex worker implemented; a separate actual Codex reviewer and root inspect the evidence. No live Google consent, API call, production deployment, paid model execution, device test, signing change or main merge is part of this repository task.
+
+The single existing signed Google manager now reports Gmail, Drive, Calendar, Sheets and Docs. One common `google_authorize` request selects `service: bundle`, optional supported `services`, and `access: read` (default) or `write`. Android offers a common read authorization and an explicit optional write authorization, and displays each service state plus write grant separately. Google Sign-In still proves identity only. ScriptApp owns backend token refresh; the model and Android do not receive API credentials. Granular partial grants and REQUIRED/unknown/revoked/expired state remain explicit. Non-Gmail adapters also require the preserved Drive metadata scope for the documented about/user principal binding; unknown principal never becomes connected. Background jobs cannot show consent and retain the same task in PENDING_AUTH.
+
+`execute_authorized_task` retains its existing objective contract and adds optional `googleOperation` structured fields. The same Gemini call selects service/operation. Deterministic validation binds that selection to the original signed objective, a literal resource ID, exact range including sheet qualifier, exact requested text and the per-service operation allowlist. This is not a new command parsing or gateway architecture. Missing targets and ambiguous/destructive operations deny rather than invent parameters.
+
+### Bounded operations
+
+- Calendar: primary owner calendar only; up to 10 upcoming events within 7 days, tomorrow in GOOGLE_OWNER_TIME_ZONE (default Europe/Dublin), or one exact event metadata read. `Create a calendar event candidate for Friday at 3 PM` produces a candidate with the unchanged requested objective and no Calendar mutation; it does not invent title/end/timezone or claim an event was created. Actual create requires an exact quoted summary and explicit ISO start/end in the original objective, maximum 24-hour duration, no attendees, sendUpdates=none and reminders disabled. Deterministic task-derived event ID.
+- Sheets: metadata without grid data, or A1 bounded rectangular read maximum 100 cells. Update is deliberately v1 single-cell only, exact quoted value or the exact full `to/with <value> in spreadsheet <id>` value, RAW interpretation (no formulas), exact range/worksheet qualifier. Multicell updates are explicitly unsupported, never silently reduced.
+- Docs: metadata or at most 10,000 text characters from the first default document body. API response capped at 64,000 characters; complex content/tabs and unsupported actions deny. Append/insert uses one exact quoted text payload <=2,000 characters, an original-authorized index for insert, non-destructive insertText only and requiredRevisionId. No delete/replace operation.
+- Gmail and Drive retain their baseline bounded read behavior, metadata limits and frozen header IDs.
+
+Writes additionally require the existing deterministic capability mechanism `google.<service>.write`; reads require `google.<service>.read`. These capability grants, source manifest scopes, API enablement and owner authorization must be established in a separate later deployment/consent task; this change does not enable them in production. OAuth grants alone and Gemini output do not create a write permit. The exact validated plan persists across auth interruption. Write intent is flushed/read before remote mutation; any uncertain request or resumed intent stops, never retries a mutation. Same clientTaskId idempotency and signed-v1 replay protections are preserved. Repeat reads check the exact expected target effect; executor reports WORK_COMPLETE_AWAITING_OWNER_VERIFICATION or PARTIAL, never PASS.
+
+### Source scopes
+
+Existing gmail.metadata and drive.metadata.readonly remain unchanged. Existing spreadsheets write scope remains required by the task store. Added scope declarations: calendar.events.owned.readonly, calendar.events.owned, spreadsheets.readonly, documents.readonly, documents. Read/write requests use only operation requirements. No actual consent is performed.
+
+### Deterministic gates
+
+`node --test tests/runtime.test.cjs tests/google-plugin.test.cjs tests/google-bundle.test.cjs` uses synthetic HTTP only. The bundle suite runs the existing native/runtime fixtures and checks all 20 requested gates: Gmail/Drive regressions; Calendar read/candidate/create; no read-to-write; exact Sheet bounds/value; Docs read/write and metadata isolation; owner/capability denial; explicit missing/partial/expired/revoked grants; zero Composio requests; signed replay and duplicate mutation; no credential leaks; unsupported-service/action denial; persisted auth task; common authorization with five individual statuses. Review regressions explicitly deny AB4 -> B4, Sheet2!B4 -> default B4, quoted paragraph -> substring, mismatched operation service, metadata -> content, partial value, partial event title and REQUIRED status -> CONNECTED. Uncertain-write fixture applies one PUT then throws; recovery must not issue another PUT.
+
+Protected baseline Auth/Enrollment/OwnerVerification, signing, applicationId com.aistudio.icarus.appsscript, Gmail/Drive authorization and Composio module are unchanged. Existing standard public-repo ubuntu-latest build lane receives this exact candidate branch and full suite, read-only Gradle cache and one-day inspection artifact retention; no larger runner or deployment.
+
+### Official contracts checked
+
+- https://developers.google.com/workspace/calendar/api/v3/reference/events/list
+- https://developers.google.com/workspace/calendar/api/v3/reference/events/insert
+- https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/get
+- https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/update
+- https://developers.google.com/workspace/docs/api/reference/rest/v1/documents/get
+- https://developers.google.com/workspace/docs/api/reference/rest/v1/documents/batchUpdate
+- https://developers.google.com/workspace/docs/api/reference/rest/v1/documents/request#InsertTextRequest
+- https://developers.google.com/identity/protocols/oauth2/web-server
+- https://developers.google.com/apps-script/concepts/scopes
+- https://developers.google.com/apps-script/reference/script/script-app
+- https://developers.google.com/apps-script/guides/services/authorization
+
+Live Google grants/API enablement, production deployment and physical Redmi acceptance remain a later separate task. Owner action during this repository task: NONE. Repository tests do not establish live Google data changes or owner acceptance.
