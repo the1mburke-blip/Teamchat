@@ -8,6 +8,7 @@ c.ScriptApp.getAuthorizationInfo=(mode,scopes)=>({getAuthorizedScopes:()=>nullGr
 c.ScriptApp.getOAuthToken=()=> 'synthetic_native_oauth_token';
 c.composioCreateSession_=()=>{composioCalls++;throw Error('COMPOSIO_MUST_NOT_RUN')};
 c.UrlFetchApp={fetch(url,options){
+ if(url.startsWith('https://generativelanguage.googleapis.com/')&&JSON.parse(options.payload).toolConfig.functionCallingConfig.allowedFunctionNames[0]==='select_procedural_skill')return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({candidates:[{content:{parts:[{functionCall:{name:'select_procedural_skill',args:{name:'',revision:''}}}]}}]})};
  if(url.startsWith('https://generativelanguage.googleapis.com/'))return response({candidates:[{content:{parts:[{functionCall:{name:'execute_authorized_task',args:{objective:reasonObjective}}}]}}]});
  assert.equal(options.method,'get');assert.equal(options.followRedirects,false);assert(!url.includes('access_token'));if(url.includes('gmail.googleapis.com'))assert(!url.includes('q='));
  reads++;

@@ -63,6 +63,8 @@ function advanceTaskLocked_(taskId, explicitResume) {
     if (current === 'REASONING') {
       if (reasoning && reasoning.status === 'IN_PROGRESS') throw new Error('REASONING_PREVIOUS_ATTEMPT_INCOMPLETE');
       if (!reasoning || reasoning.status !== 'READY_FOR_EXECUTION') {
+        const selected=skillsSelectForTask_(getTask_(taskId));
+        if(selected.status==='WAITING_REASONING_CAPACITY'){transitionTask_(taskId,'WAITING_REASONING_CAPACITY',{evidence_ref:selected.evidence});return taskForClient_(taskId);}
         appendLog_(taskId,'REASONING','IN_PROGRESS','Provider attempt started.','TASK_QUEUE:'+taskId,'provider='+mode);
         SpreadsheetApp.flush();
         reasoning=governanceReason_(getTask_(taskId),function(){return reason_(getTask_(taskId));});
@@ -76,13 +78,14 @@ function advanceTaskLocked_(taskId, explicitResume) {
       if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
       transitionTask_(taskId,'EXECUTING');
     }
+    skillsAssertReasoning_(getTask_(taskId),reasoning);
     if (googlePluginService_(task.objective)) return executeGooglePluginTask_(taskId,reasoning && reasoning.executionRequest,reasoning && reasoning.googleOperation);
     return executeComposioTask_(taskId,reasoning && reasoning.executionRequest);
   } catch (err) {
     const current = getTask_(taskId);
     const state = current ? String(current.status || '') : '';
     const reasoningFailure=state === 'REASONING';
-    if (ICARUS.TASK_TERMINAL.indexOf(state) < 0 && state !== 'PENDING_AUTH') {
+    if (ICARUS.TASK_TERMINAL.indexOf(state) < 0 && (state !== 'PENDING_AUTH' || /^SKILL_/.test(String(err.message||err)))) {
       try { transitionTask_(taskId,(IcarusGovernance.snapshot(taskId)||{}).state==='OUTCOME_UNKNOWN'?'OUTCOME_UNKNOWN':'BLOCKED',{evidence_ref:(reasoningFailure ? 'REASONING_BLOCKED ' : 'EXECUTION_BLOCKED ') + String(err.message || err).slice(0,1000)}); } catch (_) {}
     }
     let nativeRoute=false;try{nativeRoute=!!googlePluginService_(task.objective);}catch(_){}

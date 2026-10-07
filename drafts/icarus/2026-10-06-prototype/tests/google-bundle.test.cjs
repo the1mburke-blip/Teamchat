@@ -11,6 +11,7 @@ c.ScriptApp.getAuthorizationInfo=(mode,scopes)=>({getAuthorizedScopes:()=>grante
 let callsToComposio=0;c.composioCreateSession_=()=>{callsToComposio++;throw Error('COMPOSIO_FORBIDDEN');};
 function response(data){return {getResponseCode:()=>code,getContentText:()=>leak?JSON.stringify({data:'synthetic_native_oauth_token'}):JSON.stringify(data)};}
 c.UrlFetchApp={fetch(url,opt){
+ if(url.startsWith('https://generativelanguage.googleapis.com/')&&JSON.parse(opt.payload).toolConfig.functionCallingConfig.allowedFunctionNames[0]==='select_procedural_skill')return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({candidates:[{content:{parts:[{functionCall:{name:'select_procedural_skill',args:{name:'',revision:''}}}]}}]})};
   if(url.startsWith('https://generativelanguage.googleapis.com/'))return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({candidates:[{content:{parts:[{functionCall:{name:'execute_authorized_task',args:{objective,googleOperation:operation}}}]}}]})};
   assert.equal(opt.followRedirects,false);assert.equal(opt.headers.Authorization,'Bearer synthetic_native_oauth_token');nativeRequests.push({url,method:opt.method});
   if(url.endsWith('/profile'))return response({emailAddress:owner,messagesTotal:7,threadsTotal:5});
