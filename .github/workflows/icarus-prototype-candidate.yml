@@ -1,7 +1,7 @@
 name: Icarus isolated prototype validation
 on:
   push:
-    branches: ['codex/icarus-prototype-20261006', 'codex/icarus-google-bundle-20261007']
+    branches: ['codex/icarus-prototype-20261006', 'codex/icarus-google-bundle-20261007', 'codex/icarus-governance-kernel-v1-20261007']
     paths:
       - 'drafts/icarus/2026-10-06-prototype/**'
       - '.github/workflows/icarus-prototype-candidate.yml'
@@ -18,7 +18,9 @@ jobs:
       - name: Deterministic server integration tests
         run: |
           node drafts/icarus/2026-10-06-prototype/tests/runtime.test.cjs
+          node drafts/icarus/2026-10-06-prototype/tests/google-plugin.test.cjs
           node drafts/icarus/2026-10-06-prototype/tests/google-bundle.test.cjs
+          node drafts/icarus/2026-10-06-prototype/tests/governance.test.cjs
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
