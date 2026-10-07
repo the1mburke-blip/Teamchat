@@ -21,7 +21,7 @@ c.UrlFetchApp={fetch(url,options){
 function response(value){return {getResponseCode:()=>value.candidates?200:httpCode,getContentText:()=>badJson?'not-json':JSON.stringify(value)}}
 let nonceSeq=10000,reasonObjective='Check Gmail mailbox counts without modifying messages';
 function signed(inner,device=enrolled.deviceId,token=enrolled.token){const payload=JSON.stringify({...inner,deviceId:device}),timestamp=Date.now(),nonce='native_nonce_'+(++nonceSeq),signature=crypto.createHmac('sha256',c.sha256Hex_(token)).update(['ICARUS_QUEUE_V1',device,timestamp,nonce,payload].join('\n')).digest('hex');return {postData:{contents:JSON.stringify({v:1,deviceId:device,timestamp,nonce,payload,signature})}}}
-let status=c.doPost(signed({op:'google_connections'}));assert(status.ok);assert.equal(status.data.connections[0].state,'CONNECTED');assert.equal(status.data.connections[1].state,'CONNECTED');assert.equal(status.data.connections[2].state,'UNAVAILABLE');
+let status=c.doPost(signed({op:'google_connections'}));assert(status.ok);assert.equal(status.data.connections[0].state,'CONNECTED');assert.equal(status.data.connections[1].state,'CONNECTED');assert.equal(status.data.connections[2].state,'CONNECTED');assert.equal(status.data.connections.length,5);
 assert.equal(c.doPost(signed({op:'google_connections',email:'injected@example.invalid'})).error,'GOOGLE_MANAGER_ARGUMENT_DENIED');
 assert(!c.doPost(signed({op:'google_connections'},'wrong_device',enrolled.token)).ok);
 const replay=signed({op:'google_connections'});assert(c.doPost(replay).ok);assert.equal(c.doPost(replay).error,'REPLAY_DENIED');

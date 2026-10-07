@@ -1,12 +1,23 @@
 /** Native Google plugin: single configured owner, fixed GET operations, no Composio. */
 function googlePluginRegistry_() {
-  return {gmail:{scope:'https://www.googleapis.com/auth/gmail.metadata',tool:'GOOGLE_GMAIL_MAILBOX_METADATA',headerTool:'GOOGLE_GMAIL_HEADER_METADATA'},drive:{scope:'https://www.googleapis.com/auth/drive.metadata.readonly',tool:'GOOGLE_DRIVE_LIST_METADATA'}};
+  const root='https://www.googleapis.com/auth/';
+  const model={
+    gmail:{scope:root+'gmail.metadata',tool:'GOOGLE_GMAIL_MAILBOX_METADATA',headerTool:'GOOGLE_GMAIL_HEADER_METADATA',operations:['mailbox_counts','header_metadata'],writeOperations:[]},
+    drive:{scope:root+'drive.metadata.readonly',tool:'GOOGLE_DRIVE_LIST_METADATA',operations:['list_metadata'],writeOperations:[]},
+    calendar:{scope:root+'calendar.events.owned.readonly',writeScope:root+'calendar.events.owned',tool:'GOOGLE_CALENDAR',operations:['list_events','event_metadata'],writeOperations:['create_event']},
+    sheets:{scope:root+'spreadsheets.readonly',writeScope:root+'spreadsheets',tool:'GOOGLE_SHEETS',operations:['sheet_metadata','read_range'],writeOperations:['update_range']},
+    docs:{scope:root+'documents.readonly',writeScope:root+'documents',tool:'GOOGLE_DOCS',operations:['doc_metadata','read_text'],writeOperations:['append_text','insert_text']}
+  };
+  Object.keys(model).forEach(function(id){const d=model[id];d.serviceId=id;d.requiredScopes=[d.scope];d.authorizationState='CHECK_REQUIRED';d.connectionState='CHECK_REQUIRED';d.evidenceRequirements=['native API owner binding','repeat read','owner adjudication'];d.classification={read:d.operations,write:d.writeOperations};});
+  return model;
 }
 function googlePluginService_(objective) {
   const text=String(objective || '');
-  const gmail=/\b(gmail|email|mailbox)\b/i.test(text), drive=/\b(google drive|drive files|drive metadata)\b/i.test(text);
-  if (gmail && drive) throw new Error('GOOGLE_ONE_SERVICE_PER_TASK');
-  return gmail ? 'gmail' : drive ? 'drive' : '';
+  const patterns={gmail:/\b(gmail|email|mailbox)\b/i,drive:/\b(google drive|drive files|drive metadata)\b/i,calendar:/\b(calendar|calendar event)\b/i,sheets:/\b(spreadsheet|google sheets|cells? [A-Z]+[0-9]+|update [A-Z]+[0-9]+)\b/i,docs:/\b(google doc|document)\b/i};
+  const found=Object.keys(patterns).filter(function(id){return patterns[id].test(text);});
+  if(found.length>1) throw new Error('GOOGLE_ONE_SERVICE_PER_TASK');
+  if(!found.length && /\bgoogle\b/i.test(text)) throw new Error('GOOGLE_UNSUPPORTED_OPERATION');
+  return found[0] || '';
 }
 function googlePluginOwner_(deviceId) {
   if (!googleIdentityConfigured_()) throw new Error('GOOGLE_UNCONFIGURED');
@@ -51,35 +62,57 @@ function googlePluginPrincipal_(service, ownerHash) {
   if (typeof email!=='string' || !constantTimeEquals_(sha256Hex_(email.trim().toLowerCase()),ownerHash)) throw new Error('GOOGLE_API_PRINCIPAL_DENIED');
   return profile;
 }
-function googlePluginConnection_(deviceId, service, authorize) {
+function googlePluginConnection_(deviceId, service, authorize, operation) {
   const descriptor=googlePluginRegistry_()[service];
   if (!descriptor) return {service:service,state:'UNAVAILABLE',reason:'GOOGLE_SERVICE_NOT_IMPLEMENTED'};
   try {
     const ownerHash=googlePluginOwner_(deviceId);
-    const info=ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL,[descriptor.scope]);
+    const required=googlePluginRequiredScopes_(service,operation);
+    const info=ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL,required);
     const granted=info.getAuthorizedScopes();
     if (!Array.isArray(granted)) return {service:service,state:'UNKNOWN',reason:'GOOGLE_GRANTS_UNKNOWN'};
-    if (info.getAuthorizationStatus()!==ScriptApp.AuthorizationStatus.NOT_REQUIRED || granted.indexOf(descriptor.scope)<0) {
-      const out={service:service,state:'MISSING',reason:'GOOGLE_SCOPE_REQUIRED'};
+    const missing=required.filter(function(scope){return granted.indexOf(scope)<0;});
+    if (missing.length || info.getAuthorizationStatus()!==ScriptApp.AuthorizationStatus.NOT_REQUIRED) {
+      const out={service:service,state:'MISSING',authorizationState:'PARTIAL_OR_MISSING',requiredScopes:required,missingScopes:missing,reason:'GOOGLE_SCOPE_REQUIRED'};
       if (authorize) out.authorizationUrl=googlePluginAuthorizationUrl_(info.getAuthorizationUrl());
       return out;
     }
     googlePluginPrincipal_(service,ownerHash);
-    return {service:service,state:'CONNECTED',tool:descriptor.tool};
+    return {service:service,state:'CONNECTED',authorizationState:'AUTHORIZED',requiredScopes:required,missingScopes:[],tool:descriptor.tool,operations:descriptor.operations,writeOperations:descriptor.writeOperations};
   } catch (err) {
     const reason=String(err.message || err);
     const state=/EXPIRED/.test(reason) ? 'EXPIRED' : /PERMISSION/.test(reason) ? 'REVOKED' : /UNCONFIGURED/.test(reason) ? 'UNCONFIGURED' : /DENIED|REENROLL|CAPABILITY/.test(reason) ? 'BLOCKED' : 'UNKNOWN';
     const out={service:service,state:state,reason:/^GOOGLE_[A-Z_0-9]+$/.test(reason) ? reason : 'GOOGLE_AUTHORIZATION_UNKNOWN'};
     if (authorize && (state==='EXPIRED' || state==='REVOKED')) {
-      try {out.authorizationUrl=googlePluginAuthorizationUrl_(ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL,[descriptor.scope]).getAuthorizationUrl());} catch (_) {}
+      try {out.authorizationUrl=googlePluginAuthorizationUrl_(ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL,googlePluginRequiredScopes_(service,operation)).getAuthorizationUrl());} catch (_) {}
     }
     return out;
   }
 }
+function googlePluginRequiredScopes_(service, operation) {
+  const d=googlePluginRegistry_()[service];if(!d) throw new Error('GOOGLE_SERVICE_NOT_IMPLEMENTED');
+  const write=d.writeOperations.indexOf(operation)>=0;
+  // The existing Drive about principal check is shared by all non-Gmail adapters.
+  return [write ? d.writeScope : d.scope].concat(service!=='gmail' && service!=='drive' ? [googlePluginRegistry_().drive.scope] : []);
+}
 function googlePluginConnections_(auth, body, authorize) {
-  if (Object.keys(body).some(function(k){return ['op','deviceId','service'].indexOf(k)<0;})) throw new Error('GOOGLE_MANAGER_ARGUMENT_DENIED');
-  if (authorize) return googlePluginConnection_(auth.deviceId,String(body.service || ''),true);
-  return {connections:['gmail','drive','calendar','sheets'].map(function(service){return googlePluginConnection_(auth.deviceId,service,false);})};
+  if (Object.keys(body).some(function(k){return ['op','deviceId','service','services','access'].indexOf(k)<0;})) throw new Error('GOOGLE_MANAGER_ARGUMENT_DENIED');
+  if(!authorize) return {connections:Object.keys(googlePluginRegistry_()).map(function(service){const out=googlePluginConnection_(auth.deviceId,service,false);const d=googlePluginRegistry_()[service];out.writeAuthorization=d.writeOperations.length ? googlePluginConnection_(auth.deviceId,service,false,d.writeOperations[0]).state : 'UNSUPPORTED';return out;})};
+  if(body.service && body.service!=='bundle') return googlePluginConnection_(auth.deviceId,String(body.service),true);
+  googlePluginOwner_(auth.deviceId);
+  const registry=googlePluginRegistry_(), ids=body.services || Object.keys(registry);
+  if(!Array.isArray(ids)||!ids.length||ids.length>5||ids.some(function(id){return !registry[id];})||new Set(ids).size!==ids.length) throw new Error('GOOGLE_BUNDLE_ARGUMENT_DENIED');
+  if(body.access && ['read','write'].indexOf(body.access)<0) throw new Error('GOOGLE_BUNDLE_ARGUMENT_DENIED');
+  const scopes=[];ids.forEach(function(id){const d=registry[id];googlePluginRequiredScopes_(id,body.access==='write' ? d.writeOperations[0] : '').forEach(function(scope){if(scopes.indexOf(scope)<0)scopes.push(scope);});});
+  const info=ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL,scopes), granted=info.getAuthorizedScopes();
+  if(!Array.isArray(granted)) return {service:'bundle',state:'UNKNOWN',reason:'GOOGLE_GRANTS_UNKNOWN'};
+  const missing=scopes.filter(function(scope){return granted.indexOf(scope)<0;});
+  const needsAuthorization=missing.length>0||info.getAuthorizationStatus()!==ScriptApp.AuthorizationStatus.NOT_REQUIRED;
+  const connections=ids.map(function(id){const d=registry[id];return googlePluginConnection_(auth.deviceId,id,false,body.access==='write'?d.writeOperations[0]:'');});
+  const state=needsAuthorization?'MISSING':connections.every(function(v){return v.state==='CONNECTED';})?'CONNECTED':connections.some(function(v){return v.state==='BLOCKED';})?'BLOCKED':'UNKNOWN';
+  const out={service:'bundle',state:state,requiredScopes:scopes,missingScopes:missing,connections:connections};
+  if(needsAuthorization) out.authorizationUrl=googlePluginAuthorizationUrl_(info.getAuthorizationUrl());
+  return out;
 }
 function googlePluginRead_(service, ownerHash, headerIds) {
   const profile=googlePluginPrincipal_(service,ownerHash);
@@ -110,11 +143,12 @@ function googlePluginEvidence_(taskId) {
   if (task && task.google_plugin_service) return {result_json:task.google_plugin_result_json || '',execute_log_id:task.google_plugin_execute_log || '',verify_log_id:task.google_plugin_verify_log || ''};
   return composioState_(taskId) || {};
 }
-function executeGooglePluginTask_(taskId, objectiveOverride) {
+function executeGooglePluginTask_(taskId, objectiveOverride, operation) {
   const task=getTask_(taskId), service=googlePluginService_(task.objective), descriptor=googlePluginRegistry_()[service];
   if (!descriptor || !/^ANDROID:/.test(String(task.source))) throw new Error('GOOGLE_TASK_ROUTE_DENIED');
   const objective=objectiveOverride==null ? String(task.objective) : geminiExecutionObjective_(objectiveOverride,task.objective);
   if (googlePluginService_(objective)!==service) throw new Error('GOOGLE_REASONING_ROUTE_DENIED');
+  if(['calendar','sheets','docs'].indexOf(service)>=0) return executeGoogleBundleTask_(taskId,objective,operation);
   // Narrow prototype operations. Unsupported Google requests stay here and cannot fall back to Composio.
   if (/\b(send|delete|remove|create|update|upload|publish|archive|trash|reply|forward|mark|move|rename|share|invite)\b/i.test(String(task.objective)+' '+objective)) throw new Error('GOOGLE_WRITES_DENIED');
   const headersRequested=service==='gmail' && /\b(headers?|recent|latest|list)\b/i.test(String(task.objective));

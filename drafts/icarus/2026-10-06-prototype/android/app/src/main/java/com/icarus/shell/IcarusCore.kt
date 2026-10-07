@@ -31,7 +31,7 @@ interface ExecutionGateway {
     suspend fun cancel()
 }
 
-data class GoogleConnection(val service: String, val state: String, val reason: String)
+data class GoogleConnection(val service: String, val state: String, val reason: String, val writeAuthorization: String = "UNSUPPORTED")
 
 data class IcarusUiState(
     val googleConnections: List<GoogleConnection> = emptyList(),
@@ -79,11 +79,11 @@ class IcarusViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun authorizeGoogle(activity: Activity, service: String) {
+    fun authorizeGoogle(activity: Activity, access: String) {
         if (!_uiState.value.provisioned) return
         viewModelScope.launch {
             try {
-                val url = executionGateway.googleAuthorization(service)
+                val url = executionGateway.googleAuthorization("bundle", access)
                 require(validGoogleAuthorizationUrl(url))
                 activity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
                 _uiState.value = _uiState.value.copy(googleConnectionMessage = "Finish Google owner consent, then refresh connections and the saved task.")

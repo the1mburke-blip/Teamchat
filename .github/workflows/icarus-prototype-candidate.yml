@@ -1,7 +1,7 @@
 name: Icarus isolated prototype validation
 on:
   push:
-    branches: ['codex/icarus-prototype-20261006']
+    branches: ['codex/icarus-prototype-20261006', 'codex/icarus-google-bundle-20261007']
     paths:
       - 'drafts/icarus/2026-10-06-prototype/**'
       - '.github/workflows/icarus-prototype-candidate.yml'
@@ -16,7 +16,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Deterministic server integration tests
-        run: node drafts/icarus/2026-10-06-prototype/tests/google-plugin.test.cjs
+        run: |
+          node drafts/icarus/2026-10-06-prototype/tests/runtime.test.cjs
+          node drafts/icarus/2026-10-06-prototype/tests/google-bundle.test.cjs
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -24,6 +26,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
+          cache-read-only: true
       - name: Existing stable SDK
         run: |
           set -euo pipefail
@@ -45,4 +48,4 @@ jobs:
           name: Icarus-prototype-UNSIGNED-inspection-only
           path: out/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 1

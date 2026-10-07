@@ -46,7 +46,7 @@ function advanceTaskLocked_(taskId, explicitResume) {
   try {
     if (status === 'QUEUED') {
       transitionTask_(taskId,'INSPECTING');
-      appendLog_(taskId,'INSPECTING','IN_PROGRESS','Loaded durable task state.','TASK_QUEUE:'+taskId,'route=COMPOSIO_V31');
+      appendLog_(taskId,'INSPECTING','IN_PROGRESS','Loaded durable task state.','TASK_QUEUE:'+taskId,'route='+ (googlePluginService_(task.objective) ? 'GOOGLE_NATIVE' : 'COMPOSIO_V31'));
     }
     let current = String(getTask_(taskId).status || '');
     const mode=PropertiesService.getScriptProperties().getProperty('PROVIDER_MODE') || 'NONE';
@@ -76,7 +76,7 @@ function advanceTaskLocked_(taskId, explicitResume) {
       if (reasoning.status !== 'READY_FOR_EXECUTION') throw new Error('REASONING_BLOCKED');
       transitionTask_(taskId,'EXECUTING');
     }
-    if (googlePluginService_(task.objective)) return executeGooglePluginTask_(taskId,reasoning && reasoning.executionRequest);
+    if (googlePluginService_(task.objective)) return executeGooglePluginTask_(taskId,reasoning && reasoning.executionRequest,reasoning && reasoning.googleOperation);
     return executeComposioTask_(taskId,reasoning && reasoning.executionRequest);
   } catch (err) {
     const current = getTask_(taskId);
@@ -85,7 +85,8 @@ function advanceTaskLocked_(taskId, explicitResume) {
     if (ICARUS.TASK_TERMINAL.indexOf(state) < 0 && state !== 'PENDING_AUTH') {
       try { transitionTask_(taskId,'BLOCKED',{evidence_ref:(reasoningFailure ? 'REASONING_BLOCKED ' : 'EXECUTION_BLOCKED ') + String(err.message || err).slice(0,1000)}); } catch (_) {}
     }
-    appendLog_(taskId,reasoningFailure ? 'REASONING' : 'EXECUTING','BLOCKED',reasoningFailure ? 'Reasoning blocked.' : 'Service execution blocked.','COMPOSIO_TASK_STATE:'+taskId,String(err.message || err));
+    let nativeRoute=false;try{nativeRoute=!!googlePluginService_(task.objective);}catch(_){}
+    appendLog_(taskId,reasoningFailure ? 'REASONING' : 'EXECUTING','BLOCKED',reasoningFailure ? 'Reasoning blocked.' : 'Service execution blocked.',(nativeRoute?'GOOGLE_TASK_STATE:':'COMPOSIO_TASK_STATE:')+taskId,/^GOOGLE_[A-Z_0-9]+$/.test(String(err.message || err))?String(err.message):'EXECUTION_ERROR');
     return taskForClient_(taskId);
   }
 }
