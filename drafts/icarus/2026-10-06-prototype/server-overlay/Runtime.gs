@@ -4,7 +4,7 @@ function transitionAllowed_(from, to) {
     'INSPECTING':['REASONING','EXECUTING','BLOCKED','FAIL'],
     'REASONING':['EXECUTING','WAITING_REASONING_CAPACITY','BLOCKED','FAIL'],
     'WAITING_REASONING_CAPACITY':['REASONING','BLOCKED','FAIL'],
-    'EXECUTING':['PENDING_AUTH','VERIFYING','BLOCKED','FAIL'],
+    'EXECUTING':['PENDING_AUTH','VERIFYING','OUTCOME_UNKNOWN','BLOCKED','FAIL'],
     'PENDING_AUTH':['EXECUTING','BLOCKED','FAIL'],
     'VERIFYING':['WORK_COMPLETE_AWAITING_OWNER_VERIFICATION','PARTIAL','BLOCKED','FAIL']
   };
@@ -42,7 +42,7 @@ function advanceTaskLocked_(taskId, explicitResume) {
   const task = getTask_(taskId);
   if (!task) throw new Error('TASK_NOT_FOUND');
   const status = String(task.status || '');
-  if (ICARUS.TASK_TERMINAL.indexOf(status) >= 0) return taskForClient_(taskId);
+  if (status === 'OUTCOME_UNKNOWN' || ICARUS.TASK_TERMINAL.indexOf(status) >= 0) return taskForClient_(taskId);
   try {
     if (status === 'QUEUED') {
       transitionTask_(taskId,'INSPECTING');
@@ -65,7 +65,7 @@ function advanceTaskLocked_(taskId, explicitResume) {
       if (!reasoning || reasoning.status !== 'READY_FOR_EXECUTION') {
         appendLog_(taskId,'REASONING','IN_PROGRESS','Provider attempt started.','TASK_QUEUE:'+taskId,'provider='+mode);
         SpreadsheetApp.flush();
-        reasoning=reason_(getTask_(taskId));
+        reasoning=governanceReason_(getTask_(taskId),function(){return reason_(getTask_(taskId));});
         appendLog_(taskId,'REASONING',reasoning.status,'Provider reasoning returned.',reasoning.evidence,JSON.stringify(reasoning));
         SpreadsheetApp.flush();
       }
@@ -83,7 +83,7 @@ function advanceTaskLocked_(taskId, explicitResume) {
     const state = current ? String(current.status || '') : '';
     const reasoningFailure=state === 'REASONING';
     if (ICARUS.TASK_TERMINAL.indexOf(state) < 0 && state !== 'PENDING_AUTH') {
-      try { transitionTask_(taskId,'BLOCKED',{evidence_ref:(reasoningFailure ? 'REASONING_BLOCKED ' : 'EXECUTION_BLOCKED ') + String(err.message || err).slice(0,1000)}); } catch (_) {}
+      try { transitionTask_(taskId,(IcarusGovernance.snapshot(taskId)||{}).state==='OUTCOME_UNKNOWN'?'OUTCOME_UNKNOWN':'BLOCKED',{evidence_ref:(reasoningFailure ? 'REASONING_BLOCKED ' : 'EXECUTION_BLOCKED ') + String(err.message || err).slice(0,1000)}); } catch (_) {}
     }
     let nativeRoute=false;try{nativeRoute=!!googlePluginService_(task.objective);}catch(_){}
     appendLog_(taskId,reasoningFailure ? 'REASONING' : 'EXECUTING','BLOCKED',reasoningFailure ? 'Reasoning blocked.' : 'Service execution blocked.',(nativeRoute?'GOOGLE_TASK_STATE:':'COMPOSIO_TASK_STATE:')+taskId,/^GOOGLE_[A-Z_0-9]+$/.test(String(err.message || err))?String(err.message):'EXECUTION_ERROR');

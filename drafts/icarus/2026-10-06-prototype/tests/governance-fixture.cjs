@@ -1,0 +1,22 @@
+// Disposable trusted host. Real source, synthetic native Sheets transport; no external API.
+const fs=require('fs'),path=require('path'),vm=require('vm'),crypto=require('crypto');
+function createFixture(directory){
+ fs.mkdirSync(directory,{recursive:true});
+ const file=path.join(directory,'fixture-effect.json'),journal=path.join(directory,'governance-journal.json');
+ const data=fs.existsSync(journal)?JSON.parse(fs.readFileSync(journal)):{};
+ if(!fs.existsSync(file))fs.writeFileSync(file,JSON.stringify({value:'before',mutations:0}));
+ const properties={STATE_SHEET_ID:'fixture',GOVERNANCE_PERMIT_SIGNING_KEY:crypto.randomBytes(32).toString('hex')};
+ function sheet(name){if(!data[name])data[name]=[];return {appendRow(row){data[name].push(row);fs.writeFileSync(journal,JSON.stringify(data));},getDataRange(){return {getValues:()=>structuredClone(data[name])};}};}
+ const tasks={};for(const letter of 'ABCDEFGHUX')tasks['fixture'+letter]={task_id:'fixture'+letter,objective:'Update B4 to "paid" in spreadsheet fixture01',created_utc:'2026-10-07T12:00:00Z'};
+ const ctx={console,Date,JSON,Object,Array,String,Number,Math,Error,Boolean,nowIso_:()=>new Date().toISOString(),getTask_:id=>tasks[id],sha256Hex_:s=>crypto.createHash('sha256').update(s).digest('hex'),constantTimeEquals_:(a,b)=>a===b,PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties[k]||null,setProperty:(k,v)=>properties[k]=v})},SpreadsheetApp:{openById:()=>({getSheetByName:n=>data[n]?sheet(n):null,insertSheet:sheet}),flush(){}},Utilities:{Charset:{UTF_8:'utf8'},getUuid:()=>crypto.randomUUID(),computeHmacSha256Signature:(v,k)=>[...crypto.createHmac('sha256',k).update(v).digest()]},ScriptApp:{getOAuthToken:()=> 'disposable-fixture-not-live'},requireCapability_(){}};
+ ctx.UrlFetchApp={fetch(url,opt){const effect=JSON.parse(fs.readFileSync(file));if(url!=='https://sheets.googleapis.com/v4/spreadsheets/fixture01/values/B4?'+(opt.method==='get'?'valueRenderOption=UNFORMATTED_VALUE':'valueInputOption=RAW'))throw Error('FIXTURE_ENDPOINT_DENIED');if(opt.method==='put'){effect.value=JSON.parse(opt.payload).values[0][0];effect.mutations++;fs.writeFileSync(file,JSON.stringify(effect));if(ctx.uncertain)throw Error('FIXTURE_RESPONSE_LOST');}return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({values:[[effect.value]]})};}};
+ vm.createContext(ctx);for(const name of ['GovernanceKernel.gs','GooglePlugin.gs','GoogleBundle.gs'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../server-overlay',name),'utf8'),ctx,{filename:name});
+ const kernel=vm.runInContext('IcarusGovernance',ctx),plan={service:'sheets',operation:'update_range',resourceId:'fixture01',range:'B4',text:'paid'},actor={id:'disposable-runner',role:'executor'},verifier={id:'independent-reviewer',role:'verifier'};
+ function spec(id){const s=ctx.governanceGoogleSpec_(tasks[id],plan);s.agentId=actor.id;s.evidenceContract={readPath:'fixture-independent-filesystem-read',expectedHash:kernel.hash({values:[['paid']]})};return s;}
+ function preflight(id,selection){if(!tasks[id])throw Error('FIXTURE_TASK_DENIED');if(selection&&kernel.hash(ctx.googleBundleValidateOperation_(tasks[id].objective,selection))!==kernel.hash(plan))throw Error('FIXTURE_PLAN_DENIED');return kernel.prepare(id,spec(id),actor);}
+ function execute(id,permit,overrides){const s=Object.assign(spec(id),overrides||{});return kernel.run(permit,s,actor,()=>{const before=ctx.googleBundleRead_(tasks[id],plan);return ctx.googleBundleWrite_(tasks[id],plan,before);});}
+ function observe(id){const r=kernel.snapshot(id),effect=JSON.parse(fs.readFileSync(file));return {taskId:id,revision:r.revision,targetHash:kernel.hash(r.spec.target),criteriaHash:kernel.hash(r.spec.evidenceContract),observedHash:kernel.hash({values:[[effect.value]]}),readRef:'fixture-effect.json#'+effect.mutations};}
+ function snapshot(id){const r=kernel.snapshot(id);if(!r)return null;const safe=structuredClone(r);delete safe.permit;return safe;}
+ return {preflight,execute,observe,snapshot,effect:()=>JSON.parse(fs.readFileSync(file)),verify:(id,evidence)=>kernel.verdict(id,evidence,verifier),selfPass:(id,evidence)=>kernel.verdict(id,evidence,actor),bypass:()=>ctx.googleBundleWrite_(tasks.fixtureB,plan,{values:[['before']]}),rawBypass:()=>ctx.googleBundleRequest_('put','https://sheets.googleapis.com/v4/spreadsheets/fixture01/values/B4?valueInputOption=RAW',{values:[['evil']]}),setUncertain:v=>ctx.uncertain=v,kernel,ctx,plan,spec,actor};
+}
+module.exports={createFixture};

@@ -45,6 +45,11 @@ function composioChargeAmount_(obj) {
 }
 
 function composioRequest_(method, path, body) {
+  return IcarusGovernance.composioTransport(method,path,body,function(){return composioTransportHttp_(method,path,body);});
+}
+function composioTransportHttp_(method,path,body) {
+  // Recheck even on direct helper access: only the active governed request may fetch.
+  IcarusGovernance.composioTransport(method,path,body,function(){return null;});
   const cfg = composioApiConfig_();
   const options = {
     method:String(method || 'get').toLowerCase(),
@@ -281,6 +286,7 @@ function composioGenerateArguments_(toolSlug, objective) {
 }
 
 function composioExecuteInSession_(sessionId, toolSlug, args, accountId) {
+  IcarusGovernance.composioWire(sessionId,toolSlug,args,accountId);
   const payload={
     tool_slug:toolSlug,
     arguments:args || {}
@@ -324,6 +330,7 @@ function taskForClient_(taskId) {
   if (!task) throw new Error('TASK_NOT_FOUND');
   const c=googlePluginEvidence_(taskId);
   const out=Object.assign({},task);
+  const g=IcarusGovernance.snapshot(taskId);if(g)out.governance={state:g.state,revision:g.revision,policyVersion:IcarusGovernance.policyVersion,evidenceRef:g.evidenceRef||'',verification:g.verification||null};
   out.evidence_fingerprint=ownerEvidenceFingerprint_(taskId);
   out.owner_verification=ownerVerificationRecord_(task);
   if (task.google_plugin_service) out.google_tool=task.google_plugin_tool || googlePluginRegistry_()[task.google_plugin_service].tool;
@@ -339,6 +346,10 @@ function taskForClient_(taskId) {
 }
 
 function executeComposioTask_(taskId, objectiveOverride) {
+  if(PropertiesService.getScriptProperties().getProperty('COMPOSIO_ZERO_COST_VERIFIED')!=='true')throw new Error('GOVERNANCE_ZERO_COST_UNVERIFIED');
+  return IcarusGovernance.withComposioTask(taskId,function(){return executeComposioTaskGoverned_(taskId,objectiveOverride);});
+}
+function executeComposioTaskGoverned_(taskId,objectiveOverride) {
   const task=getTask_(taskId);
   if (!task) throw new Error('TASK_NOT_FOUND');
   const objective=objectiveOverride === undefined || objectiveOverride === null ? String(task.objective || '').trim() : geminiExecutionObjective_(objectiveOverride,task.objective);
@@ -376,6 +387,7 @@ function executeComposioTask_(taskId, objectiveOverride) {
   if (currentStatus === 'PENDING_AUTH' || currentStatus === 'INSPECTING') transitionTask_(taskId,'EXECUTING');
   else if (currentStatus !== 'EXECUTING' && currentStatus !== 'VERIFYING') throw new Error('COMPOSIO_UNEXPECTED_TASK_STATE:' + currentStatus);
 
+  return governanceExecuteComposio_(task,sessionId,route.toolSlug,args,accountId,function(){
   const executed=composioExecuteInSession_(sessionId,route.toolSlug,args,accountId);
   if (!composioExecutionSucceeded_(executed)) throw new Error('COMPOSIO_EXECUTION_FAILED');
   const executeLog=String(executed.log_id || composioFindString_(executed,'log_id') || '');
@@ -406,4 +418,5 @@ function executeComposioTask_(taskId, objectiveOverride) {
   transitionTask_(taskId,'WORK_COMPLETE_AWAITING_OWNER_VERIFICATION',{evidence_ref:evidence});
   appendLog_(taskId,'VERIFYING','WORK_COMPLETE_AWAITING_OWNER_VERIFICATION','Executor repeat-read matched; Michael verification required.','COMPOSIO_SESSION:'+sessionId,'tool='+route.toolSlug+';account='+accountId+';execute='+executeLog+';verify='+verifyLog+';fingerprint='+fp2);
   return taskForClient_(taskId);
+  });
 }

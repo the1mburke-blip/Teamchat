@@ -67,6 +67,7 @@ function googleBundleWindow_(task, plan) {
 function googleBundleRequest_(method,url,body) {
   const allowed=/^https:\/\/(www\.googleapis\.com\/calendar\/v3\/calendars\/primary\/events(?:\/[A-Za-z0-9_-]+)?|sheets\.googleapis\.com\/v4\/spreadsheets\/[A-Za-z0-9_-]+(?:\/values\/[^?#]+)?|docs\.googleapis\.com\/v1\/documents\/[A-Za-z0-9_-]+(?::batchUpdate)?)(?:\?[^#\s]*)?$/.test(url);
   if(!allowed || ['get','post','put'].indexOf(method)<0)throw new Error('GOOGLE_ENDPOINT_DENIED');
+  IcarusGovernance.wire(method,url,body);
   const token=ScriptApp.getOAuthToken(),options={method:method,headers:{Authorization:'Bearer '+token},muteHttpExceptions:true,followRedirects:false};
   if(body){options.contentType='application/json';options.payload=JSON.stringify(body);}
   let response;try{response=UrlFetchApp.fetch(url,options);}catch(_){throw new Error(method==='get'?'GOOGLE_TRANSPORT_UNKNOWN':'GOOGLE_WRITE_OUTCOME_UNKNOWN');}
@@ -96,6 +97,7 @@ function googleBundleDoc_(plan) {
   return {service:'docs',documentId:data.documentId,title:String(data.title||'').slice(0,200),revisionId:String(data.revisionId||''),text:text.slice(0,10000),truncated:text.length>10000};
 }
 function googleBundleRead_(task,plan) {
+  IcarusGovernance.guard(task,plan,false);
   if(plan.candidate) return {service:'calendar',candidate:true,requestedObjective:plan.requestedObjective,scope:'candidate only; no Calendar mutation'};
   if(plan.service==='calendar') {
     let url='https://www.googleapis.com/calendar/v3/calendars/primary/events';
@@ -116,20 +118,21 @@ function googleBundleRead_(task,plan) {
   return doc;
 }
 function googleBundleWrite_(task,plan,before) {
+  IcarusGovernance.guard(task,plan,true);
   if(plan.candidate)return before;
   if(plan.service==='calendar') {
     const id=sha256Hex_('ICARUS:'+task.task_id);
-    googleBundleRequest_('post','https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=none',{id:id,summary:plan.summary,start:{dateTime:plan.start},end:{dateTime:plan.end},reminders:{useDefault:false}});
+    governanceBundleMutation_('post','https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=none',{id:id,summary:plan.summary,start:{dateTime:plan.start},end:{dateTime:plan.end},reminders:{useDefault:false}});
     return googleBundleRead_(task,{service:'calendar',operation:'event_metadata',eventId:id});
   }
   if(plan.service==='sheets') {
-    googleBundleRequest_('put','https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(plan.resourceId)+'/values/'+encodeURIComponent(plan.range)+'?valueInputOption=RAW',{range:plan.range,majorDimension:'ROWS',values:[[plan.text]]});
+    governanceBundleMutation_('put','https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(plan.resourceId)+'/values/'+encodeURIComponent(plan.range)+'?valueInputOption=RAW',{range:plan.range,majorDimension:'ROWS',values:[[plan.text]]});
     return googleBundleRead_(task,plan);
   }
   if(plan.text.length+before.text.length>10000 || (plan.operation==='insert_text' && plan.index>before.text.length))throw new Error('GOOGLE_DOC_WRITE_BOUNDS_DENIED');
   if(before.truncated||!before.revisionId)throw new Error('GOOGLE_DOC_WRITE_BOUNDS_UNKNOWN');
   const insert={text:plan.text};if(plan.operation==='append_text')insert.endOfSegmentLocation={};else insert.location={index:plan.index};
-  googleBundleRequest_('post','https://docs.googleapis.com/v1/documents/'+encodeURIComponent(plan.resourceId)+':batchUpdate',{writeControl:{requiredRevisionId:before.revisionId},requests:[{insertText:insert}]});
+  governanceBundleMutation_('post','https://docs.googleapis.com/v1/documents/'+encodeURIComponent(plan.resourceId)+':batchUpdate',{writeControl:{requiredRevisionId:before.revisionId},requests:[{insertText:insert}]});
   return googleBundleRead_(task,plan);
 }
 function executeGoogleBundleTask_(taskId,objective,selection) {
@@ -145,6 +148,7 @@ function executeGoogleBundleTask_(taskId,objective,selection) {
   if(state.state!=='CONNECTED')throw new Error(state.reason||'GOOGLE_AUTHORIZATION_UNKNOWN');
   if(task.status==='PENDING_AUTH')transitionTask_(taskId,'EXECUTING');
   if(task.google_plugin_write_intent)throw new Error('GOOGLE_WRITE_OUTCOME_UNKNOWN');
+  return governanceExecuteGoogle_(task,plan,function(){
   const before=googleBundleRead_(task,plan);
   let result=before;
   if(write&&!plan.candidate) {
@@ -162,4 +166,6 @@ function executeGoogleBundleTask_(taskId,objective,selection) {
   googlePluginStore_(taskId,{google_plugin_result_json:JSON.stringify(repeat),google_plugin_execute_log:executed,google_plugin_verify_log:verified});
   transitionTask_(taskId,match?'WORK_COMPLETE_AWAITING_OWNER_VERIFICATION':'PARTIAL',{evidence_ref:'GOOGLE_NATIVE '+plan.operation+'; '+(match?'bounded readback matched':'readback mismatch')+'; owner verification required'});
   return taskForClient_(taskId);
+  });
 }
+function governanceBundleMutation_(method,url,body){IcarusGovernance.bindWire(method,url,body);return googleBundleRequest_(method,url,body);}

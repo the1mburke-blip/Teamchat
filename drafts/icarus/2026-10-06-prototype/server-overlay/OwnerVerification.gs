@@ -48,6 +48,7 @@ function verifyOwnerTask_(auth, body) {
     // Lost response recovery is read-only and still requires the owning signed device.
     if (existing) {
       if (existing.id!==id) throw new Error('OWNER_VERIFICATION_ALREADY_RECORDED');
+      IcarusGovernance.ownerVerified(taskId,existing);
       return taskForClient_(taskId);
     }
     const cache=CacheService.getScriptCache(), raw=cache.get('OWNER:'+id);
@@ -67,6 +68,7 @@ function verifyOwnerTask_(auth, body) {
       SpreadsheetApp.flush();
       found=findTaskRow_(taskId);
     }
+    IcarusGovernance.ownerPrevalidate(taskId);
     measureTwiceStateMutationPreflight_(taskId,{status:c.decision,owner_verification_json:JSON.stringify(record)});
     const second=ownerTask_(auth,taskId);
     if (second.status!==task.status || ownerEvidenceFingerprint_(taskId)!==c.evidenceFingerprint) throw new Error('OWNER_TASK_CHANGED');
@@ -79,6 +81,7 @@ function verifyOwnerTask_(auth, body) {
     SpreadsheetApp.flush();
     const readback=getTask_(taskId), receipt=ownerVerificationRecord_(readback);
     if (!receipt || JSON.stringify(receipt)!==JSON.stringify(record) || readback.task_id!==taskId || readback.status!==c.decision) throw new Error('OWNER_VERIFICATION_READBACK_FAILED');
+    IcarusGovernance.ownerVerified(taskId,record);
     cache.remove('OWNER:'+id);
     appendLog_(taskId,'OWNER_VERIFICATION',c.decision,'Michael Google identity verified; persisted verdict reread.','TASK_QUEUE:'+taskId,'verification_id='+id+';fingerprint='+c.evidenceFingerprint);
     return taskForClient_(taskId);

@@ -77,9 +77,11 @@ function geminiDirectReason_(task, genome, context) {
   if (!key) throw new Error('REASONING_GEMINI_KEY_MISSING');
   const model=geminiModel_();
   if (!/^gemini-[A-Za-z0-9.-]*flash-lite[A-Za-z0-9.-]*$/.test(model)) throw new Error('REASONING_MODEL_DENIED');
+  const requestBody=geminiRequestBody_(task,genome,context);
+  IcarusGovernance.providerWire(task,model,requestBody);
   const resp=UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
     method:'post',contentType:'application/json',headers:{'x-goog-api-key':key},
-    payload:JSON.stringify(geminiRequestBody_(task,genome,context)),muteHttpExceptions:true,followRedirects:false
+    payload:JSON.stringify(requestBody),muteHttpExceptions:true,followRedirects:false
   });
   const code=resp.getResponseCode();
   if (code === 429 || code >= 500) return {status:'WAITING_REASONING_CAPACITY',provider:'GEMINI_DIRECT',model:model,evidence:'Gemini HTTP '+code};

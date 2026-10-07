@@ -36,6 +36,7 @@ function googlePluginAuthorizationUrl_(value) {
   if (!/^https:\/\/(accounts\.google\.com\/o\/oauth2(?:\/v2)?\/auth|script\.google\.com\/oauthcallback)(?:\?|$)/.test(url) || /[\s\\]/.test(url)) throw new Error('GOOGLE_AUTH_URL_DENIED');
   return url;
 }
+let googlePrincipalProbe_=false;
 function googlePluginGet_(url) {
   const gmailProfile=url==='https://gmail.googleapis.com/gmail/v1/users/me/profile';
   const gmailList=url==='https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=3';
@@ -43,6 +44,7 @@ function googlePluginGet_(url) {
   const driveAbout=url==='https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)';
   const driveList=url==='https://www.googleapis.com/drive/v3/files?pageSize=5&orderBy=modifiedTime%20desc&fields=files(id,name,mimeType,modifiedTime)&q=trashed%3Dfalse';
   if (!gmailProfile && !gmailList && !gmailHeaders && !driveAbout && !driveList) throw new Error('GOOGLE_ENDPOINT_DENIED');
+  if(!googlePrincipalProbe_ || (!gmailProfile&&!driveAbout)) IcarusGovernance.nativeMetadataWire(url);
   let response;const token=ScriptApp.getOAuthToken();
   try {response=UrlFetchApp.fetch(url,{method:'get',headers:{Authorization:'Bearer '+token},muteHttpExceptions:true,followRedirects:false});}
   catch (_) {throw new Error('GOOGLE_TRANSPORT_UNKNOWN');}
@@ -54,10 +56,11 @@ function googlePluginGet_(url) {
   if (raw.length>64000 || (token && raw.indexOf(token)>=0)) throw new Error('GOOGLE_RESPONSE_TOO_LARGE');
   let parsed;try {parsed=JSON.parse(raw);} catch (_) {throw new Error('GOOGLE_INVALID_JSON');}
   if (!parsed || typeof parsed!=='object' || Array.isArray(parsed)) throw new Error('GOOGLE_INVALID_RESPONSE');
+  IcarusGovernance.captureMetadataList(url,parsed);
   return parsed;
 }
 function googlePluginPrincipal_(service, ownerHash) {
-  const profile=googlePluginGet_(service==='gmail' ? 'https://gmail.googleapis.com/gmail/v1/users/me/profile' : 'https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');
+  let profile;googlePrincipalProbe_=true;try{profile=googlePluginGet_(service==='gmail' ? 'https://gmail.googleapis.com/gmail/v1/users/me/profile' : 'https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');}finally{googlePrincipalProbe_=false;}
   const email=service==='gmail' ? profile.emailAddress : (profile.user || {}).emailAddress;
   if (typeof email!=='string' || !constantTimeEquals_(sha256Hex_(email.trim().toLowerCase()),ownerHash)) throw new Error('GOOGLE_API_PRINCIPAL_DENIED');
   return profile;
@@ -114,7 +117,8 @@ function googlePluginConnections_(auth, body, authorize) {
   if(needsAuthorization) out.authorizationUrl=googlePluginAuthorizationUrl_(info.getAuthorizationUrl());
   return out;
 }
-function googlePluginRead_(service, ownerHash, headerIds) {
+function googlePluginRead_(service, ownerHash, headerIds, taskId) {
+  IcarusGovernance.guard(taskId,{service:service},false);
   const profile=googlePluginPrincipal_(service,ownerHash);
   if (service==='gmail') {
     if (headerIds) {
@@ -161,14 +165,17 @@ function executeGooglePluginTask_(taskId, objectiveOverride, operation) {
   if (['MISSING','EXPIRED','REVOKED'].indexOf(connection.state)>=0) {transitionTask_(taskId,'PENDING_AUTH',{evidence_ref:connection.reason+'; authorize '+service+' in Google connections, then refresh this task'});return taskForClient_(taskId);}
   if (connection.state!=='CONNECTED') throw new Error(connection.reason || 'GOOGLE_RECONNECT_REQUIRED');
   if (task.status==='PENDING_AUTH') transitionTask_(taskId,'EXECUTING');
+  const governedPlan={service:service,operation:headersRequested?'header_metadata':service==='gmail'?'mailbox_counts':'list_metadata'};
+  return governanceExecuteGoogle_(task,governedPlan,function(){
   let headerIds=null;
   if(headersRequested){const listed=googlePluginGet_('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=3');if(listed.messages!==undefined && !Array.isArray(listed.messages))throw new Error('GOOGLE_INVALID_RESPONSE');headerIds=(listed.messages || []).slice(0,3).map(function(m){return String(m.id || '');});}
   const tool=headersRequested ? descriptor.headerTool : descriptor.tool;
-  const result=googlePluginRead_(service,ownerHash,headerIds), executeLog=appendLog_(taskId,'EXECUTING','READ_COMPLETE','Native Google read completed.','TASK_QUEUE:'+taskId,tool);
+  const result=googlePluginRead_(service,ownerHash,headerIds,taskId), executeLog=appendLog_(taskId,'EXECUTING','READ_COMPLETE','Native Google read completed.','TASK_QUEUE:'+taskId,tool);
   transitionTask_(taskId,'VERIFYING');
-  const repeated=googlePluginRead_(service,googlePluginOwner_(deviceId),headerIds), verifyLog=appendLog_(taskId,'VERIFYING','READ_COMPLETE','Native Google repeat-read completed.','TASK_QUEUE:'+taskId,tool);
+  const repeated=googlePluginRead_(service,googlePluginOwner_(deviceId),headerIds,taskId), verifyLog=appendLog_(taskId,'VERIFYING','READ_COMPLETE','Native Google repeat-read completed.','TASK_QUEUE:'+taskId,tool);
   const match=JSON.stringify(result)===JSON.stringify(repeated);
   googlePluginStore_(taskId,{google_plugin_tool:tool,google_plugin_result_json:JSON.stringify(repeated),google_plugin_execute_log:String(executeLog),google_plugin_verify_log:String(verifyLog)});
   transitionTask_(taskId,match ? 'WORK_COMPLETE_AWAITING_OWNER_VERIFICATION' : 'PARTIAL',{evidence_ref:'GOOGLE_NATIVE '+tool+'; repeat-read '+(match?'matched; Michael verification required':'changed; owner inspection required')+'; execute='+executeLog+'; verify='+verifyLog});
   return taskForClient_(taskId);
+  });
 }

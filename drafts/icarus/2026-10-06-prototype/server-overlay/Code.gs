@@ -65,7 +65,7 @@ function doPost(e) {
       return jsonResponse_({ok:true,data:mcpListTools_(cleanText_(body.gatewayId,128))});
     }
     if (op === 'mcp_call_tool') {
-      return jsonResponse_({ok:true,data:mcpCallTool_(cleanText_(body.gatewayId,128),cleanText_(body.toolName,128),body.arguments || {})});
+      throw new Error('GOVERNANCE_MCP_PERMIT_REQUIRED');
     }
     if (op === 'runtime') {
       const genome = runtimeGenome_();
