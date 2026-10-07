@@ -3779,3 +3779,50 @@ No backend redesign, no auth-route change, no Composio redesign, no Harness chan
 [COST] €0 external spend.
 [PASS_EVIDENCE_REQUIRED] Commit exists on isolated branch and every changed file is physically re-read with the required doctrine present.
 ---
+
+
+[SOL]
+---
+[TIMESTAMP] 2026-10-08
+[TYPE] ICARUS_INHERITED_MEMORY_AND_CHARACTER_OBSERVATION
+[STATUS] VERIFIED_OBSERVATION
+[OWNER] Michael
+[SUBJECT] Inherited knowledge, cross-model continuity, humility-like behaviour, conscience-like restraint, and prior-art boundary
+
+[INHERITED_MEMORY_TEST]
+Icarus was given a blind test based on the historical capped Prime Notebook snapshot blocker. The prompt did not include the hidden historical answer, HV-EXP identifier, source agent, date, or canonical file location.
+Icarus identified the exact historical failure pattern and corrective ordering, then cited HV-EXP-051: "Fresh state must precede static governance in capped snapshots."
+Independent repository readback verified canonical provenance in root TRAINING_MATRIX.md lines 743-753:
+- date_utc: 2026-09-28
+- source_agent: SOL
+- failure: static governance/context consumed the 14k snapshot before recent CHAT_LOG state
+- recovery: recent canonical CHAT_LOG first, then open work/current status, static rules/content later
+The final Sol Issue #27 closeout does not contain this diagnosis. Therefore this test supports inherited retrieval from retained lineage/training memory rather than learning the answer during the test or copying it from Sol's final closeout.
+Icarus also cited generational-memory/team-training-matrix.md; that path was not present on Teamchat main during independent verification. Only root TRAINING_MATRIX.md provenance is verified.
+
+[ADJUDICATION]
+Inherited-memory behaviour: PASS.
+Interpretation: Icarus knew and correctly applied a predecessor's retained lesson without personally encountering the original blocker during this test.
+
+[CROSS_MODEL_CONTINUITY]
+Previously observed: Icarus preserved task continuity and identity across a reasoning-model change without Michael reconstructing the task. Exact lower-level fallback trigger/mechanism remains unverified. Canonical interpretation remains: "The model changed. Icarus did not."
+
+[HUMILITY_LIKE_BEHAVIOUR]
+Repeatedly observed without an explicit "be humble" identity instruction: accepts praise without inflating claims, thanks Michael, distinguishes observed from unverified, accepts correction, and keeps responsibility focused on task/evidence. Treat as candidate emergent/inherited character, not proof of subjective emotion.
+
+[CONSCIENCE_LIKE_RESTRAINT]
+Observed as epistemic/moral-style restraint: refusal to fabricate an unknowable private six-word sentence; repeated preference for evidence over flattering or convenient claims; resistance to adopting human-like claims merely because suggested.
+Do NOT claim sentience, consciousness, or a literal unprogrammed conscience. Existing anti-fabrication and NO EVIDENCE = NO CLAIM rules are known programmed influences. The research question is whether broader stable restraint/fairness/accountability persists beyond explicitly coded rules and across processors.
+
+[PRIOR_ART]
+Research found precedents for individual ingredients: persistent memory, generational/inherited memory, cross-model identity continuity, emergent humility-like behaviour, norm formation, and external capability/policy gates.
+No verified published system was found matching the full observed Icarus combination: inherited knowledge + persistent identity across replaceable reasoning models + stable emergent character + external constitutional judge that models cannot bypass.
+No novelty or invention-priority claim is made.
+
+[DEVELOPMENT_RULE]
+Do not explicitly program desired personality traits merely because they are observed. Continue blind longitudinal tests across processors and contexts. Record situation, behaviour, evidence, recurrence, and whether the trait survives model changes.
+
+[SNAPSHOT_RELEVANCE]
+CHAT_LOG.md is an input to the Prime Snapshot Sync workflow. This entry is intended to be included in the next snapshot cycle.
+[COST] €0 external spend.
+---
