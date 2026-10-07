@@ -55,8 +55,10 @@ function geminiParseFunctionCall_(response, original) {
   if (calls.length !== 1 || parts.some(function(p){return p.text && !p.thought && String(p.text).trim();})) throw new Error('REASONING_FUNCTION_CALL_REQUIRED');
   const call=calls[0].functionCall;
   if (call.name !== 'execute_authorized_task') throw new Error('REASONING_UNKNOWN_FUNCTION');
-  if (!call.args || typeof call.args !== 'object' || Array.isArray(call.args) || Object.keys(call.args).some(function(k){return k !== 'objective';})) throw new Error('REASONING_MALFORMED_ARGUMENTS');
-  return {executionRequest:geminiExecutionObjective_(call.args.objective, original),callId:String(call.id || '').slice(0,128)};
+  if (!call.args || typeof call.args !== 'object' || Array.isArray(call.args) || Object.keys(call.args).some(function(k){return ['objective','googleOperation'].indexOf(k)<0;})) throw new Error('REASONING_MALFORMED_ARGUMENTS');
+  if(call.args.googleOperation)googleBundleValidateOperation_(original,call.args.googleOperation);
+  const googleOperation=call.args.googleOperation || null;
+  return {googleOperation:googleOperation,executionRequest:geminiExecutionObjective_(call.args.objective, original),callId:String(call.id || '').slice(0,128)};
 }
 
 function geminiRequestBody_(task, genome, context) {
@@ -64,7 +66,7 @@ function geminiRequestBody_(task, genome, context) {
   return {
     systemInstruction:{parts:[{text:rules}]},
     contents:[{role:'user',parts:[{text:JSON.stringify({objective:String(task.objective || '').slice(0,4000),nativeGoogleTools:googlePluginRegistry_(),policy:JSON.stringify(genome || {}).slice(0,3000),experience:(context.experience || []).filter(function(x){return x.verification_evidence;}).slice(0,3).map(function(x){return {id:x.experience_id,principle:String(x.reusable_principle || '').slice(0,400),evidence:String(x.verification_evidence || '').slice(0,400)};})})}]}],
-    tools:[{functionDeclarations:[{name:'execute_authorized_task',description:'Provide the authorized objective to the existing read-only executor.',parameters:{type:'OBJECT',properties:{objective:{type:'STRING'}},required:['objective']}}]}],
+    tools:[{functionDeclarations:[{name:'execute_authorized_task',description:'Provide the authorized objective to the existing governed executor. Google writes require explicit original target and content; no objective expansion.',parameters:{type:'OBJECT',properties:{objective:{type:'STRING'},googleOperation:{type:'OBJECT',properties:{service:{type:'STRING'},operation:{type:'STRING'},resourceId:{type:'STRING'},range:{type:'STRING'},text:{type:'STRING'},index:{type:'INTEGER'},eventId:{type:'STRING'},start:{type:'STRING'},end:{type:'STRING'},summary:{type:'STRING'},timeMin:{type:'STRING'},timeMax:{type:'STRING'}},required:['service','operation']}},required:['objective']}}]}],
     toolConfig:{functionCallingConfig:{mode:'ANY',allowedFunctionNames:['execute_authorized_task']}},
     generationConfig:{temperature:0,maxOutputTokens:1024}
   };
@@ -87,7 +89,7 @@ function geminiDirectReason_(task, genome, context) {
   let parsed;
   try { parsed=JSON.parse(raw); } catch (_) { throw new Error('REASONING_INVALID_JSON'); }
   const call=geminiParseFunctionCall_(parsed,task.objective);
-  return {status:'READY_FOR_EXECUTION',provider:'GEMINI_DIRECT',model:model,executionRequest:call.executionRequest,
+  return {status:'READY_FOR_EXECUTION',provider:'GEMINI_DIRECT',model:model,executionRequest:call.executionRequest,googleOperation:call.googleOperation,
     evidence:'function=execute_authorized_task;model='+model+';response='+String(parsed.responseId || '').slice(0,128)+';call='+call.callId};
 }
 
