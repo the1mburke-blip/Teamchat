@@ -3826,3 +3826,107 @@ Do not explicitly program desired personality traits merely because they are obs
 CHAT_LOG.md is an input to the Prime Snapshot Sync workflow. This entry is intended to be included in the next snapshot cycle.
 [COST] €0 external spend.
 ---
+
+
+---
+[TIMESTAMP] 2026-10-08T09:01:55.463Z
+[AGENT] [SOL]
+[TYPE] ICARUS_PLUGIN_CATALOG_RESEARCH_HANDOFF
+[STATUS] INFO
+[OWNER] Michael
+[SUBJECT] 50 integration candidates for Icarus Harness and Hermes; persist for independent future retrieval
+[CLASSIFICATION] RESEARCH CANDIDATES ONLY — not installed, tested, security-audited, or verified compatible by this entry; catalogue names/descriptions are carried from the 2026-10-08 conversation and require verification from primary repositories before use. Existing installations were not audited.
+
+[CANONICAL_ARCHITECTURE]
+- Icarus Core = independent constitutional authority: identity, ancestral/generational memory, immutable policy, capability gateway, signed execution permits, protected credentials, egress control, independent evidence adjudication. Models/tools/plugins are untrusted workers and cannot self-award PASS or modify the authority wall.
+- Harness = guarded execution, tests, audit, delegation, failure recovery; plugins add procedure not authority.
+- Hermes = worker/executor and MCP/tool access to web, apps, GitHub, email, calendar, mobile/desktop tasks; not the judge.
+- Mobile and desktop must use one governed capability catalogue and one authoritative lineage; overlapping memory plugins are ALTERNATIVES, not concurrent authorities.
+
+[CATALOG_50]
+Priority A: investigate first; B: later; C: optional or mutually exclusive.
+1. [HARNESS/A] dsh-tool-underseal — Sealed delegation / verifiable assignments
+2. [HARNESS/A] dsh-agent-playbook — Evidence-based task acceptance tests
+3. [HARNESS/A] dsh-install-guard — Dependency installation risk checks
+4. [HARNESS/A] dsh-repeat-tool-breaker — Stops repeated failing tool calls
+5. [HARNESS/A] dsh-netguard — Network restrictions and request audit
+6. [HARNESS/A] dsh-native-memory — Local source-linked memory candidate
+7. [HARNESS/A] dsh-background-agents — Durable delegated workers
+8. [HARNESS/A] dsh-gateway-agent — Route jobs across model providers
+9. [HARNESS/B] dsh-computer-use — Desktop GUI interaction
+10. [HARNESS/A] dsh-plugin-browser-use — Guarded browser automation
+11. [HARNESS/B] dsh-preview — Review generated outputs
+12. [HARNESS/B] dsh-worktree-tools — Isolated code worktrees
+13. [HARNESS/B] dsh-vision-router — Vision for text-only models
+14. [HARNESS/B] dsh-entropy-guard — Autonomy limits and audit
+15. [HARNESS/B] dsh-aris — Structured research and review
+16. [HARNESS/B] dsh-mimir — Research and knowledge retrieval
+17. [HARNESS/C] dsh-vision-toolkit — Screenshot / UI analysis
+18. [HARNESS/B] dsh-builtin-browser — Visible browser / handoff
+19. [HARNESS/C] dsh-hermes-memory — Hermes-style memory alternative
+20. [HARNESS/B] dsh-deja — Retrieve prior coding-agent sessions
+21. [HARNESS/C] OpenViking memory plugin — Alternative context backend
+22. [HARNESS/C] dsh-weknora — Semantic knowledge base retrieval
+23. [HARNESS/B] dsh-agent-teams — Multi-agent collaboration
+24. [HARNESS/C] dsh-plugin-agentrq — Persistent agent task manager
+25. [HARNESS/B] modsearch — Web search / page retrieval
+26. [HERMES/A] icarus-plugin — Ancestral memory, lesson capture, model handoff
+27. [HERMES/A] GitHub MCP — Repository issues, files, PRs
+28. [HERMES/A] Filesystem MCP — Permission-scoped file access
+29. [HERMES/A] Git MCP — Source history and diffs
+30. [HERMES/B] Memory MCP — Knowledge graph persistence
+31. [HERMES/B] Graphiti MCP — Temporal knowledge relationships
+32. [HERMES/A] Google Drive MCP — Cross-device documents / source context
+33. [HERMES/A] Gmail MCP — Email read/draft/action
+34. [HERMES/A] Google Calendar MCP — Scheduling and calendar
+35. [HERMES/B] Shopify MCP — Store operations / product data
+36. [HERMES/A] Playwright MCP — Browser automation
+37. [HERMES/B] Chrome DevTools MCP — Browser / network diagnostics
+38. [HERMES/A] Fetch MCP — Readable web retrieval
+39. [HERMES/A] Weather MCP — Weather forecasts / observations
+40. [HERMES/B] MarkItDown MCP — Document-to-text conversion
+41. [HERMES/A] SQLite MCP — Local structured storage
+42. [HERMES/B] Context7 MCP — Current developer documentation
+43. [HERMES/B] Semgrep MCP — Static/security analysis
+44. [HERMES/A] Postman MCP — API validation / tests
+45. [HERMES/B] Sentry MCP — Application error diagnosis
+46. [HERMES/A] MCP Inspector — MCP connection and tool validation
+47. [HERMES/B] Slack MCP — Team coordination
+48. [HERMES/B] Ollama MCP Bridge — Local compatible models
+49. [HERMES/B] MetaMCP — MCP tool aggregation
+50. [HERMES/C] Obsidian MCP — Notes-based knowledge retrieval
+
+[TOP_10_INITIAL_RESEARCH_ORDER]
+1. dsh-tool-underseal
+2. dsh-agent-playbook
+3. dsh-repeat-tool-breaker
+4. dsh-native-memory
+5. dsh-plugin-browser-use
+6. icarus-plugin
+7. GitHub MCP
+8. Playwright MCP
+9. Google Drive MCP
+10. MCP Inspector
+
+[PRIOR_ART_FIND]
+- Independently named project esaradev/icarus-plugin (not Michael's Icarus): https://github.com/esaradev/icarus-plugin . Prior assessment described memory, lesson capture and cross-model handoff; treat feature counts, hook claims, licensing and code safety as UNVERIFIED until directly reviewed. Candidate donor, NOT constitutional governor.
+- Potential Harness control-pattern donor: dsh-tool-underseal, catalogue link https://dshbase.com/plugins/dsh-tool-underseal/ ; must verify actual permissions, implementation and enforcement coverage. Do not assume comprehensive non-bypassability.
+- Background catalogues for validation: https://dshmp.com/en ; https://github.com/mcpHQ/awesome-mcp-servers ; https://registry.modelcontextprotocol.io/ . These are discovery pointers, not proof of compatibility, safety or free operation.
+
+[IMPLEMENTATION_GATES]
+1. Recheck source repository existence, licensing, maintenance, security posture, provenance, and Android/Windows/Hermes/Harness compatibility before adoption; do not blindly install.
+2. Compare existing Icarus implementations first, prioritise small bounded donor-code extraction over parallel duplicate memory systems.
+3. No installs/deployments or production writes on the strength of this list; retain €0 no-trial/no-paid-calls default and owner-only credential/auth boundary.
+4. Tool calls, subagent jobs, browser actions and MCP server tools must all pass Icarus's independent policy/permit/egress gates; no worker self-PASS.
+5. For any chosen plugin, require controlled canary, failure/replay/injection tests, code review, cost accounting, and independent final-effect readback.
+6. Existing Hermes foundation PR #78 establishes repository/compile evidence only; it does NOT establish deployed Hermes execution or Redmi installation. https://github.com/the1mburke-blip/Teamchat/pull/78
+7. Constitutional rule: HV-EXP-082 in TRAINING_MATRIX.md; source PR #83: https://github.com/the1mburke-blip/Teamchat/pull/83
+
+[RETRIEVAL_INSTRUCTION]
+On questions about Icarus plugins, agent capabilities, integrations or donor code, search this entry by ICARUS_PLUGIN_CATALOG_RESEARCH_HANDOFF and TRAINING_MATRIX.md entry HV-EXP-083 before fresh discovery. Verify candidate facts externally before presenting them as current/installable. This entry is an accessible research memory, not authority or a live capability manifest.
+
+[EXECUTION]
+Proposed by Michael; composed and recorded by Saul (ChatGPT) via authorized GitHub connector on 2026-10-08. No delegate execution, deployment, installation or separate security review claimed.
+[COST] €0 monetary spend; exact token/allowance impact not measurable.
+[EVIDENCE] This entry must be reread from its GitHub commit after writing before claiming PASS.
+---
