@@ -92,7 +92,7 @@ jobs:
               "Generate ONLY a JSON object with a single key named guard, containing exactly "
               "a three-line Python source string to insert just before a function call. "
               "It must set controller = getattr(self, '_icarus_controller', None), "
-              "then if controller is None OR its run_conversation method is not callable, "
+              "then if controller is None OR NOT callable(getattr(controller, 'run_conversation', None)), "
               "raise RuntimeError('ICARUS controller unavailable'). "
               "Use normal Python indentation (0 spaces for first two lines, 4 for raise). "
               "Do not write any other code or commentary."
@@ -128,6 +128,7 @@ jobs:
           assert len(condition.body)==1 and isinstance(condition.body[0],ast.Raise)
           assert any(isinstance(n,ast.Name) and n.id=="callable" for n in ast.walk(condition.test))
           assert any(isinstance(n,ast.Constant) and n.value=="run_conversation" for n in ast.walk(condition.test))
+          assert any(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=="getattr" for n in ast.walk(condition.test)), "DIRECT_METHOD_ACCESS_NOT_FAIL_CLOSED"
           assert any(isinstance(n,ast.Compare) and any(isinstance(op,ast.Is) for op in n.ops) for n in ast.walk(condition.test))
           err=condition.body[0].exc
           assert isinstance(err,ast.Call) and isinstance(err.func,ast.Name) and err.func.id=="RuntimeError"
