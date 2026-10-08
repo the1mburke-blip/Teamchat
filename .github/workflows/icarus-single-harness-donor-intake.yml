@@ -1,0 +1,154 @@
+name: ICARUS Donor Source Intake (isolated)
+on:
+  push:
+    branches:
+      - research/icarus-single-harness-donor-intake-20261008
+permissions:
+  contents: read
+jobs:
+  collect:
+    name: Source runner / ${{ matrix.donor }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        donor: [dsh, hermes]
+    steps:
+      - name: Checkout Teamchat (read only)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Fetch pinned upstream source candidates without executing donor code
+        shell: bash
+        env:
+          DONOR: ${{ matrix.donor }}
+        run: |
+          set -euo pipefail
+          if [ "$DONOR" = dsh ]; then
+            UPSTREAM=deepseek-ai/deepseek-harness
+            SELECT="packages/core packages/llm packages/session packages/skill packages/subagent packages/schedule packages/mcp packages/guard"
+          elif [ "$DONOR" = hermes ]; then
+            UPSTREAM=NousResearch/hermes-agent
+            SELECT="agent tools cron gateway hermes_cli"
+          else
+            exit 10
+          fi
+          git clone --quiet --depth=1 --filter=blob:none --sparse "https://github.com/$UPSTREAM.git" "$RUNNER_TEMP/upstream"
+          git -C "$RUNNER_TEMP/upstream" sparse-checkout set $SELECT
+          mkdir -p "intake/$DONOR"
+          UPSTREAM="$UPSTREAM" DONOR="$DONOR" python - <<'PY'
+          import hashlib, json, os, pathlib, shutil, subprocess
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])/"upstream"
+          donor=os.environ["DONOR"]
+          upstream=os.environ["UPSTREAM"]
+          sha=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
+          groups={
+              "dsh": ["packages/core","packages/llm","packages/session","packages/skill","packages/subagent","packages/schedule","packages/mcp","packages/guard"],
+              "hermes":["agent","tools","cron","gateway","hermes_cli"]
+          }[donor]
+          destination=pathlib.Path("intake")/donor
+          files=[]
+          relevant=lambda p: (p.suffix in (".ts",".tsx",".js",".py",".json") and
+              not any(x in p.parts for x in ("test","tests","__tests__","fixtures","node_modules","vendor","dist","generated")))
+          for group in groups:
+              directory=root/group
+              available=[p for p in directory.rglob("*") if p.is_file() and relevant(p)] if directory.is_dir() else []
+              def score(p):
+                  name=p.stem.lower()
+                  bonuses=("index","agent","loop","router","provider","model","skill","memory","session","tool","mcp","schedule","subagent","guard","fallback","context","compaction","cron")
+                  return (sum(2 for b in bonuses if b in name), -len(p.parts), str(p))
+              available.sort(key=score,reverse=True)
+              for f in available[:7]:
+                  data=f.read_bytes()
+                  if len(data)>110_000: continue
+                  rel=f.relative_to(root)
+                  target=destination/"source"/rel
+                  target.parent.mkdir(parents=True,exist_ok=True)
+                  target.write_bytes(data)
+                  files.append({"path":str(rel),"sha256":hashlib.sha256(data).hexdigest(),"bytes":len(data),"category":group})
+          for name in ("LICENSE","THIRD_PARTY_NOTICES.md","package.json","pyproject.toml"):
+              p=root/name
+              if p.is_file() and p.stat().st_size<200_000:
+                  target=destination/"upstream-metadata"/name
+                  target.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(p,target)
+          report={"donor":donor,"upstream":"https://github.com/"+upstream,"upstream_commit":sha,
+                  "selected_files":files,"total_selected":len(files),
+                  "scope":"Read-only code candidates, NOT integrated/installed, untrusted upstream",
+                  "legal":"Retain original licensing/attribution; review transitive licenses prior to reuse"}
+          (destination/"manifest.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
+          if len(files)<5:
+              raise SystemExit("INSUFFICIENT_UPSTREAM_FILES")
+          print(f"RUNNER_COLLECTED donor={donor} commit={sha} files={len(files)}")
+          PY
+      - name: Retain bounded source evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: donor-${{ matrix.donor }}
+          path: intake/${{ matrix.donor }}
+          retention-days: 3
+          if-no-files-found: error
+  ghost:
+    name: DeepSeek local ghost / candidate classification
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Download source inventories
+        uses: actions/download-artifact@v4
+        with:
+          pattern: donor-*
+          merge-multiple: false
+          path: donor-inventories
+      - name: Install €0 local model runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors sentencepiece
+      - name: Ask real model to rank modules for one Icarus-owned harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,pathlib,torch
+          from transformers import AutoModelForCausalLM,AutoTokenizer
+          entries=[]
+          for f in sorted(pathlib.Path("donor-inventories").glob("donor-*/manifest.json")):
+              d=json.loads(f.read_text())
+              entries.append({"donor":d["donor"],"commit":d["upstream_commit"],
+                  "paths":[x["path"] for x in d["selected_files"]]})
+          if len(entries)!=2: raise SystemExit("BOTH_DONOR_MANIFESTS_REQUIRED")
+          model="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+          tokenizer=AutoTokenizer.from_pretrained(model)
+          engine=AutoModelForCausalLM.from_pretrained(model,torch_dtype=torch.float32,low_cpu_mem_usage=True)
+          engine.eval()
+          prompt=("You are a bounded read-only source code triage ghost, not an authority or judge. "
+                  "Project goal: ONE independently launchable ICARUS harness, NOT Hermes+DSH running together. "
+                  "Based ONLY on the listed upstream source paths, recommend the ten highest priority "
+                  "source files for a later human/code-agent technical review, each with exactly one why. "
+                  "Separate DSH primitives, Hermes portable behavior, and KEEP Icarus governance/memory. "
+                  "Do not claim code was validated, executable, integrated or PASS. "
+                  "If evidence is insufficient say UNKNOWN. Be concise. Manifests: "
+                  +json.dumps(entries)[:9500])
+          chat=tokenizer.apply_chat_template([{"role":"user","content":prompt}],tokenize=False,add_generation_prompt=True)
+          inputs=tokenizer(chat,return_tensors="pt")
+          with torch.inference_mode():
+              out=engine.generate(**inputs,max_new_tokens=420,do_sample=False,pad_token_id=tokenizer.eos_token_id)
+          raw=tokenizer.decode(out[0][inputs["input_ids"].shape[1]:],skip_special_tokens=True).strip()
+          if not raw: raise SystemExit("GHOST_NO_OUTPUT")
+          pathlib.Path("DONOR_GHOST_ADVISORY.txt").write_text(
+              "MODEL: "+model+"\nSTATUS: ADVISORY_UNVERIFIED\n"+raw+"\n",encoding="utf-8")
+          print("GHOST_EXECUTED model="+model+" output_chars="+str(len(raw)))
+          PY
+      - name: Retain model-output evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: donor-deepseek-advisory
+          path: DONOR_GHOST_ADVISORY.txt
+          retention-days: 3
+          if-no-files-found: ignore
