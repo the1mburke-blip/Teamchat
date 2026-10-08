@@ -60,11 +60,11 @@ internal object IcarusExecutionGate {
 """, encoding="utf-8")
     once(module/"OrchestratorImpl.kt",
          'val stableSystem = persona + standingBlock + supplementalBlock + toolInstruction',
-         'val stableSystem = IcarusIdentity.ROOT + "\\n\\n" + persona + standingBlock + supplementalBlock + toolInstruction')
+         'val stableSystem = IcarusIdentity.ROOT + "\n\n" + persona + standingBlock + supplementalBlock + toolInstruction')
     once(module/"OrchestratorImpl.kt",
          'decision is ToolExecutionDecision.Deny -> ToolResult.error(decision.reason)',
-         'decision is ToolExecutionDecision.Deny -> ToolResult.error(decision.reason)\\n'
-         '                    !IcarusExecutionGate.isAuthorized(deterministic.call.name) ->\\n'
+         'decision is ToolExecutionDecision.Deny -> ToolResult.error(decision.reason)\n'
+         '                    !IcarusExecutionGate.isAuthorized(deterministic.call.name) ->\n'
          '                        ToolResult.error("ICARUS_PERMIT_REQUIRED: action denied")')
     once(module/"AgentLoopRunner.kt", "tools.none { it.name == call.name } ->",
          "tools.none { it.name == call.name } ->") if False else None
@@ -74,7 +74,7 @@ internal object IcarusExecutionGate {
     if source.count(anchor) != 1:
         raise RuntimeError("agent loop executor anchor missing")
     source = source.replace(anchor, ' !IcarusExecutionGate.isAuthorized(gateName) -> '
-                 'ToolResult.error("ICARUS_PERMIT_REQUIRED: action denied")\\n'
+                 'ToolResult.error("ICARUS_PERMIT_REQUIRED: action denied")\n'
                  '                    '+anchor)
     loop.write_text(source, encoding="utf-8")
     icon = Image.open(logo).convert("RGB")
