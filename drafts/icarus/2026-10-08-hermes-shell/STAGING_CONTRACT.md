@@ -1,0 +1,26 @@
+# ICARUS Android — Hermes-body source stage (8 October 2026)
+
+**State: STAGED SOURCE / NOT COMPILED / NOT INSTALLED / NOT VERIFIED ON REDMI.** Michael requested a single Icarus-branded Android body keeping Hermes's useful runtime and Qwen, with Icarus's identity as the primary persona and policy authority.
+
+## Proven inputs
+- Standalone donor: https://github.com/l3ad3r1/Hermes-Agent-Android ; MIT license. Shared core: https://github.com/l3ad3r1/agent-core . Current donor `agent-core.ref`: `8445f2a04d4f9ca48c7c8d12221ad33064dd1b45`.
+- Icarus baseline: this repository PR #78 (Hermes mobile foundation, inert), PR #63 (governance-kernel candidate, not deployed); neither grants live mobile authority.
+- Identity artwork: Michael's approved **Celestial Gold Winged Emblem.png**, 7 Oct 2026; binary SHA256 `b55af87a4934fcef76a7a16003dd7406b9558a120a97e918485494f151d86b89`. The original image lives in Michael's ChatGPT Library; it is **not** in GitHub. Transfer only via authorized asset handling.
+- Current Android provider and Qwen settings, Gemini/OpenRouter keys, and ChatGPT failsafe are NOT migrated automatically or hard-coded.
+
+## Staging implementation
+- Keep Hermes Kotlin class names, source license, core tool interfaces and on-device model runtime; do NOT concatenate two runtimes.
+- Replace visible app string values with Icarus and launcher raster/adaptive icon with the **exact approved asset**. Candidate applicationId `com.icarus.preproduction` keeps installed Hermes intact and avoids hijacking its signing identity.
+- Inject Icarus's continuity/persona prefix at the actual `OrchestratorImpl.kt` stable-system-prompt seam. Prompt is guidance only, not permission.
+- Put a deterministic **DENY** stop-gate before two standard interactive tool-call lanes (`OrchestratorImpl.kt` and `AgentLoopRunner.kt`). These are fail-closed scaffolds, **not a complete tool gateway**. Do not enable tools until the real Icarus policy/permit authority and all alternative entrypoints (direct, API, background, plugin/MCP, accessibility, voice) have been covered and independently verified.
+- Preserve memory files and models; ancestral memory may be read only from an authenticated and verified Icarus lineage snapshot. Do not invent or overwrite memory.
+- `apply_icarus_overlay.py` is a *staging patch* to apply within a donor checkout with the approved logo passed separately. It must fail if upstream anchors drift. Do not stage secrets or signing identities.
+
+## Acceptance / STOP
+A source-overlay claim requires exact GitHub readback and static checks. **APK claim** requires real CI/Gradle logs and APK SHA, package/signature validation. **Icarus authority claim** requires adversarial deny/replay/self-PASS tests plus bypass audit. **Mobile claim** requires separate physical Redmi evidence for standalone Qwen, no desktop URL, correct launcher, memory lineage, permissions and tool gates.
+
+Any successful build at this early stage is **inspection-only** and NOT authorization to install or operate a production agent. Unverified native/remote/bot paths must remain disabled in the final mobile artifact.
+
+Protected: Teamchat main, PR #63/#78, production Apps Script/Shopify/Make/Buffer/Metricool/Publora, installed phone, credential stores. €0 only. No signed APK, paid service, deployment or owner authorization assumed.
+
+**PRE-FLIGHT:** Owner Michael; orchestration ChatGPT; repository staging via deterministic GitHub connector; no authenticated Codex/Claude worker acceptance observed; allowance unknown. `TRAINING_MATRIX.md` HV-EXP-001: "A strong model without the required read/write/verification capability is the wrong execution chair. Capability-gate the entire route before spending execution attempts." This stage is bounded by its actual file-edit capability. Independent compiler/device evidence not yet available.
