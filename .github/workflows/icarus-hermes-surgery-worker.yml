@@ -73,14 +73,18 @@ jobs:
         run: |
           set -euo pipefail
           cat >/tmp/icarus-task.txt <<'TASK'
-          ONLY editable file: agent/turn_facade.py. This is FIRST CUT, not complete ICARUS.
-          In TurnFacadeMixin.run_conversation, replace the Hermes-owned per-turn controller with a REQUIRED ICARUS runtime controller read from self._icarus_controller. Delegate run_conversation with the existing argument names/values to that controller, not to agent.conversation_loop.run_conversation. If the ICARUS controller is absent or has no callable run_conversation, raise RuntimeError and fail closed. Keep the existing public function signature and chat method compatible. Do not create a second agent, a supervisory permission wrapper, or any permissive fallback to Hermes. Leave copyright unchanged.
-          Write functional Python code into this one file; do not just explain the plan. Other kernel implementation and tool routes are NOT in scope. Do not claim the overall transplant worked.
+          Edit ONLY agent/turn_facade.py. Output only a diff for that file, with no other text, demo, new files, or greeting scripts.
+          In TurnFacadeMixin.run_conversation:
+          1. Remove the function-local import of run_conversation from agent.conversation_loop.
+          2. Immediately before the existing call named 'result = run_conversation(', use controller = getattr(self, "_icarus_controller", None).
+          3. If controller is None or controller.run_conversation is not callable, explicitly raise RuntimeError("ICARUS controller unavailable"). NEVER fall back to Hermes.
+          4. Replace that call with result = controller.run_conversation( and remove the leading 'self,' argument ONLY, preserving the remaining arguments in their original order.
+          Keep the function's signature and all unrelated code unchanged. No second agent or permission wrapper. This is only cut one; never assert full transplant.
           TASK
           cd /tmp/icarus-one-file
           echo 'CODING_AGENT_ATTEMPTED=YES' >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
           set +e
-          timeout 660 aider --yes --no-gitignore --map-tokens 0 --no-pretty --no-stream --no-auto-commits --no-dirty-commits --no-suggest-shell-commands --no-show-model-warnings --model ollama_chat/qwen2.5-coder:1.5b --message-file /tmp/icarus-task.txt agent/turn_facade.py > "$GITHUB_WORKSPACE/surgery-output/coder.log" 2>&1
+          timeout 660 aider --yes --edit-format diff --no-gitignore --map-tokens 0 --no-pretty --no-stream --no-auto-commits --no-dirty-commits --no-suggest-shell-commands --no-show-model-warnings --model ollama_chat/qwen2.5-coder:1.5b --message-file /tmp/icarus-task.txt agent/turn_facade.py > "$GITHUB_WORKSPACE/surgery-output/coder.log" 2>&1
           code=$?
           set -e
           echo "CODING_AGENT_EXIT=$code" >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
@@ -108,7 +112,8 @@ jobs:
           source = open('agent/turn_facade.py', encoding='utf-8').read()
           f = next(n for n in ast.walk(ast.parse(source)) if isinstance(n, ast.FunctionDef) and n.name == 'run_conversation')
           assert '_icarus_controller' in ast.get_source_segment(source, f), 'ICARUS_HOOK_MISSING'
-          assert any(isinstance(n, ast.Raise) for n in ast.walk(f)), 'FAIL_CLOSED_MISSING'
+          assert any(isinstance(n, ast.Raise) and isinstance(n.exc, ast.Call) and isinstance(n.exc.func, ast.Name) and n.exc.func.id == 'RuntimeError' for n in ast.walk(f)), 'EXPLICIT_RUNTIMEERROR_MISSING'
+          assert any(isinstance(n, ast.Attribute) and n.attr == 'run_conversation' for n in ast.walk(f)), 'DELEGATION_MISSING'
           assert not any(isinstance(n, ast.ImportFrom) and n.module == 'agent.conversation_loop' for n in ast.walk(f)), 'HERMES_CONTROLLER_STILL_IMPORTED'
           print('STRUCTURE_CHECK=PASS; FULL_RUNTIME=UNVERIFIED')
           PY
