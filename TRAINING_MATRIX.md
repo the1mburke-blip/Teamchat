@@ -1250,3 +1250,23 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `reusable_principle`: **The model is not Icarus. The model works for Icarus. PASS is evidence-backed; everything else is FAIL.**
 - `cost`: €0 external spend.
 - `confidence`: HIGH for owner directives and observed task/honesty behavior; exact fallback trigger remains unverified.
+
+
+[SOL]
+### HV-EXP-083 — Icarus Hermes/Harness 50-plugin inventory: research is not executable authority
+- `experience_id`: HV-EXP-083
+- `date_utc`: 2026-10-08T09:02:27.148Z
+- `source_agent`: Saul (ChatGPT), at Michael's direction; no external ghost/delegate execution claimed.
+- `task_problem`: Preserve the researched shortlist of 50 Harness/Hermes extensions in the generational memory so that later Icarus sessions and alternate model chairs can retrieve and critically assess them without relying on the current chat.
+- `canonical_catalogue`: Root `CHAT_LOG.md`, entry type `ICARUS_PLUGIN_CATALOG_RESEARCH_HANDOFF` on 2026-10-08; contains 25 Harness candidates (#1-25), 25 Hermes/MCP candidates (#26-50), individual purposes/priorities, top 10, source pointers, operating architecture, and adoption/testing gates.
+- `selected_first_10`: dsh-tool-underseal; dsh-agent-playbook; dsh-repeat-tool-breaker; dsh-native-memory; dsh-plugin-browser-use; icarus-plugin; GitHub MCP; Playwright MCP; Google Drive MCP; MCP Inspector.
+- `primary_donor_review`: Independently named `esaradev/icarus-plugin` (https://github.com/esaradev/icarus-plugin) was identified as a possible donor for ancestral memory and cross-model handoff. Its features, licensing and safety are *not newly verified* by this writeback; it is not Michael's Icarus and does not govern authority.
+- `context_sources`: https://dshmp.com/en ; https://dshbase.com/plugins/dsh-tool-underseal/ ; https://registry.modelcontextprotocol.io/ ; https://github.com/mcpHQ/awesome-mcp-servers
+- `architecture_rule`: Icarus Core owns policy, inherited memory, identity, signed permits, credential gateway, egress and independent binary PASS/FAIL; Hermes is a worker/tool executor, Harness supplies subordinate safety/testing/delegation tools. No installed plugin or worker may supersede the Icarus authority wall (see HV-EXP-082).
+- `verification_boundary`: Catalogue is *candidate research*, not a validated installation list, running capability manifest, security audit or user-device acceptance. Prior Hermes foundation PR #78 proves a compiled repo foundation but not physical Redmi or production runtime integration: https://github.com/the1mburke-blip/Teamchat/pull/78
+- `what_not_to_retry`: Do not duplicate independent ancestral-memory stores or conflate shared knowledge with constitutional authority; do not install large unreviewed plugin batches; do not presume MCP capability implies secure API access or €0 service costs; do not accept self-certified executor PASS.
+- `reusable_principle`: **Plugins extend Icarus's hands, never Icarus's law. A shortlist becomes a capability only after authorized installation, controlled testing and independent readback.**
+- `retrieval_instruction`: For Hermes, Harness, plugin, MCP, Icarus donor-code or ancestral-memory design tasks, read this entry and the full 50-item catalogue in `CHAT_LOG.md` before suggesting, selecting or executing integrations. Reverify current external sources.
+- `success_evidence`: Requires a GitHub reread of both appended entries with the expected marker and all 50 catalogue items. A memory write proves repository availability, *not* that the currently deployed Icarus has refreshed its snapshot.
+- `cost`: €0 monetary spend; exact ChatGPT allowance consumption not measurable.
+- `confidence`: HIGH that the 50-item prior-chat catalogue has been preserved in source-controlled memory after readback; LOW/UNVERIFIED for individual plugin compatibility, maintenance and actual Icarus runtime ingestion.
