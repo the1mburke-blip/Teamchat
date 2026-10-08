@@ -43,7 +43,9 @@ jobs:
           git -C /tmp/icarus-donor status --porcelain
           test -f /tmp/icarus-donor/LICENSE
           test -f "$GITHUB_WORKSPACE/icarus/memory/identity.md"
-          test -f "$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-prototype/server-overlay/GovernanceKernel.gs"
+          curl --fail --silent --show-error --location "https://raw.githubusercontent.com/the1mburke-blip/Teamchat/9800928ffea7645b9218eb32fbf6aa9abec2cab5/drafts/icarus/2026-10-06-prototype/server-overlay/GovernanceKernel.gs" --output /tmp/icarus-governance-reference.gs
+          test -s /tmp/icarus-governance-reference.gs
+          echo "GOVERNANCE_SOURCE=Teamchat@9800928ffea7645b9218eb32fbf6aa9abec2cab5" >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
           echo "SCOPE: ephemeral Ubuntu runner only; no credentials; no live services" >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
 
       - name: Install free local coding-agent dependencies
@@ -80,7 +82,7 @@ jobs:
           cd /tmp/icarus-donor
           echo 'CODING_AGENT_INVOCATION=STARTED' | tee -a "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
           set +e
-          timeout 1560 aider --yes --no-pretty --no-stream --no-auto-commits --no-dirty-commits --no-suggest-shell-commands --no-show-model-warnings --model ollama_chat/qwen2.5-coder:1.5b --message-file /tmp/icarus-transplant-task.txt --read "$GITHUB_WORKSPACE/icarus/memory/identity.md" --read "$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-prototype/server-overlay/GovernanceKernel.gs" >"$GITHUB_WORKSPACE/surgery-output/coding-agent.log" 2>&1
+          timeout 1560 aider --yes --no-pretty --no-stream --no-auto-commits --no-dirty-commits --no-suggest-shell-commands --no-show-model-warnings --model ollama_chat/qwen2.5-coder:1.5b --message-file /tmp/icarus-transplant-task.txt --read "$GITHUB_WORKSPACE/icarus/memory/identity.md" --read /tmp/icarus-governance-reference.gs >"$GITHUB_WORKSPACE/surgery-output/coding-agent.log" 2>&1
           code=$?
           set -e
           echo "CODING_AGENT_EXIT=$code" | tee -a "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
