@@ -21,7 +21,7 @@ jobs:
       DO_NOT_TRACK: "1"
       PINNED_DONOR: 99a45ecc17cc51c0488ec3b8ccf7eaf483f7203d
     steps:
-      - name: Sparse checkout pinned donor: ONE source file and MIT license
+      - name: "Sparse checkout pinned donor: ONE source file and MIT license"
         uses: actions/checkout@v4
         with:
           repository: NousResearch/hermes-agent
