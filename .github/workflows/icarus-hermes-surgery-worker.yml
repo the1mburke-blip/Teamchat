@@ -1,0 +1,126 @@
+name: ICARUS Hermes Disposable Transplant Ghost
+
+on:
+  push:
+    branches:
+      - experiment/icarus-hermes-surgery-20261008
+    paths:
+      - .github/workflows/icarus-hermes-surgery-worker.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icarus-hermes-surgery-experiment
+  cancel-in-progress: false
+
+jobs:
+  surgery:
+    name: Qwen coding agent - isolated surgery
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      HERMES_HOME: /tmp/icarus-surgery-home
+      OLLAMA_API_BASE: http://127.0.0.1:11434
+      OLLAMA_CONTEXT_LENGTH: "8192"
+      OLLAMA_HOST: 127.0.0.1:11434
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+    steps:
+      - name: Checkout reference identity, governance and rules
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare disposable Hermes source and preserve donor identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/icarus-surgery-home "$GITHUB_WORKSPACE/surgery-output"
+          git clone --quiet --no-tags https://github.com/NousResearch/hermes-agent.git /tmp/icarus-donor
+          git -C /tmp/icarus-donor checkout --quiet 99a45ecc17cc51c0488ec3b8ccf7eaf483f7203d
+          echo "DONOR_COMMIT=$(git -C /tmp/icarus-donor rev-parse HEAD)" | tee "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
+          git -C /tmp/icarus-donor status --porcelain
+          test -f /tmp/icarus-donor/LICENSE
+          test -f "$GITHUB_WORKSPACE/icarus/memory/identity.md"
+          test -f "$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-prototype/server-overlay/GovernanceKernel.gs"
+          echo "SCOPE: ephemeral Ubuntu runner only; no credentials; no live services" >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
+
+      - name: Install free local coding-agent dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet 'aider-chat'
+          curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh
+          sh /tmp/ollama-install.sh
+          nohup ollama serve >/tmp/icarus-ollama.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull qwen2.5-coder:1.5b
+          echo 'MODEL=ollama_chat/qwen2.5-coder:1.5b (local CPU, no paid API)' >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
+
+      - name: Give the real Qwen coding agent the owner task
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/icarus-transplant-task.txt <<'TASK'
+          OWNER: Michael. Your chair: Qwen2.5-Coder-1.5B-Instruct running through the Aider source-editing coding agent, on a disposable GitHub Actions worker.
+          TASK: PERFORM AN ACTUAL SOURCE TRANSPLANT IN THIS DISPOSABLE /tmp/icarus-donor COPY.
+          Source: upstream NousResearch/hermes-agent at pinned commit. The main Teamchat repo and the owner's laptop are NOT targets.
+          Replace the Hermes-controlled agent identity/authority/startup with the canonical ICARUS identity and kernel, retaining donor tool implementations, provider adapters, memory/persistence, working agent loop and necessary dependencies. ICARUS must be the SINGLE agent. Do NOT leave Hermes as a second agent underneath an ICARUS supervisory wrapper. Do NOT just rename a banner, add a system prompt, or merely insert an ICARUS pretool plugin.
+          Start with source reconnaissance and make the smallest substantive code edits possible. The existing ICARUS governance is written in Apps Script; if Python port cannot be completed faithfully, do not invent a PASS or claim governance enforcement.
+          The canonical identity is provided read-only from Teamchat. The governance source is provided read-only. Never modify those files, nor GitHub Actions, billing, production, user machine, tokens, credentials, or networked services. No use of external inference APIs, no new accounts and no paid services.
+          Ensure any generated changes remain in this donor git worktree. Keep copyright LICENSE unchanged and all attribution. Do not modify third-party libraries. Fail honestly if the requested surgery cannot be accomplished.
+          OUTPUT: real modified Python source files, tested as much as possible without provider credentials, with exact limitations reported. This is an experiment; FAIL is acceptable; fake PASS is not.
+          TASK
+          cd /tmp/icarus-donor
+          echo 'CODING_AGENT_INVOCATION=STARTED' | tee -a "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
+          set +e
+          timeout 1560 aider --yes --no-pretty --no-stream --no-auto-commits --no-dirty-commits --no-suggest-shell-commands --no-show-model-warnings --model ollama_chat/qwen2.5-coder:1.5b --message-file /tmp/icarus-transplant-task.txt --read "$GITHUB_WORKSPACE/icarus/memory/identity.md" --read "$GITHUB_WORKSPACE/drafts/icarus/2026-10-06-prototype/server-overlay/GovernanceKernel.gs" >"$GITHUB_WORKSPACE/surgery-output/coding-agent.log" 2>&1
+          code=$?
+          set -e
+          echo "CODING_AGENT_EXIT=$code" | tee -a "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
+          exit 0
+
+      - name: Capture exact changes and run safe syntax checks
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          OUT="$GITHUB_WORKSPACE/surgery-output"
+          mkdir -p "$OUT"
+          if test -d /tmp/icarus-donor/.git; then
+            cd /tmp/icarus-donor
+            git status --short > "$OUT/status.txt"
+            git diff --no-ext-diff --binary > "$OUT/donor.patch"
+            git diff --name-only > "$OUT/modified-files.txt"
+            git ls-files --others --exclude-standard > "$OUT/untracked-files.txt"
+            git rev-parse HEAD > "$OUT/donor-sha.txt"
+            python -m compileall -q run_agent.py agent model_tools.py >"$OUT/python-syntax.log" 2>&1
+            echo "PYTHON_COMPILE_EXIT=$?" >> "$OUT/metadata.txt"
+            cat "$OUT/modified-files.txt" "$OUT/untracked-files.txt" > "$OUT/all-changed-files.txt"
+            if test -s "$OUT/all-changed-files.txt"; then
+              echo "CHANGED_SOURCE=YES" >> "$OUT/metadata.txt"
+            else
+              echo "CHANGED_SOURCE=NO" >> "$OUT/metadata.txt"
+            fi
+            cd /tmp
+            tar -czf "$OUT/disposable-icarus-transplant.tar.gz" --exclude=.git -C /tmp/icarus-donor .
+            sha256sum "$OUT/disposable-icarus-transplant.tar.gz" >> "$OUT/metadata.txt"
+          fi
+          if test -f /tmp/icarus-ollama.log; then
+            tail -n 100 /tmp/icarus-ollama.log >"$OUT/local-model.log"
+          fi
+
+      - name: Upload experimental result without touching main or laptop
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-Hermes-disposable-surgery-experiment
+          path: surgery-output/
+          retention-days: 7
+          if-no-files-found: warn
