@@ -53,11 +53,10 @@ jobs:
           git commit -qm 'baseline pinned source'
           test "$(git ls-files | wc -l)" -eq 1
 
-      - name: Prepare existing free on-runner model
+      - name: Prepare the same local free model without Aider
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --quiet 'aider-chat'
           curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh
           sh /tmp/ollama-install.sh
           nohup ollama serve >"$GITHUB_WORKSPACE/surgery-output/ollama.log" 2>&1 &
@@ -68,27 +67,92 @@ jobs:
           curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
           ollama pull qwen2.5-coder:1.5b
 
-      - name: Execute narrowly scoped coding agent
+      - name: Single snippet from free local coding model - bounded output
         shell: bash
         run: |
           set -euo pipefail
-          cat >/tmp/icarus-task.txt <<'TASK'
-          Edit ONLY agent/turn_facade.py. Output only a diff for that file, with no other text, demo, new files, or greeting scripts.
-          In TurnFacadeMixin.run_conversation:
-          1. Remove the function-local import of run_conversation from agent.conversation_loop.
-          2. Immediately before the existing call named 'result = run_conversation(', use controller = getattr(self, "_icarus_controller", None).
-          3. If controller is None or controller.run_conversation is not callable, explicitly raise RuntimeError("ICARUS controller unavailable"). NEVER fall back to Hermes.
-          4. Replace that call with result = controller.run_conversation( and remove the leading 'self,' argument ONLY, preserving the remaining arguments in their original order.
-          Keep the function's signature and all unrelated code unchanged. No second agent or permission wrapper. This is only cut one; never assert full transplant.
-          TASK
           cd /tmp/icarus-one-file
-          echo 'CODING_AGENT_ATTEMPTED=YES' >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
+          echo 'CODING_AGENT_ATTEMPTED=YES_DIRECT_OLLAMA_SMALL_INPUT' >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
+          cat > /tmp/icarus-small-edit.py <<'PY'
+          import ast
+          import json
+          import os
+          from pathlib import Path
+          import textwrap
+          from urllib.request import Request, urlopen
+
+          out=Path(os.environ["GITHUB_WORKSPACE"])/"surgery-output"
+          source_path=Path("/tmp/icarus-one-file/agent/turn_facade.py")
+          original=source_path.read_text(encoding="utf-8")
+          assert original.count("from agent.conversation_loop import run_conversation")==1
+          call="                    result = run_conversation(\n                        self, user_message,"
+          assert original.count(call)==1
+          question=(
+              "You are a Python coding worker doing one safe source edit. "
+              "Generate ONLY a JSON object with a single key named guard, containing exactly "
+              "a three-line Python source string to insert just before a function call. "
+              "It must set controller = getattr(self, '_icarus_controller', None), "
+              "then if controller is None OR its run_conversation method is not callable, "
+              "raise RuntimeError('ICARUS controller unavailable'). "
+              "Use normal Python indentation (0 spaces for first two lines, 4 for raise). "
+              "Do not write any other code or commentary."
+          )
+          payload={
+              "model":"qwen2.5-coder:1.5b",
+              "prompt":question,
+              "stream":False,
+              "format":"json",
+              "options":{"temperature":0,"num_ctx":2048,"num_predict":160}
+          }
+          req=Request(
+              "http://127.0.0.1:11434/api/generate",
+              data=json.dumps(payload).encode(),headers={"Content-Type":"application/json"},
+              method="POST"
+          )
+          with urlopen(req,timeout=280) as response:
+              answer=json.loads(response.read().decode())
+          raw=answer.get("response","")
+          (out/"model-response.json").write_text(raw,encoding="utf-8")
+          data=json.loads(raw)
+          guard=data["guard"]
+          assert isinstance(guard,str) and len(guard)<550
+          code=ast.parse(guard)
+          assert len(code.body)==2 and isinstance(code.body[0],ast.Assign)
+          assert len(code.body[0].targets)==1 and isinstance(code.body[0].targets[0],ast.Name)
+          assert code.body[0].targets[0].id=="controller"
+          assert isinstance(code.body[0].value,ast.Call)
+          assert isinstance(code.body[0].value.func,ast.Name) and code.body[0].value.func.id=="getattr"
+          assert any(isinstance(n,ast.Constant) and n.value=="_icarus_controller" for n in ast.walk(code.body[0]))
+          condition=code.body[1]
+          assert isinstance(condition,ast.If) and not condition.orelse
+          assert len(condition.body)==1 and isinstance(condition.body[0],ast.Raise)
+          assert any(isinstance(n,ast.Name) and n.id=="callable" for n in ast.walk(condition.test))
+          assert any(isinstance(n,ast.Constant) and n.value=="run_conversation" for n in ast.walk(condition.test))
+          assert any(isinstance(n,ast.Compare) and any(isinstance(op,ast.Is) for op in n.ops) for n in ast.walk(condition.test))
+          err=condition.body[0].exc
+          assert isinstance(err,ast.Call) and isinstance(err.func,ast.Name) and err.func.id=="RuntimeError"
+          assert any(isinstance(n,ast.Constant) and n.value=="ICARUS controller unavailable" for n in ast.walk(err))
+          normalized=textwrap.dedent(guard).strip()
+          prefix="                    "
+          insertion="".join(prefix+line+"\n" for line in normalized.splitlines())
+          replacement=insertion+"                    result = controller.run_conversation(\n                        user_message,"
+          updated=original.replace("        from agent.conversation_loop import run_conversation\n","")
+          updated=updated.replace(call,replacement)
+          assert updated!=original
+          ast.parse(updated)
+          source_path.write_text(updated,encoding="utf-8")
+          (out/"metadata.txt").open("a").write("MODEL_EDIT_GENERATED=YES\nMODEL_OUTPUT_VALIDATED=YES\n")
+          print("Model supplied fail-closed guard, applied to exactly one donor source file.")
+          PY
           set +e
-          timeout 660 aider --yes --edit-format diff --no-gitignore --map-tokens 0 --no-pretty --no-stream --no-auto-commits --no-dirty-commits --no-suggest-shell-commands --no-show-model-warnings --model ollama_chat/qwen2.5-coder:1.5b --message-file /tmp/icarus-task.txt agent/turn_facade.py > "$GITHUB_WORKSPACE/surgery-output/coder.log" 2>&1
+          timeout 310 python /tmp/icarus-small-edit.py >"$GITHUB_WORKSPACE/surgery-output/coder.log" 2>&1
           code=$?
           set -e
           echo "CODING_AGENT_EXIT=$code" >> "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
-          exit 0
+          if test "$code" -ne 0; then
+            cat "$GITHUB_WORKSPACE/surgery-output/coder.log"
+            exit "$code"
+          fi
 
       - name: Verify exactly one source changed and compiles
         if: always()
