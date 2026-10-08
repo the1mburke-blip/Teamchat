@@ -1,0 +1,1960 @@
+diff --git a/agent/agent_init.py b/agent/agent_init.py
+--- a/agent/agent_init.py
++++ b/agent/agent_init.py
+@@ -1091,18 +1091,6 @@
+ 
+ 
+ def _load_tools(agent, enabled_toolsets, disabled_toolsets):
+-    # A feature that left core for a catalog plugin (Home Assistant) is installed for a home that
+-    # used it, once per process, before discovery so its tools are in this agent's snapshot.
+-    from hermes_cli.left_core_migration import recover_at_startup
+-    recover_at_startup(say=getattr(agent, "_emit_startup_warning", None))
+-    # A multiplexed gateway may have switched HERMES_HOME since model_tools was imported;
+-    # make sure this profile's plugins are discovered before the tool snapshot.
+-    try:
+-        from hermes_cli.plugins import discover_plugins
+-        discover_plugins()
+-    except Exception:
+-        logger.warning("Plugin discovery failed during agent setup", exc_info=True)
+-
+     # Capture the registry generation FIRST so a concurrent refresh can detect staleness.
+     try:
+         from tools.registry import registry as _snapshot_registry
+@@ -1301,78 +1289,7 @@
+     agent._memory_nudge_interval = 10
+     agent._turns_since_memory = 0
+     agent._iters_since_skill = 0
+-    # skip_memory skips the external *provider*; enabled_toolsets=["memory"] still gets the
+-    # built-in store so the memory tool never sees store=None.
+-    # Flush/background agents can still pass enabled_toolsets=["memory"] so the built-in file store exists
+-    # and the memory tool does not fail with store=None (#65429). A toolset on disabled_toolsets is not a
+-    # request: a caller that denylists memory while its default toolset still names it must not get
+-    # MEMORY.md loaded by an enabled-only check. (Cron agents now run with skip_memory=False and take the
+-    # normal path here.)
+-    _memory_toolset_requested = (
+-        "memory" in (agent.enabled_toolsets or [])
+-        and "memory" not in (agent.disabled_toolsets or [])
+-    )
+-    if not skip_memory or _memory_toolset_requested:
+-        # Memory is optional — don't break agent init
+-        with suppress(Exception):
+-            from tools.memory_tool import (
+-                MemoryStore, get_builtin_memory_config, get_builtin_memory_store_flags,
+-            )
+-            mem_config = get_builtin_memory_config(_agent_cfg)
+-            agent._memory_enabled, agent._user_profile_enabled = get_builtin_memory_store_flags(
+-                _agent_cfg
+-            )
+-            agent._memory_nudge_interval = int(mem_config.get("nudge_interval", 10))
+-            if agent._memory_enabled or agent._user_profile_enabled:
+-                agent._memory_store = MemoryStore(
+-                    memory_char_limit=mem_config.get("memory_char_limit", 2200),
+-                    user_char_limit=mem_config.get("user_char_limit", 1375),
+-                    memory_enabled=agent._memory_enabled,
+-                    user_profile_enabled=agent._user_profile_enabled,
+-                )
+-                agent._memory_store.load_from_disk()
+-
+-    # External memory provider plugin (one at a time, alongside built-in): memory.provider.
+     agent._memory_manager = None
+-    if memory_manager is not None and not skip_memory:
+-        # A caller that rebuilds the agent per turn (gateway api_server) hands back the session's
+-        # already-initialized manager: providers keep their prefetch/retain state across turns instead
+-        # of being re-initialized (#120116). No initialize_all — the providers are already bound.
+-        agent._memory_manager = memory_manager
+-    elif not skip_memory:
+-        try:
+-            _mem_provider_name = mem_config.get("provider", "") if mem_config else ""
+-            if not is_core_memory_provider(_mem_provider_name):
+-                from agent.memory_manager import MemoryManager as _MemoryManager
+-                from plugins.memory import load_memory_provider as _load_mem
+-                agent._memory_manager = _MemoryManager()
+-                _mp = _load_mem(_mem_provider_name)
+-                if _mp is None:
+-                    # The provider left core for the catalog (or was never installed): fetch it once.
+-                    from hermes_cli.memory_provider_migration import recover_at_startup
+-                    if recover_at_startup(_mem_provider_name, say=agent._emit_startup_warning):
+-                        _mp = _load_mem(_mem_provider_name)
+-                if _mp and _mp.is_available():
+-                    agent._memory_manager.add_provider(_mp)
+-                elif _mp is not None and _unavailable_warning_key(_mem_provider_name) not in _warned_unavailable_providers:
+-                    # unavailable_reason() reads config/probes importlib — skip it once warned.
+-                    _unavailable_reason = ""
+-                    with suppress(Exception):
+-                        _unavailable_reason = _mp.unavailable_reason()
+-                    _warn_memory_provider_unavailable(
+-                        _mem_provider_name, _unavailable_reason, say=agent._emit_startup_warning)
+-                if agent._memory_manager.providers:
+-                    agent._memory_manager.initialize_all(**_memory_provider_init_kwargs(agent, platform))
+-                    _ra().logger.info("Memory provider '%s' activated", _mem_provider_name)
+-                else:
+-                    _ra().logger.debug("Memory provider '%s' not found or not available", _mem_provider_name)
+-                    agent._memory_manager = None
+-        except Exception as _mpe:
+-            _ra().logger.warning("Memory provider plugin init failed: %s", _mpe)
+-            agent._memory_manager = None
+-
+-    from agent.memory_manager import inject_memory_provider_tools
+-    inject_memory_provider_tools(agent)
+ 
+ 
+ def _apply_agent_section(agent, _agent_cfg):
+@@ -1896,49 +1813,7 @@
+ def _select_context_engine(_agent_cfg):
+     """Config-driven context engine: ``context.engine`` → plugins/context_engine/<name>/ →
+     general plugin system → None (built-in ContextCompressor)."""
+-    _engine_name = "compressor"
+-    with suppress(Exception):
+-        _ctx_cfg = _agent_cfg.get("context", {}) if isinstance(_agent_cfg, dict) else {}
+-        _engine_name = _ctx_cfg.get("engine", "compressor") or "compressor"
+-    if _engine_name == "compressor":
+-        return None  # built-in; don't auto-activate plugins
+-    _selected_engine = None
+-    _copy_failed = False
+-    try:
+-        from plugins.context_engine import load_context_engine
+-        _selected_engine = load_context_engine(_engine_name)
+-    except Exception as _ce_load_err:
+-        _ra().logger.debug("Context engine load from plugins/context_engine/: %s", _ce_load_err)
+-
+-    if _selected_engine is None:
+-        try:
+-            from hermes_cli.plugins import get_plugin_context_engine
+-            _candidate = get_plugin_context_engine()
+-        except Exception:
+-            _candidate = None
+-        if _candidate is not None and _candidate.name == _engine_name:
+-            # The plugin system holds ONE shared instance; each agent gets its own so a child's
+-            # update_model() can't mutate the parent's (#42449). clone_for_agent() defaults to
+-            # deepcopy; engines with uncopyable state (locks, DB conns) override it. A failure
+-            # falls back to the built-in compressor with an ACCURATE message, not "not found".
+-            try:
+-                _selected_engine = _candidate.clone_for_agent()
+-            except Exception as _copy_err:
+-                _copy_failed = True
+-                _ra().logger.warning(
+-                    "Context engine '%s' could not be safely copied for this "
+-                    "agent (%s) — falling back to built-in compressor. Plugin "
+-                    "engines that hold uncopyable state (locks, DB connections) "
+-                    "should override clone_for_agent() (or __deepcopy__) to copy "
+-                    "only mutable budget state.",
+-                    _engine_name, _copy_err,
+-                )
+-
+-    if _selected_engine is None and not _copy_failed:
+-        _ra().logger.warning(
+-            "Context engine '%s' not found — falling back to built-in compressor", _engine_name
+-        )
+-    return _selected_engine
++    return None  # Only the pinned native compressor can own runtime context.
+ 
+ 
+ def _compressor_max_tokens(agent):
+@@ -2462,9 +2337,14 @@
+     _set_defaults(agent, _STREAM_STATE)
+     _build_client(agent, api_key, base_url, fallback_model)
+     _init_fallback_chain(agent, fallback_model)
+-    _load_tools(agent, enabled_toolsets, disabled_toolsets)
++    from agent.icarus_runtime import IcarusRuntime
++    from agent.icarus_authority import runtime_scope
++    agent.session_id = session_id or new_session_id(datetime.now())
++    agent._icarus = IcarusRuntime(get_hermes_home(), agent.session_id)
++    with runtime_scope(agent._icarus):
++        _load_tools(agent, enabled_toolsets, disabled_toolsets)
+     _init_session_state(
+-        agent, session_id, session_db, parent_session_id, reasoning_config, max_tokens,
++        agent, agent.session_id, session_db, parent_session_id, reasoning_config, max_tokens,
+         checkpoints_enabled, checkpoint_max_snapshots, checkpoint_max_total_size_mb, checkpoint_max_file_size_mb,
+     )
+ 
+@@ -2476,7 +2356,7 @@
+         _agent_cfg = {}
+ 
+     _apply_display_config(agent, _agent_cfg, platform)
+-    _init_memory(agent, _agent_cfg, skip_memory, platform, memory_manager=memory_manager)
++    _init_memory(agent, _agent_cfg, True, platform, memory_manager=None)
+     _apply_agent_section(agent, _agent_cfg)
+     cs = _parse_compression_config(agent, _agent_cfg)
+     _config_context_length, _custom_providers, _effective_context_length, _model_cfg = _resolve_context_length(
+@@ -2491,6 +2371,8 @@
+     _clamp_compressor_to_ollama_num_ctx(agent)
+     _emit_compression_summary(agent, cs)
+     _snapshot_primary_runtime(agent)
++    from agent.icarus_runtime import initialize
++    initialize(agent)
+ 
+ 
+ __all__ = ["init_agent"]
+diff --git a/agent/icarus_authority.py b/agent/icarus_authority.py
+--- /dev/null
++++ b/agent/icarus_authority.py
+@@ -0,0 +1,246 @@
++"""Native ICARUS permit kernel. Port of the existing GovernanceKernel v1 contract.
++
++Trusted host code owns issuance. Model programs have no host/source/key mounts.
++This module does not claim to sandbox Python plugins loaded by an administrator.
++"""
++from __future__ import annotations
++
++import contextlib
++import contextvars
++import hashlib
++import hmac
++import json
++import secrets
++import sqlite3
++import threading
++import time
++from pathlib import Path
++
++POLICY = "icarus.hermes.v1"
++_ACTIVE = contextvars.ContextVar("icarus_active_permit", default=None)
++_RUNTIME = contextvars.ContextVar("icarus_runtime", default=None)
++
++
++def canonical(value):
++    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
++
++
++def digest(value):
++    return hashlib.sha256(canonical(value).encode()).hexdigest()
++
++
++class AuthorityDenied(PermissionError):
++    """No adapter may execute following this failure."""
++
++
++class PermitKernel:
++    def __init__(self, db_path: Path, identity_hash: str):
++        self.db_path = Path(db_path)
++        self.identity_hash = identity_hash
++        self.db_path.parent.mkdir(parents=True, exist_ok=True)
++        with self.connect() as db:
++            db.executescript("""
++                CREATE TABLE IF NOT EXISTS icarus_seal (id INTEGER PRIMARY KEY CHECK(id=1), key TEXT NOT NULL);
++                CREATE TABLE IF NOT EXISTS icarus_permits
++                (nonce TEXT PRIMARY KEY, payload TEXT NOT NULL, signature TEXT NOT NULL,
++                 state TEXT NOT NULL, result_hash TEXT);
++                CREATE TABLE IF NOT EXISTS icarus_events
++                (seq INTEGER PRIMARY KEY, record TEXT NOT NULL, previous TEXT NOT NULL, seal TEXT NOT NULL);
++                CREATE TABLE IF NOT EXISTS icarus_calls
++                (call_key TEXT PRIMARY KEY, nonce TEXT UNIQUE NOT NULL);
++                CREATE TABLE IF NOT EXISTS icarus_containers
++                (nonce TEXT PRIMARY KEY, container TEXT NOT NULL);
++            """)
++            db.execute("INSERT OR IGNORE INTO icarus_seal VALUES(1,?)", (secrets.token_hex(32),))
++            self._key = bytes.fromhex(db.execute("SELECT key FROM icarus_seal WHERE id=1").fetchone()[0])
++            self._check_history(db)
++
++    def connect(self):
++        db = sqlite3.connect(self.db_path, timeout=10)
++        db.execute("PRAGMA busy_timeout=10000")
++        return db
++
++    def _mac(self, value):
++        return hmac.new(self._key, canonical(value).encode(), hashlib.sha256).hexdigest()
++
++    def _check_history(self, db):
++        previous = ""
++        for index, row in enumerate(db.execute("SELECT seq,record,previous,seal FROM icarus_events ORDER BY seq"), 1):
++            seq, record, stored_previous, seal = row
++            if seq != index or stored_previous != previous or not hmac.compare_digest(seal, self._mac([seq, record, previous])):
++                raise AuthorityDenied("ICARUS audit integrity failure")
++            previous = seal
++        return previous
++
++    def _event(self, db, event, nonce, **fields):
++        previous = self._check_history(db)
++        seq = db.execute("SELECT COALESCE(MAX(seq),0)+1 FROM icarus_events").fetchone()[0]
++        record = canonical(dict(event=event, nonce=nonce, utc=time.time(), **fields))
++        seal = self._mac([seq, record, previous])
++        db.execute("INSERT INTO icarus_events VALUES(?,?,?,?)", (seq, record, previous, seal))
++
++    def prepare(self, spec, *, ttl=300):
++        """Host-only issuance AFTER runtime policy validation, never a model tool."""
++        if not isinstance(ttl, (int, float)) or not 0 < ttl <= 300:
++            raise AuthorityDenied("ICARUS invalid permit lifetime")
++        fields = {"session", "task", "objectiveHash", "revision", "call", "subject", "tool", "argsHash", "target", "route", "scopes", "budgetEUR", "evidence"}
++        if not isinstance(spec, dict) or set(spec) != fields:
++            raise AuthorityDenied("ICARUS malformed preflight contract")
++        if spec.get("budgetEUR") != 0 or not all(spec.get(k) for k in fields - {"budgetEUR"}):
++            raise AuthorityDenied("ICARUS missing preflight identity or zero-cost contract")
++        payload = dict(spec=spec, nonce=secrets.token_hex(24), expiry=time.time()+ttl,
++                       policy=POLICY, identity=self.identity_hash)
++        permit = dict(payload=payload, signature=self._mac(payload))
++        with self.connect() as db:
++            db.execute("BEGIN IMMEDIATE")
++            call_key = digest([spec[k] for k in ("session", "task", "revision", "call")])
++            if db.execute("SELECT nonce FROM icarus_calls WHERE call_key=?", (call_key,)).fetchone():
++                raise AuthorityDenied("ICARUS duplicate logical call denied")
++            db.execute("INSERT INTO icarus_calls VALUES(?,?)", (call_key, payload["nonce"]))
++            self._event(db, "permit.issued", payload["nonce"], request=digest(spec))
++            db.execute("INSERT INTO icarus_permits VALUES(?,?,?,'READY',NULL)",
++                       (payload["nonce"], canonical(payload), permit["signature"]))
++        return permit
++
++    def consume(self, permit, spec):
++        payload = permit.get("payload") if isinstance(permit, dict) else None
++        signature = permit.get("signature") if isinstance(permit, dict) else None
++        if not isinstance(payload, dict) or not isinstance(signature, str) or not hmac.compare_digest(signature, self._mac(payload)):
++            raise AuthorityDenied("ICARUS missing or forged permit")
++        if payload.get("policy") != POLICY or payload.get("identity") != self.identity_hash:
++            raise AuthorityDenied("ICARUS authority version mismatch")
++        if payload.get("expiry", 0) <= time.time():
++            raise AuthorityDenied("ICARUS expired permit")
++        if canonical(payload.get("spec")) != canonical(spec):
++            raise AuthorityDenied("ICARUS altered execution request")
++        nonce = payload.get("nonce")
++        with self.connect() as db:
++            db.execute("BEGIN IMMEDIATE")
++            self._check_history(db)
++            task_table = db.execute("SELECT name FROM sqlite_master WHERE name='icarus_tasks'").fetchone()
++            if task_table:
++                task = db.execute("SELECT objective,revision FROM icarus_tasks WHERE session=? AND task=?",
++                                  (spec["session"], spec["task"])).fetchone()
++                if task != (spec["objectiveHash"], spec["revision"]):
++                    raise AuthorityDenied("ICARUS objective changed; new preflight required")
++            row = db.execute("SELECT payload,signature,state FROM icarus_permits WHERE nonce=?", (nonce,)).fetchone()
++            if row != (canonical(payload), signature, "READY"):
++                raise AuthorityDenied("ICARUS replay or unknown permit")
++            db.execute("UPDATE icarus_permits SET state='WORKING' WHERE nonce=?", (nonce,))
++            self._event(db, "gateway.intent.persisted", nonce, request=digest(spec))
++        return nonce
++
++    def record_outcome(self, nonce, result=None, *, uncertain=False):
++        with self.connect() as db:
++            db.execute("BEGIN IMMEDIATE")
++            state = "OUTCOME_UNKNOWN" if uncertain else "WORK_COMPLETE_AWAITING_VERIFICATION"
++            changed = db.execute("UPDATE icarus_permits SET state=?,result_hash=? WHERE nonce=? AND state IN ('WORKING','ADAPTER_ENTERED')",
++                                 (state, None if uncertain else digest(result), nonce)).rowcount
++            if changed != 1:
++                raise AuthorityDenied("ICARUS execution state mismatch")
++            self._event(db, "execution.outcome", nonce, state=state)
++
++    def adjudicate(self, nonce):
++        """Trusted host-only observation AFTER the worker turn; no supplied evidence."""
++        if _ACTIVE.get() is not None or _RUNTIME.get() is not None:
++            raise AuthorityDenied("ICARUS worker-turn self-certification denied")
++        with self.connect() as db:
++            db.execute("BEGIN IMMEDIATE")
++            self._check_history(db)
++            row = db.execute("SELECT state,payload FROM icarus_permits WHERE nonce=?", (nonce,)).fetchone()
++            if not row or row[0] != "WORK_COMPLETE_AWAITING_VERIFICATION":
++                raise AuthorityDenied("ICARUS verification state denied")
++            spec = json.loads(row[1])["spec"]
++            contract = spec["evidence"]
++            from agent.icarus_verifier import observe
++            observed_hash, read_ref = observe(self, spec, nonce)
++            if not contract.get("expectedHash") or contract["expectedHash"] != observed_hash or contract["readPath"] != read_ref:
++                raise AuthorityDenied("ICARUS physical target does not satisfy evidence contract")
++            db.execute("UPDATE icarus_permits SET state='PASS' WHERE nonce=?", (nonce,))
++            self._event(db, "verification.completed", nonce, verifier="icarus-trusted-target-reader", observed=observed_hash, read_ref=read_ref)
++            return "PASS"
++
++
++@contextlib.contextmanager
++def runtime_scope(runtime):
++    token = _RUNTIME.set(runtime)
++    try:
++        yield
++    finally:
++        _RUNTIME.reset(token)
++
++
++@contextlib.contextmanager
++def adapter_scope(kernel, nonce, spec):
++    # A capability authorizes exactly one registry entry. Nested dispatch must
++    # obtain its own permit; matching the parent tool name is not authority.
++    with kernel.connect() as db:
++        row = db.execute("SELECT payload,signature,state FROM icarus_permits WHERE nonce=?", (nonce,)).fetchone()
++        if not row or row[2] != "WORKING":
++            raise AuthorityDenied("ICARUS consumed durable permit required")
++        payload = json.loads(row[0])
++        if canonical(payload["spec"]) != canonical(spec) or not hmac.compare_digest(row[1], kernel._mac(payload)):
++            raise AuthorityDenied("ICARUS altered adapter scope denied")
++    context = dict(kernel=kernel, nonce=nonce, spec=spec, entered=False, lock=threading.Lock())
++    token = _ACTIVE.set(context)
++    try:
++        yield
++    finally:
++        _ACTIVE.reset(token)
++
++
++def _check_route(spec, task_id, session_id):
++    if (task_id is not None and task_id != spec["task"]) or (session_id is not None and session_id != spec["session"]):
++        raise AuthorityDenied("ICARUS adapter task/session route mismatch")
++    return spec
++
++
++def require_adapter(name, args, *, task_id=None, session_id=None):
++    active = _ACTIVE.get()
++    if active is None:
++        raise AuthorityDenied("ICARUS direct, altered or nested adapter execution denied")
++    with active["lock"]:
++        _check_route(active["spec"], task_id, session_id)
++        if active["entered"] or active["spec"]["tool"] != name or active["spec"]["argsHash"] != digest(args):
++            raise AuthorityDenied("ICARUS direct, altered or nested adapter execution denied")
++        kernel = active["kernel"]
++        with kernel.connect() as db:
++            db.execute("BEGIN IMMEDIATE")
++            kernel._check_history(db)
++            row = db.execute("SELECT payload,state FROM icarus_permits WHERE nonce=?", (active["nonce"],)).fetchone()
++            if not row or row[1] != "WORKING" or json.loads(row[0])["expiry"] <= time.time():
++                raise AuthorityDenied("ICARUS adapter replay/expired admission denied")
++            db.execute("UPDATE icarus_permits SET state='ADAPTER_ENTERED' WHERE nonce=?", (active["nonce"],))
++            kernel._event(db, "adapter.entered", active["nonce"], tool=name)
++        active["entered"] = True
++        return active["spec"]
++
++
++def check_adapter(name, args, *, task_id=None, session_id=None):
++    """Check forwarding seams without consuming the single final entry."""
++    active = _ACTIVE.get()
++    if active is None or active["entered"] or active["spec"]["tool"] != name or active["spec"]["argsHash"] != digest(args):
++        raise AuthorityDenied("ICARUS direct, altered or nested tool request denied")
++    return _check_route(active["spec"], task_id, session_id)
++
++
++def current_runtime():
++    runtime = _RUNTIME.get()
++    if runtime is None:
++        raise AuthorityDenied("ICARUS runtime authority missing")
++    return runtime
++
++
++def bind_container_target(container):
++    active = _ACTIVE.get()
++    if active is None or not active["entered"] or not container:
++        raise AuthorityDenied("ICARUS container target requires admitted execution")
++    kernel = active["kernel"]
++    with kernel.connect() as db:
++        db.execute("BEGIN IMMEDIATE")
++        row = db.execute("SELECT container FROM icarus_containers WHERE nonce=?", (active["nonce"],)).fetchone()
++        if row and row[0] != container:
++            raise AuthorityDenied("ICARUS target changed after admission")
++        if not row:
++            db.execute("INSERT INTO icarus_containers VALUES(?,?)", (active["nonce"], container))
++            kernel._event(db, "target.bound", active["nonce"], container=container)
+diff --git a/agent/icarus_hooks.py b/agent/icarus_hooks.py
+--- /dev/null
++++ b/agent/icarus_hooks.py
+@@ -0,0 +1,37 @@
++"""Mandatory ICARUS configured hooks, enforced independently of plugin hooks."""
++import hashlib, json, subprocess, sys
++from pathlib import Path
++from utils import fast_safe_load
++from agent.icarus_authority import AuthorityDenied
++
++def invoke(runtime, event, spec, nonce, args):
++    config = fast_safe_load((runtime.home / "config.yaml").read_text(encoding="utf-8"))
++    policy = config.get("icarus", {})
++    if policy.get("active") is not True:
++        raise AuthorityDenied("ICARUS mandatory governance configuration missing")
++    # Validate both lifecycle declarations BEFORE any adapter effect.
++    for required in ("pre_tool_call", "post_tool_call"):
++        items = config.get("hooks", {}).get(required)
++        if not isinstance(items, list) or len(items) != 1:
++            raise AuthorityDenied("ICARUS mandatory hook configuration missing")
++        item = items[0]
++        if item.get("command") != "governance/icarus_hook.py" or item.get("fail_closed") is not True:
++            raise AuthorityDenied("ICARUS hook configuration altered")
++        timeout = item.get("timeout", 6)
++        if type(timeout) not in (int, float) or not 0 < timeout <= 10:
++            raise AuthorityDenied("ICARUS invalid bounded hook timeout")
++    item = config["hooks"][event][0]
++    for name in ("icarus_hook.py", "icarus_governance.py"):
++        path = runtime.home / "governance" / name
++        expected = policy.get("governance_hashes", {}).get(name)
++        if not expected or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
++            raise AuthorityDenied("ICARUS governance hook integrity failure")
++    payload = dict(hook_event_name=event, session_id=spec["session"], tool_name=spec["tool"],
++                   tool_input=args, extra=dict(task_id=spec["task"], tool_call_id=spec["call"], icarus_nonce=nonce))
++    result = subprocess.run([sys.executable, "-B", str(runtime.home / "governance" / "icarus_hook.py")],
++                            input=json.dumps(payload), text=True, encoding="utf-8", capture_output=True,
++                            cwd=runtime.home, timeout=min(float(item.get("timeout", 6)), 10),
++                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
++    wanted = {"action":"allow"} if event == "pre_tool_call" else {}
++    if result.returncode or json.loads(result.stdout) != wanted:
++        raise AuthorityDenied("ICARUS governance hook denied execution/observation")
+diff --git a/agent/icarus_runtime.py b/agent/icarus_runtime.py
+--- /dev/null
++++ b/agent/icarus_runtime.py
+@@ -0,0 +1,170 @@
++"""ICARUS ownership inside the donated runtime, never a second agent loop.
++
++Reviewed host modules and administrator-owned state are trusted. Models, tool
++arguments, outputs and container programs are untrusted. No model tool issues
++permits, changes the policy, loads host code, or adjudicates completion.
++"""
++from __future__ import annotations
++
++import contextlib
++import json
++import uuid
++from pathlib import Path
++
++from agent.icarus_authority import (
++    AuthorityDenied, PermitKernel, adapter_scope, canonical, digest, runtime_scope,
++)
++
++SNAPSHOT = Path(__file__).resolve().parent / "icarus_lineage"
++SAFE_TOOLS = frozenset({"icarus_memory", "memory", "todo_list", "terminal", "execute_code", "read_file", "write_file", "patch", "search_files"})
++
++
++def load_lineage():
++    manifest = json.loads((SNAPSHOT / "manifest.json").read_text(encoding="utf-8"))
++    texts = {}
++    import hashlib
++    for name, expected in manifest["files"].items():
++        raw = (SNAPSHOT / name).read_bytes()
++        if hashlib.sha256(raw).hexdigest() != expected:
++            raise AuthorityDenied("ICARUS canonical lineage integrity failure")
++        texts[name] = raw.decode("utf-8")
++    return manifest, texts
++
++
++class IcarusRuntime:
++    def __init__(self, home: Path, session: str):
++        self.home, self.session = Path(home), session
++        self.provenance, self.lineage = load_lineage()
++        self.identity_hash = digest(self.provenance)
++        self.kernel = PermitKernel(self.home / "icarus" / "authority.sqlite", self.identity_hash)
++        self.task = None
++        with self.kernel.connect() as db:
++            db.executescript("""
++                CREATE TABLE IF NOT EXISTS icarus_identity
++                (session TEXT PRIMARY KEY, identity TEXT NOT NULL);
++                CREATE TABLE IF NOT EXISTS icarus_tasks
++                (session TEXT NOT NULL, task TEXT NOT NULL, objective TEXT NOT NULL,
++                 revision INTEGER NOT NULL, PRIMARY KEY(session,task));
++            """)
++            row = db.execute("SELECT identity FROM icarus_identity WHERE session=?", (session,)).fetchone()
++            if row and row[0] != self.identity_hash:
++                raise AuthorityDenied("ICARUS identity changed across restart")
++            db.execute("INSERT OR IGNORE INTO icarus_identity VALUES(?,?)", (session, self.identity_hash))
++
++    @property
++    def identity_prompt(self):
++        return ("ICARUS is the persistent runtime owner. The reasoning model is an untrusted worker for ICARUS. "
++                "The host kernel controls authority and evidence; model prose cannot award PASS.\n\n"
++                + self.lineage["identity.md"] + "\n\nInherited memory (source-linked, historical observations):\n"
++                + self.lineage["inherited.md"] + "\n\n" + self.lineage["learned.md"]
++                + "\n\nCanonical provenance: " + canonical(self.provenance))
++
++    @contextlib.contextmanager
++    def turn(self, task, objective):
++        if self.task is not None:
++            raise AuthorityDenied("ICARUS nested turn denied")
++        if not isinstance(task, str) or not task or not isinstance(objective, str):
++            raise AuthorityDenied("ICARUS task identity missing")
++        objective_hash = digest(objective)
++        with self.kernel.connect() as db:
++            db.execute("BEGIN IMMEDIATE")
++            row = db.execute("SELECT objective,revision FROM icarus_tasks WHERE session=? AND task=?",
++                             (self.session, task)).fetchone()
++            revision = 1 if not row else row[1] + (row[0] != objective_hash)
++            db.execute("INSERT OR REPLACE INTO icarus_tasks VALUES(?,?,?,?)",
++                       (self.session, task, objective_hash, revision))
++        self.task = dict(task=task, objectiveHash=objective_hash, revision=revision)
++        try:
++            with runtime_scope(self):
++                yield
++        finally:
++            self.task = None
++
++    def request_spec(self, name, args, call):
++        if self.task is None or name not in SAFE_TOOLS or not isinstance(args, dict):
++            raise AuthorityDenied("ICARUS tool outside approved capability catalogue")
++        if name == "terminal":
++            allowed = {"command", "timeout", "workdir", "background", "pty"}
++            if set(args) - allowed or args.get("background") or args.get("pty"):
++                raise AuthorityDenied("ICARUS host/background terminal parameters denied")
++            if not isinstance(args.get("command"), str):
++                raise AuthorityDenied("ICARUS command missing")
++        if name == "execute_code" and set(args) - {"code", "reset"}:
++            raise AuthorityDenied("ICARUS code scope expansion denied")
++        if name == "icarus_memory" and (set(args) - {"source", "query"} or args.get("source", "learned.md") not in self.lineage):
++            raise AuthorityDenied("ICARUS constitutional memory writes denied")
++        if name == "memory":
++            if (set(args) - {"action", "target", "content"} or args.get("action") not in {"read", "add"}
++                    or args.get("target", "memory") != "memory"):
++                raise AuthorityDenied("ICARUS only native observation read/add is approved")
++            if args.get("action") == "add" and not isinstance(args.get("content"), str):
++                raise AuthorityDenied("ICARUS observation content missing")
++        # Every file operation uses the same contained backend, never host I/O.
++        evidence = {"readPath": "sandbox-result:"+self.session+":"+digest(args), "expectedHash": None}
++        if name == "write_file" and isinstance(args.get("content"), str):
++            evidence = {"readPath": "sandbox-file:"+self.session+":"+str(args.get("path")),
++                        "expectedHash": digest(args["content"])}
++        if name == "todo_list" and isinstance(args.get("todos"), list) and not args.get("merge"):
++            evidence = {"readPath": "native-todo:"+self.session, "expectedHash": digest(args["todos"])}
++        return dict(session=self.session, **self.task, call=call, subject="reasoning-worker",
++                    tool=name, argsHash=digest(args), target="session-container:"+self.session,
++                    route="HERMES_DOCKER" if name != "todo_list" else "NATIVE_TODO",
++                    scopes=[name], budgetEUR=0,
++                    evidence=evidence)
++
++    def execute(self, name, args, call, dispatch):
++        spec = self.request_spec(name, args, call or uuid.uuid4().hex)
++        permit = self.kernel.prepare(spec)
++        nonce = self.kernel.consume(permit, spec)
++        from agent.icarus_hooks import invoke
++        try:
++            invoke(self, "pre_tool_call", spec, nonce, args)
++            with runtime_scope(self), adapter_scope(self.kernel, nonce, spec):
++                result = dispatch(args)
++        except BaseException:
++            self.kernel.record_outcome(nonce, uncertain=True)
++            raise
++        try:
++            body = json.loads(result) if isinstance(result, str) else result
++        except (ValueError, TypeError):
++            body = None
++        failed = (not isinstance(body, dict) or body.get("error") or body.get("success") is False
++                  or body.get("status") in {"error", "timeout", "interrupted"}
++                  or body.get("exit_code", 0) != 0)
++        self.kernel.record_outcome(nonce, result, uncertain=bool(failed))
++        try:
++            invoke(self, "post_tool_call", spec, nonce, args)
++        except BaseException:
++            with self.kernel.connect() as db:
++                db.execute("BEGIN IMMEDIATE")
++                db.execute("UPDATE icarus_permits SET state='OUTCOME_UNKNOWN' WHERE nonce=? AND state='WORK_COMPLETE_AWAITING_VERIFICATION'", (nonce,))
++                self.kernel._event(db, "hook.observation_failed", nonce)
++            raise
++        return result
++
++    def describe(self, task):
++        return dict(name="Icarus", identity=self.identity_hash, session=self.session,
++                    task=task, provenance=self.provenance, verdict="FAIL",
++                    reason="Independent final-effect adjudication is required; model output is advisory.")
++
++
++def initialize(agent):
++    from hermes_constants import get_hermes_home
++    if agent._icarus.session != agent.session_id:
++        raise AuthorityDenied("ICARUS session identity mismatch")
++    # Unreviewed memory providers/plugins cannot become a second authority.
++    agent._memory_manager = None
++    from tools.memory_tool import load_on_disk_store
++    agent._memory_store = load_on_disk_store()
++    agent._memory_enabled = True
++    agent._user_profile_enabled = False
++    agent.skip_background_review = True
++    # Approved native tools are eager: a deferred Tool Search bridge must not
++    # hide their schemas or silently regain arbitrary connector authority.
++    from model_tools import _select_tool_names
++    from tools.registry import registry
++    selected = set(_select_tool_names(agent.enabled_toolsets, agent.disabled_toolsets, quiet_mode=True))
++    agent.tools = registry.get_definitions(selected & SAFE_TOOLS, quiet=True)
++    agent.valid_tool_names = {tool["function"]["name"] for tool in agent.tools}
++    from agent.icarus_verifier import bind_todo
++    bind_todo(agent._icarus.kernel, agent.session_id, agent._todo_store)
+diff --git a/agent/icarus_sandbox.py b/agent/icarus_sandbox.py
+--- /dev/null
++++ b/agent/icarus_sandbox.py
+@@ -0,0 +1,38 @@
++"""Fixed Docker posture for model programs using Hermes's existing backend."""
++from __future__ import annotations
++
++from agent.icarus_authority import AuthorityDenied, current_runtime
++
++IMAGE = "python:3.11-slim-bookworm@sha256:0a310eeecf4e1f5a0743f9a6520c90c88d089c903ca5fd283f501e3a805f5f89"
++
++
++def config():
++    # No environment/config/model value can opt back into the host backend.
++    return dict(env_type="docker", docker_image=IMAGE, docker_image_pinned=True,
++                cwd="/workspace", host_cwd=None, timeout=60, lifetime_seconds=300,
++                container_cpu=1, container_memory=512, container_disk=0,
++                container_persistent=False, docker_volumes=[], docker_forward_env=[], docker_env={},
++                docker_run_as_host_user=False, docker_network=False, docker_extra_args=[],
++                docker_shm_size="64m", docker_snap_compat=False,
++                docker_mount_cwd_to_workspace=False, docker_persist_across_processes=False,
++                docker_shared_container_key="", docker_orphan_reaper=False)
++
++
++def create(env_type, image, cwd, timeout, container_config, host_cwd, task_id):
++    current_runtime()
++    cc = container_config or {}
++    unsafe = (env_type != "docker" or image != IMAGE or host_cwd is not None
++              or cc.get("docker_volumes") or cc.get("docker_forward_env") or cc.get("docker_env")
++              or cc.get("docker_extra_args") or cc.get("docker_network", False)
++              or cc.get("container_persistent", False) or cc.get("persistent_filesystem", False) or cc.get("docker_mount_cwd_to_workspace", False) or cc.get("auto_mount_cwd", False)
++              or cc.get("docker_persist_across_processes", False) or cc.get("persist_across_processes", False) or cc.get("shared_container_key")
++              or cc.get("docker_snap_compat", False) or cc.get("snap_compat", False))
++    if unsafe:
++        raise AuthorityDenied("ICARUS sandbox overrides/host execution denied")
++    from tools.environments.docker import DockerEnvironment
++    return DockerEnvironment(image=IMAGE, cwd="/workspace", timeout=min(timeout, 60),
++                             cpu=1, memory=512, disk=0, persistent_filesystem=False,
++                             task_id=task_id, volumes=[], forward_env=[], env={}, network=False,
++                             host_cwd=None, auto_mount_cwd=False, extra_args=[],
++                             persist_across_processes=False, shm_size="64m", image_pinned=True,
++                             icarus_governed=True)
+diff --git a/agent/icarus_verifier.py b/agent/icarus_verifier.py
+--- /dev/null
++++ b/agent/icarus_verifier.py
+@@ -0,0 +1,47 @@
++"""Trusted target reader. Observations come from targets, never supplied hashes.
++
++No tool, RPC, model program or plugin receives this API. Native reads are a
++separate host operation after the execution turn; Docker reads use a separate
++docker-exec process. Administrator-owned Python code remains trusted.
++"""
++import json
++import subprocess
++import weakref
++
++from agent.icarus_authority import AuthorityDenied, digest
++
++_TODOS = {}
++
++
++def bind_todo(kernel, session, store):
++    from tools.todo_tool import TodoStore
++    if type(store) is not TodoStore:
++        raise AuthorityDenied("ICARUS only the reviewed native todo target may bind")
++    _TODOS[(str(kernel.db_path.resolve()), session)] = weakref.ref(store)
++
++
++def observe(kernel, spec, nonce):
++    contract = spec["evidence"]
++    if spec["tool"] == "todo_list" and contract["readPath"] == "native-todo:"+spec["session"]:
++        ref = _TODOS.get((str(kernel.db_path.resolve()), spec["session"]))
++        store = ref() if ref else None
++        if store is None:
++            raise AuthorityDenied("ICARUS actual native target is unavailable")
++        return digest(store.read()), contract["readPath"]
++    if spec["tool"] == "write_file" and contract["readPath"].startswith("sandbox-file:"+spec["session"]+":"):
++        with kernel.connect() as db:
++            row = db.execute("SELECT container FROM icarus_containers WHERE nonce=?", (nonce,)).fetchone()
++        if not row:
++            raise AuthorityDenied("ICARUS physical container target was not bound")
++        path = contract["readPath"].split(":", 2)[2]
++        from tools.environments.docker import find_docker
++        docker = find_docker()
++        if not docker:
++            raise AuthorityDenied("ICARUS Docker readback unavailable")
++        result = subprocess.run(
++            [docker, "exec", row[0], "python3", "-c",
++             "import json,pathlib,sys; print(json.dumps(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')))", path],
++            capture_output=True, text=True, timeout=15, check=True,
++        )
++        return digest(json.loads(result.stdout)), contract["readPath"]
++    raise AuthorityDenied("ICARUS no reviewed independent reader for this effect")
+diff --git a/agent/inline_tool_executors.py b/agent/inline_tool_executors.py
+--- a/agent/inline_tool_executors.py
++++ b/agent/inline_tool_executors.py
+@@ -291,7 +291,10 @@
+ 
+ def _coerced(name: str, executor: InlineToolExecutor) -> InlineToolExecutor:
+     def _exec(agent, args: dict, ctx: InlineToolContext) -> Any:
+-        return executor(agent, coerce_tool_args(name, args), ctx)
++        from agent.icarus_authority import require_adapter
++        final_args = coerce_tool_args(name, args)
++        require_adapter(name, final_args, task_id=ctx.effective_task_id, session_id=agent.session_id)
++        return executor(agent, final_args, ctx)
+     return _exec
+ 
+ 
+diff --git a/agent/system_prompt.py b/agent/system_prompt.py
+--- a/agent/system_prompt.py
++++ b/agent/system_prompt.py
+@@ -545,9 +545,7 @@
+     """SOUL.md (primary identity; cron keeps the persona while skipping cwd
+     instructions, scoped to the agent's OWN home) or the default identity.
+     Returns ``(parts, soul_loaded)``."""
+-    wants_soul = agent.load_soul_identity or not agent.skip_context_files
+-    _soul_content = _pb.load_soul_md(ctx_len, home_override=_agent_home(agent)) if wants_soul else None
+-    return ([_soul_content], True) if _soul_content else ([DEFAULT_AGENT_IDENTITY], False)
++    return ([agent._icarus.identity_prompt], True)
+ 
+ 
+ def _guidance_parts(agent: Any) -> List[str]:
+diff --git a/agent/tool_executor.py b/agent/tool_executor.py
+--- a/agent/tool_executor.py
++++ b/agent/tool_executor.py
+@@ -667,20 +667,9 @@
+ 
+ 
+ def _pre_tool_block(agent, ref: _ToolCallRef):
+-    """Run ``pre_tool_call`` plugin hooks; returns ``(block_message, final_args)`` with any
+-    hook-modified args applied. Hook failures never block."""
+-    try:
+-        from hermes_cli.plugins import _dispatch_pre_tool_call_hooks
+-
+-        block_msg, modified_args = _dispatch_pre_tool_call_hooks(
+-            ref.name,
+-            ref.args,
+-            **tool_hook_ids(agent, ref.task_id, ref.call_id),
+-            middleware_trace=list(ref.trace),
+-        )
+-        return block_msg, (ref.args if modified_args is None else modified_args)
+-    except Exception:
+-        return None, ref.args
++    # Governed hooks run after native permit consumption in IcarusRuntime.
++    # An earlier plugin hook cannot supply authority or rewrite granted args.
++    return None, ref.args
+ 
+ 
+ def _dispatch_authorized_once(
+@@ -749,7 +738,16 @@
+     from agent.terminal_approval_batch import prepare_current_terminal
+     prepare_current_terminal(ref)
+     _advance_start_order(lambda: _begin_tool_execution(agent, ref, display_index))
+-    return _run_with_activity_heartbeat(agent, ref.name, lambda: execute(ref.args))
++    from agent.icarus_authority import AuthorityDenied
++    try:
++        return _run_with_activity_heartbeat(
++            agent, ref.name,
++            lambda: agent._icarus.execute(ref.name, ref.args, ref.call_id, execute),
++        )
++    except AuthorityDenied as exc:
++        state.blocked = True
++        return _blocked_tool_result(agent, ref, block_body={"error": str(exc)},
++                                    block_error_type="icarus_authority_denied", guardrail_decision=None)
+ 
+ 
+ def _run_agent_tool_execution_middleware(
+diff --git a/agent/turn_facade.py b/agent/turn_facade.py
+--- a/agent/turn_facade.py
++++ b/agent/turn_facade.py
+@@ -141,7 +141,7 @@
+ 
+             # Keep the ContextVar scope local (agent tokens may be observed from another thread).
+             # A host that owns this thread (Hermes Console) may cancel the turn cross-thread.
+-            with bind_subagent_parent(self), scoped_runtime_main({}), track_in_interrupt_scope(self):
++            with self._icarus.turn(effective_task_id, user_message), bind_subagent_parent(self), scoped_runtime_main({}), track_in_interrupt_scope(self):
+                 try:
+                     if lease is not None:
+                         lease.start()
+@@ -161,6 +161,8 @@
+                     # the interrupt clear itself waits for the thread join in the outer finally.
+                     if lease is not None:
+                         lease.stop_refresher()
++            if isinstance(result, dict):
++                result["icarus"] = self._icarus.describe(effective_task_id)
+             terminal = result if isinstance(result, dict) else {}
+             relay_outcome = (
+                 "cancelled" if terminal.get("interrupted") is True
+diff --git a/hermes_cli/plugins.py b/hermes_cli/plugins.py
+--- a/hermes_cli/plugins.py
++++ b/hermes_cli/plugins.py
+@@ -1279,52 +1279,7 @@
+     def discover_and_load(self, force: bool = False) -> None:
+         """Scan all plugin sources and load each plugin found; ``force`` unloads first so config
+         changes / new bundled backends become visible in long-lived sessions."""
+-        if plugin_discovery_suppressed():
+-            return  # a config-only read of a profile this process must not load plugins for
+-        if self._discovered and not force and in_plugin_load_worker():
+-            # A plugin whose register() re-enters discovery (importing model_tools does) runs on a
+-            # deadline worker that cannot re-acquire the sweep's RLock; the flag is already set for the
+-            # whole sweep, so return where the locked re-entry used to. Every other caller still waits.
+-            return
+-        with self._discovery_lock, _plugin_home_scope(self.home_path):
+-            if self._discovered and not force:
+-                return
+-            # ``on_plugin_loaded`` reports the plugins this sweep loads that the process did not have before
+-            # (boot: everything; a mid-run install/enable: just the newcomer), keyed on the pre-sweep set.
+-            loaded_before = frozenset(k for k, p in self._plugins.items() if not p.error and not p.deferred)
+-            if force:
+-                self.unload()  # the ledger owns teardown of process-global registries
+-            if env_var_enabled("HERMES_SAFE_MODE"):
+-                logger.info("HERMES_SAFE_MODE=1 — plugin discovery skipped")
+-                self._discovered = True
+-                return
+-            # Flag set up front as a re-entrancy guard (register() can trigger discovery again) but
+-            # reset on failure so a failed scan is NOT cached as "discovered with an empty registry"
+-            # — callers swallow the exception and would be stranded on the early return above.
+-            self._discovered = True
+-            try:
+-                self._discover_and_load_inner()
+-                # Persistent registrations survived the unload-all; now that plugins re-registered,
+-                # dispose the ones whose plugin did not come back.
+-                # Now that plugins have had their chance to re-register, dispose the ones whose plugin did
+-                # not come back (disabled, removed, or omitted from this discovery pass) so e.g. a disabled
+-                # auth plugin's provider does not stay live process-wide until restart. See #91701.
+-                self._evict_stale_persistent_registrations()
+-                # load_hermes_dotenv() ran at import, before plugin secret sources existed: re-pull.
+-                # Plugin secret sources register during discover; the initial load_hermes_dotenv() already
+-                # ran at import time. Re-pull so the first process sees plugin backends (tracking #64177).
+-                self._refresh_secret_sources_after_discovery()
+-                if force:
+-                    # config.yaml shell hooks / outbound webhooks live in ``_hooks`` but are
+-                    # config-owned; unload() wiped them and cannot restore them.
+-                    # Re-register so force-reload is symmetric (#60036; tracking #64178 — salvaged from PR
+-                    # #64188; outbound webhooks added per #92682 review).
+-                    self._re_register_config_hooks_after_force()
+-            except BaseException:
+-                self._discovered = False
+-                raise
+-        # Outside the lock: a listener (the gateway's re-wire) may read the registry from another thread.
+-        self._notify_plugin_loaded(loaded_before)
++        self._discovered = True
+ 
+     def _re_register_config_hooks_after_force(self) -> None:
+         """Restore config-owned shell hooks/outbound webhooks after a force clear; each guarded
+diff --git a/hermes_cli/plugins_loader.py b/hermes_cli/plugins_loader.py
+--- a/hermes_cli/plugins_loader.py
++++ b/hermes_cli/plugins_loader.py
+@@ -457,92 +457,7 @@
+ 
+     def _load_plugin_scoped(self, manifest: PluginManifest) -> None:
+         """Load one plugin with the manager's home bound as current."""
+-        from hermes_cli.plugins import LoadedPlugin, PluginContext, _PLUGINS_DEBUG
+-        loaded = LoadedPlugin(manifest=manifest)
+-        plugin_key = manifest_key(manifest)
+-        logger.debug(
+-            "Loading plugin '%s' (source=%s, kind=%s, path=%s)",
+-            plugin_key, manifest.source, manifest.kind, manifest.path,
+-        )
+-        if manifest.portable:
+-            self._load_portable_plugin(manifest, loaded)
+-            return
+-        # requires_hermes gate: skip cleanly (no import, no traceback) on a version mismatch.
+-        from hermes_cli.plugins_manifest import requires_hermes_error
+-        reason = requires_hermes_error(manifest)
+-        if reason:
+-            loaded.error = reason
+-            logger.warning("Plugin '%s' skipped: %s", plugin_key, reason)
+-            self._plugins[plugin_key] = loaded
+-            return
+-        registration_start = len(self._registration_order)
+-        module_name = self._policy_module_name(manifest)
+-        self._track_tool_override_policy(manifest, module_name)
+-        ctx = PluginContext(manifest, self)
+-        in_host = self._runs_in_plugin_host(manifest)
+-
+-        def _import_and_register() -> bool:
+-            """Import + register() — the part a plugin controls, so the part the deadline covers."""
+-            # Declared language packs register before any plugin code runs, inside the same ledger slice
+-            # so a failing register() unwinds them too.
+-            self._register_declared_locales(manifest, ctx)
+-            if in_host and not self._is_manifest_only_language_pack(manifest):
+-                self._plugin_host().load(manifest, ctx, module_name=module_name,
+-                                         entrypoint=manifest.source not in {"user", "project"})
+-                return True
+-            # Reuse a deferred platform's already-imported package so its body doesn't run twice.
+-            # See #78050.
+-            module = self._predeclared_modules.pop(plugin_key, None)
+-            if module is None and manifest.source in {"user", "project", "bundled"}:
+-                if self._is_manifest_only_language_pack(manifest):
+-                    return True  # pure pack: locales/ is the whole plugin, no register() to run
+-                module = self._load_directory_module(manifest, module_name=module_name)
+-            elif module is None:
+-                module = self._load_entrypoint_module(manifest)
+-            register_fn = None
+-            if module is not None and not isinstance(module, types.ModuleType) and callable(module):
+-                # An entry point declared as ``module:function`` resolves to the function object itself via
+-                # ``ep.load()``, not its module (#72052).
+-                register_fn = module
+-                module = sys.modules.get(getattr(register_fn, "__module__", ""))
+-            loaded.module = module
+-            if register_fn is None:
+-                register_fn = getattr(module, "register", None)
+-            if register_fn is None:
+-                loaded.error = "no register() function"
+-                logger.warning("Plugin '%s' has no register() function", manifest.name)
+-                return False
+-            register_fn(ctx)
+-            return True
+-
+-        try:
+-            if run_with_load_deadline(plugin_key, ctx, _import_and_register):
+-                self._attribute_registrations(loaded, plugin_key, registration_start)
+-                loaded.enabled = True
+-                from hermes_cli.plugins_ledger import _hook_source_of
+-
+-                self._drop_fallback_hooks(_hook_source_of(manifest.name, loaded.module))
+-        except (Exception, SystemExit) as exc:
+-            # SystemExit too: a plugin module with an unguarded ``main()``/``sys.exit()`` must not take the
+-            # whole process (and every other plugin's registry) down with it; KeyboardInterrupt still propagates.
+-            # PluginLoadTimeout lands here as well: the abandoned worker's later registrations are refused
+-            # by ``ctx``, and whatever it registered before hanging is disposed below.
+-            owned = [r for r in self._registration_order if r.plugin_key == plugin_key]
+-            self._dispose_registrations(owned)
+-            self._forget_registrations(owned)
+-            loaded.error = _load_error_text(exc)
+-            # register() may have subscribed before raising; a failed plugin must leave no callable reachable
+-            # from later event dispatch.
+-            self._remove_plugin_subscriptions(plugin_key)
+-            logger.warning("Failed to load plugin '%s': %s", manifest.name, _load_error_text(exc), exc_info=_PLUGINS_DEBUG)
+-        # The failure path swept this plugin's whole ledger (not just the registration_start slice), so
+-        # discovery-time pre-registrations are gone too.
+-        # There is no live tool left to credit — attribution and the registry agree at zero. Only the
+-        # success path pops _predeclared_tools, so drop the entry here rather than let the bookkeeping
+-        # outlive the load attempt (#78050).
+-        if not loaded.enabled:
+-            self._predeclared_tools.pop(plugin_key, None)
+-        self._plugins[plugin_key] = loaded
++        raise PermissionError("ICARUS unreviewed host plugin loading denied")
+ 
+     @staticmethod
+     def _is_manifest_only_language_pack(manifest: PluginManifest) -> bool:
+diff --git a/icarus_profile_template/config.yaml b/icarus_profile_template/config.yaml
+--- /dev/null
++++ b/icarus_profile_template/config.yaml
+@@ -0,0 +1,35 @@
++{
++  "icarus": {
++    "active": true,
++    "governance_hashes": {
++      "icarus_hook.py": "ab6edf2b997e3e7c77972a56f090381000ea56a7817553ffffca759639837892",
++      "icarus_governance.py": "14199afdf7d20493920a8b9ab999b87e4a46f4ac68c0e326a011f89496956fcb"
++    }
++  },
++  "model": {
++    "default": "reasoner-not-configured"
++  },
++  "memory": {
++    "memory_enabled": true,
++    "user_profile_enabled": false
++  },
++  "plugins": {
++    "enabled": []
++  },
++  "hooks": {
++    "pre_tool_call": [
++      {
++        "command": "governance/icarus_hook.py",
++        "timeout": 6,
++        "fail_closed": true
++      }
++    ],
++    "post_tool_call": [
++      {
++        "command": "governance/icarus_hook.py",
++        "timeout": 6,
++        "fail_closed": true
++      }
++    ]
++  }
++}
+\ No newline at end of file
+diff --git a/icarus_profile_template/governance/icarus_governance.py b/icarus_profile_template/governance/icarus_governance.py
+--- /dev/null
++++ b/icarus_profile_template/governance/icarus_governance.py
+@@ -0,0 +1,52 @@
++"""ICARUS native-permit hook: no primary-profile exemption or hook issuance."""
++from pathlib import Path
++import hashlib, hmac, json, sqlite3, sys, time
++
++PROFILE = Path(__file__).resolve().parent.parent
++class AuthorityDenied(PermissionError):
++    pass
++
++def canonical(value):
++    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
++
++def digest(value):
++    return hashlib.sha256(canonical(value).encode()).hexdigest()
++
++
++def validate(payload):
++    if not isinstance(payload, dict) or payload.get("hook_event_name") not in {"pre_tool_call", "post_tool_call"}:
++        raise AuthorityDenied("ICARUS malformed hook request")
++    extra = payload.get("extra", {})
++    nonce = extra.get("icarus_nonce")
++    db_path = PROFILE / "icarus" / "authority.sqlite"
++    if not nonce or not db_path.is_file():
++        raise AuthorityDenied("ICARUS native authority missing")
++    with sqlite3.connect(db_path.as_uri()+"?mode=ro", uri=True) as db:
++        row = db.execute("SELECT payload,signature,state FROM icarus_permits WHERE nonce=?", (nonce,)).fetchone()
++        key_row = db.execute("SELECT key FROM icarus_seal WHERE id=1").fetchone()
++        if not row or not key_row:
++            raise AuthorityDenied("ICARUS unknown permit")
++        key = bytes.fromhex(key_row[0])
++        permit = json.loads(row[0]); spec = permit["spec"]
++        mac = hmac.new(key, canonical(permit).encode(), hashlib.sha256).hexdigest()
++        if not hmac.compare_digest(mac, row[1]) or permit["expiry"] <= time.time():
++            raise AuthorityDenied("ICARUS invalid or expired authority")
++        if (spec["session"] != payload.get("session_id") or spec["task"] != extra.get("task_id")
++                or spec["call"] != extra.get("tool_call_id") or spec["tool"] != payload.get("tool_name")
++                or spec["argsHash"] != digest(payload.get("tool_input"))):
++            raise AuthorityDenied("ICARUS hook request binding mismatch")
++        allowed = {"WORKING"} if payload["hook_event_name"] == "pre_tool_call" else {"WORK_COMPLETE_AWAITING_VERIFICATION", "OUTCOME_UNKNOWN"}
++        if row[2] not in allowed:
++            raise AuthorityDenied("ICARUS hook replay or invalid execution state")
++        return {"action": "allow"} if payload["hook_event_name"] == "pre_tool_call" else {}
++
++def main():
++    try:
++        print(json.dumps(validate(json.load(sys.stdin))))
++        return 0
++    except Exception as exc:
++        print(json.dumps({"action":"block", "message":"ICARUS_DENIED: "+type(exc).__name__+": "+str(exc)}))
++        return 2
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/icarus_profile_template/governance/icarus_hook.py b/icarus_profile_template/governance/icarus_hook.py
+--- /dev/null
++++ b/icarus_profile_template/governance/icarus_hook.py
+@@ -0,0 +1,15 @@
++"""Strict hook protocol; native governance supplies the only decision."""
++import json, sys
++from icarus_governance import validate
++
++def main():
++    try:
++        response = validate(json.load(sys.stdin))
++        print(json.dumps(response))
++        return 0
++    except Exception as exc:
++        print(json.dumps({"action":"block", "message":"ICARUS_DENIED: "+type(exc).__name__+": "+str(exc)}))
++        return 2
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/icarus_profile_template/import_lineage.py b/icarus_profile_template/import_lineage.py
+--- /dev/null
++++ b/icarus_profile_template/import_lineage.py
+@@ -0,0 +1,32 @@
++"""Deployment-time local import; never a second runtime or supervisor."""
++from pathlib import Path
++import argparse, hashlib, json, shutil, subprocess
++
++parser=argparse.ArgumentParser()
++parser.add_argument('--repository', type=Path, required=True, help='Owner-supplied Teamchat checkout')
++parser.add_argument('--profile', type=Path, required=True, help='Protected profile, read only')
++parser.add_argument('--runtime-source', type=Path, required=True, help='Patched isolated donor checkout')
++args=parser.parse_args()
++target=args.runtime_source.resolve()/'agent'/'icarus_lineage'
++if target.exists(): raise SystemExit('Existing canonical lineage preserved. Import only into a new isolated candidate.')
++inputs={name:args.repository/'icarus'/'memory'/name for name in ('identity.md','inherited.md','learned.md','current-state.md')}
++inputs['training.md']=args.repository/'TRAINING_MATRIX.md'
++for folder in ('generational-memory','skills'):
++    for path in (args.profile/folder).rglob('*'):
++        if path.is_file() and not path.is_symlink() and path.suffix in ('.md','.json','.yaml','.yml','.csv','.txt'):
++            inputs[str(path.relative_to(args.profile)).replace('\\','/')]=path
++def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
++before={name:sha(path) for name,path in inputs.items()}
++commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=args.repository,text=True).strip()
++manifest=dict(schema=1,repository='owner-supplied-local-checkout',commit=commit,
++    donor='99a45ecc17cc51c0488ec3b8ccf7eaf483f7203d',files=before,sources={})
++target.mkdir(parents=True)
++for name,path in inputs.items():
++    destination=target/name
++    destination.parent.mkdir(parents=True,exist_ok=True)
++    shutil.copy2(path,destination)
++    if sha(destination)!=before[name] or sha(path)!=before[name]:
++        raise SystemExit('Canonical input changed; preserve incomplete import and do not launch.')
++    manifest['sources'][name]=dict(kind='dated-local-snapshot',source=str(path.resolve()),verified_current_capability=False)
++(target/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
++print('Local canonical snapshots imported:',len(inputs))
+diff --git a/model_tools.py b/model_tools.py
+--- a/model_tools.py
++++ b/model_tools.py
+@@ -834,6 +834,8 @@
+     def _dispatch(next_args: Dict[str, Any]) -> Any:
+         from tools.connectors import dispatch_connector_call, is_connector_name
+         if is_connector_name(function_name):
++            from agent.icarus_authority import require_adapter
++            require_adapter(function_name, next_args, task_id=ids.task_id, session_id=ids.session_id)
+             return dispatch_connector_call(function_name, next_args, ids.tool_call_id)
+         return registry.dispatch(function_name, next_args, **dispatch_kwargs)
+ 
+@@ -885,6 +887,12 @@
+     it (single-fire contract). enabled/disabled_toolsets scope the Tool Search
+     bridge catalog to this session's grant (None = unrestricted).
+     """
++    from agent.icarus_authority import check_adapter, AuthorityDenied
++    try:
++        route = check_adapter(function_name, function_args, task_id=task_id, session_id=session_id)
++        task_id, session_id = route["task"], route["session"]
++    except AuthorityDenied as exc:
++        return tool_error(str(exc))
+     function_args = coerce_tool_args(function_name, function_args)
+     if not isinstance(function_args, dict):
+         function_args = {}
+diff --git a/providers/__init__.py b/providers/__init__.py
+--- a/providers/__init__.py
++++ b/providers/__init__.py
+@@ -322,26 +322,7 @@
+     check picks it up. Checking on a short cadence keeps a newly installed plugin discoverable
+     without making every model lookup perform two filesystem stats.
+     """
+-    now = time.monotonic()
+-    if home is None or not (
+-        force
+-        or layer.stamp_checked_at is None
+-        or now - layer.stamp_checked_at >= _PLUGIN_DIR_STAMP_TTL_SECONDS
+-    ):
+-        return False
+-    stamps = _plugin_dir_stamps(home)
+-    if stamps != layer.stamps:
+-        _scan_home_layer(layer, key)
+-        layer.stamps = stamps
+-        # Publish the completed layer -- stamps AND check time -- before auth
+-        # sync: it calls list_providers(), which re-enters this function. An
+-        # unpublished stamp rescanned forever; an unpublished check time
+-        # re-stats the plugin dirs inside the TTL.
+-        layer.stamp_checked_at = now
+-        if _discovered and not _discovering:
+-            _sync_auth_registry()
+-    layer.stamp_checked_at = now
+-    return True
++    return False
+ 
+ 
+ def _plugin_dir_stamps(home: Path) -> tuple:
+@@ -538,74 +519,7 @@
+     ``register_provider()`` — a pip package cannot hijack a first-party
+     provider name.
+     """
+-    try:
+-        import importlib.metadata as _md
+-    except Exception:  # pragma: no cover — importlib.metadata always present ≥3.8
+-        return
+-
+-    # Same opt-in gate as the general PluginManager: only entry points named
+-    # in ``plugins.enabled`` load, and ``plugins.disabled`` always wins.
+-    try:
+-        from hermes_cli.plugins import _get_disabled_plugins, _get_enabled_plugins
+-
+-        enabled = _get_enabled_plugins()  # None = nothing enabled yet (opt-in default)
+-        disabled = _get_disabled_plugins()
+-    except Exception:  # pragma: no cover — config layer unavailable
+-        enabled, disabled = None, set()
+-    if not enabled:
+-        return
+-
+-    group = "hermes_agent.plugins"
+-    try:
+-        eps = _md.entry_points()
+-        # Python 3.10+ exposes .select(); older returns a dict-like mapping.
+-        if hasattr(eps, "select"):
+-            group_eps = list(eps.select(group=group))
+-        else:  # pragma: no cover — legacy interpreters
+-            group_eps = list(eps.get(group, []))  # type: ignore[attr-defined]
+-    except Exception as exc:
+-        logger.debug("entry-point provider scan skipped: %s", exc)
+-        return
+-
+-    for ep in group_eps:
+-        if ep.name not in enabled or ep.name in disabled:
+-            logger.debug(
+-                "entry-point provider %r skipped: not enabled in config", ep.name
+-            )
+-            continue
+-        from hermes_cli.plugin_isolation import in_process_import_refusal
+-        refusal = in_process_import_refusal(f"pip-installed model-provider plugin {ep.name!r}")
+-        if refusal:
+-            logger.warning("%s", refusal)
+-            continue
+-        try:
+-            loaded = ep.load()
+-        except Exception as exc:
+-            logger.warning(
+-                "Failed to load entry-point provider plugin %r: %s", ep.name, exc
+-            )
+-            continue
+-        # ``module:func`` → callable we invoke; bare ``module`` → import side
+-        # effect already happened during load(). Only call when it's callable
+-        # AND zero-arg: general plugins in this shared group expose
+-        # ``register(ctx)`` (requires an argument) and belong to the
+-        # PluginManager, not the provider registry.
+-        if callable(loaded):
+-            if _requires_arguments(loaded):
+-                logger.debug(
+-                    "entry-point %r skipped by provider scan: target requires "
+-                    "arguments (general plugin owned by PluginManager)",
+-                    ep.name,
+-                )
+-                continue
+-            try:
+-                loaded()
+-            except Exception as exc:
+-                logger.warning(
+-                    "Entry-point provider plugin %r raised on invocation: %s",
+-                    ep.name,
+-                    exc,
+-                )
++    return
+ 
+ 
+ def _requires_arguments(fn) -> bool:
+diff --git a/tests/agent/icarus_profile_fixture.py b/tests/agent/icarus_profile_fixture.py
+--- /dev/null
++++ b/tests/agent/icarus_profile_fixture.py
+@@ -0,0 +1,19 @@
++import hashlib, shutil
++from pathlib import Path
++import json
++from utils import fast_safe_load
++
++def configure(home):
++    source = Path(__file__).resolve().parents[2] / "icarus_profile_template"
++    home = Path(home)
++    (home / "governance").mkdir(parents=True, exist_ok=True)
++    for name in ("icarus_hook.py", "icarus_governance.py"):
++        shutil.copy2(source / "governance" / name, home / "governance" / name)
++    hashes = {name: hashlib.sha256((home / "governance" / name).read_bytes()).hexdigest() for name in ("icarus_hook.py", "icarus_governance.py")}
++    config_path = home / "config.yaml"
++    config = fast_safe_load(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
++    config = config or {}
++    config["icarus"] = dict(active=True, governance_hashes=hashes)
++    config.setdefault("memory", {}).update(memory_enabled=True, user_profile_enabled=False)
++    config["hooks"] = {event:[dict(command="governance/icarus_hook.py", fail_closed=True, timeout=6)] for event in ("pre_tool_call", "post_tool_call")}
++    (home / "config.yaml").write_text(json.dumps(config, indent=2), encoding="utf-8")
+diff --git a/tests/agent/test_icarus_authority.py b/tests/agent/test_icarus_authority.py
+--- /dev/null
++++ b/tests/agent/test_icarus_authority.py
+@@ -0,0 +1,159 @@
++"""Native ICARUS adversarial contracts. Fixture assertions are not independent PASS."""
++import copy
++import json
++import time
++from types import SimpleNamespace
++from concurrent.futures import ThreadPoolExecutor
++
++import pytest
++
++from agent.icarus_authority import AuthorityDenied, PermitKernel, adapter_scope, digest, require_adapter
++from agent.icarus_runtime import IcarusRuntime
++
++
++@pytest.fixture
++def runtime(tmp_path):
++    return IcarusRuntime(tmp_path / "profile", "icarus-session")
++
++
++def spec(runtime, call="call-1"):
++    return runtime.request_spec("todo_list", {"todos": [{"id": "x", "content": "done", "status": "completed"}]}, call)
++
++
++def test_canonical_identity_restart_and_task_provenance(runtime):
++    assert "The model is never Icarus" in runtime.identity_prompt
++    assert runtime.lineage["learned.md"].find("ICARUS-ALIVE-001") >= 0
++    assert "HV-EXP-051" in runtime.lineage["training.md"]
++    with runtime.turn("task-stable", "fix it"):
++        before = dict(runtime.task)
++    again = IcarusRuntime(runtime.home, runtime.session)
++    with again.turn("task-stable", "fix it"):
++        assert again.task == before
++    assert again.identity_hash == runtime.identity_hash
++    assert again.provenance == runtime.provenance
++
++
++def test_missing_forged_tampered_expired_authority(runtime):
++    with runtime.turn("task", "objective"):
++        request = spec(runtime)
++        permit = runtime.kernel.prepare(request)
++        for invalid in [None, {}, {"payload": permit["payload"], "signature": "0"*64}]:
++            with pytest.raises(AuthorityDenied):
++                runtime.kernel.consume(invalid, request)
++        changed = copy.deepcopy(permit)
++        changed["payload"]["spec"]["target"] = "other"
++        with pytest.raises(AuthorityDenied):
++            runtime.kernel.consume(changed, request)
++        with pytest.raises(AuthorityDenied):
++            runtime.kernel.consume(permit, dict(request, argsHash=digest({"other": "args"})))
++        short = runtime.kernel.prepare(spec(runtime, "expiry"), ttl=0.001)
++        time.sleep(0.01)
++        with pytest.raises(AuthorityDenied, match="expired"):
++            runtime.kernel.consume(short, spec(runtime, "expiry"))
++
++
++def test_objective_change_revokes_pending_permit(runtime):
++    with runtime.turn("task", "old"):
++        request = spec(runtime)
++        permit = runtime.kernel.prepare(request)
++    with runtime.turn("task", "new"):
++        with pytest.raises(AuthorityDenied, match="objective changed"):
++            runtime.kernel.consume(permit, request)
++
++
++def test_concurrent_and_restart_replay_one_winner(runtime):
++    with runtime.turn("task", "objective"):
++        request = spec(runtime)
++        permit = runtime.kernel.prepare(request)
++        def attempt(_):
++            kernel = PermitKernel(runtime.kernel.db_path, runtime.identity_hash)
++            try:
++                return kernel.consume(permit, request)
++            except AuthorityDenied:
++                return None
++        with ThreadPoolExecutor(max_workers=8) as pool:
++            results = list(pool.map(attempt, range(8)))
++        assert sum(r is not None for r in results) == 1
++        again = PermitKernel(runtime.kernel.db_path, runtime.identity_hash)
++        with pytest.raises(AuthorityDenied, match="replay"):
++            again.consume(permit, request)
++
++
++def test_final_adapter_once_and_nested_same_tool_denied(runtime):
++    with runtime.turn("task", "objective"):
++        request = spec(runtime)
++        nonce = runtime.kernel.consume(runtime.kernel.prepare(request), request)
++        args = {"todos": [{"id": "x", "content": "done", "status": "completed"}]}
++        with adapter_scope(runtime.kernel, nonce, request):
++            require_adapter("todo_list", args)
++            with pytest.raises(AuthorityDenied):
++                require_adapter("todo_list", args)
++        with pytest.raises(AuthorityDenied):
++            with adapter_scope(runtime.kernel, nonce, request):
++                pass
++        with pytest.raises(AuthorityDenied):
++            with adapter_scope(runtime.kernel, "invented", request):
++                pass
++
++
++def test_registry_inline_bridge_rpc_missing_authority(runtime):
++    from tools.registry import registry
++    from model_tools import handle_function_call
++    from agent.inline_tool_executors import INLINE_TOOL_EXECUTORS, InlineToolContext
++    from tools.code_execution_rpc import _handle_rpc_request
++    from tools.code_execution_tool import _sandbox_tools_for
++    assert "ICARUS" in registry.dispatch("todo_list", {})
++    assert "ICARUS" in handle_function_call("tool_call", {"tool": "terminal", "arguments": {"command": "touch /tmp/forbidden"}})
++    with pytest.raises(AuthorityDenied):
++        INLINE_TOOL_EXECUTORS["todo_list"](SimpleNamespace(session_id="session"), {}, InlineToolContext("task"))
++    calls = []
++    answer = _handle_rpc_request({"tool": "terminal", "args": {}}, allowed_tools=frozenset({"terminal"}),
++                                tool_call_counter=[0], max_tool_calls=2, dispatch=lambda *a: calls.append(a),
++                                tool_call_log=[], call_start=time.monotonic(), where="test")
++    assert "ICARUS" in answer and calls == []
++    assert _sandbox_tools_for([]) == frozenset()
++
++
++def test_policy_expansion_self_certification_and_memory_mutation_denied(runtime):
++    with runtime.turn("task", "objective"):
++        for name, args in [("delegate_task", {}), ("manage_connections", {}), ("memory", {"action": "add"}),
++                           ("terminal", {"command": "echo denied", "_host_local": True}),
++                           ("terminal", {"command": "echo denied", "background": True}),
++                           ("icarus_memory", {"source": "identity.md", "content": "rewrite"})]:
++            with pytest.raises(AuthorityDenied):
++                runtime.request_spec(name, args, "deny")
++        request = spec(runtime)
++        nonce = runtime.kernel.consume(runtime.kernel.prepare(request), request)
++        runtime.kernel.record_outcome(nonce, {"claimed": "PASS"})
++        with pytest.raises(AuthorityDenied, match="self-certification"):
++            runtime.kernel.adjudicate(nonce)
++        with pytest.raises(TypeError):
++            runtime.kernel.adjudicate(nonce, observed_hash=request["evidence"]["expectedHash"], read_ref="forged")
++        with runtime.kernel.connect() as db:
++            assert db.execute("SELECT state FROM icarus_permits WHERE nonce=?", (nonce,)).fetchone()[0] != "PASS"
++
++
++def test_audit_corruption_denies_restart(runtime):
++    with runtime.turn("task", "objective"):
++        runtime.kernel.prepare(spec(runtime))
++    with runtime.kernel.connect() as db:
++        db.execute("UPDATE icarus_events SET record='tampered' WHERE seq=1")
++    with pytest.raises(AuthorityDenied, match="integrity"):
++        IcarusRuntime(runtime.home, runtime.session)
++
++
++def test_final_task_session_mismatch_denied_before_entry(runtime):
++    from tools.registry import registry
++    from model_tools import handle_function_call
++    from agent.inline_tool_executors import INLINE_TOOL_EXECUTORS, InlineToolContext
++    args = {"todos": []}
++    with runtime.turn("task", "objective"):
++        request = runtime.request_spec("todo_list", args, "bound")
++        nonce = runtime.kernel.consume(runtime.kernel.prepare(request), request)
++        with adapter_scope(runtime.kernel, nonce, request):
++            assert "route mismatch" in registry.dispatch("todo_list", args, task_id="other", session_id=runtime.session)
++            assert "route mismatch" in handle_function_call("todo_list", args, task_id="task", session_id="other")
++            with pytest.raises(AuthorityDenied, match="route mismatch"):
++                INLINE_TOOL_EXECUTORS["todo_list"](SimpleNamespace(session_id="other"), args, InlineToolContext("task"))
++        with runtime.kernel.connect() as db:
++            assert db.execute("SELECT state FROM icarus_permits WHERE nonce=?", (nonce,)).fetchone()[0] == "WORKING"
+diff --git a/tests/agent/test_icarus_native_runtime.py b/tests/agent/test_icarus_native_runtime.py
+--- /dev/null
++++ b/tests/agent/test_icarus_native_runtime.py
+@@ -0,0 +1,112 @@
++"""Real native AIAgent loop with a labelled deterministic HTTP transport fixture.
++
++This verifies orchestration and persistence, not autonomous model reasoning.
++"""
++import json
++import threading
++from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
++
++import pytest
++
++
++@pytest.fixture
++def reasoner():
++    requests = []
++    class Handler(BaseHTTPRequestHandler):
++        def log_message(self, *_):
++            pass
++        def do_GET(self):
++            self.send_response(200); self.end_headers(); self.wfile.write(b'{"data":[]}')
++        def do_POST(self):
++            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
++            requests.append(body)
++            has_tool = any(m["role"] == "tool" for m in body.get("messages", []))
++            message = {"role": "assistant", "content": "Transport fixture completed; final evidence remains independently reviewable."}
++            finish = "stop"
++            if body.get("model") == "processor-a" and not has_tool:
++                message = {"role": "assistant", "content": None, "tool_calls": [
++                    {"id": "native-once", "type": "function", "function": {"name": "todo_list", "arguments": json.dumps(
++                        {"todos": [{"id": "proof", "content": "native target", "status": "completed"}]})}}]}
++                finish = "tool_calls"
++            response = {"id": "fixture", "object": "chat.completion", "created": 1, "model": body.get("model"),
++                        "choices": [{"index": 0, "message": message, "finish_reason": finish}],
++                        "usage": {"prompt_tokens": 32, "completion_tokens": 16, "total_tokens": 48}}
++            self.send_response(200)
++            if body.get("stream"):
++                self.send_header("Content-Type", "text/event-stream"); self.end_headers()
++                delta = dict(message)
++                if "tool_calls" in delta:
++                    delta["tool_calls"][0]["index"] = 0
++                chunk = dict(response, object="chat.completion.chunk", choices=[{"index": 0, "delta": delta, "finish_reason": None}])
++                end = dict(response, object="chat.completion.chunk", choices=[{"index": 0, "delta": {}, "finish_reason": finish}])
++                self.wfile.write(("data: "+json.dumps(chunk)+"\n\ndata: "+json.dumps(end)+"\n\ndata: [DONE]\n\n").encode())
++            else:
++                self.send_header("Content-Type", "application/json"); self.end_headers()
++                self.wfile.write(json.dumps(response).encode())
++    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
++    thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
++    yield f"http://127.0.0.1:{server.server_port}/v1", requests
++    server.shutdown(); server.server_close(); thread.join(timeout=2)
++
++
++def make_agent(url, model, session, db):
++    from run_agent import AIAgent
++    from hermes_constants import get_hermes_home
++    from tests.agent.icarus_profile_fixture import configure
++    configure(get_hermes_home())
++    return AIAgent(model=model, base_url=url, api_key="nonsecret-transport-fixture", provider="custom",
++                   session_id=session, session_db=db, max_iterations=3, max_tokens=1024,
++                   enabled_toolsets=["todo", "memory"], quiet_mode=True, skip_context_files=True,
++                   skip_memory=True, skip_background_review=True)
++
++
++def test_native_loop_once_readback_model_swap_and_restart(tmp_path, reasoner):
++    from hermes_state import SessionDB
++    from agent.icarus_authority import AuthorityDenied, digest
++    url, requests = reasoner
++    db = SessionDB(tmp_path / "state.sqlite")
++    first = make_agent(url, "processor-a", "native-continuity", db)
++    result = first.run_conversation("Finish the proof task", task_id="same-task")
++    assert result["icarus"]["name"] == "Icarus"
++    assert result["icarus"]["task"] == "same-task"
++    target = first._todo_store.read()
++    assert target == [{"id": "proof", "content": "native target", "status": "completed"}]
++    chats = [request for request in requests if "messages" in request]
++    assert "The model is never Icarus" in chats[0]["messages"][0]["content"]
++    with first._icarus.kernel.connect() as store:
++        rows = store.execute("SELECT nonce,state,payload FROM icarus_permits").fetchall()
++    assert len(rows) == 1 and rows[0][1] == "WORK_COMPLETE_AWAITING_VERIFICATION"
++    contract = json.loads(rows[0][2])["spec"]["evidence"]
++    assert contract["expectedHash"] == digest(target)
++    assert contract["readPath"] == "native-todo:native-continuity"
++    second = make_agent(url, "processor-b", "native-continuity", db)
++    resumed = second.run_conversation("Finish the proof task", task_id="same-task", conversation_history=result["messages"])
++    assert resumed["icarus"]["identity"] == result["icarus"]["identity"]
++    assert resumed["icarus"]["task"] == "same-task"
++    assert resumed["icarus"]["provenance"] == result["icarus"]["provenance"]
++    assert any(r["model"] == "processor-b" for r in requests if "messages" in r)
++    assert resumed["icarus"]["verdict"] == "FAIL"
++    with second._icarus.turn("same-task", "Finish the proof task"):
++        with pytest.raises(AuthorityDenied):
++            second._icarus.execute("todo_list", {"todos": target}, "native-once", lambda _: "{}")
++    # The test executor does not award kernel or project PASS. Independent
++    # reviewer receives the target readback and exact contract separately.
++    db.close()
++
++
++def test_unreviewed_plugin_and_memory_provider_cannot_activate(tmp_path, monkeypatch, reasoner):
++    from hermes_constants import get_hermes_home
++    from hermes_state import SessionDB
++    home = get_hermes_home()
++    marker = tmp_path / "forbidden-plugin-executed"
++    plugin = home / "plugins" / "evil"; plugin.mkdir(parents=True)
++    (plugin / "plugin.yaml").write_text("name: evil\nversion: 1.0.0\ndescription: hostile fixture\n", encoding="utf-8")
++    (plugin / "__init__.py").write_text(f"from pathlib import Path\nPath({str(marker)!r}).write_text('executed')\ndef register(ctx): pass\n", encoding="utf-8")
++    (home / "config.yaml").write_text("plugins:\n  enabled: [evil]\nmemory:\n  provider: evil\ncontext:\n  engine: evil\n", encoding="utf-8")
++    from hermes_cli.plugins import discover_plugins, start_background_plugin_discovery
++    discover_plugins(force=True); start_background_plugin_discovery()
++    db = SessionDB(tmp_path / "plugin-state.sqlite")
++    agent = make_agent(reasoner[0], "processor-b", "no-host-plugins", db)
++    assert agent._memory_manager is None and not marker.exists()
++    assert agent._icarus.identity_hash
++    db.close()
+diff --git a/tests/agent/test_icarus_transplant_hooks.py b/tests/agent/test_icarus_transplant_hooks.py
+--- /dev/null
++++ b/tests/agent/test_icarus_transplant_hooks.py
+@@ -0,0 +1,81 @@
++"""Behavioral contracts for the native profile-hook seam and mutable memory."""
++import json
++import subprocess
++import sys
++from types import SimpleNamespace
++
++import pytest
++
++from agent.icarus_authority import AuthorityDenied, require_adapter
++from agent.icarus_runtime import IcarusRuntime
++from tests.agent.icarus_profile_fixture import configure
++
++
++@pytest.fixture
++def runtime(tmp_path):
++    home = tmp_path / 'profile'
++    configure(home)
++    return IcarusRuntime(home, 'hook-session')
++
++
++def dispatch(args):
++    require_adapter('todo_list', args, task_id='task', session_id='hook-session')
++    return json.dumps({'success': True})
++
++
++@pytest.mark.parametrize('damage', ['missing_hook', 'changed_hook', 'missing_config', 'wrong_config', 'missing_post'])
++def test_invalid_hook_or_configuration_blocks_before_adapter(runtime, damage):
++    config = runtime.home / 'config.yaml'
++    hook = runtime.home / 'governance' / 'icarus_hook.py'
++    if damage == 'missing_hook':
++        hook.unlink()
++    elif damage == 'changed_hook':
++        hook.write_text('print("allowed")', encoding='utf-8')
++    elif damage == 'missing_config':
++        config.unlink()
++    else:
++        data = json.loads(config.read_text(encoding='utf-8'))
++        data['hooks']['post_tool_call' if damage == 'missing_post' else 'pre_tool_call'] = []
++        config.write_text(json.dumps(data), encoding='utf-8')
++    entered = []
++    with runtime.turn('task', 'objective'):
++        with pytest.raises((AuthorityDenied, FileNotFoundError)):
++            runtime.execute('todo_list', {'todos': []}, 'damage', lambda args: entered.append(args))
++    assert entered == []
++    with runtime.kernel.connect() as db:
++        assert db.execute('SELECT state FROM icarus_permits').fetchone() == ('OUTCOME_UNKNOWN',)
++
++
++def test_profile_label_without_native_permit_cannot_admit(runtime):
++    payload = dict(hook_event_name='pre_tool_call', session_id='desktop-primary', tool_name='terminal',
++                   tool_input={'command': 'echo bypass'}, extra={'tool_call_id': 'forged', 'task_id': 'task'})
++    result = subprocess.run([sys.executable, '-B', str(runtime.home / 'governance' / 'icarus_hook.py')],
++                            input=json.dumps(payload), capture_output=True, text=True)
++    assert result.returncode == 2 and json.loads(result.stdout)['action'] == 'block'
++
++
++def test_exact_hook_admission_once_and_route_mismatch(runtime):
++    args = {'todos': []}
++    with runtime.turn('task', 'objective'):
++        assert json.loads(runtime.execute('todo_list', args, 'once', dispatch))['success']
++        with pytest.raises(AuthorityDenied, match='duplicate'):
++            runtime.execute('todo_list', args, 'once', dispatch)
++        with pytest.raises(AuthorityDenied, match='route mismatch'):
++            runtime.execute('todo_list', args, 'route', lambda value: require_adapter('todo_list', value, task_id='other-task'))
++
++
++def test_native_observation_memory_survives_reload(runtime, monkeypatch):
++    from tools.memory_tool import load_on_disk_store
++    from agent.inline_tool_executors import INLINE_TOOL_EXECUTORS, InlineToolContext
++    monkeypatch.setenv('HERMES_HOME', str(runtime.home))
++    agent = SimpleNamespace(session_id=runtime.session, _memory_store=load_on_disk_store(), _memory_manager=None)
++    args = dict(action='add', target='memory', content='Unverified observation: transplant continuity marker.')
++    with runtime.turn('task', 'learn observation'):
++        result = runtime.execute('memory', args, 'learning',
++                                 lambda value: INLINE_TOOL_EXECUTORS['memory'](agent, value, InlineToolContext('task', 'learning')))
++    assert json.loads(result)['success']
++    reloaded = load_on_disk_store()
++    assert 'transplant continuity marker' in reloaded.format_for_system_prompt("memory")
++    with runtime.turn('task', 'protect constitution'):
++        with pytest.raises(AuthorityDenied):
++            runtime.request_spec('memory', dict(action='add', target='user', content='override authority'), 'forbidden')
+diff --git a/tools/code_execution_rpc.py b/tools/code_execution_rpc.py
+--- a/tools/code_execution_rpc.py
++++ b/tools/code_execution_rpc.py
+@@ -89,32 +89,7 @@
+                         where: str) -> str:
+     """Enforce allow-list + budget, then dispatch one authenticated request. Only a dispatched
+     call consumes budget and is logged; refusals are free."""
+-    tool_name = request.get("tool", "")
+-    tool_args = request.get("args", {})
+-    if tool_name not in allowed_tools:
+-        return tool_error(f"Tool '{tool_name}' is not available in execute_code. "
+-                          f"Available: {', '.join(sorted(allowed_tools))}")
+-    if tool_call_counter[0] >= max_tool_calls:
+-        return tool_error(f"Tool call limit reached ({max_tool_calls}). "
+-                          "No more tool calls allowed in this execution.")
+-    if tool_name == "terminal" and isinstance(tool_args, dict):
+-        for param in _TERMINAL_BLOCKED_PARAMS:
+-            tool_args.pop(param, None)
+-    # Silence handler status prints so they don't leak into the CLI spinner.
+-    try:
+-        with thread_scoped_silence():
+-            result = dispatch(tool_name, tool_args)
+-    except Exception as exc:
+-        logger.error("Tool call failed in %s: %s", where, exc, exc_info=True)
+-        result = tool_error(str(exc))
+-    tool_call_counter[0] += 1
+-    entry = {"tool": tool_name, "args_preview": str(tool_args)[:80],
+-             "duration": round(time.monotonic() - call_start, 2)}
+-    error = _result_error(result)
+-    if error:
+-        entry["error"] = error
+-    tool_call_log.append(entry)
+-    return result
++    return tool_error("ICARUS nested sandbox RPC denied: no independent execution permit")
+ 
+ 
+ def _result_error(result) -> str:
+diff --git a/tools/code_execution_tool.py b/tools/code_execution_tool.py
+--- a/tools/code_execution_tool.py
++++ b/tools/code_execution_tool.py
+@@ -588,7 +588,7 @@
+ 
+ def _sandbox_tools_for(enabled_tools: Optional[List[str]]) -> frozenset:
+     """Enabled ∩ SANDBOX_ALLOWED_TOOLS, or every sandbox tool when the intersection is empty."""
+-    return frozenset(SANDBOX_ALLOWED_TOOLS & set(enabled_tools or ())) or SANDBOX_ALLOWED_TOOLS
++    return frozenset(SANDBOX_ALLOWED_TOOLS & set(enabled_tools or ()))
+ 
+ 
+ def _run_remote_per_call(env, env_type: str, code: str, effective_task_id: str,
+@@ -663,7 +663,7 @@
+     a kernel cannot be spawned and the only route for hosts that cannot sustain a background process."""
+     _cfg = _load_config()
+     timeout, max_tool_calls = _cfg.get("timeout", DEFAULT_TIMEOUT), _cfg.get("max_tool_calls", DEFAULT_MAX_TOOL_CALLS)
+-    sandbox_tools, effective_task_id = _sandbox_tools_for(enabled_tools), task_id or "default"
++    sandbox_tools, effective_task_id = frozenset(), task_id or "default"
+     env, env_type = _get_or_create_env(effective_task_id)
+     exec_start = time.monotonic()
+     try:
+diff --git a/tools/environments/docker.py b/tools/environments/docker.py
+--- a/tools/environments/docker.py
++++ b/tools/environments/docker.py
+@@ -654,7 +654,13 @@
+         shm_size: str = _DEFAULT_SHM_SIZE,
+         shared_container_key: str = "",
+         snap_compat: bool = False,
+-        image_pinned: bool = False):
++        image_pinned: bool = False,
++        icarus_governed: bool = False):
++        self._icarus_governed = icarus_governed
++        if icarus_governed and (network or volumes or forward_env or env or host_cwd or auto_mount_cwd
++                               or extra_args or persistent_filesystem or persist_across_processes
++                               or snap_compat or shared_container_key):
++            raise ValueError("ICARUS Docker posture override denied")
+         if cwd == "~":
+             cwd = "/root"
+         super().__init__(cwd=cwd, timeout=timeout)
+@@ -687,7 +693,8 @@
+                 mount, cwd)
+             cwd = mount
+             self.cwd = mount
+-        volume_args.extend(_readonly_skill_mount_args())
++        if not self._icarus_governed:
++            volume_args.extend(_readonly_skill_mount_args())
+         egress_label, egress_volume_args, egress_host_args, env_args, validated_extra = (
+             self._egress_and_env_args(extra_args))
+         volume_args.extend(egress_volume_args)
+@@ -762,6 +769,9 @@
+         validated docker_extra_args. Returns ``(egress_label, volume_args, host_args, env_args,
+         validated_extra)``; sets ``self._run_env_values`` (injected into the docker-client
+         subprocess env at run time and reused verbatim by container-recreation recovery)."""
++        if self._icarus_governed:
++            self._run_env_values = {}
++            return "icarus-offline", [], [], [], []
+         egress_volume_args, egress_env_overrides, egress_host_args = _egress_proxy_args_for_docker()
+         egress_label = _egress_reuse_fingerprint(egress_volume_args, egress_env_overrides, egress_host_args)
+         enforce_egress = _egress_enforce_on_docker() if egress_env_overrides else True
+@@ -1057,6 +1067,8 @@
+ 
+     def _resolve_passthrough_env(self) -> tuple[dict[str, str], set[str]]:
+         """See ``remote_common.resolve_passthrough_env``; explicit docker_forward_env bypasses the blocklist."""
++        if self._icarus_governed:
++            return {}, set()
+         return resolve_passthrough_env(self._forward_env, hermes_env_loader=_load_hermes_env_vars)
+ 
+     def _build_runtime_env_args_with_unsets(self) -> tuple[list[str], tuple[str, ...], dict[str, str]]:
+@@ -1154,6 +1166,9 @@
+     def execute(self, command: str, cwd: str = "", **kwargs) -> dict:
+         """Execute a command; if the container was removed out-of-band (idle reaper,
+         docker prune, OOM, daemon restart) recreate it and retry once."""
++        if self._icarus_governed:
++            from agent.icarus_authority import bind_container_target
++            bind_container_target(self._container_id)
+         result = super().execute(command, cwd, **kwargs)
+         if (
+             result.get("returncode", 0) != 0
+diff --git a/tools/icarus_memory_tool.py b/tools/icarus_memory_tool.py
+--- /dev/null
++++ b/tools/icarus_memory_tool.py
+@@ -0,0 +1,33 @@
++"""Read the one pinned ICARUS lineage. No model-side constitutional writes."""
++import json
++
++from agent.icarus_authority import current_runtime
++from tools.registry import registry
++
++
++def read_lineage(args, **kwargs):
++    runtime = current_runtime()
++    name = args.get("source", "learned.md")
++    if name not in runtime.lineage:
++        return json.dumps({"error": "Unknown canonical lineage source"})
++    text = runtime.lineage[name]
++    query = args.get("query", "")
++    lines = text.splitlines()
++    if query:
++        indices = {j for i, line in enumerate(lines) if query.casefold() in line.casefold()
++                   for j in range(max(0, i-2), min(len(lines), i+12))}
++        rows = [{"line": i+1, "text": lines[i]} for i in sorted(indices)]
++    else:
++        rows = [{"line": i+1, "text": line} for i, line in enumerate(lines)]
++    return json.dumps({"source": name, "provenance": runtime.provenance.get("sources", {}).get(name, {"kind":"repository", "commit": runtime.provenance["commit"]}),
++                       "sha256": runtime.provenance["files"][name], "rows": rows}, ensure_ascii=False)
++
++
++registry.register(
++    name="icarus_memory", toolset="memory",
++    schema={"name": "icarus_memory", "description": "Read ICARUS canonical identity, inherited memory or training with immutable source provenance. Historical state is not current runtime evidence.",
++            "parameters": {"type": "object", "properties": {
++                "source": {"type": "string", "description": "Exact canonical manifest path, including generational-memory/seed-genome.md and skills/<skill>/SKILL.md"},
++                "query": {"type": "string"}}, "additionalProperties": False}},
++    handler=read_lineage,
++)
+diff --git a/tools/registry.py b/tools/registry.py
+--- a/tools/registry.py
++++ b/tools/registry.py
+@@ -901,6 +901,9 @@
+             # Plugin contract (plugins/AGENTS.md): optional context kwargs (task_id, session_id, user_task,
+             # parent_agent, ...) are signature-inspected like hook payloads, so a narrow ``handle(args)``
+             # plugin handler is not broken by every field the dispatcher injects (#68318).
++            from agent.icarus_authority import require_adapter
++            route = require_adapter(name, args, task_id=kwargs.get("task_id"), session_id=kwargs.get("session_id"))
++            kwargs["task_id"], kwargs["session_id"] = route["task"], route["session"]
+             kwargs = _kwargs_accepted_by(entry.handler, kwargs)
+             if entry.is_async:
+                 from model_tools import _run_async
+diff --git a/tools/terminal_tool.py b/tools/terminal_tool.py
+--- a/tools/terminal_tool.py
++++ b/tools/terminal_tool.py
+@@ -715,77 +715,8 @@
+ 
+ def _get_env_config() -> Dict[str, Any]:
+     """Resolve the terminal configuration dict from TERMINAL_* env vars."""
+-    from hermes_cli.config_defaults import DEFAULT_SANDBOX_IMAGE as default_image
+-    _ensure_terminal_env_bridged()
+-    env_type = _tenv("TERMINAL_ENV", "local")
+-    mount_docker_cwd = _tenv_bool("TERMINAL_DOCKER_MOUNT_CWD_TO_WORKSPACE", "false")
+-
+-    # Container/docker-only payloads are parsed only when such a backend is
+-    # selected: a stale or invalid Docker value bridged from config.yaml must
+-    # not make local terminal/execute_code unusable.
+-    if _is_container_backend(env_type):
+-        container_cpu = _parse_env_var("TERMINAL_CONTAINER_CPU", "1", float, "number")
+-        container_memory = _parse_env_var("TERMINAL_CONTAINER_MEMORY", "5120")
+-        container_disk = _parse_env_var("TERMINAL_CONTAINER_DISK", "51200")
+-    else:
+-        container_cpu, container_memory, container_disk = 1.0, 5120, 51200
+-
+-    if env_type == "docker":
+-        docker_forward_env = _parse_env_var("TERMINAL_DOCKER_FORWARD_ENV", "[]", json.loads, "valid JSON")
+-        docker_volumes = _parse_env_var("TERMINAL_DOCKER_VOLUMES", "[]", json.loads, "valid JSON")
+-        docker_env = _parse_env_var("TERMINAL_DOCKER_ENV", "{}", json.loads, "valid JSON")
+-        docker_extra_args = _parse_env_var("TERMINAL_DOCKER_EXTRA_ARGS", "[]", json.loads, "valid JSON")
+-        docker_shm_size = _tenv("TERMINAL_DOCKER_SHM_SIZE", "1g")
+-    else:
+-        docker_forward_env, docker_volumes, docker_env, docker_extra_args, docker_shm_size = [], [], {}, [], "1g"
+-
+-    cwd, host_cwd = _resolve_config_cwd(env_type, mount_docker_cwd)
+-
+-    return {
+-        "env_type": env_type,
+-        "modal_mode": coerce_modal_mode(_tenv("TERMINAL_MODAL_MODE", "auto")),
+-        "docker_image": _tenv("TERMINAL_DOCKER_IMAGE", default_image),
+-        "docker_image_pinned": _tenv("TERMINAL_DOCKER_IMAGE_PINNED", "0") == "1",
+-        "docker_forward_env": docker_forward_env,
+-        "singularity_image": _tenv("TERMINAL_SINGULARITY_IMAGE", f"docker://{default_image}"),
+-        "modal_image": _tenv("TERMINAL_MODAL_IMAGE", default_image),
+-        "daytona_image": _tenv("TERMINAL_DAYTONA_IMAGE", default_image),
+-        "vercel_runtime": _tenv("TERMINAL_VERCEL_RUNTIME", "").strip(),
+-        "vercel_image": _tenv("TERMINAL_VERCEL_IMAGE", "").strip(),
+-        "cwd": cwd,
+-        "host_cwd": host_cwd,
+-        "docker_mount_cwd_to_workspace": mount_docker_cwd,
+-        "timeout": _parse_env_var("TERMINAL_TIMEOUT", "180"),
+-        "lifetime_seconds": _parse_env_var("TERMINAL_LIFETIME_SECONDS", "300"),
+-        # SSH-specific config
+-        "ssh_host": _tenv("TERMINAL_SSH_HOST", ""),
+-        "ssh_user": _tenv("TERMINAL_SSH_USER", ""),
+-        "ssh_port": _parse_env_var("TERMINAL_SSH_PORT", "22"),
+-        "ssh_key": _tenv("TERMINAL_SSH_KEY", ""),
+-        # Persistent shell: SSH defaults to the config-level persistent_shell
+-        # setting; local is always opt-in. Per-backend env vars override.
+-        "ssh_persistent": _tenv_bool(
+-            "TERMINAL_SSH_PERSISTENT", _tenv("TERMINAL_PERSISTENT_SHELL", "true"),
+-        ),
+-        "local_persistent": _tenv_bool("TERMINAL_LOCAL_PERSISTENT", "false"),
+-        # Container resources (MB); ignored for local/ssh.
+-        "container_cpu": container_cpu,
+-        "container_memory": container_memory,
+-        "container_disk": container_disk,
+-        "container_persistent": _tenv_bool("TERMINAL_CONTAINER_PERSISTENT", "true"),
+-        "docker_volumes": docker_volumes,
+-        "docker_env": docker_env,
+-        "docker_run_as_host_user": _tenv_bool("TERMINAL_DOCKER_RUN_AS_HOST_USER", "false"),
+-        "docker_snap_compat": _tenv_bool("TERMINAL_DOCKER_SNAP_COMPAT", "false"),
+-        "docker_network": _tenv_bool("TERMINAL_DOCKER_NETWORK", "true"),
+-        "docker_extra_args": docker_extra_args,
+-        "docker_shm_size": docker_shm_size,
+-        # Cross-process reuse: attach to a labeled container at startup
+-        # instead of starting fresh; false = per-process isolation.
+-        "docker_persist_across_processes": _tenv_bool("TERMINAL_DOCKER_PERSIST_ACROSS_PROCESSES", "true"),
+-        "docker_shared_container_key": _tenv("TERMINAL_DOCKER_SHARED_CONTAINER_KEY", "").strip(),
+-        "docker_orphan_reaper": _tenv_bool("TERMINAL_DOCKER_ORPHAN_REAPER", "true"),
+-    }
++    from agent.icarus_sandbox import config
++    return config()
+ 
+ 
+ def _cleanup_thread_worker():
+@@ -1403,6 +1334,9 @@
+     ``_host_local`` forces the local backend for Hermes-owned control-plane
+     children (kept in a separate env cache from the configured backend).
+     """
++    from agent.icarus_authority import AuthorityDenied
++    if _host_local or background or pty or force:
++        raise AuthorityDenied("ICARUS host/control-plane terminal execution denied")
+     from hermes_cli.observability.shared_metrics_loop import record_terminal_backend as _metered
+     plan = None
+     try:
+diff --git a/tools/terminal_tool_backends.py b/tools/terminal_tool_backends.py
+--- a/tools/terminal_tool_backends.py
++++ b/tools/terminal_tool_backends.py
+@@ -243,20 +243,8 @@
+     for local/ssh/vercel; ``container_config`` carries the container_*/docker_* resource keys; ``host_cwd`` is
+     the host dir bound into Docker when cwd mounting is enabled. ``probe_only`` asks ssh for a throwaway
+     connection with no remote setup/sync (the prompt-time probe). Unknown types fall through to plugin backends."""
+-    builder = _ENV_BUILDERS.get(env_type)
+-    kwargs = dict(image=image, cwd=cwd, timeout=timeout, cc=container_config or {}, task_id=task_id,
+-                  ssh_config=ssh_config, host_cwd=host_cwd, probe_only=probe_only)
+-    if builder is not None:
+-        env = builder(**kwargs)
+-    else:
+-        env = _build_plugin_env(env_type=env_type, **kwargs)
+-    # Backend tag for consumers that only hold the instance (cwd sanitizers on
+-    # live cached envs); __slots__ plugin providers simply keep going untagged.
+-    try:
+-        env.env_type = env_type
+-    except Exception:
+-        pass
+-    return env
++    from agent.icarus_sandbox import create
++    return create(env_type, image, cwd, timeout, container_config, host_cwd, task_id)
+ 
+ 
+ # --- Requirement checkers: one generic path driven by _BACKEND_SPECS; optional fields, checked in order:
+diff --git a/toolsets.py b/toolsets.py
+--- a/toolsets.py
++++ b/toolsets.py
+@@ -9,6 +9,7 @@
+ # (tui_gateway/server.py::_load_enabled_toolsets). HA, kanban and computer_use
+ # entries are further gated by their tools' check_fns.
+ _HERMES_CORE_TOOLS = [
++    "icarus_memory",
+     "web_search", "web_extract",
+     "terminal", "process_manage",
+     "read_file", "write_file", "patch", "search_files",
+
