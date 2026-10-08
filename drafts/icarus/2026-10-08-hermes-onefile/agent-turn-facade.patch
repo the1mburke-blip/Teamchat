@@ -23,3 +23,4 @@ index 17bfcb7..357765e 100644
 +                        user_message, system_message, conversation_history, effective_task_id,
                          stream_callback, persist_user_message,
                          persist_user_timestamp=persist_user_timestamp,
+                         persist_user_display_kind=persist_user_display_kind,
