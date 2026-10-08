@@ -21,14 +21,29 @@ jobs:
       DO_NOT_TRACK: "1"
       PINNED_DONOR: 99a45ecc17cc51c0488ec3b8ccf7eaf483f7203d
     steps:
-      - name: Fetch ONE pinned Hermes source file; do not clone repository
+      - name: Sparse checkout pinned donor: ONE source file and MIT license
+        uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: 99a45ecc17cc51c0488ec3b8ccf7eaf483f7203d
+          path: hermes-sparse
+          sparse-checkout: |
+            agent/turn_facade.py
+            LICENSE
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Copy ONLY the editable source into isolated scratch Git repo
         shell: bash
         run: |
           set -euo pipefail
+          SRC="$GITHUB_WORKSPACE/hermes-sparse"
+          test -s "$SRC/agent/turn_facade.py"
+          test -s "$SRC/LICENSE"
+          test "$(git -C "$SRC" rev-parse HEAD)" = "$PINNED_DONOR"
           mkdir -p /tmp/icarus-one-file/agent "$GITHUB_WORKSPACE/surgery-output"
-          curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/$PINNED_DONOR/agent/turn_facade.py" -o /tmp/icarus-one-file/agent/turn_facade.py
-          curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/$PINNED_DONOR/LICENSE" -o "$GITHUB_WORKSPACE/surgery-output/LICENSE"
-          test -s /tmp/icarus-one-file/agent/turn_facade.py
+          cp "$SRC/agent/turn_facade.py" /tmp/icarus-one-file/agent/turn_facade.py
+          cp "$SRC/LICENSE" "$GITHUB_WORKSPACE/surgery-output/LICENSE"
           printf '%s\n' 'SOURCE_ONLY=agent/turn_facade.py' "DONOR_COMMIT=$PINNED_DONOR" 'MODEL=local qwen2.5-coder:1.5b via Aider' > "$GITHUB_WORKSPACE/surgery-output/metadata.txt"
           cd /tmp/icarus-one-file
           git init -q
