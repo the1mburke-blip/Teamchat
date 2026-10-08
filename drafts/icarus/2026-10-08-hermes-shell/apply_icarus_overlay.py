@@ -60,15 +60,13 @@ internal object IcarusExecutionGate {
 """, encoding="utf-8")
     once(module/"OrchestratorImpl.kt",
          'val stableSystem = persona + standingBlock + supplementalBlock + toolInstruction',
-         'val stableSystem = IcarusIdentity.ROOT + "\n\n" + persona + standingBlock + supplementalBlock + toolInstruction')
+         'val stableSystem = IcarusIdentity.ROOT + "\\n\\n" + persona + standingBlock + supplementalBlock + toolInstruction')
     once(module/"OrchestratorImpl.kt",
          'decision is ToolExecutionDecision.Deny -> ToolResult.error(decision.reason)',
          'decision is ToolExecutionDecision.Deny -> ToolResult.error(decision.reason)\n'
          '                    !IcarusExecutionGate.isAuthorized(deterministic.call.name) ->\n'
          '                        ToolResult.error("ICARUS_PERMIT_REQUIRED: action denied")')
-    once(module/"AgentLoopRunner.kt", "tools.none { it.name == call.name } ->",
-         "tools.none { it.name == call.name } ->") if False else None
-    loop = module/"AgentLoopRunner.kt"
+        loop = module/"AgentLoopRunner.kt"
     source = loop.read_text(encoding="utf-8")
     anchor = "tools.none { it.name == call.name } -> ToolResult.error("
     if source.count(anchor) != 1:
