@@ -186,6 +186,7 @@ diff --git a/agent/agent_init.py b/agent/agent_init.py
  
  __all__ = ["init_agent"]
 diff --git a/agent/icarus_authority.py b/agent/icarus_authority.py
+new file mode 100644
 --- /dev/null
 +++ b/agent/icarus_authority.py
 @@ -0,0 +1,246 @@
@@ -436,6 +437,7 @@ diff --git a/agent/icarus_authority.py b/agent/icarus_authority.py
 +            db.execute("INSERT INTO icarus_containers VALUES(?,?)", (active["nonce"], container))
 +            kernel._event(db, "target.bound", active["nonce"], container=container)
 diff --git a/agent/icarus_hooks.py b/agent/icarus_hooks.py
+new file mode 100644
 --- /dev/null
 +++ b/agent/icarus_hooks.py
 @@ -0,0 +1,37 @@
@@ -477,6 +479,7 @@ diff --git a/agent/icarus_hooks.py b/agent/icarus_hooks.py
 +    if result.returncode or json.loads(result.stdout) != wanted:
 +        raise AuthorityDenied("ICARUS governance hook denied execution/observation")
 diff --git a/agent/icarus_runtime.py b/agent/icarus_runtime.py
+new file mode 100644
 --- /dev/null
 +++ b/agent/icarus_runtime.py
 @@ -0,0 +1,170 @@
@@ -651,6 +654,7 @@ diff --git a/agent/icarus_runtime.py b/agent/icarus_runtime.py
 +    from agent.icarus_verifier import bind_todo
 +    bind_todo(agent._icarus.kernel, agent.session_id, agent._todo_store)
 diff --git a/agent/icarus_sandbox.py b/agent/icarus_sandbox.py
+new file mode 100644
 --- /dev/null
 +++ b/agent/icarus_sandbox.py
 @@ -0,0 +1,38 @@
@@ -693,6 +697,7 @@ diff --git a/agent/icarus_sandbox.py b/agent/icarus_sandbox.py
 +                             persist_across_processes=False, shm_size="64m", image_pinned=True,
 +                             icarus_governed=True)
 diff --git a/agent/icarus_verifier.py b/agent/icarus_verifier.py
+new file mode 100644
 --- /dev/null
 +++ b/agent/icarus_verifier.py
 @@ -0,0 +1,47 @@
@@ -993,6 +998,7 @@ diff --git a/hermes_cli/plugins_loader.py b/hermes_cli/plugins_loader.py
      @staticmethod
      def _is_manifest_only_language_pack(manifest: PluginManifest) -> bool:
 diff --git a/icarus_profile_template/config.yaml b/icarus_profile_template/config.yaml
+new file mode 100644
 --- /dev/null
 +++ b/icarus_profile_template/config.yaml
 @@ -0,0 +1,35 @@
@@ -1033,6 +1039,7 @@ diff --git a/icarus_profile_template/config.yaml b/icarus_profile_template/confi
 +}
 \ No newline at end of file
 diff --git a/icarus_profile_template/governance/icarus_governance.py b/icarus_profile_template/governance/icarus_governance.py
+new file mode 100644
 --- /dev/null
 +++ b/icarus_profile_template/governance/icarus_governance.py
 @@ -0,0 +1,52 @@
@@ -1089,6 +1096,7 @@ diff --git a/icarus_profile_template/governance/icarus_governance.py b/icarus_pr
 +if __name__ == "__main__":
 +    sys.exit(main())
 diff --git a/icarus_profile_template/governance/icarus_hook.py b/icarus_profile_template/governance/icarus_hook.py
+new file mode 100644
 --- /dev/null
 +++ b/icarus_profile_template/governance/icarus_hook.py
 @@ -0,0 +1,15 @@
@@ -1108,6 +1116,7 @@ diff --git a/icarus_profile_template/governance/icarus_hook.py b/icarus_profile_
 +if __name__ == "__main__":
 +    sys.exit(main())
 diff --git a/icarus_profile_template/import_lineage.py b/icarus_profile_template/import_lineage.py
+new file mode 100644
 --- /dev/null
 +++ b/icarus_profile_template/import_lineage.py
 @@ -0,0 +1,32 @@
@@ -1276,6 +1285,7 @@ diff --git a/providers/__init__.py b/providers/__init__.py
  
  def _requires_arguments(fn) -> bool:
 diff --git a/tests/agent/icarus_profile_fixture.py b/tests/agent/icarus_profile_fixture.py
+new file mode 100644
 --- /dev/null
 +++ b/tests/agent/icarus_profile_fixture.py
 @@ -0,0 +1,19 @@
@@ -1299,6 +1309,7 @@ diff --git a/tests/agent/icarus_profile_fixture.py b/tests/agent/icarus_profile_
 +    config["hooks"] = {event:[dict(command="governance/icarus_hook.py", fail_closed=True, timeout=6)] for event in ("pre_tool_call", "post_tool_call")}
 +    (home / "config.yaml").write_text(json.dumps(config, indent=2), encoding="utf-8")
 diff --git a/tests/agent/test_icarus_authority.py b/tests/agent/test_icarus_authority.py
+new file mode 100644
 --- /dev/null
 +++ b/tests/agent/test_icarus_authority.py
 @@ -0,0 +1,159 @@
@@ -1462,6 +1473,7 @@ diff --git a/tests/agent/test_icarus_authority.py b/tests/agent/test_icarus_auth
 +        with runtime.kernel.connect() as db:
 +            assert db.execute("SELECT state FROM icarus_permits WHERE nonce=?", (nonce,)).fetchone()[0] == "WORKING"
 diff --git a/tests/agent/test_icarus_native_runtime.py b/tests/agent/test_icarus_native_runtime.py
+new file mode 100644
 --- /dev/null
 +++ b/tests/agent/test_icarus_native_runtime.py
 @@ -0,0 +1,112 @@
@@ -1578,6 +1590,7 @@ diff --git a/tests/agent/test_icarus_native_runtime.py b/tests/agent/test_icarus
 +    assert agent._icarus.identity_hash
 +    db.close()
 diff --git a/tests/agent/test_icarus_transplant_hooks.py b/tests/agent/test_icarus_transplant_hooks.py
+new file mode 100644
 --- /dev/null
 +++ b/tests/agent/test_icarus_transplant_hooks.py
 @@ -0,0 +1,81 @@
@@ -1778,6 +1791,7 @@ diff --git a/tools/environments/docker.py b/tools/environments/docker.py
          if (
              result.get("returncode", 0) != 0
 diff --git a/tools/icarus_memory_tool.py b/tools/icarus_memory_tool.py
+new file mode 100644
 --- /dev/null
 +++ b/tools/icarus_memory_tool.py
 @@ -0,0 +1,33 @@
@@ -1957,4 +1971,3 @@ diff --git a/toolsets.py b/toolsets.py
      "web_search", "web_extract",
      "terminal", "process_manage",
      "read_file", "write_file", "patch", "search_files",
-
