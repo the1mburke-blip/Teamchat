@@ -1,0 +1,65 @@
+{
+  "schema": "icarus.mobile-hermes.build-stage.v0.1",
+  "owner": "Michael",
+  "created": "2026-10-08",
+  "status": "STAGED_SPEC_ONLY_NOT_BUILT",
+  "monetary_spend_eur_max": 0,
+  "donor": {
+    "repo": "l3ad3r1/Hermes-Agent-Android",
+    "source_revision_observed": "a08497b979d6241387bc15cde7c57279d0b2cc10",
+    "engine_repo": "l3ad3r1/agent-core",
+    "engine_ref_observed": "8445f2a04d4f9ca48c7c8d12221ad33064dd1b45",
+    "license": "MIT"
+  },
+  "identity": {
+    "name": "Icarus",
+    "canonical_branch": "icarus/constitutional-law-20261008",
+    "files": [
+      "icarus/memory/identity.md",
+      "icarus/memory/inherited.md",
+      "icarus/memory/current-state.md"
+    ],
+    "branding_asset": "owner-approved 2026-10-07 logo; GitHub binary NOT YET STAGED",
+    "display_name": "Icarus",
+    "no_desktop_login": true
+  },
+  "runtime": {
+    "one_apk": true,
+    "hermes_exec_body": true,
+    "model": [
+      "Qwen local",
+      "Gemini authorized",
+      "OpenRouter free only",
+      "ChatGPT failsafe only if verified"
+    ],
+    "zero_new_paid_services": true
+  },
+  "security": {
+    "fail_closed": true,
+    "all_tool_entrypoints_must_gate": true,
+    "permit_replay_denial": true,
+    "independent_verification": true,
+    "self_pass_denied": true,
+    "canonical_verdicts": [
+      "PASS",
+      "FAIL"
+    ],
+    "no_embedded_credentials": true
+  },
+  "proof_required": [
+    "git source pins",
+    "logo binary hash",
+    "compilation",
+    "runtime tool-denial",
+    "independent verifier readback",
+    "physical Redmi offline test"
+  ],
+  "not_claimed": [
+    "implemented Android governance",
+    "integrated approved image",
+    "signed APK",
+    "test pass",
+    "physical install",
+    "genuine worker acceptance"
+  ]
+}
