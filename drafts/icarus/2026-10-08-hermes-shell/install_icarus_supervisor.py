@@ -29,53 +29,33 @@ def install(donor: Path, lineage: Path):
         if f.read_bytes() != bundled.read_bytes():
             raise RuntimeError("ICARUS memory not byte-identical: " + name)
 
-    # Android OS entrypoint: ICARUS Tinker shell -> ICARUS patched delegate -> Hermes worker.
-    manifest = app / "src/main/AndroidManifest.xml"
-    once(manifest,
-         'android:name=".tinker.loader.HermesTinkerApplication"',
-         'android:name=".tinker.loader.IcarusTinkerApplication"')
-    loader = app / "src/main/java/com/hermes/agent/tinker/loader/HermesTinkerApplication.java"
-    body = loader.read_text(encoding="utf-8")
-    if "public final class HermesTinkerApplication" not in body:
-        raise RuntimeError("Tinker shell changed upstream")
-    out_loader = loader.with_name("IcarusTinkerApplication.java")
-    if out_loader.exists():
-        raise RuntimeError("ICARUS shell already exists, refusing double install")
-    revised = body.replace("HermesTinkerApplication", "IcarusTinkerApplication").replace(
-        '"com.hermes.agent.tinker.HermesApplicationLike"',
-        '"com.hermes.agent.tinker.IcarusApplicationLike"')
-    out_loader.write_text(revised, encoding="utf-8")
 
+    # The installed Hermes release must retain its package, Manifest and Tinker loader.
+    # Its existing patchable delegate initializes ICARUS BEFORE HermesAppStartup.
+    # A different manifest Application class would require a new installation.
+    manifest = app / "src/main/AndroidManifest.xml"
+    exact = 'android:name=".tinker.loader.HermesTinkerApplication"'
+    if manifest.read_text(encoding="utf-8").count(exact) != 1:
+        raise RuntimeError("Existing Hermes Tinker loader not present exactly once")
     delegate = app / "src/main/kotlin/com/hermes/agent/tinker/HermesApplicationLike.kt"
     original = delegate.read_text(encoding="utf-8")
     if "com.hermes.agent.data.agent.IcarusLineage.loadAtStartup(application)" not in original:
-        raise RuntimeError("Missing previous staged memory startup")
-    migrated = original.replace("HermesApplicationLike", "IcarusApplicationLike")
-    migrated = migrated.replace("HermesTinkerApplication", "IcarusTinkerApplication")
-    migrated = migrated.replace(
-        "        val app = application",
-        "        val app = application\n"
-        "        // Bootstrap ICARUS BEFORE installing Hermes tooling or exposing the Hilt manager.\n"
-        "        if (!ShareTinkerInternals.isInPatchProcess(app)) {\n"
-        "            com.hermes.agent.data.tool.IcarusAuthority.bootstrap(app)\n"
-        "        }")
-    migrated = migrated.replace(
-        "        com.hermes.agent.data.agent.IcarusLineage.loadAtStartup(application)\n", "")
-    migrated = migrated.replace(
-        "        HermesAppStartup.start(application)",
-        "        com.hermes.agent.data.tool.IcarusAuthority.requireReady()\n"
-        "        // Hermes is a subordinate execution body; no unverified lineage may start it.\n"
-        "        HermesAppStartup.start(application)")
-    out_delegate = delegate.with_name("IcarusApplicationLike.kt")
-    if out_delegate.exists():
-        raise RuntimeError("ICARUS startup delegate already exists")
-    out_delegate.write_text(migrated, encoding="utf-8")
-
-    proguard = app / "proguard-rules.pro"
-    value = proguard.read_text(encoding="utf-8")
-    value += "\n# New ICARUS outer ApplicationLike is constructed by Tinker reflection.\n"
-    value += "-keep class com.hermes.agent.tinker.IcarusApplicationLike { public <init>(...); }\n"
-    proguard.write_text(value, encoding="utf-8")
+        raise RuntimeError("Missing staged ICARUS lineage startup anchor")
+    once(delegate,
+         "        HermesTinker.install(this)",
+         "        HermesTinker.install(this)\n"
+         "        // Bootstrap ICARUS before the Hermes worker's onCreate executes.\n"
+         "        if (!ShareTinkerInternals.isInPatchProcess(app)) {\n"
+         "            com.hermes.agent.data.tool.IcarusAuthority.bootstrap(app)\n"
+         "        }")
+    once(delegate,
+         "        com.hermes.agent.data.agent.IcarusLineage.loadAtStartup(application)",
+         "        com.hermes.agent.data.tool.IcarusAuthority.requireReady()")
+    # No new Application shell/delegate: those are incompatible with a Tinker patch.
+    if (app / "src/main/java/com/hermes/agent/tinker/loader/IcarusTinkerApplication.java").exists():
+        raise RuntimeError("Unexpected replacement Tinker shell")
+    if (app / "src/main/kotlin/com/hermes/agent/tinker/IcarusApplicationLike.kt").exists():
+        raise RuntimeError("Unexpected replacement Tinker delegate")
 
     # The owner control code is compiled into the shared core: the Hermes model
     # cannot become the authorization decision-maker just by writing a prompt.
@@ -226,8 +206,9 @@ __EXPECTED__
          '                    ', '')
 
     # Local source assertions: evidence of placement, NOT device/runtime proof.
-    assert "IcarusApplicationLike" in out_loader.read_text()
-    assert "IcarusAuthority.bootstrap(app)" in out_delegate.read_text()
+    assert "IcarusAuthority.bootstrap(app)" in delegate.read_text()
+    assert "IcarusAuthority.requireReady()" in delegate.read_text()
+    assert exact in manifest.read_text(encoding="utf-8")
     assert "IcarusAuthority.deniedReason(call.name)" in executor.read_text()
     assert "IcarusAuthority.memoryReport()" in orchestrator.read_text()
     assert "IcarusAuthority.donorAutonomyPermitted()" in startup_worker.read_text()

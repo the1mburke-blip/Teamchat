@@ -41,3 +41,21 @@ into `app/src/main/assets/icarus/memory/` with an immediate hash readback.
 authority source. No paid services, credentials, production writes, or alternate
 mobile donor have been introduced. This is SOURCE STAGING, NOT an APK or
 runtime memory-load proof.
+
+## Installed Hermes compatibility correction — 10 October 2026
+This isolated branch targets the **already-installed standalone Hermes Android app**.
+A previous diagnostic staging build changed package ID to com.icarus.preproduction
+and its manifest Tinker Application class. Those are NOT in-place updates.
+The corrected staged overlay preserves the donor package com.hermes.agent,
+the existing AndroidManifest and the HermesTinkerApplication loader, and
+injects ICARUS bootstrap into the existing patchable HermesApplicationLike
+before the Hermes execution worker starts. Central deny-first gate remains
+partial, not a completed permit system.
+
+**Delivery hard gates:** Real installed version, package, TINKER_ID and
+certificate must match a source release with an archived base. Tinker patch
+requires original release signing key; debug builds from GitHub cannot update
+a release-signed application. We do not copy the original key, publish to
+the donor's release, change installed app or ship a diagnostic APK.
+ICARUS authority bypass testing, patch build and physical phone confirmation
+are separate acceptance gates.

@@ -4,7 +4,7 @@ import argparse
 import re
 from pathlib import Path
 
-APP_ID = "com.icarus.preproduction"
+APP_ID = "com.hermes.agent"
 MODULE = Path("app/src/main/kotlin/com/hermes/agent/data/agent")
 
 def once(path, old, new):
