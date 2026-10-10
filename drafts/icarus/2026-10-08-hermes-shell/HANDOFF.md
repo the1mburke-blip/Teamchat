@@ -15,3 +15,12 @@ Handoff package: apply_icarus_overlay.py, STAGING_CONTRACT.md, approved original
 Known gaps: logo binary not checked into GitHub, upstream full checkout unavailable here, no Android CI compiled, enforced signed permits not ported, no physical Redmi acceptance.
 Next authorized action: use a real verified repository code/build executor to apply the candidate to isolated source; repair upstream drift; integrate full Icarus gateway before tool execution; separate security reviewer; compile unsigned inspection APK in existing €0 runner; independently read back exact artifact. Stop before signing/deploying.
 PASS gate: exact source and SHA -> clean build -> independent adversarial governance review -> signed inspectable APK + on-device redmi tests after separate authorization.
+
+## 10 October scoped path-correction handoff
+Current branch: `feature/icarus-hermes-lineage-relocation-20261010`.
+Relocated source branch: `feature/icarus-dsh-tether-rebrand-20261010`.
+Four source files now live at
+`drafts/icarus/2026-10-08-hermes-shell/lineage-source/` after exact
+relocated-source byte comparison. Existing source overlay now REQUIRES
+`--lineage-root` and stages assets to `app/src/main/assets/icarus/memory/`.
+No APK was built or deployed, and no model has been granted tool authority.

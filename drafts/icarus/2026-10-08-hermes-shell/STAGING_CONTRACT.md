@@ -24,3 +24,20 @@ Any successful build at this early stage is **inspection-only** and NOT authoriz
 Protected: Teamchat main, PR #63/#78, production Apps Script/Shopify/Make/Buffer/Metricool/Publora, installed phone, credential stores. €0 only. No signed APK, paid service, deployment or owner authorization assumed.
 
 **PRE-FLIGHT:** Owner Michael; orchestration ChatGPT; repository staging via deterministic GitHub connector; no authenticated Codex/Claude worker acceptance observed; allowance unknown. `TRAINING_MATRIX.md` HV-EXP-001: "A strong model without the required read/write/verification capability is the wrong execution chair. Capability-gate the entire route before spending execution attempts." This stage is bounded by its actual file-edit capability. Independent compiler/device evidence not yet available.
+
+## Relocated canonical lineage input (10 October 2026)
+The staged build now consumes the four canonical files from
+`drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory/` on
+`feature/icarus-dsh-tether-rebrand-20261010`. A deterministic authenticated
+GitHub Actions runner checks byte equality against the pinned relocated ICARUS source commit
+and records the exact source commit and SHA256 values in `lineage-source/`.
+
+Invoke the existing overlay against the **real Hermes Android checkout** with
+`--lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source`
+and the same `--hermes-checkout` / `--approved-logo` arguments as before.
+The overlay copies exactly identity.md, inherited.md, learned.md, current-state.md
+into `app/src/main/assets/icarus/memory/` with an immediate hash readback.
+`AGENTS.md` is DSH workspace guidance and is deliberately not an Android
+authority source. No paid services, credentials, production writes, or alternate
+mobile donor have been introduced. This is SOURCE STAGING, NOT an APK or
+runtime memory-load proof.

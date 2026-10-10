@@ -13,9 +13,9 @@ def once(path, old, new):
         raise RuntimeError(f"upstream mismatch: {path}, count {original.count(old)}")
     path.write_text(original.replace(old, new), encoding="utf-8")
 
-def stage(root, logo):
+def stage(root, logo, lineage_root):
     from PIL import Image
-    root, logo = Path(root), Path(logo)
+    root, logo, lineage_root = Path(root), Path(logo), Path(lineage_root)
     if not (root / ".git").exists() or not (root / "agent-core.ref").exists():
         raise RuntimeError("expected original Hermes Android git checkout")
     if not logo.is_file():
@@ -23,6 +23,26 @@ def stage(root, logo):
     import hashlib
     if hashlib.sha256(logo.read_bytes()).hexdigest() != "b55af87a4934fcef76a7a16003dd7406b9558a120a97e918485494f151d86b89":
         raise RuntimeError("logo differs from Michael's approved artwork")
+
+    # ICARUS lineage belongs to the app owner, not the model or donor's workspace.
+    # Source is the relocated, SHA-checked four-file snapshot, not AGENTS.md.
+    import hashlib
+    files = ("identity.md", "inherited.md", "learned.md", "current-state.md")
+    if not lineage_root.is_dir():
+        raise RuntimeError("ICARUS lineage source is absent")
+    app_lineage = root / "app/src/main/assets/icarus/memory"
+    for filename in files:
+        source = lineage_root / filename
+        if not source.is_file() or not source.read_bytes().strip():
+            raise RuntimeError("missing ICARUS lineage: " + filename)
+    app_lineage.mkdir(parents=True, exist_ok=True)
+    for filename in files:
+        source_data = (lineage_root / filename).read_bytes()
+        target = app_lineage / filename
+        target.write_bytes(source_data)
+        if hashlib.sha256(target.read_bytes()).digest() != hashlib.sha256(source_data).digest():
+            raise RuntimeError("ICARUS lineage copy verification failed: " + filename)
+
     strings = root / "app/src/main/res/values/strings.xml"
     content = strings.read_text(encoding="utf-8")
     if '<string name="app_name">Hermes</string>' not in content:
@@ -66,7 +86,7 @@ internal object IcarusExecutionGate {
          'decision is ToolExecutionDecision.Deny -> ToolResult.error(decision.reason)\n'
          '                    !IcarusExecutionGate.isAuthorized(deterministic.call.name) ->\n'
          '                        ToolResult.error("ICARUS_PERMIT_REQUIRED: action denied")')
-        loop = module/"AgentLoopRunner.kt"
+    loop = module/"AgentLoopRunner.kt"
     source = loop.read_text(encoding="utf-8")
     anchor = "tools.none { it.name == call.name } -> ToolResult.error("
     if source.count(anchor) != 1:
@@ -98,5 +118,6 @@ if __name__ == "__main__":
     p=argparse.ArgumentParser()
     p.add_argument("--hermes-checkout", required=True)
     p.add_argument("--approved-logo", required=True)
+    p.add_argument("--lineage-root", required=True)
     a=p.parse_args()
-    stage(a.hermes_checkout,a.approved_logo)
+    stage(a.hermes_checkout,a.approved_logo,a.lineage_root)
