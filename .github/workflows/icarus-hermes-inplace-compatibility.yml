@@ -1,0 +1,128 @@
+name: ICARUS staged installed Hermes compatibility repair
+on:
+  push:
+    branches: [feature/icarus-hermes-inplace-update-stage-20261010]
+    paths: [.github/workflows/icarus-hermes-inplace-compatibility.yml]
+permissions:
+  contents: write
+jobs:
+  repair-existing-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply bounded compatibility correction to existing stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("drafts/icarus/2026-10-08-hermes-shell")
+          overlay_path = p / "apply_icarus_overlay.py"
+          overlay = overlay_path.read_text(encoding="utf-8")
+          old = 'APP_ID = "com.icarus.preproduction"'
+          new = 'APP_ID = "com.hermes.agent"'
+          assert overlay.count(old) == 1, "App ID has changed; refuse unsafe rewrite"
+          overlay_path.write_text(overlay.replace(old, new), encoding="utf-8")
+
+          install_path = p / "install_icarus_supervisor.py"
+          source = install_path.read_text(encoding="utf-8")
+          start_marker = "    # Android OS entrypoint: ICARUS Tinker shell"
+          end_marker = "    # The owner control code is compiled into the shared core"
+          assert source.count(start_marker) == 1
+          assert source.count(end_marker) == 1
+          start = source.index(start_marker)
+          end = source.index(end_marker)
+          assert start < end
+          replacement = '''
+              # The installed Hermes release must retain its package, Manifest and Tinker loader.
+              # Its existing patchable delegate initializes ICARUS BEFORE HermesAppStartup.
+              # A different manifest Application class would require a new installation.
+              manifest = app / "src/main/AndroidManifest.xml"
+              exact = 'android:name=".tinker.loader.HermesTinkerApplication"'
+              if manifest.read_text(encoding="utf-8").count(exact) != 1:
+                  raise RuntimeError("Existing Hermes Tinker loader not present exactly once")
+              delegate = app / "src/main/kotlin/com/hermes/agent/tinker/HermesApplicationLike.kt"
+              original = delegate.read_text(encoding="utf-8")
+              if "com.hermes.agent.data.agent.IcarusLineage.loadAtStartup(application)" not in original:
+                  raise RuntimeError("Missing staged ICARUS lineage startup anchor")
+              once(delegate,
+                   "        HermesTinker.install(this)",
+                   "        HermesTinker.install(this)\\n"
+                   "        // Bootstrap ICARUS before the Hermes worker's onCreate executes.\\n"
+                   "        if (!ShareTinkerInternals.isInPatchProcess(app)) {\\n"
+                   "            com.hermes.agent.data.tool.IcarusAuthority.bootstrap(app)\\n"
+                   "        }")
+              once(delegate,
+                   "        com.hermes.agent.data.agent.IcarusLineage.loadAtStartup(application)",
+                   "        com.hermes.agent.data.tool.IcarusAuthority.requireReady()")
+              # No new Application shell/delegate: those are incompatible with a Tinker patch.
+              if (app / "src/main/java/com/hermes/agent/tinker/loader/IcarusTinkerApplication.java").exists():
+                  raise RuntimeError("Unexpected replacement Tinker shell")
+              if (app / "src/main/kotlin/com/hermes/agent/tinker/IcarusApplicationLike.kt").exists():
+                  raise RuntimeError("Unexpected replacement Tinker delegate")
+
+          '''
+          source = source[:start] + replacement + source[end:]
+          old_checks = '''    assert "IcarusApplicationLike" in out_loader.read_text()
+              assert "IcarusAuthority.bootstrap(app)" in out_delegate.read_text()'''
+          new_checks = '''    assert "IcarusAuthority.bootstrap(app)" in delegate.read_text()
+              assert "IcarusAuthority.requireReady()" in delegate.read_text()
+              assert exact in manifest.read_text(encoding="utf-8")'''
+          assert source.count(old_checks) == 1, "Previous acceptance anchors drifted"
+          source = source.replace(old_checks,new_checks)
+          install_path.write_text(source,encoding="utf-8")
+
+          contract = p / "STAGING_CONTRACT.md"
+          with contract.open("a",encoding="utf-8") as out:
+              out.write("""
+          ## Installed Hermes compatibility correction — 10 October 2026
+          This isolated branch targets the **already-installed standalone Hermes Android app**.
+          A previous diagnostic staging build changed package ID to com.icarus.preproduction
+          and its manifest Tinker Application class. Those are NOT in-place updates.
+          The corrected staged overlay preserves the donor package com.hermes.agent,
+          the existing AndroidManifest and the HermesTinkerApplication loader, and
+          injects ICARUS bootstrap into the existing patchable HermesApplicationLike
+          before the Hermes execution worker starts. Central deny-first gate remains
+          partial, not a completed permit system.
+
+          **Delivery hard gates:** Real installed version, package, TINKER_ID and
+          certificate must match a source release with an archived base. Tinker patch
+          requires original release signing key; debug builds from GitHub cannot update
+          a release-signed application. We do not copy the original key, publish to
+          the donor's release, change installed app or ship a diagnostic APK.
+          ICARUS authority bypass testing, patch build and physical phone confirmation
+          are separate acceptance gates.
+          """)
+          print("SOURCE_COMPATIBILITY_CORRECTION_PREPARED")
+          PY
+      - name: Validate staging source and commit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("drafts/icarus/2026-10-08-hermes-shell")
+          a=(p/"apply_icarus_overlay.py").read_text()
+          b=(p/"install_icarus_supervisor.py").read_text()
+          assert 'APP_ID = "com.hermes.agent"' in a
+          assert "IcarusTinkerApplication.java" not in b.split("# No new Application shell/delegate")[0]
+          assert "once(delegate," in b
+          assert "IcarusAuthority.bootstrap(app)" in b
+          assert "IcarusAuthority.requireReady()" in b
+          assert "HermesTinkerApplication" in b
+          print("STATIC_HOTFIX_SOURCE_CHECK=PASS")
+          PY
+          git diff --check
+          git add drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py drafts/icarus/2026-10-08-hermes-shell/STAGING_CONTRACT.md
+          git diff --cached --check
+          git diff --cached --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "stage: preserve installed Hermes package and patchable Tinker startup"
+          git push origin HEAD:refs/heads/feature/icarus-hermes-inplace-update-stage-20261010
+          echo "COMPAT_SOURCE_COMMIT=$(git rev-parse HEAD)"
+
