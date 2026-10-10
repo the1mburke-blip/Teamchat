@@ -1,0 +1,189 @@
+name: ICARUS Tether Source Intake and First Rebrand
+
+on:
+  push:
+    branches:
+      - feature/icarus-dsh-tether-rebrand-20261010
+    paths:
+      - .github/workflows/icarus-dsh-tether-rebrand.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: icarus-dsh-tether-rebrand-20261010
+  cancel-in-progress: false
+
+jobs:
+  stage_source:
+    name: Repo runner - pin source and stage cosmetic ICARUS branding
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout isolated Teamchat branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Fetch exact original source, do not run donor code
+        shell: bash
+        run: |
+          set -euo pipefail
+          PIN=a702cae7fcf90b5025bde47d7dbdcbcb3a7e9f1c
+          mkdir -p "$RUNNER_TEMP/dsh-tether"
+          git -C "$RUNNER_TEMP/dsh-tether" init -q
+          git -C "$RUNNER_TEMP/dsh-tether" remote add origin https://github.com/zexadev/dsh-tether.git
+          git -C "$RUNNER_TEMP/dsh-tether" fetch -q --depth=1 origin "$PIN"
+          git -C "$RUNNER_TEMP/dsh-tether" checkout -q --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/dsh-tether" rev-parse HEAD)" = "$PIN"
+          test -f "$RUNNER_TEMP/dsh-tether/LICENSE"
+          grep -q 'Copyright (c) 2026 zexadev' "$RUNNER_TEMP/dsh-tether/LICENSE"
+          BASE=drafts/icarus/2026-10-10-dsh-tether-rebrand
+          mkdir -p "$BASE/source"
+          rsync -a --exclude='.git' "$RUNNER_TEMP/dsh-tether/" "$BASE/source/"
+          test -f "$BASE/source/app/src-tauri/tauri.conf.json"
+          test -f "$BASE/source/app/ui/index.html"
+          test -f "$BASE/source/app/src-tauri/gen/android/app/src/main/res/values/strings.xml"
+          test -f "$BASE/source/LICENSE"
+          BASE="$BASE" PIN="$PIN" python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          base=Path(os.environ["BASE"])
+          source=base/"source"
+          targets=[
+            "app/src-tauri/tauri.conf.json",
+            "app/ui/index.html",
+            "app/ui/i18n.js",
+            "app/src-tauri/gen/android/app/src/main/res/values/strings.xml"
+          ]
+          original={p:hashlib.sha256((source/p).read_bytes()).hexdigest() for p in targets}
+          conf=source/targets[0]
+          settings=json.loads(conf.read_text(encoding="utf-8"))
+          assert settings["productName"] == "DSH Tether"
+          assert settings["identifier"] == "cc.zexa.dshtether"
+          settings["productName"]="ICARUS"
+          for window in settings["app"]["windows"]:
+            assert window["title"] == "DSH Tether"
+            window["title"]="ICARUS"
+          conf.write_text(json.dumps(settings,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+          def replace_exact(relative, old, new, expected):
+            p=source/relative
+            contents=p.read_text(encoding="utf-8")
+            assert contents.count(old)==expected,(relative,old,contents.count(old))
+            p.write_text(contents.replace(old,new),encoding="utf-8")
+          replace_exact("app/ui/index.html","DSH Tether","ICARUS",3)
+          replace_exact("app/ui/i18n.js","Open DSH Tether","Open ICARUS",1)
+          replace_exact("app/ui/i18n.js","打开 DSH Tether","打开 ICARUS",1)
+          replace_exact("app/src-tauri/gen/android/app/src/main/res/values/strings.xml","DSH Tether","ICARUS",2)
+          assert json.loads(conf.read_text())["identifier"]=="cc.zexa.dshtether"
+          gradle=(source/"app/src-tauri/gen/android/app/build.gradle.kts").read_text()
+          assert 'applicationId = "cc.zexa.dshtether"' in gradle
+          assert (source/"LICENSE").read_text().startswith("MIT License")
+          files=[p for p in source.rglob("*") if p.is_file()]
+          manifest={
+            "status":"SOURCE_STAGED_AND_COSMETIC_BRANDING_ONLY",
+            "owner":"Michael",
+            "executor":"GitHub Actions deterministic repo runner",
+            "upstream":"https://github.com/zexadev/dsh-tether",
+            "upstream_commit":os.environ["PIN"],
+            "source_file_count":len(files),
+            "license_sha256":hashlib.sha256((source/"LICENSE").read_bytes()).hexdigest(),
+            "changed_files":[{"path":p,"upstream_sha256":original[p],
+                "staged_sha256":hashlib.sha256((source/p).read_bytes()).hexdigest()} for p in targets],
+            "unchanged_contract":"Android package ID, plugin identity, DSH runtime, pairing, protocols, credentials, data keys and signing are untouched",
+            "logo":"BLOCKED: approved owner image bytes not independently located; donor icons are NOT ICARUS artwork",
+            "runtime":"NOT BUILT / NOT TESTED / NOT INSTALLED",
+            "deployment":"NONE",
+            "legal":"Original zexadev MIT LICENSE preserved"
+          }
+          (base/"SOURCE_AND_BRAND_MANIFEST.json").write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8")
+          (base/"README.md").write_text("# ICARUS DSH Tether — preproduction cosmetic source branch\n\n"
+            "Derived from zexadev/dsh-tether at pinned commit "+os.environ["PIN"]+". "
+            "Retains upstream MIT LICENSE and technical identifiers. "
+            "Phase one changes visible product/launcher text ONLY. "
+            "Existing UI webview still runs DeepSeek Harness, not a proved ICARUS authority. "
+            "NO build, signed APK, deployment, phone installation, or icon replacement has occurred. "
+            "Do not build or install before new side-by-side package ID and approved logo assets are independently reviewed.\n",encoding="utf-8")
+          print("SOURCE_STAGED files=",len(files)," changed=",len(targets))
+          PY
+      - name: Commit staged source on feature branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add drafts/icarus/2026-10-10-dsh-tether-rebrand/
+          if git diff --cached --quiet; then
+            echo "Source already staged; no commit needed"
+          else
+            git commit -m "stage: pinned DSH Tether source and bounded ICARUS visual labels"
+            git push origin HEAD:feature/icarus-dsh-tether-rebrand-20261010
+          fi
+          git rev-parse HEAD
+      - name: Retain source provenance artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-dsh-tether-source-stage
+          path: drafts/icarus/2026-10-10-dsh-tether-rebrand/SOURCE_AND_BRAND_MANIFEST.json
+          retention-days: 3
+          if-no-files-found: ignore
+
+  advisory_ghost:
+    name: DeepSeek local ghost - independent branding risk review
+    needs: stage_source
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/icarus-dsh-tether-rebrand-20261010
+          persist-credentials: false
+      - name: Install free local-model dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --quiet transformers accelerate safetensors sentencepiece
+      - name: Run genuine local DeepSeek advisory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,pathlib,torch
+          from transformers import AutoModelForCausalLM,AutoTokenizer
+          root=pathlib.Path("drafts/icarus/2026-10-10-dsh-tether-rebrand")
+          data=json.loads((root/"SOURCE_AND_BRAND_MANIFEST.json").read_text())
+          model="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+          tok=AutoTokenizer.from_pretrained(model)
+          mdl=AutoModelForCausalLM.from_pretrained(model,torch_dtype=torch.float32,low_cpu_mem_usage=True)
+          mdl.eval()
+          prompt=("Read the following VERIFIED source-stage manifest for the pinned MIT DSH Tether source. "
+                  "You are a read-only coding review GHOST, not the runner, not ICARUS and not an adjudicator. "
+                  "Independently identify the top 5 further user-visible app branding locations and the top 5 "
+                  "RISKS of wrongly renaming technical identifiers, assets, Android package namespace, "
+                  "local mode/runtime, pairing and plugin compatibility. Do not invent filenames. "
+                  "Do NOT claim ICARUS runtime authority installed. Do not change source or certify PASS. "
+                  "If the approved logo is absent, mark artwork BLOCKED. "
+                  "Output concise file-or-risk findings with UNKNOWN where evidence is limited. "
+                  "Manifest: "+json.dumps(data)[:8500])
+          chat=tok.apply_chat_template([{"role":"user","content":prompt}],tokenize=False,add_generation_prompt=True)
+          inputs=tok(chat,return_tensors="pt")
+          with torch.inference_mode():
+              out=mdl.generate(**inputs,max_new_tokens=430,do_sample=False,pad_token_id=tok.eos_token_id)
+          raw=tok.decode(out[0][inputs["input_ids"].shape[1]:],skip_special_tokens=True).strip()
+          if not raw:raise SystemExit("GHOST_NO_OUTPUT")
+          pathlib.Path("ICARUS_DSH_TETHER_GHOST_ADVISORY.txt").write_text(
+            "MODEL: "+model+"\nSTATUS: ADVISORY_NOT_VERIFIED\n"+raw+"\n",encoding="utf-8")
+          print("GHOST_EXECUTED model="+model+" output_chars="+str(len(raw)))
+          PY
+      - name: Retain independent ghost output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-dsh-tether-deepseek-review
+          path: ICARUS_DSH_TETHER_GHOST_ADVISORY.txt
+          retention-days: 3
+          if-no-files-found: ignore
