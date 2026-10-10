@@ -106,6 +106,8 @@ def install(donor: Path, lineage: Path):
 
 import android.content.Context
 import java.security.MessageDigest
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * ICARUS owner-side boot and authorization boundary.
@@ -180,8 +182,14 @@ __EXPECTED__
      * Only audited read-only names are eligible in this inspection build.
      * Owner-issued scoped permits for mutating actions are NOT implemented.
      */
-    fun deniedReason(toolName: String): String? {
+    fun deniedReason(toolName: String, arguments: Map<String, JsonElement> = emptyMap()): String? {
         if (snapshot == null) return "ICARUS_NOT_READY: worker cannot execute"
+        // Memory reads are allowed; memory writes/deletes are never implicitly allowed.
+        if (toolName == "memory") {
+            val action = (arguments["action"] as? JsonPrimitive)?.content
+            if (action == "search" || action == "list") return null
+            return "ICARUS_PERMIT_REQUIRED: memory action requires ICARUS permit"
+        }
         if (toolName !in readOnlyTools) {
             return "ICARUS_PERMIT_REQUIRED: no owner-approved execution permit for " + toolName
         }
@@ -195,8 +203,20 @@ __EXPECTED__
     once(executor,
          '        val tool = registry.byName(call.name)',
          '        // ICARUS must authorize before any Hermes tool implementation is entered.\n'
-         '        IcarusAuthority.deniedReason(call.name)?.let { return ToolResult.error(it) }\n'
+         '        IcarusAuthority.deniedReason(call.name, call.arguments)?.let { return ToolResult.error(it) }\n'
          '        val tool = registry.byName(call.name)')
+
+    # The deferred-tool bridge calls raw Tool.execute directly. Close the
+    # bypass at its actual target dispatch, not only the outer tool executor.
+    bridge = engine / "core/tools/src/main/kotlin/com/hermes/agent/data/tools/ToolCallTool.kt"
+    once(bridge,
+         'import com.hermes.agent.domain.tool.Tool\n',
+         'import com.hermes.agent.domain.tool.Tool\n'
+         'import com.hermes.agent.data.tool.IcarusAuthority\n')
+    once(bridge,
+         '        return targetTool.execute(toolArgs)',
+         '        IcarusAuthority.deniedReason(toolName, toolArgs)?.let { return ToolResult.error(it) }\n'
+         '        return targetTool.execute(toolArgs)')
 
     # Do not let the donor's own bootstrap reschedule cron, plugins or proactive
     # actions before ICARUS has a separately reviewed owner-approved route.
@@ -233,6 +253,21 @@ __EXPECTED__
          '            send(OrchestratorEvent.ReplyToken(report))\n'
          '            send(OrchestratorEvent.ReplyComplete(report, AgentRole.CONVERSATIONAL, isOnDevice = true))\n'
          '            return@channelFlow\n'
+         '        }\n')
+
+    # Hermes silently writes memory through ConversationLearner after a reply.
+    # Do not let this background path bypass ICARUS's no-write policy.
+    once(orchestrator,
+         '        learningScope.launch {\n'
+         '            // Extract personal facts from this turn.',
+         '        if (com.hermes.agent.data.tool.IcarusAuthority.donorAutonomyPermitted()) {\n'
+         '        learningScope.launch {\n'
+         '            // Extract personal facts from this turn.')
+    once(orchestrator,
+         '            userModelService.onConversationComplete()\n'
+         '        }\n',
+         '            userModelService.onConversationComplete()\n'
+         '        }\n'
          '        }\n')
 
     loop = module / "AgentLoopRunner.kt"
