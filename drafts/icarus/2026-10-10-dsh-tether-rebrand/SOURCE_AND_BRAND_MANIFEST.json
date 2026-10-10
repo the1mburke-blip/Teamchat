@@ -1,0 +1,36 @@
+{
+  "status": "SOURCE_STAGED_AND_COSMETIC_BRANDING_ONLY",
+  "owner": "Michael",
+  "executor": "GitHub Actions deterministic repo runner",
+  "upstream": "https://github.com/zexadev/dsh-tether",
+  "upstream_commit": "a702cae7fcf90b5025bde47d7dbdcbcb3a7e9f1c",
+  "source_file_count": 167,
+  "license_sha256": "127959c93d776ff083aacae6d2573c730b85002410fd4a08ca6aa8b556cd8c5a",
+  "changed_files": [
+    {
+      "path": "app/src-tauri/tauri.conf.json",
+      "upstream_sha256": "12885fe2b318c757b197b57594034f9b4357e7804ad75772c63a0d5f3e6b6d8d",
+      "staged_sha256": "935aeea2c214f54c6c77219dc2746d389da1bb91525ada3b4de04515bdd6340b"
+    },
+    {
+      "path": "app/ui/index.html",
+      "upstream_sha256": "f9ccea09943ce6d4725e738c79ea8b54511f66e4c44db7c19914e01284cac874",
+      "staged_sha256": "2e00fe99db7677a54f4ba68987431256fa5af1defd8a1d1ca24d4bbae86058fc"
+    },
+    {
+      "path": "app/ui/i18n.js",
+      "upstream_sha256": "032517044f8435f3d154b1621ffcacae30787adc632cc0f1d2c26c003c3be947",
+      "staged_sha256": "1a534d0f52a494fe9a650e38e7b0e30526be02a0ac6bdff2375c9763725e7cc8"
+    },
+    {
+      "path": "app/src-tauri/gen/android/app/src/main/res/values/strings.xml",
+      "upstream_sha256": "c741f2f1aef36e46e06ee52ee040c2831b854110f13f228ad6aaffb4342b10ef",
+      "staged_sha256": "c046b609db983f2865a0545a6ea1f682a3807e4aa3f193d93ef3dbee0643adfc"
+    }
+  ],
+  "unchanged_contract": "Android package ID, plugin identity, DSH runtime, pairing, protocols, credentials, data keys and signing are untouched",
+  "logo": "BLOCKED: approved owner image bytes not independently located; donor icons are NOT ICARUS artwork",
+  "runtime": "NOT BUILT / NOT TESTED / NOT INSTALLED",
+  "deployment": "NONE",
+  "legal": "Original zexadev MIT LICENSE preserved"
+}
