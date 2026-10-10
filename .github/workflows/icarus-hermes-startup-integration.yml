@@ -87,7 +87,7 @@ jobs:
             assert original.read_bytes()==asset.read_bytes()
             assert hashlib.sha256(asset.read_bytes()).hexdigest() in k
             print('VERIFIED_SOURCE_MEMORY',name)
-          assert 'applicationId = "com.icarus.preproduction"' in (d/'app/build.gradle.kts').read_text()
+          assert 'applicationId = "com.icarus.preproduction.control"' in (d/'app/build.gradle.kts').read_text()
           # Independent source inspection: entrypoint is ICARUS, not Hermes.
           manifest=(d/'app/src/main/AndroidManifest.xml').read_text()
           assert 'android:name=".tinker.loader.IcarusTinkerApplication"' in manifest
@@ -112,6 +112,8 @@ jobs:
           assert '"memory"' not in control.split('private val readOnlyTools = setOf(')[1].split(')')[0]
           assert 'IcarusAuthority.memoryReport()' in orchestrator
           assert 'IcarusAuthority.promptContext()' in orchestrator
+          shortcuts=(d/'app/src/main/res/xml/shortcuts.xml').read_text()
+          assert shortcuts.count('android:targetPackage="com.icarus.preproduction.control"') == 4
           Path('startup-evidence/STATIC_INSPECTION.txt').write_text(
             'HERMES_DONOR=PINNED\nENGINE=PINNED\nMEMORY_FOUR_SHA256=PASS\n'
             'ANDROID_APPLICATION_ENTRYPOINT=ICARUS_SHELL_STATIC\n'
@@ -138,7 +140,7 @@ jobs:
             unzip -p "$APK" "assets/icarus/memory/$name" | cmp - "drafts/icarus/2026-10-08-hermes-shell/lineage-source/$name"
             echo "APK_ASSET_EXACT $name" | tee -a startup-evidence/BUILD_INSPECTION.txt
           done
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction.debug'" | tee -a startup-evidence/BUILD_INSPECTION.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction.control.debug'" | tee -a startup-evidence/BUILD_INSPECTION.txt
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -F 'IcarusTinkerApplication' | tee -a startup-evidence/BUILD_INSPECTION.txt
       - name: Save logs and diagnostic only
         if: always()
