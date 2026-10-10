@@ -80,7 +80,7 @@ jobs:
           orchestrator=(m/'OrchestratorImpl.kt').read_text()
           assert start.count('IcarusLineage.loadAtStartup(application)')==1
           assert start.index('IcarusLineage.loadAtStartup(application)')<start.index('HermesAppStartup.start(application)')
-          assert orchestrator.count('IcarusLineage.promptPrefix()')==1
+          assert orchestrator.count('IcarusLineage.promptPrefix()')==0  # moved to ICARUS authority
           for name in ('identity.md','inherited.md','learned.md','current-state.md'):
             original=Path('drafts/icarus/2026-10-08-hermes-shell/lineage-source')/name
             asset=d/'app/src/main/assets/icarus/memory'/name
