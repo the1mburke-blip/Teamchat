@@ -67,6 +67,10 @@ jobs:
           python3 /tmp/icarus-compile-inspection.py --hermes-checkout donor \
             --approved-logo /tmp/not-approved-build-diagnostic.png \
             --lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source
+          python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py
+          python3 drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py \
+            --hermes-checkout donor \
+            --lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source
           python3 - <<'PY'
           from pathlib import Path
           import hashlib
@@ -84,12 +88,31 @@ jobs:
             assert hashlib.sha256(asset.read_bytes()).hexdigest() in k
             print('VERIFIED_SOURCE_MEMORY',name)
           assert 'applicationId = "com.icarus.preproduction"' in (d/'app/build.gradle.kts').read_text()
-          assert 'ICARUS_PERMIT_REQUIRED' in (m/'AgentLoopRunner.kt').read_text()
+          # Independent source inspection: entrypoint is ICARUS, not Hermes.
+          manifest=(d/'app/src/main/AndroidManifest.xml').read_text()
+          assert 'android:name=".tinker.loader.IcarusTinkerApplication"' in manifest
+          assert 'android:name=".tinker.loader.HermesTinkerApplication"' not in manifest
+          owner=(d/'app/src/main/kotlin/com/hermes/agent/tinker/IcarusApplicationLike.kt').read_text()
+          shell=(d/'app/src/main/java/com/hermes/agent/tinker/loader/IcarusTinkerApplication.java').read_text()
+          control=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tool/IcarusAuthority.kt').read_text()
+          executor=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tool/ToolCallExecutor.kt').read_text()
+          assert '"com.hermes.agent.tinker.IcarusApplicationLike"' in shell
+          assert 'IcarusAuthority.bootstrap(app)' in owner
+          assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('HermesAppStartup.start(application)')
+          assert 'IcarusAuthority.requireReady()' in owner
+          assert 'IcarusAuthority.deniedReason(call.name)' in executor
+          assert executor.index('IcarusAuthority.deniedReason(call.name)') < executor.index('registry.byName(call.name)')
+          assert 'if (toolName !in readOnlyTools)' in control
+          assert '"memory"' not in control.split('private val readOnlyTools = setOf(')[1].split(')')[0]
+          assert 'IcarusAuthority.memoryReport()' in orchestrator
+          assert 'IcarusAuthority.promptContext()' in orchestrator
           Path('startup-evidence/STATIC_INSPECTION.txt').write_text(
             'HERMES_DONOR=PINNED\nENGINE=PINNED\nMEMORY_FOUR_SHA256=PASS\n'
-            'APP_ONCREATE_BEFORE_HERMES_STARTUP=PASS_STATIC\n'
-            'MODEL_READS_PINNED_MEMORY=PASS_STATIC\n'
-            'PERMISSION_GATE=PARTIAL_DENY_NOT_FULL_AUTHORITY\n')
+            'ANDROID_APPLICATION_ENTRYPOINT=ICARUS_SHELL_STATIC\n'
+            'ICARUS_BOOT_BEFORE_HERMES=PASS_STATIC\n'
+            'ICARUS_MEMORY_HASH_AND_DIRECT_RECALL=PASS_STATIC\n'
+            'CENTRAL_TOOL_EXECUTOR_GATE=PARTIAL_DEFAULT_DENY\n'
+            'BYPASS_AUDIT_AND_ON_DEVICE_VERIFICATION=PENDING\n')
           PY
       - name: Android debug compile
         working-directory: donor
@@ -110,11 +133,12 @@ jobs:
             echo "APK_ASSET_EXACT $name" | tee -a startup-evidence/BUILD_INSPECTION.txt
           done
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction.debug'" | tee -a startup-evidence/BUILD_INSPECTION.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -F 'IcarusTinkerApplication' | tee -a startup-evidence/BUILD_INSPECTION.txt
       - name: Save logs and diagnostic only
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ICARUS-Android-startup-INSPECTION-ONLY-NOT-APPROVED-ART
+          name: ICARUS-Android-OUTER-CONTROL-INSPECTION-ONLY
           path: |
             startup-evidence/
             donor/app/build/outputs/apk/debug/app-debug.apk
