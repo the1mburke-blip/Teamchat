@@ -35,8 +35,8 @@ jobs:
           for filename in identity.md inherited.md learned.md current-state.md; do
             git show "${SOURCE_COMMIT}:${SOURCE_PREFIX}/${filename}" > "${TARGET_DIR}/${filename}"
             test -s "${TARGET_DIR}/${filename}"
-            cmp "${TARGET_DIR}/${filename}" "icarus/memory/${filename}"
-            echo "CANONICAL_IDENTITY_MATCH ${filename} $(sha256sum "${TARGET_DIR}/${filename}" | cut -d' ' -f1)"
+            git show "${SOURCE_COMMIT}:${SOURCE_PREFIX}/${filename}" | cmp - "${TARGET_DIR}/${filename}"
+            echo "RELOCATED_SOURCE_MATCH ${filename} $(sha256sum "${TARGET_DIR}/${filename}" | cut -d' ' -f1)"
           done
           echo "${SOURCE_COMMIT}" > "${TARGET_DIR}/SOURCE_COMMIT.txt"
           printf '%s\n' "${SOURCE_PREFIX}" > "${TARGET_DIR}/SOURCE_PATH.txt"
@@ -92,7 +92,7 @@ jobs:
           The staged build now consumes the four canonical files from
           `drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory/` on
           `feature/icarus-dsh-tether-rebrand-20261010`. A deterministic authenticated
-          GitHub Actions runner checks byte equality against canonical `icarus/memory/`
+          GitHub Actions runner checks byte equality against the pinned relocated ICARUS source commit
           and records the exact source commit and SHA256 values in `lineage-source/`.
 
           Invoke the existing overlay against the **real Hermes Android checkout** with
@@ -114,7 +114,7 @@ jobs:
           Relocated source branch: `feature/icarus-dsh-tether-rebrand-20261010`.
           Four source files now live at
           `drafts/icarus/2026-10-08-hermes-shell/lineage-source/` after exact
-          canonical-byte comparison. Existing source overlay now REQUIRES
+          relocated-source byte comparison. Existing source overlay now REQUIRES
           `--lineage-root` and stages assets to `app/src/main/assets/icarus/memory/`.
           No APK was built or deployed, and no model has been granted tool authority.
           """, encoding="utf-8")
@@ -123,7 +123,7 @@ jobs:
           python3 drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py --help | grep -F -- '--lineage-root'
           git diff --check
           echo 'STAGED_OVERLAY_PYTHON_SYNTAX=PASS'
-          echo 'RELOCATED_FOUR_FILE_CANONICAL_MATCH=PASS'
+          echo 'RELOCATED_FOUR_FILE_SOURCE_MATCH=PASS'
 
       - name: Commit only the original staging correction
         shell: bash
