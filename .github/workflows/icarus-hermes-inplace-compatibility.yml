@@ -1,0 +1,44 @@
+name: ICARUS installed Hermes early-start compatibility correction
+on:
+  push:
+    branches: [feature/icarus-hermes-inplace-update-stage-20261010]
+    paths: [.github/workflows/icarus-hermes-inplace-compatibility.yml]
+permissions:
+  contents: write
+jobs:
+  repair-boot-order:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Move ICARUS boot before Hermes Hilt component and tool startup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py")
+          s=p.read_text(encoding="utf-8")
+          old='''once(delegate,
+                   "        HermesTinker.install(this)",
+                   "        HermesTinker.install(this)\\n"'''
+          new='''once(delegate,
+                   "        val app = application",
+                   "        val app = application\\n"'''
+          assert s.count(old)==1, "Expected single prior staging hook"
+          s=s.replace(old,new)
+          assert s.count('IcarusAuthority.bootstrap(app)')>=1
+          p.write_text(s,encoding="utf-8")
+          print("ICARUS_BOOT_MOVED_BEFORE_HILT_PREPARED")
+          PY
+          python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py
+          git diff --check
+          git add drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "stage: bootstrap ICARUS before Hermes Hilt component initialization"
+          git push origin HEAD:refs/heads/feature/icarus-hermes-inplace-update-stage-20261010
+          echo "COMPAT_EARLY_BOOT_COMMIT=$(git rev-parse HEAD)"

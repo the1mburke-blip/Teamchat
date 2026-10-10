@@ -1,7 +1,7 @@
-name: ICARUS existing Hermes Android startup integration inspect
+name: ICARUS in-place Hermes compatibility diagnostic build
 on:
   push:
-    branches: [feature/icarus-hermes-android-qwen-review-20261010]
+    branches: [feature/icarus-hermes-inplace-update-stage-20261010]
     paths: [.github/workflows/icarus-hermes-startup-integration.yml]
 permissions: {contents: read}
 jobs:
@@ -78,8 +78,8 @@ jobs:
           k=(m/'IcarusLineage.kt').read_text()
           start=(d/'app/src/main/kotlin/com/hermes/agent/tinker/HermesApplicationLike.kt').read_text()
           orchestrator=(m/'OrchestratorImpl.kt').read_text()
-          assert start.count('IcarusLineage.loadAtStartup(application)')==1
-          assert start.index('IcarusLineage.loadAtStartup(application)')<start.index('HermesAppStartup.start(application)')
+          assert start.count('IcarusAuthority.requireReady()')==1
+          assert start.index('IcarusAuthority.requireReady()')<start.index('HermesAppStartup.start(application)')
           assert orchestrator.count('IcarusLineage.promptPrefix()')==0  # moved to ICARUS authority
           for name in ('identity.md','inherited.md','learned.md','current-state.md'):
             original=Path('drafts/icarus/2026-10-08-hermes-shell/lineage-source')/name
@@ -87,16 +87,16 @@ jobs:
             assert original.read_bytes()==asset.read_bytes()
             assert hashlib.sha256(asset.read_bytes()).hexdigest() in k
             print('VERIFIED_SOURCE_MEMORY',name)
-          assert 'applicationId = "com.icarus.preproduction"' in (d/'app/build.gradle.kts').read_text()
-          # Independent source inspection: entrypoint is ICARUS, not Hermes.
+          assert 'applicationId = "com.hermes.agent"' in (d/'app/build.gradle.kts').read_text()
+          # Preserve installed Hermes Tinker shell; ICARUS boots before its worker.
           manifest=(d/'app/src/main/AndroidManifest.xml').read_text()
-          assert 'android:name=".tinker.loader.IcarusTinkerApplication"' in manifest
-          assert 'android:name=".tinker.loader.HermesTinkerApplication"' not in manifest
-          owner=(d/'app/src/main/kotlin/com/hermes/agent/tinker/IcarusApplicationLike.kt').read_text()
-          shell=(d/'app/src/main/java/com/hermes/agent/tinker/loader/IcarusTinkerApplication.java').read_text()
+          assert 'android:name=".tinker.loader.HermesTinkerApplication"' in manifest
+          assert 'android:name=".tinker.loader.IcarusTinkerApplication"' not in manifest
+          owner=(d/'app/src/main/kotlin/com/hermes/agent/tinker/HermesApplicationLike.kt').read_text()
+          shell=(d/'app/src/main/java/com/hermes/agent/tinker/loader/HermesTinkerApplication.java').read_text()
           control=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tool/IcarusAuthority.kt').read_text()
           executor=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tool/ToolCallExecutor.kt').read_text()
-          assert '"com.hermes.agent.tinker.IcarusApplicationLike"' in shell
+          assert '"com.hermes.agent.tinker.HermesApplicationLike"' in shell
           assert 'IcarusAuthority.bootstrap(app)' in owner
           assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('setComponentManager(')
           assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('HermesTinker.install(this)')
@@ -114,8 +114,8 @@ jobs:
           assert 'IcarusAuthority.promptContext()' in orchestrator
           Path('startup-evidence/STATIC_INSPECTION.txt').write_text(
             'HERMES_DONOR=PINNED\nENGINE=PINNED\nMEMORY_FOUR_SHA256=PASS\n'
-            'ANDROID_APPLICATION_ENTRYPOINT=ICARUS_SHELL_STATIC\n'
-            'ICARUS_BOOT_BEFORE_HERMES=PASS_STATIC\n'
+            'ANDROID_APPLICATION_ENTRYPOINT=EXISTING_HERMES_TINKER_LOADER_STATIC\n'
+            'ICARUS_BOOT_IN_PATCHABLE_DELEGATE_BEFORE_WORKER=PASS_STATIC\n'
             'ICARUS_MEMORY_HASH_AND_DIRECT_RECALL=PASS_STATIC\n'
             'CENTRAL_TOOL_EXECUTOR_GATE=PARTIAL_DEFAULT_DENY\n'
             'BYPASS_AUDIT_AND_ON_DEVICE_VERIFICATION=PENDING\n')
@@ -138,13 +138,13 @@ jobs:
             unzip -p "$APK" "assets/icarus/memory/$name" | cmp - "drafts/icarus/2026-10-08-hermes-shell/lineage-source/$name"
             echo "APK_ASSET_EXACT $name" | tee -a startup-evidence/BUILD_INSPECTION.txt
           done
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction.debug'" | tee -a startup-evidence/BUILD_INSPECTION.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.hermes.agent.debug'" | tee -a startup-evidence/BUILD_INSPECTION.txt
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -F 'IcarusTinkerApplication' | tee -a startup-evidence/BUILD_INSPECTION.txt
       - name: Save logs and diagnostic only
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ICARUS-Android-OUTER-CONTROL-INSPECTION-ONLY
+          name: ICARUS-Android-INPLACE-HOTFIX-SOURCE-DIAGNOSTIC-ONLY
           path: |
             startup-evidence/
             donor/app/build/outputs/apk/debug/app-debug.apk
