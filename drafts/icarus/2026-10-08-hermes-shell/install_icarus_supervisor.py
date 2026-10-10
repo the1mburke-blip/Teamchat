@@ -240,6 +240,60 @@ __EXPECTED__
          'IcarusIdentity.ROOT + "\\n\\n" + ' +
          'com.hermes.agent.data.tool.IcarusAuthority.promptContext() + "\\n\\n" + ' +
          '"Hermes is an execution worker; ICARUS owns the policy and memory.\\n\\n" + persona')
+    # Deterministic runtime probe: invoke the actual registered memory tool
+    # through the shared executor and compare durable Room contents before/after.
+    # The model cannot answer or forge this test.
+    once(orchestrator,
+         'import com.hermes.agent.domain.llm.LlmMessage\n',
+         'import com.hermes.agent.domain.llm.LlmMessage\n'
+         'import com.hermes.agent.domain.llm.ToolCall\n'
+         'import kotlinx.serialization.json.JsonPrimitive\n'
+         'import kotlinx.coroutines.flow.first\n')
+    hook = '    ): Flow<OrchestratorEvent> = channelFlow {\n'
+    insertion = (
+        '        if (userMessage.trim().equals("/icarus authority test", ignoreCase = true)) {\n'
+        '            val marker = "ICARUS-AUTHORITY-TEST-002"\n'
+        '            val registered = toolRegistry.byName("memory") != null\n'
+        '            val before = memoryRepository.observeMemories().first().any { it.content == marker }\n'
+        '            val attempted = ToolCall(\n'
+        '                id = "icarus-authority-test",\n'
+        '                name = "memory",\n'
+        '                arguments = mapOf(\n'
+        '                    "action" to JsonPrimitive("add"),\n'
+        '                    "content" to JsonPrimitive(marker),\n'
+        '                ),\n'
+        '            )\n'
+        '            val outcome = if (registered) {\n'
+        '                toolCallExecutor.execute(attempted, confirmationGate = null)\n'
+        '            } else {\n'
+        '                ToolResult.error("ICARUS_NO_REGISTERED_MEMORY_TOOL")\n'
+        '            }\n'
+        '            val after = memoryRepository.observeMemories().first().any { it.content == marker }\n'
+        '            activityLedger.record(ActivityEntry(\n'
+        '                timestamp = System.currentTimeMillis(),\n'
+        '                kind = ActivityKind.TOOL_CALL,\n'
+        '                origin = "icarus_supervisor_probe",\n'
+        '                conversationId = conversationId,\n'
+        '                title = "memory:add",\n'
+        '                detail = (outcome.errorMessage ?: outcome.output).take(500),\n'
+        '                success = outcome.success,\n'
+        '            ))\n'
+        '            val report = "ICARUS_AUTHORITY_PROBE\\n" +\n'
+        '                "REGISTERED_MEMORY_TOOL=" + registered + "\\n" +\n'
+        '                "EXECUTOR_CALLED=" + registered + "\\n" +\n'
+        '                "EXECUTION_SUCCESS=" + outcome.success + "\\n" +\n'
+        '                "RAW_DENIAL=" + (outcome.errorMessage ?: "(none)") + "\\n" +\n'
+        '                "MARKER_PRESENT_BEFORE=" + before + "\\n" +\n'
+        '                "MARKER_PRESENT_AFTER=" + after + "\\n" +\n'
+        '                "MODEL_INFERENCE_USED=false\\n" +\n'
+        '                "LOG=ActivityLedger/memory:add"\n'
+        '            send(OrchestratorEvent.ReplyToken(report))\n'
+        '            send(OrchestratorEvent.ReplyComplete(report, AgentRole.CONVERSATIONAL, isOnDevice = true))\n'
+        '            return@channelFlow\n'
+        '        }\n'
+    )
+    once(orchestrator, hook, hook + insertion)
+
     # Remove previously staged prompt-adjacent default deny; central executor owns it.
     once(orchestrator,
          '                    !IcarusExecutionGate.isAuthorized(deterministic.call.name) ->\n'
