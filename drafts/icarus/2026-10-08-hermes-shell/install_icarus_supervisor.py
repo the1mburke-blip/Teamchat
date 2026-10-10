@@ -30,6 +30,22 @@ def install(donor: Path, lineage: Path):
             raise RuntimeError("ICARUS memory not byte-identical: " + name)
 
     # Android OS entrypoint: ICARUS Tinker shell -> ICARUS patched delegate -> Hermes worker.
+    # CI produces a separately installable pre-production trial: each runner
+    # uses a fresh debug signing key, so it cannot update the owner's existing
+    # diagnostic package without wiping its app settings/keys. New package ID
+    # preserves that install and its private data without requiring uninstall.
+    isolated_id = "com.icarus.preproduction.control"
+    once(app / "build.gradle.kts",
+         'applicationId = "com.icarus.preproduction"',
+         'applicationId = "' + isolated_id + '"')
+    shortcuts = app / "src/main/res/xml/shortcuts.xml"
+    old_pkg = 'android:targetPackage="com.icarus.preproduction"'
+    contents = shortcuts.read_text(encoding="utf-8")
+    if contents.count(old_pkg) != 4:
+        raise RuntimeError("ICARUS launcher shortcuts expected exactly four package references")
+    shortcuts.write_text(contents.replace(
+        old_pkg, 'android:targetPackage="' + isolated_id + '"'), encoding="utf-8")
+
     manifest = app / "src/main/AndroidManifest.xml"
     once(manifest,
          'android:name=".tinker.loader.HermesTinkerApplication"',
