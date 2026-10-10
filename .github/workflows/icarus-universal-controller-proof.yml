@@ -1,0 +1,70 @@
+name: ICARUS universal controller - isolated proof
+
+on:
+  push:
+    branches:
+      - feature/icarus-controller-first-20261010
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controller-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Controller contract tests
+        run: python3 -m unittest discover -s icarus/universal_control -p test_controller.py -v
+
+      - name: Build disposable sandboxed harness images
+        run: |
+          set -euo pipefail
+          cd icarus/universal_control
+          docker build --pull --build-arg HARNESS_MODE=A -t icarus-worker:a .
+          docker build --build-arg HARNESS_MODE=B -t icarus-worker:b .
+          docker build --build-arg HARNESS_MODE=ATTACK -t icarus-worker:attack .
+          echo "A_IMG=$(docker image inspect --format '{{.Id}}' icarus-worker:a)" >> "$GITHUB_ENV"
+          echo "B_IMG=$(docker image inspect --format '{{.Id}}' icarus-worker:b)" >> "$GITHUB_ENV"
+          echo "ATT_IMG=$(docker image inspect --format '{{.Id}}' icarus-worker:attack)" >> "$GITHUB_ENV"
+          echo 'HOST_ONLY_SECRET_MARKER' | sudo tee /icarus-protected-host-secret > /dev/null
+
+      - name: Real sandbox worker replacement and denial proof
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import sys
+          import tempfile
+          sys.path.insert(0, "icarus/universal_control")
+          from controller import Icarus, DockerHarness
+          with tempfile.TemporaryDirectory() as td:
+              state = Path(td) / "icarus"
+              lineage = Path("icarus/memory")
+              original = Icarus(state, lineage)
+              task_id = original.create_task("Write the exact approved text PROOF", allowed_note="PROOF")
+              first = original.step(task_id, DockerHarness(os.environ["A_IMG"]), harness_name="A")
+              assert first["state"] == "WORKING"
+              restarted = Icarus(state, lineage)
+              second = restarted.step(task_id, DockerHarness(os.environ["B_IMG"]), harness_name="B")
+              assert second["task_id"] == task_id
+              assert second["state"] == "PASS"
+              assert (state / "notes" / (task_id + ".txt")).read_text() == "PROOF"
+              print("CONTROLLER_REPLACEMENT_PRESERVED_TASK=YES")
+              print("INDEPENDENT_EFFECT_READBACK=YES")
+              print("WORKER_SELF_VERDICT_OVERRIDDEN=YES")
+              adversary = Icarus(state, lineage)
+              attack_id = adversary.create_task("Try to claim false completion", allowed_note="PROOF")
+              attacker = DockerHarness(os.environ["ATT_IMG"])
+              raw = attacker.invoke({"protocol": "icarus.worker.v1", "task_id": attack_id, "objective": "attack"})
+              assert raw["probe"]["host_readable"] is False, raw
+              assert raw["probe"]["network_open"] is False, raw
+              verified = adversary.step(attack_id, attacker, harness_name="ATTACK")
+              assert verified["verdict"] == "FAIL", verified
+              print("HOST_FILE_ISOLATION=YES")
+              print("WORKER_NETWORK_ISOLATION=YES")
+              print("FAKE_PASS_REJECTED=YES")
+          PY
