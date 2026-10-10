@@ -112,6 +112,63 @@ internal object IcarusExecutionGate {
                 raise RuntimeError("launcher adaptive icon baseline changed")
             layout.write_text(value.replace("@mipmap/ic_launcher_foreground",
                                             "@drawable/icarus_launcher_foreground"), encoding="utf-8")
+    # Build-time pinning is deterministic. The Android Application loads and verifies
+    # all four files BEFORE Hermes starts. An absent or modified file stops startup.
+    digest_entries = ",\n".join(
+        f'        "{filename}" to "{hashlib.sha256((lineage_root / filename).read_bytes()).hexdigest()}"'
+        for filename in files
+    )
+    lineage_source = r'''package com.hermes.agent.data.agent
+
+import android.content.Context
+import java.security.MessageDigest
+
+/** App-owned, fail-closed ICARUS lineage. Models can read a snapshot; they cannot write it. */
+internal object IcarusLineage {
+    @Volatile private var loaded: Map<String, String>? = null
+    private val expected = linkedMapOf(
+__DIGEST_ENTRIES__
+    )
+
+    @Synchronized fun loadAtStartup(context: Context) {
+        val verified = linkedMapOf<String, String>()
+        for ((name, digest) in expected) {
+            val bytes = context.assets.open("icarus/memory/" + name).use { it.readBytes() }
+            check(bytes.isNotEmpty()) { "ICARUS lineage empty: " + name }
+            val actual = MessageDigest.getInstance("SHA-256").digest(bytes)
+                .joinToString("") { "%02x".format(it) }
+            check(actual == digest) { "ICARUS lineage digest mismatch: " + name }
+            val body = bytes.toString(Charsets.UTF_8)
+            check(body.isNotBlank()) { "ICARUS lineage text blank: " + name }
+            verified[name] = body
+        }
+        check(verified.size == 4) { "ICARUS lineage incomplete" }
+        loaded = verified.toMap()
+    }
+
+    fun promptPrefix(): String {
+        val snapshot = checkNotNull(loaded) { "ICARUS lineage not loaded at startup" }
+        return snapshot.entries.joinToString("\n\n") {
+            "[ICARUS SOURCE: " + it.key + "]\n" + it.value
+        }
+    }
+}
+'''.replace("__DIGEST_ENTRIES__", digest_entries)
+    (module / "IcarusLineage.kt").write_text(lineage_source, encoding="utf-8")
+
+    # Tinker does NOT instantiate HermesApp directly. HermesApplicationLike is
+    # the actual patchable app owner; the call must precede HermesAppStartup.
+    startup = root / "app/src/main/kotlin/com/hermes/agent/tinker/HermesApplicationLike.kt"
+    once(startup,
+         '        HermesAppStartup.start(application)',
+         '        com.hermes.agent.data.agent.IcarusLineage.loadAtStartup(application)\n'
+         '        HermesAppStartup.start(application)')
+    # Replace the already-staged identity prefix, not the unpatched donor text.
+    # Prompt integration is DATA, not permission authority.
+    once(module / "OrchestratorImpl.kt",
+         'IcarusIdentity.ROOT + "\\n\\n" + persona',
+         'IcarusIdentity.ROOT + "\\n\\n" + IcarusLineage.promptPrefix() + "\\n\\n" + persona')
+
     print("SOURCE_OVERLAY_STAGED; tool calls default denied; not a compiled APK")
 
 if __name__ == "__main__":
