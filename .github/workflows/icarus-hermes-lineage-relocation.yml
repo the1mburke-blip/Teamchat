@@ -1,0 +1,142 @@
+name: ICARUS Android staged lineage relocation
+on:
+  push:
+    branches:
+      - feature/icarus-hermes-lineage-relocation-20261010
+
+permissions:
+  contents: write
+
+concurrency:
+  group: icarus-hermes-lineage-relocation-20261010
+  cancel-in-progress: false
+
+jobs:
+  relocate-staged-lineage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Source the actual relocated ICARUS lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_BRANCH="feature/icarus-dsh-tether-rebrand-20261010"
+          SOURCE_PREFIX="drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory"
+          TARGET_DIR="drafts/icarus/2026-10-08-hermes-shell/lineage-source"
+          git fetch --no-tags --depth=1 origin "${SOURCE_BRANCH}"
+          SOURCE_COMMIT="$(git rev-parse FETCH_HEAD)"
+          mkdir -p "${TARGET_DIR}"
+          echo "SOURCE_COMMIT=${SOURCE_COMMIT}"
+          for filename in identity.md inherited.md learned.md current-state.md; do
+            git show "${SOURCE_COMMIT}:${SOURCE_PREFIX}/${filename}" > "${TARGET_DIR}/${filename}"
+            test -s "${TARGET_DIR}/${filename}"
+            cmp "${TARGET_DIR}/${filename}" "icarus/memory/${filename}"
+            echo "CANONICAL_IDENTITY_MATCH ${filename} $(sha256sum "${TARGET_DIR}/${filename}" | cut -d' ' -f1)"
+          done
+          echo "${SOURCE_COMMIT}" > "${TARGET_DIR}/SOURCE_COMMIT.txt"
+          printf '%s\n' "${SOURCE_PREFIX}" > "${TARGET_DIR}/SOURCE_PATH.txt"
+
+      - name: Correct only the already-staged Hermes Android source overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          stage = Path("drafts/icarus/2026-10-08-hermes-shell")
+          overlay = stage / "apply_icarus_overlay.py"
+          text = overlay.read_text(encoding="utf-8")
+
+          def one(old, new):
+              global text
+              assert text.count(old) == 1, f"Expected unique original anchor: {old}"
+              text = text.replace(old, new)
+
+          one("def stage(root, logo):", "def stage(root, logo, lineage_root):")
+          one("    root, logo = Path(root), Path(logo)", "    root, logo, lineage_root = Path(root), Path(logo), Path(lineage_root)")
+          insert_anchor = '    strings = root / "app/src/main/res/values/strings.xml"'
+          copy_code = '''
+    # ICARUS lineage belongs to the app owner, not the model or donor's workspace.
+    # Source is the relocated, SHA-checked four-file snapshot, not AGENTS.md.
+    import hashlib
+    files = ("identity.md", "inherited.md", "learned.md", "current-state.md")
+    if not lineage_root.is_dir():
+        raise RuntimeError("ICARUS lineage source is absent")
+    app_lineage = root / "app/src/main/assets/icarus/memory"
+    for filename in files:
+        source = lineage_root / filename
+        if not source.is_file() or not source.read_bytes().strip():
+            raise RuntimeError("missing ICARUS lineage: " + filename)
+    app_lineage.mkdir(parents=True, exist_ok=True)
+    for filename in files:
+        source_data = (lineage_root / filename).read_bytes()
+        target = app_lineage / filename
+        target.write_bytes(source_data)
+        if hashlib.sha256(target.read_bytes()).digest() != hashlib.sha256(source_data).digest():
+            raise RuntimeError("ICARUS lineage copy verification failed: " + filename)
+'''
+          one(insert_anchor, copy_code + "\n" + insert_anchor)
+          one('        loop = module/"AgentLoopRunner.kt"', '    loop = module/"AgentLoopRunner.kt"')
+          one('    p.add_argument("--approved-logo", required=True)', '    p.add_argument("--approved-logo", required=True)\n    p.add_argument("--lineage-root", required=True)')
+          one('    stage(a.hermes_checkout,a.approved_logo)', '    stage(a.hermes_checkout,a.approved_logo,a.lineage_root)')
+          overlay.write_text(text, encoding="utf-8")
+
+          contract = stage / "STAGING_CONTRACT.md"
+          contract.write_text(contract.read_text(encoding="utf-8") + """
+
+## Relocated canonical lineage input (10 October 2026)
+The staged build now consumes the four canonical files from
+`drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory/` on
+`feature/icarus-dsh-tether-rebrand-20261010`. A deterministic authenticated
+GitHub Actions runner checks byte equality against canonical `icarus/memory/`
+and records the exact source commit and SHA256 values in `lineage-source/`.
+
+Invoke the existing overlay against the **real Hermes Android checkout** with
+`--lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source`
+and the same `--hermes-checkout` / `--approved-logo` arguments as before.
+The overlay copies exactly identity.md, inherited.md, learned.md, current-state.md
+into `app/src/main/assets/icarus/memory/` with an immediate hash readback.
+`AGENTS.md` is DSH workspace guidance and is deliberately not an Android
+authority source. No paid services, credentials, production writes, or alternate
+mobile donor have been introduced. This is SOURCE STAGING, NOT an APK or
+runtime memory-load proof.
+""", encoding="utf-8")
+
+          handoff = stage / "HANDOFF.md"
+          handoff.write_text(handoff.read_text(encoding="utf-8") + """
+
+## 10 October scoped path-correction handoff
+Current branch: `feature/icarus-hermes-lineage-relocation-20261010`.
+Relocated source branch: `feature/icarus-dsh-tether-rebrand-20261010`.
+Four source files now live at
+`drafts/icarus/2026-10-08-hermes-shell/lineage-source/` after exact
+canonical-byte comparison. Existing source overlay now REQUIRES
+`--lineage-root` and stages assets to `app/src/main/assets/icarus/memory/`.
+No APK was built or deployed, and no model has been granted tool authority.
+""", encoding="utf-8")
+          PY
+          python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py
+          python3 drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py --help | grep -F -- '--lineage-root'
+          git diff --check
+          echo 'STAGED_OVERLAY_PYTHON_SYNTAX=PASS'
+          echo 'RELOCATED_FOUR_FILE_CANONICAL_MATCH=PASS'
+
+      - name: Commit only the original staging correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py
+          git add drafts/icarus/2026-10-08-hermes-shell/STAGING_CONTRACT.md
+          git add drafts/icarus/2026-10-08-hermes-shell/HANDOFF.md
+          git add drafts/icarus/2026-10-08-hermes-shell/lineage-source/
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "stage: point existing Hermes Android overlay at relocated ICARUS lineage"
+          git push origin "HEAD:refs/heads/feature/icarus-hermes-lineage-relocation-20261010"
+          echo "COMMITTED_SHA=$(git rev-parse HEAD)"
