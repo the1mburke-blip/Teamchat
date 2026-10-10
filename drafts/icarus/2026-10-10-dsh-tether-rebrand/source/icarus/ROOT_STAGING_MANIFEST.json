@@ -1,0 +1,42 @@
+{
+  "status": "SOURCE_ROOT_STAGED_NOT_RUNTIME_ENFORCED",
+  "owner": "Michael",
+  "executor": "GitHub Actions deterministic repo runner",
+  "source_branch": "feature/icarus-dsh-tether-rebrand-20261010",
+  "staged_source_root": "drafts/icarus/2026-10-10-dsh-tether-rebrand/source",
+  "instructions": {
+    "path": "drafts/icarus/2026-10-10-dsh-tether-rebrand/source/AGENTS.md",
+    "sha256": "36af352afe10761c7507c6c20a5a22474bda8084dc07c2c80b141a356a724caf"
+  },
+  "canonical_memory": [
+    {
+      "path": "drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory/identity.md",
+      "canonical": "icarus/memory/identity.md",
+      "sha256": "b994a77370c0a4f086a7a90a394c891a7b13b7e71e653980e98eadba20fb2dce"
+    },
+    {
+      "path": "drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory/inherited.md",
+      "canonical": "icarus/memory/inherited.md",
+      "sha256": "623ddf31b85920b208754aa6b4383c4af94dee6aa1c91884f380b16bd6a5ceab"
+    },
+    {
+      "path": "drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory/learned.md",
+      "canonical": "icarus/memory/learned.md",
+      "sha256": "34d2586b915571fc51033d343b4d4e48bc194dea61a2941b72d4d916300ad516"
+    },
+    {
+      "path": "drafts/icarus/2026-10-10-dsh-tether-rebrand/source/icarus/memory/current-state.md",
+      "canonical": "icarus/memory/current-state.md",
+      "sha256": "0bebf9d8b07c205ed6709fb5190152341b892bfb1f2bdc873a0d8039e526b427"
+    }
+  ],
+  "active_workspace_runtime_target": "<selected-DSH-workspace>/AGENTS.md",
+  "user_global_runtime_target": "$DSH_HOME/AGENTS.md (defaults to ~/.dsh/AGENTS.md)",
+  "actual_user_hardware_written": false,
+  "actual_dsh_runtime_session_readback": "NOT_RUN",
+  "deterministic_icarus_enforcement": "NOT_IMPLEMENTED_OR_TESTED",
+  "parent_upstream_commit": "a702cae7fcf90b5025bde47d7dbdcbcb3a7e9f1c",
+  "preserved_upstream_licence_sha256": "127959c93d776ff083aacae6d2573c730b85002410fd4a08ca6aa8b556cd8c5a",
+  "integration_note": "DSH Tether source checkout root is NOT necessarily the DSH workspace root on a running device.",
+  "next_gate": "Fresh DSH session must independently confirm it loaded AGENTS.md in real selected workspace; separately deny/bypass-test real deterministic policy gateway."
+}
