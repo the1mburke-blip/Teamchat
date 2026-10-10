@@ -98,7 +98,13 @@ jobs:
           executor=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tool/ToolCallExecutor.kt').read_text()
           assert '"com.hermes.agent.tinker.IcarusApplicationLike"' in shell
           assert 'IcarusAuthority.bootstrap(app)' in owner
+          assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('setComponentManager(')
+          assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('HermesTinker.install(this)')
           assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('HermesAppStartup.start(application)')
+          donorStartup=(d/'app/src/main/kotlin/com/hermes/agent/HermesAppStartup.kt').read_text()
+          assert 'IcarusAuthority.donorAutonomyPermitted()' in donorStartup
+          assert donorStartup.index('IcarusAuthority.donorAutonomyPermitted()') < donorStartup.index('proactiveScheduler.get().syncFromConsent()')
+          assert 'fun donorAutonomyPermitted(): Boolean = false' in control
           assert 'IcarusAuthority.requireReady()' in owner
           assert 'IcarusAuthority.deniedReason(call.name)' in executor
           assert executor.index('IcarusAuthority.deniedReason(call.name)') < executor.index('registry.byName(call.name)')
