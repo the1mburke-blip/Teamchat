@@ -16,6 +16,7 @@ jobs:
           repository: l3ad3r1/Hermes-Agent-Android
           ref: a08497b979d6241387bc15cde7c57279d0b2cc10
           path: donor
+          submodules: recursive
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
@@ -38,6 +39,9 @@ jobs:
           pip3 install --quiet Pillow
           mkdir -p startup-evidence
           test "$(git -C donor rev-parse HEAD)" = a08497b979d6241387bc15cde7c57279d0b2cc10
+          test -s donor/app/src/main/cpp/llama.cpp/CMakeLists.txt
+          git -C donor submodule status --recursive
+          echo "NATIVE_LLAMA_CPP_SUBMODULE_PRESENT=PASS" >> startup-evidence/STATIC_INSPECTION_EARLY.txt
           test "$(git -C donor/agent-core rev-parse HEAD)" = 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
           test "$(tr -d '\r\n' < donor/agent-core.ref)" = 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
           python3 - <<'PY'
@@ -105,7 +109,7 @@ jobs:
             unzip -p "$APK" "assets/icarus/memory/$name" | cmp - "drafts/icarus/2026-10-08-hermes-shell/lineage-source/$name"
             echo "APK_ASSET_EXACT $name" | tee -a startup-evidence/BUILD_INSPECTION.txt
           done
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction'" | tee -a startup-evidence/BUILD_INSPECTION.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction.debug'" | tee -a startup-evidence/BUILD_INSPECTION.txt
       - name: Save logs and diagnostic only
         if: always()
         uses: actions/upload-artifact@v4
