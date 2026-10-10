@@ -53,9 +53,9 @@ def install(donor: Path, lineage: Path):
     migrated = original.replace("HermesApplicationLike", "IcarusApplicationLike")
     migrated = migrated.replace("HermesTinkerApplication", "IcarusTinkerApplication")
     migrated = migrated.replace(
-        "        HermesTinker.install(this)",
-        "        HermesTinker.install(this)\n"
-        "        // ICARUS is bootstrapped before content providers and Hilt consumers run.\n"
+        "        val app = application",
+        "        val app = application\n"
+        "        // Bootstrap ICARUS BEFORE installing Hermes tooling or exposing the Hilt manager.\n"
         "        if (!ShareTinkerInternals.isInPatchProcess(app)) {\n"
         "            com.hermes.agent.data.tool.IcarusAuthority.bootstrap(app)\n"
         "        }")
@@ -133,6 +133,9 @@ __EXPECTED__
         check(snapshot?.size == 4) { "ICARUS CONTROL NOT BOOTSTRAPPED" }
     }
 
+    /** Hermes may not restore autonomous plugin, cron, backup or background jobs. */
+    fun donorAutonomyPermitted(): Boolean = false
+
     /** Verifiable memory owned and read by ICARUS, separate from Hermes Room. */
     fun promptContext(): String {
         val verified = checkNotNull(snapshot) { "ICARUS lineage unavailable" }
@@ -179,6 +182,21 @@ __EXPECTED__
          '        IcarusAuthority.deniedReason(call.name)?.let { return ToolResult.error(it) }\n'
          '        val tool = registry.byName(call.name)')
 
+    # Do not let the donor's own bootstrap reschedule cron, plugins or proactive
+    # actions before ICARUS has a separately reviewed owner-approved route.
+    # Keep only platform-required WorkManager initialization, logging, memory
+    # pressure handling and settings warm-up for interactive chat/inference.
+    startup_worker = app / "src/main/kotlin/com/hermes/agent/HermesAppStartup.kt"
+    once(startup_worker,
+         '        // Secrets restored from another install are sealed with that install\'s',
+         '        // ICARUS owns autonomous work: no Hermes startup jobs without owner permits.\n'
+         '        if (!com.hermes.agent.data.tool.IcarusAuthority.donorAutonomyPermitted()) {\n'
+         '            memoryPressureMonitor.start()\n'
+         '            warmUpSettingsStore()\n'
+         '            return\n'
+         '        }\n'
+         '        // Secrets restored from another install are sealed with that install\'s')
+
     module = app / "src/main/kotlin/com/hermes/agent/data/agent"
     orchestrator = module / "OrchestratorImpl.kt"
     once(orchestrator,
@@ -212,6 +230,7 @@ __EXPECTED__
     assert "IcarusAuthority.bootstrap(app)" in out_delegate.read_text()
     assert "IcarusAuthority.deniedReason(call.name)" in executor.read_text()
     assert "IcarusAuthority.memoryReport()" in orchestrator.read_text()
+    assert "IcarusAuthority.donorAutonomyPermitted()" in startup_worker.read_text()
     print("ICARUS_SUPERVISOR_SOURCE_INSTALLED; memory SHA pinned; central tools fail closed")
 
 
