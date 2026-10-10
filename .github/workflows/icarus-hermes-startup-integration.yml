@@ -1,0 +1,118 @@
+name: ICARUS existing Hermes Android startup integration inspect
+on:
+  push:
+    branches: [feature/icarus-hermes-android-qwen-review-20261010]
+    paths: [.github/workflows/icarus-hermes-startup-integration.yml]
+permissions: {contents: read}
+jobs:
+  inspect-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: l3ad3r1/Hermes-Agent-Android
+          ref: a08497b979d6241387bc15cde7c57279d0b2cc10
+          path: donor
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: l3ad3r1/agent-core
+          ref: 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
+          path: donor/agent-core
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Android SDK 36
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+      - name: Run the unchanged staged overlay on the real Hermes donor
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip3 install --quiet Pillow
+          mkdir -p startup-evidence
+          test "$(git -C donor rev-parse HEAD)" = a08497b979d6241387bc15cde7c57279d0b2cc10
+          test "$(git -C donor/agent-core rev-parse HEAD)" = 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
+          test "$(tr -d '\r\n' < donor/agent-core.ref)" = 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import hashlib
+          p=Path('drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py')
+          s=p.read_text()
+          approved='b55af87a4934fcef76a7a16003dd7406b9558a120a97e918485494f151d86b89'
+          assert s.count(approved)==1
+          assert 'IcarusLineage.loadAtStartup(application)' in s and 'IcarusLineage.promptPrefix()' in s
+          icon=Path('/tmp/not-approved-build-diagnostic.png')
+          Image.new('RGB',(512,512),(19,28,43)).save(icon)
+          sha=hashlib.sha256(icon.read_bytes()).hexdigest()
+          # Diagnostic ONLY, never alter committed production-patch approved hash.
+          Path('/tmp/icarus-compile-inspection.py').write_text(s.replace(approved,sha))
+          Path('startup-evidence/IDENTITY_WARNING.txt').write_text(
+            'DIAGNOSTIC BUILD: NOT APPROVED LOGO; NOT FOR INSTALLATION\n'
+            'THE REAL APPROVED LOGO IS STILL REQUIRED AND VERIFIED IN CHATGPT LIBRARY\n'
+            'ORIGINAL_ICON_SHA256='+approved+'\nDIAGNOSTIC_ICON_SHA256='+sha+'\n')
+          PY
+          python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py
+          python3 /tmp/icarus-compile-inspection.py --hermes-checkout donor \
+            --approved-logo /tmp/not-approved-build-diagnostic.png \
+            --lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          d=Path('donor'); m=d/'app/src/main/kotlin/com/hermes/agent/data/agent'
+          k=(m/'IcarusLineage.kt').read_text()
+          start=(d/'app/src/main/kotlin/com/hermes/agent/tinker/HermesApplicationLike.kt').read_text()
+          orchestrator=(m/'OrchestratorImpl.kt').read_text()
+          assert start.count('IcarusLineage.loadAtStartup(application)')==1
+          assert start.index('IcarusLineage.loadAtStartup(application)')<start.index('HermesAppStartup.start(application)')
+          assert orchestrator.count('IcarusLineage.promptPrefix()')==1
+          for name in ('identity.md','inherited.md','learned.md','current-state.md'):
+            original=Path('drafts/icarus/2026-10-08-hermes-shell/lineage-source')/name
+            asset=d/'app/src/main/assets/icarus/memory'/name
+            assert original.read_bytes()==asset.read_bytes()
+            assert hashlib.sha256(asset.read_bytes()).hexdigest() in k
+            print('VERIFIED_SOURCE_MEMORY',name)
+          assert 'applicationId = "com.icarus.preproduction"' in (d/'app/build.gradle.kts').read_text()
+          assert 'ICARUS_PERMIT_REQUIRED' in (m/'AgentLoopRunner.kt').read_text()
+          Path('startup-evidence/STATIC_INSPECTION.txt').write_text(
+            'HERMES_DONOR=PINNED\nENGINE=PINNED\nMEMORY_FOUR_SHA256=PASS\n'
+            'APP_ONCREATE_BEFORE_HERMES_STARTUP=PASS_STATIC\n'
+            'MODEL_READS_PINNED_MEMORY=PASS_STATIC\n'
+            'PERMISSION_GATE=PARTIAL_DENY_NOT_FULL_AUTHORITY\n')
+          PY
+      - name: Android debug compile
+        working-directory: donor
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :app:assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk | tee ../startup-evidence/DEBUG_DIAGNOSTIC_SHA256.txt
+      - name: Check package and memory bytes inside APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=donor/app/build/outputs/apk/debug/app-debug.apk
+          for name in identity.md inherited.md learned.md current-state.md; do
+            unzip -p "$APK" "assets/icarus/memory/$name" | cmp - "drafts/icarus/2026-10-08-hermes-shell/lineage-source/$name"
+            echo "APK_ASSET_EXACT $name" | tee -a startup-evidence/BUILD_INSPECTION.txt
+          done
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction'" | tee -a startup-evidence/BUILD_INSPECTION.txt
+      - name: Save logs and diagnostic only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-Android-startup-INSPECTION-ONLY-NOT-APPROVED-ART
+          path: |
+            startup-evidence/
+            donor/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+          retention-days: 7
