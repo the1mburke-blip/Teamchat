@@ -106,7 +106,7 @@ __EXPECTED__
     )
     private val readOnlyTools = setOf(
         "get_current_datetime", "get_current_time", "get_weather", "weather",
-        "web_search", "web_fetch", "memory_search", "search_memory", "memory",
+        "web_search", "web_fetch", "memory_search", "search_memory",
         "search_conversations", "search_sessions", "list_bots"
     )
     @Volatile private var snapshot: Map<String, String>? = null
