@@ -42,8 +42,8 @@ def install(donor: Path, lineage: Path):
     if "com.hermes.agent.data.agent.IcarusLineage.loadAtStartup(application)" not in original:
         raise RuntimeError("Missing staged ICARUS lineage startup anchor")
     once(delegate,
-         "        HermesTinker.install(this)",
-         "        HermesTinker.install(this)\n"
+         "        val app = application",
+         "        val app = application\n"
          "        // Bootstrap ICARUS before the Hermes worker's onCreate executes.\n"
          "        if (!ShareTinkerInternals.isInPatchProcess(app)) {\n"
          "            com.hermes.agent.data.tool.IcarusAuthority.bootstrap(app)\n"
