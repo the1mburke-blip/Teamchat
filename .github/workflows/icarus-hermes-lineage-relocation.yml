@@ -70,14 +70,14 @@ jobs:
               for filename in files:
                   source = lineage_root / filename
                   if not source.is_file() or not source.read_bytes().strip():
-                  raise RuntimeError("missing ICARUS lineage: " + filename)
+                      raise RuntimeError("missing ICARUS lineage: " + filename)
               app_lineage.mkdir(parents=True, exist_ok=True)
               for filename in files:
                   source_data = (lineage_root / filename).read_bytes()
                   target = app_lineage / filename
                   target.write_bytes(source_data)
                   if hashlib.sha256(target.read_bytes()).digest() != hashlib.sha256(source_data).digest():
-                  raise RuntimeError("ICARUS lineage copy verification failed: " + filename)
+                      raise RuntimeError("ICARUS lineage copy verification failed: " + filename)
           '''
           one(insert_anchor, copy_code + "\n" + insert_anchor)
           one('        loop = module/"AgentLoopRunner.kt"', '    loop = module/"AgentLoopRunner.kt"')
