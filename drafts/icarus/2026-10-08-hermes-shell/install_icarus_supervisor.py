@@ -34,7 +34,7 @@ def install(donor: Path, lineage: Path):
     # uses a fresh debug signing key, so it cannot update the owner's existing
     # diagnostic package without wiping its app settings/keys. New package ID
     # preserves that install and its private data without requiring uninstall.
-    isolated_id = "com.icarus.preproduction.control"
+    isolated_id = "com.icarus.preproduction.ownertrial"
     once(app / "build.gradle.kts",
          'applicationId = "com.icarus.preproduction"',
          'applicationId = "' + isolated_id + '"')
