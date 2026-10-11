@@ -373,6 +373,38 @@ __EXPECTED__
 
     loop = module / "AgentLoopRunner.kt"
     once(loop,
+         'import com.hermes.agent.data.tool.ToolCallExecutor\n',
+         'import com.hermes.agent.data.tool.ToolCallExecutor\n'
+         'import com.hermes.agent.data.tool.IcarusAuthority\n')
+    once(loop,
+         '                val mustConfirm = decision is ToolExecutionDecision.Confirm\n',
+         '                val mustConfirm = true // native owner approval required for every tool action\n')
+    once(loop,
+         '                        decision !is ToolExecutionDecision.Deny\n',
+         '                        decision !is ToolExecutionDecision.Deny && origin == ExecutionOrigin.INTERACTIVE\n')
+    once(loop,
+         '                    // Headless: there was no gate to ask, so a confirmation-required\n'
+         '                    // tool still cannot run. Unchanged from before this fix.\n'
+         '                    mustConfirm && confirmed != true -> ToolResult.error("user declined")',
+         '                    // ICARUS does not let background workers mint owner permits.\n'
+         '                    origin != ExecutionOrigin.INTERACTIVE ->\n'
+         '                        ToolResult.error("ICARUS_PERMIT_REQUIRED: interactive owner approval required")\n'
+         '                    mustConfirm && confirmed != true -> ToolResult.error("ICARUS_OWNER_DECLINED")')
+    once(loop,
+         '                    else -> toolCallExecutor.execute(call, confirmationGate = null).also {\n',
+         '                    else -> {\n'
+         '                        IcarusAuthority.approveOwnerConfirmed(call.name, call.arguments)\n'
+         '                        if (call.name == ToolSearchEngine.TOOL_CALL_NAME && gateName != call.name) {\n'
+         '                            IcarusAuthority.approveOwnerConfirmed(gateName, gateArgs)\n'
+         '                        }\n'
+         '                        toolCallExecutor.execute(call, confirmationGate = null).also {\n')
+    once(loop,
+         '                        if (call.id.startsWith(RECOVERED_CALL_PREFIX)) recoveredResults[signature] = it\n'
+         '                    }\n',
+         '                        if (call.id.startsWith(RECOVERED_CALL_PREFIX)) recoveredResults[signature] = it\n'
+         '                        }\n'
+         '                    }\n')
+    once(loop,
          ' !IcarusExecutionGate.isAuthorized(gateName) -> '
          'ToolResult.error("ICARUS_PERMIT_REQUIRED: action denied")\n'
          '                    ', '')
