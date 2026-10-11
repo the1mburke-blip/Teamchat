@@ -1,4 +1,4 @@
-name: ICARUS Android owner-permit and approved-logo integration
+name: ICARUS owner permits + global chats + approved gold-winged app icon
 on:
   push:
     branches: [feature/icarus-hermes-android-qwen-review-20261010]
