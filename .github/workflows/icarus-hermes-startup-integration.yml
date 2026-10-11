@@ -106,11 +106,22 @@ jobs:
           assert donorStartup.index('IcarusAuthority.donorAutonomyPermitted()') < donorStartup.index('proactiveScheduler.get().syncFromConsent()')
           assert 'fun donorAutonomyPermitted(): Boolean = false' in control
           assert 'IcarusAuthority.requireReady()' in owner
-          assert 'IcarusAuthority.deniedReason(call.name)' in executor
-          assert executor.index('IcarusAuthority.deniedReason(call.name)') < executor.index('registry.byName(call.name)')
-          assert 'if (toolName !in readOnlyTools)' in control
-          assert '"memory"' not in control.split('private val readOnlyTools = setOf(')[1].split(')')[0]
+          assert 'IcarusAuthority.deniedReason(call.name, call.arguments)' in executor
+          assert executor.index('IcarusAuthority.deniedReason(call.name, call.arguments)') < executor.index('registry.byName(call.name)')
+          assert 'val available = permits[k] ?: 0' in control
+          assert 'approveOwnerConfirmed(name: String, args: Map<String, JsonElement>)' in control
+          assert 'ICARUS_PERMIT_REQUIRED' in control
           assert 'IcarusAuthority.memoryReport()' in orchestrator
+          assert 'awaitExplicitOwnerConfirmation(deterministic.call)' in orchestrator
+          assert 'approveOwnerConfirmed(' in orchestrator
+          donorloop=(d/'app/src/main/kotlin/com/hermes/agent/data/agent/AgentLoopRunner.kt').read_text()
+          assert 'IcarusAuthority.approveOwnerConfirmed(call.name, call.arguments)' in donorloop
+          assert 'val mustConfirm = true' in donorloop
+          bridge=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tools/ToolCallTool.kt').read_text()
+          assert 'IcarusAuthority.deniedReason(toolName, toolArgs)' in bridge
+          nativeconfirm=(d/'agent-core/core/domain/src/main/kotlin/com/hermes/agent/domain/tool/ToolConfirmationService.kt').read_text()
+          assert 'suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)' in nativeconfirm
+          assert 'awaitConfirmation(call)' not in nativeconfirm.split('suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)')[1].split('suspend fun awaitConfirmation(call: ToolCall)')[0]
           assert 'IcarusAuthority.promptContext()' in orchestrator
           shortcuts=(d/'app/src/main/res/xml/shortcuts.xml').read_text()
           assert shortcuts.count('android:targetPackage="com.icarus.preproduction.control"') == 4
@@ -119,7 +130,7 @@ jobs:
             'ANDROID_APPLICATION_ENTRYPOINT=ICARUS_SHELL_STATIC\n'
             'ICARUS_BOOT_BEFORE_HERMES=PASS_STATIC\n'
             'ICARUS_MEMORY_HASH_AND_DIRECT_RECALL=PASS_STATIC\n'
-            'CENTRAL_TOOL_EXECUTOR_GATE=PARTIAL_DEFAULT_DENY\n'
+            'CENTRAL_TOOL_EXECUTOR_GATE=OWNER_CONFIRMATION_REQUIRED_STATIC\n'
             'BYPASS_AUDIT_AND_ON_DEVICE_VERIFICATION=PENDING\n')
           PY
       - name: Android debug compile
