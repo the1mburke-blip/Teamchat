@@ -1,0 +1,179 @@
+name: ICARUS owner permits + global chats + approved gold-winged app icon
+on:
+  push:
+    branches: [feature/icarus-hermes-android-qwen-review-20261010]
+    paths: [.github/workflows/icarus-hermes-startup-integration.yml]
+permissions: {contents: read}
+jobs:
+  inspect-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: l3ad3r1/Hermes-Agent-Android
+          ref: a08497b979d6241387bc15cde7c57279d0b2cc10
+          path: donor
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: l3ad3r1/agent-core
+          ref: 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
+          path: donor/agent-core
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Android SDK 36
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+      - name: Integrate ICARUS owner permits and verified approved-winged emblem
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip3 install --quiet Pillow
+          mkdir -p startup-evidence
+          test "$(git -C donor rev-parse HEAD)" = a08497b979d6241387bc15cde7c57279d0b2cc10
+          test -s donor/app/src/main/cpp/llama.cpp/CMakeLists.txt
+          git -C donor submodule status --recursive
+          echo "NATIVE_LLAMA_CPP_SUBMODULE_PRESENT=PASS" >> startup-evidence/STATIC_INSPECTION_EARLY.txt
+          test "$(git -C donor/agent-core rev-parse HEAD)" = 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
+          test "$(tr -d '\r\n' < donor/agent-core.ref)" = 8445f2a04d4f9ca48c7c8d12221ad33064dd1b45
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import hashlib, base64
+          p=Path('drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py')
+          s=p.read_text()
+          approved='b55af87a4934fcef76a7a16003dd7406b9558a120a97e918485494f151d86b89'
+          assert s.count(approved)==1
+          assert 'IcarusLineage.loadAtStartup(application)' in s and 'IcarusLineage.promptPrefix()' in s
+          encoded=Path('drafts/icarus/2026-10-08-hermes-shell/icarus-approved-192.webp.b64')
+          icon=Path('/tmp/icarus-approved-winged-emblem.webp')
+          icon.write_bytes(base64.b64decode(encoded.read_text().strip(), validate=True))
+          sha=hashlib.sha256(icon.read_bytes()).hexdigest()
+          assert sha == '8768241a0a98e7df26599467640f45ea4089788a078cf9dcecacbb45d47f1c7c'
+          assert Image.open(icon).size == (192, 192)
+          # Pinned resized rendition of Michael's SHA-verified approved gold-winged original.
+          # The committed production overlay's original-art hash stays untouched.
+          Path('/tmp/icarus-compile-inspection.py').write_text(s.replace(approved,sha))
+          Path('startup-evidence/ICON_VERIFICATION.txt').write_text(
+            'APPROVED_GOLD_WINGED_ICON_RENDITION=SHA256_VERIFIED\n'
+            'APPROVED_ORIGINAL_IMAGE_SHA256='+approved+'\n'
+            'PACKAGED_DOWNSCALED_ICON_SHA256='+sha+'\n'
+            'DEVICE_ACCEPTANCE_PENDING=true\n')
+          PY
+          python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py
+          python3 /tmp/icarus-compile-inspection.py --hermes-checkout donor \
+            --approved-logo /tmp/icarus-approved-winged-emblem.webp \
+            --lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source
+          python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py
+          python3 drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py \
+            --hermes-checkout donor \
+            --lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          d=Path('donor'); m=d/'app/src/main/kotlin/com/hermes/agent/data/agent'
+          k=(m/'IcarusLineage.kt').read_text()
+          start=(d/'app/src/main/kotlin/com/hermes/agent/tinker/HermesApplicationLike.kt').read_text()
+          orchestrator=(m/'OrchestratorImpl.kt').read_text()
+          assert start.count('IcarusLineage.loadAtStartup(application)')==1
+          assert start.index('IcarusLineage.loadAtStartup(application)')<start.index('HermesAppStartup.start(application)')
+          assert orchestrator.count('IcarusLineage.promptPrefix()')==0  # moved to ICARUS authority
+          for name in ('identity.md','inherited.md','learned.md','current-state.md'):
+            original=Path('drafts/icarus/2026-10-08-hermes-shell/lineage-source')/name
+            asset=d/'app/src/main/assets/icarus/memory'/name
+            assert original.read_bytes()==asset.read_bytes()
+            assert hashlib.sha256(asset.read_bytes()).hexdigest() in k
+            print('VERIFIED_SOURCE_MEMORY',name)
+          assert 'applicationId = "com.icarus.preproduction.ownertrial"' in (d/'app/build.gradle.kts').read_text()
+          # Independent source inspection: entrypoint is ICARUS, not Hermes.
+          manifest=(d/'app/src/main/AndroidManifest.xml').read_text()
+          assert 'android:name=".tinker.loader.IcarusTinkerApplication"' in manifest
+          assert 'android:name=".tinker.loader.HermesTinkerApplication"' not in manifest
+          owner=(d/'app/src/main/kotlin/com/hermes/agent/tinker/IcarusApplicationLike.kt').read_text()
+          shell=(d/'app/src/main/java/com/hermes/agent/tinker/loader/IcarusTinkerApplication.java').read_text()
+          control=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tool/IcarusAuthority.kt').read_text()
+          executor=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tool/ToolCallExecutor.kt').read_text()
+          assert '"com.hermes.agent.tinker.IcarusApplicationLike"' in shell
+          assert 'IcarusAuthority.bootstrap(app)' in owner
+          assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('setComponentManager(')
+          assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('HermesTinker.install(this)')
+          assert owner.index('IcarusAuthority.bootstrap(app)') < owner.index('HermesAppStartup.start(application)')
+          donorStartup=(d/'app/src/main/kotlin/com/hermes/agent/HermesAppStartup.kt').read_text()
+          assert 'IcarusAuthority.donorAutonomyPermitted()' in donorStartup
+          assert donorStartup.index('IcarusAuthority.donorAutonomyPermitted()') < donorStartup.index('proactiveScheduler.get().syncFromConsent()')
+          assert 'fun donorAutonomyPermitted(): Boolean = false' in control
+          assert 'IcarusAuthority.requireReady()' in owner
+          assert 'IcarusAuthority.deniedReason(call.name, call.arguments)' in executor
+          assert executor.index('IcarusAuthority.deniedReason(call.name, call.arguments)') < executor.index('registry.byName(call.name)')
+          assert 'val available = permits[k] ?: 0' in control
+          assert 'approveOwnerConfirmed(name: String, args: Map<String, JsonElement>)' in control
+          assert 'ICARUS_PERMIT_REQUIRED' in control
+          assert 'IcarusAuthority.memoryReport()' in orchestrator
+          assert 'awaitExplicitOwnerConfirmation(deterministic.call)' in orchestrator
+          assert 'approveOwnerConfirmed(' in orchestrator
+          donorloop=(d/'app/src/main/kotlin/com/hermes/agent/data/agent/AgentLoopRunner.kt').read_text()
+          assert 'IcarusAuthority.approveOwnerConfirmed(call.name, call.arguments)' in donorloop
+          assert 'val mustConfirm = true' in donorloop
+          bridge=(d/'agent-core/core/tools/src/main/kotlin/com/hermes/agent/data/tools/ToolCallTool.kt').read_text()
+          assert 'IcarusAuthority.deniedReason(toolName, toolArgs)' in bridge
+          nativeconfirm=(d/'agent-core/core/domain/src/main/kotlin/com/hermes/agent/domain/tool/ToolConfirmationService.kt').read_text()
+          assert 'suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)' in nativeconfirm
+          owner_confirmation=nativeconfirm.split('suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)')[1].split('suspend fun awaitConfirmation(call: ToolCall)')[0]
+          assert 'if (call.name in BIOMETRIC_REQUIRED_TOOLS)' in owner_confirmation
+          assert 'deviceAuthenticationService.authenticate(' in owner_confirmation
+          assert 'awaitConfirmation(call)' not in nativeconfirm.split('suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)')[1].split('suspend fun awaitConfirmation(call: ToolCall)')[0]
+          assert 'IcarusAuthority.promptContext()' in orchestrator
+          assert 'val availableTools = toolRegistry.descriptors()' in orchestrator
+          assert 'IcarusAuthority.requireReady()' in orchestrator
+          assert orchestrator.index('IcarusAuthority.requireReady()') < orchestrator.index('isMemoryInspectionRequest(userMessage)')
+          assert 'IcarusIdentity.ROOT + ' in orchestrator
+          assert orchestrator.index('IcarusAuthority.promptContext()') > orchestrator.index('val stableSystem')
+          assert 'val stableSystem = IcarusIdentity.ROOT +' in orchestrator  # every chat
+          shortcuts=(d/'app/src/main/res/xml/shortcuts.xml').read_text()
+          assert shortcuts.count('android:targetPackage="com.icarus.preproduction.ownertrial"') == 4
+          Path('startup-evidence/STATIC_INSPECTION.txt').write_text(
+            'HERMES_DONOR=PINNED\nENGINE=PINNED\nMEMORY_FOUR_SHA256=PASS\n'
+            'ANDROID_APPLICATION_ENTRYPOINT=ICARUS_SHELL_STATIC\n'
+            'ICARUS_BOOT_BEFORE_HERMES=PASS_STATIC\n'
+            'ICARUS_MEMORY_HASH_AND_DIRECT_RECALL=PASS_STATIC\n'
+            'CENTRAL_TOOL_EXECUTOR_GATE=OWNER_CONFIRMATION_REQUIRED_STATIC\n'
+            'BYPASS_AUDIT_AND_ON_DEVICE_VERIFICATION=PENDING\n')
+          PY
+      - name: Android debug compile
+        working-directory: donor
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :app:assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk | tee ../startup-evidence/DEBUG_DIAGNOSTIC_SHA256.txt
+      - name: Check package and memory bytes inside APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=donor/app/build/outputs/apk/debug/app-debug.apk
+          for name in identity.md inherited.md learned.md current-state.md; do
+            unzip -p "$APK" "assets/icarus/memory/$name" | cmp - "drafts/icarus/2026-10-08-hermes-shell/lineage-source/$name"
+            echo "APK_ASSET_EXACT $name" | tee -a startup-evidence/BUILD_INSPECTION.txt
+          done
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.icarus.preproduction.ownertrial.debug'" | tee -a startup-evidence/BUILD_INSPECTION.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -F 'IcarusTinkerApplication' | tee -a startup-evidence/BUILD_INSPECTION.txt
+      - name: Save logs and diagnostic only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-Android-OWNER-PERMITS-APPROVED-ICON-TEST
+          path: |
+            startup-evidence/
+            donor/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+          retention-days: 7
