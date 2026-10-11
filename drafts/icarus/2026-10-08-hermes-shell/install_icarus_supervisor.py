@@ -333,6 +333,29 @@ __EXPECTED__
          '            return@channelFlow\n'
          '        }\n')
 
+    # Every interactive command is approved by Michael, not by Hermes's
+    # default-allow policy or a model's text response.
+    once(orchestrator,
+         '                val mustConfirm = decision is ToolExecutionDecision.Confirm\n',
+         '                val mustConfirm = true // ICARUS requires owner approval for every action\n')
+    once(orchestrator,
+         '                    mustConfirm && !toolConfirmationService.awaitConfirmation(deterministic.call) ->\n'
+         '                        ToolResult.error("Action cancelled")\n'
+         '                    else -> toolCallExecutor.execute(deterministic.call, confirmationGate = null)',
+         '                    origin != ExecutionOrigin.INTERACTIVE ->\n'
+         '                        ToolResult.error("ICARUS_PERMIT_REQUIRED: interactive owner approval required")\n'
+         '                    !toolConfirmationService.awaitExplicitOwnerConfirmation(deterministic.call) ->\n'
+         '                        ToolResult.error("ICARUS_OWNER_DECLINED: action not approved")\n'
+         '                    else -> {\n'
+         '                        com.hermes.agent.data.tool.IcarusAuthority.approveOwnerConfirmed(\n'
+         '                            deterministic.call.name, deterministic.call.arguments)\n'
+         '                        toolCallExecutor.execute(deterministic.call, confirmationGate = null)\n'
+         '                    }')
+    # The LLM callback is also required to use explicit native confirmation.
+    once(orchestrator,
+         'if (requiresConfirmation) toolConfirmationService.awaitConfirmation(call) else true',
+         'if (requiresConfirmation) toolConfirmationService.awaitExplicitOwnerConfirmation(call) else false')
+
     # Hermes silently writes memory through ConversationLearner after a reply.
     # Do not let this background path bypass ICARUS's no-write policy.
     once(orchestrator,
