@@ -123,6 +123,7 @@ jobs:
           assert 'suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)' in nativeconfirm
           assert 'awaitConfirmation(call)' not in nativeconfirm.split('suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)')[1].split('suspend fun awaitConfirmation(call: ToolCall)')[0]
           assert 'IcarusAuthority.promptContext()' in orchestrator
+          assert 'val stableSystem = IcarusIdentity.ROOT +' in orchestrator  # every chat
           shortcuts=(d/'app/src/main/res/xml/shortcuts.xml').read_text()
           assert shortcuts.count('android:targetPackage="com.icarus.preproduction.control"') == 4
           Path('startup-evidence/STATIC_INSPECTION.txt').write_text(
