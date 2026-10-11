@@ -357,14 +357,14 @@ __EXPECTED__
     # tool catalogue must not hide available capabilities from ICARUS.
     # Every execution remains subject to native owner confirmation.
     once(orchestrator,
-         '            val availableTools = when {\\n'
-         '                // A persona chat is just a chat: offering the full catalogue to a small\\n'
-         '                // on-device model made it improvise calls to unrelated tools (desktop_bots,\\n'
-         '                // kanban) instead of answering. The Chief of Bots gets exactly one tool.\\n'
-         '                localBotStore.isChiefOfBots(conversationId) ->\\n'
-         '                    listOfNotNull(toolRegistry.byName("manage_bots")?.descriptor)\\n'
-         '                localBotStore.isLocalBot(conversationId) -> emptyList()\\n'
-         '                else -> agent.availableTools(toolRegistry)\\n'
+         '            val availableTools = when {\n'
+         '                // A persona chat is just a chat: offering the full catalogue to a small\n'
+         '                // on-device model made it improvise calls to unrelated tools (desktop_bots,\n'
+         '                // kanban) instead of answering. The Chief of Bots gets exactly one tool.\n'
+         '                localBotStore.isChiefOfBots(conversationId) ->\n'
+         '                    listOfNotNull(toolRegistry.byName("manage_bots")?.descriptor)\n'
+         '                localBotStore.isLocalBot(conversationId) -> emptyList()\n'
+         '                else -> agent.availableTools(toolRegistry)\n'
          '            }',
          '            val availableTools = toolRegistry.descriptors() // ICARUS: all chats, all registered capabilities')
 
