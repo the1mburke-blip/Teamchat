@@ -353,6 +353,21 @@ __EXPECTED__
          '                            deterministic.call.name, deterministic.call.arguments)\n'
          '                        toolCallExecutor.execute(deterministic.call, confirmationGate = null)\n'
          '                    }')
+    # ICARUS is the global chat controller. Hermes's role/persona-specific
+    # tool catalogue must not hide available capabilities from ICARUS.
+    # Every execution remains subject to native owner confirmation.
+    once(orchestrator,
+         '            val availableTools = when {\\n'
+         '                // A persona chat is just a chat: offering the full catalogue to a small\\n'
+         '                // on-device model made it improvise calls to unrelated tools (desktop_bots,\\n'
+         '                // kanban) instead of answering. The Chief of Bots gets exactly one tool.\\n'
+         '                localBotStore.isChiefOfBots(conversationId) ->\\n'
+         '                    listOfNotNull(toolRegistry.byName("manage_bots")?.descriptor)\\n'
+         '                localBotStore.isLocalBot(conversationId) -> emptyList()\\n'
+         '                else -> agent.availableTools(toolRegistry)\\n'
+         '            }',
+         '            val availableTools = toolRegistry.descriptors() // ICARUS: all chats, all registered capabilities')
+
     # The LLM callback is also required to use explicit native confirmation.
     once(orchestrator,
          'if (requiresConfirmation) toolConfirmationService.awaitConfirmation(call) else true',
