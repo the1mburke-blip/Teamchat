@@ -215,6 +215,13 @@ __EXPECTED__
     once(confirmation,
          '    suspend fun awaitConfirmation(call: ToolCall): Boolean = requestMutex.withLock {',
          '''    suspend fun awaitExplicitOwnerConfirmation(call: ToolCall): Boolean = requestMutex.withLock {
+        // Preserve native strong owner authentication for privileged shell actions.
+        if (call.name in BIOMETRIC_REQUIRED_TOOLS) {
+            return@withLock deviceAuthenticationService.authenticate(
+                title = "Approve ${call.name.replace('_', ' ')}",
+                reason = "Confirm with your fingerprint or phone passcode",
+            )
+        }
         val deferred = CompletableDeferred<Boolean>()
         pendingDeferred = deferred
         val request = PendingConfirmation(UUID.randomUUID().toString(), call)
