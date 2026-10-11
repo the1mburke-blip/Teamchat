@@ -1,4 +1,4 @@
-name: ICARUS existing Hermes Android startup integration inspect
+name: ICARUS Android owner-permit and approved-logo integration
 on:
   push:
     branches: [feature/icarus-hermes-android-qwen-review-20261010]
@@ -32,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-      - name: Run the unchanged staged overlay on the real Hermes donor
+      - name: Integrate ICARUS owner permits and verified approved-winged emblem
         shell: bash
         run: |
           set -euo pipefail
@@ -47,25 +47,30 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           from PIL import Image
-          import hashlib
+          import hashlib, base64
           p=Path('drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py')
           s=p.read_text()
           approved='b55af87a4934fcef76a7a16003dd7406b9558a120a97e918485494f151d86b89'
           assert s.count(approved)==1
           assert 'IcarusLineage.loadAtStartup(application)' in s and 'IcarusLineage.promptPrefix()' in s
-          icon=Path('/tmp/not-approved-build-diagnostic.png')
-          Image.new('RGB',(512,512),(19,28,43)).save(icon)
+          encoded=Path('drafts/icarus/2026-10-08-hermes-shell/assets/approved-winged-icarus-96.png.b64')
+          icon=Path('/tmp/icarus-approved-winged-emblem.png')
+          icon.write_bytes(base64.b64decode(encoded.read_text().strip(), validate=True))
           sha=hashlib.sha256(icon.read_bytes()).hexdigest()
-          # Diagnostic ONLY, never alter committed production-patch approved hash.
+          assert sha == '63001089582a756d1df35d84c8ff149b79e43339166d840bdb28c37c12856c65'
+          assert Image.open(icon).size == (96, 96)
+          # Pinned resized rendition of Michael's SHA-verified approved gold-winged original.
+          # The committed production overlay's original-art hash stays untouched.
           Path('/tmp/icarus-compile-inspection.py').write_text(s.replace(approved,sha))
-          Path('startup-evidence/IDENTITY_WARNING.txt').write_text(
-            'DIAGNOSTIC BUILD: NOT APPROVED LOGO; NOT FOR INSTALLATION\n'
-            'THE REAL APPROVED LOGO IS STILL REQUIRED AND VERIFIED IN CHATGPT LIBRARY\n'
-            'ORIGINAL_ICON_SHA256='+approved+'\nDIAGNOSTIC_ICON_SHA256='+sha+'\n')
+          Path('startup-evidence/ICON_VERIFICATION.txt').write_text(
+            'APPROVED_GOLD_WINGED_ICON_RENDITION=SHA256_VERIFIED\n'
+            'APPROVED_ORIGINAL_IMAGE_SHA256='+approved+'\n'
+            'PACKAGED_DOWNSCALED_ICON_SHA256='+sha+'\n'
+            'DEVICE_ACCEPTANCE_PENDING=true\n')
           PY
           python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/apply_icarus_overlay.py
           python3 /tmp/icarus-compile-inspection.py --hermes-checkout donor \
-            --approved-logo /tmp/not-approved-build-diagnostic.png \
+            --approved-logo /tmp/icarus-approved-winged-emblem.png \
             --lineage-root drafts/icarus/2026-10-08-hermes-shell/lineage-source
           python3 -m py_compile drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py
           python3 drafts/icarus/2026-10-08-hermes-shell/install_icarus_supervisor.py \
@@ -123,6 +128,7 @@ jobs:
           assert 'suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)' in nativeconfirm
           assert 'awaitConfirmation(call)' not in nativeconfirm.split('suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)')[1].split('suspend fun awaitConfirmation(call: ToolCall)')[0]
           assert 'IcarusAuthority.promptContext()' in orchestrator
+          assert 'val availableTools = toolRegistry.descriptors()' in orchestrator
           assert 'IcarusAuthority.requireReady()' in orchestrator
           assert orchestrator.index('IcarusAuthority.requireReady()') < orchestrator.index('isMemoryInspectionRequest(userMessage)')
           assert 'IcarusIdentity.ROOT + ' in orchestrator
