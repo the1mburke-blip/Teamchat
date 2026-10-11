@@ -113,7 +113,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * ICARUS owner-side boot and authorization boundary.
  * Boots from Android Application attach before the Hermes worker initializes.
  * Donor model prompts, plugins and retrieved text may not modify this table.
- * All unknown actions DENY. No model-supplied PASS or tools can mint a permit.
+ * All unapproved actions DENY. Only native owner confirmation can grant a one-use permit.
  *
  * LIMIT: direct calls to raw capabilities outside ToolCallExecutor are not yet
  * covered. This is a bounded owner-side gate, not complete sandbox isolation.
@@ -122,11 +122,16 @@ object IcarusAuthority {
     private val expected = linkedMapOf(
 __EXPECTED__
     )
-    private val readOnlyTools = setOf(
-        "get_current_datetime", "get_current_time", "get_weather", "weather",
-        "web_search", "web_fetch", "memory_search", "search_memory",
-        "search_conversations", "search_sessions", "list_bots"
-    )
+    // Only explicit owner confirmation from the native UI issues a permit.
+    // Permits are bound to exact tool arguments and consumed once.
+    private val permits = mutableMapOf<String, Int>()
+    private fun permitKey(name: String, args: Map<String, JsonElement>): String =
+        name + "|" + kotlinx.serialization.json.JsonObject(args).toString()
+    @Synchronized fun approveOwnerConfirmed(name: String, args: Map<String, JsonElement>) {
+        requireReady()
+        val k = permitKey(name, args)
+        permits[k] = (permits[k] ?: 0) + 1
+    }
     @Volatile private var snapshot: Map<String, String>? = null
 
     @Synchronized
@@ -179,21 +184,18 @@ __EXPECTED__
 
     /**
      * Central fail-closed check for the known Hermes ToolCallExecutor path.
-     * Only audited read-only names are eligible in this inspection build.
-     * Owner-issued scoped permits for mutating actions are NOT implemented.
+     * All tool actions require an exact, one-use, owner-approved permit.
      */
+    @Synchronized
     fun deniedReason(toolName: String, arguments: Map<String, JsonElement> = emptyMap()): String? {
         if (snapshot == null) return "ICARUS_NOT_READY: worker cannot execute"
-        // Memory reads are allowed; memory writes/deletes are never implicitly allowed.
-        if (toolName == "memory") {
-            val action = (arguments["action"] as? JsonPrimitive)?.content
-            if (action == "search" || action == "list") return null
-            return "ICARUS_PERMIT_REQUIRED: memory action requires ICARUS permit"
+        val k = permitKey(toolName, arguments)
+        val available = permits[k] ?: 0
+        if (available > 0) {
+            if (available == 1) permits.remove(k) else permits[k] = available - 1
+            return null
         }
-        if (toolName !in readOnlyTools) {
-            return "ICARUS_PERMIT_REQUIRED: no owner-approved execution permit for " + toolName
-        }
-        return null
+        return "ICARUS_PERMIT_REQUIRED: no owner-approved execution permit for " + toolName
     }
 }
 '''.replace("__EXPECTED__", expected)
