@@ -412,7 +412,7 @@ __EXPECTED__
     # Local source assertions: evidence of placement, NOT device/runtime proof.
     assert "IcarusApplicationLike" in out_loader.read_text()
     assert "IcarusAuthority.bootstrap(app)" in out_delegate.read_text()
-    assert "IcarusAuthority.deniedReason(call.name)" in executor.read_text()
+    assert "IcarusAuthority.deniedReason(call.name, call.arguments)" in executor.read_text()
     assert "IcarusAuthority.memoryReport()" in orchestrator.read_text()
     assert "IcarusAuthority.donorAutonomyPermitted()" in startup_worker.read_text()
     print("ICARUS_SUPERVISOR_SOURCE_INSTALLED; memory SHA pinned; central tools fail closed")
