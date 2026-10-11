@@ -325,6 +325,8 @@ __EXPECTED__
     once(orchestrator,
          '    ): Flow<OrchestratorEvent> = channelFlow {\n',
          '    ): Flow<OrchestratorEvent> = channelFlow {\n'
+         '        // Independent of chat ID and selected LLM, ICARUS must be ready.\n'
+         '        com.hermes.agent.data.tool.IcarusAuthority.requireReady()\n'
          '        // ICARUS speaks for its own memory without relying on a model guess.\n'
          '        if (com.hermes.agent.data.tool.IcarusAuthority.isMemoryInspectionRequest(userMessage)) {\n'
          '            val report = com.hermes.agent.data.tool.IcarusAuthority.memoryReport()\n'
