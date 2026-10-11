@@ -126,6 +126,9 @@ jobs:
           assert 'IcarusAuthority.deniedReason(toolName, toolArgs)' in bridge
           nativeconfirm=(d/'agent-core/core/domain/src/main/kotlin/com/hermes/agent/domain/tool/ToolConfirmationService.kt').read_text()
           assert 'suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)' in nativeconfirm
+          owner_confirmation=nativeconfirm.split('suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)')[1].split('suspend fun awaitConfirmation(call: ToolCall)')[0]
+          assert 'if (call.name in BIOMETRIC_REQUIRED_TOOLS)' in owner_confirmation
+          assert 'deviceAuthenticationService.authenticate(' in owner_confirmation
           assert 'awaitConfirmation(call)' not in nativeconfirm.split('suspend fun awaitExplicitOwnerConfirmation(call: ToolCall)')[1].split('suspend fun awaitConfirmation(call: ToolCall)')[0]
           assert 'IcarusAuthority.promptContext()' in orchestrator
           assert 'val availableTools = toolRegistry.descriptors()' in orchestrator
