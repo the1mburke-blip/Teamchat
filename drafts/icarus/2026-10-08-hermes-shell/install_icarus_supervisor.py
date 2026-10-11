@@ -208,6 +208,28 @@ __EXPECTED__
          '        IcarusAuthority.deniedReason(call.name, call.arguments)?.let { return ToolResult.error(it) }\n'
          '        val tool = registry.byName(call.name)')
 
+    # Unlike the donor callback, this entry never auto-approves read-only,
+    # phone, or Home Assistant actions. Each interactive tool call must
+    # actually be approved in the owner's native dialog.
+    confirmation = engine / "core/domain/src/main/kotlin/com/hermes/agent/domain/tool/ToolConfirmationService.kt"
+    once(confirmation,
+         '    suspend fun awaitConfirmation(call: ToolCall): Boolean = requestMutex.withLock {',
+         '''    suspend fun awaitExplicitOwnerConfirmation(call: ToolCall): Boolean = requestMutex.withLock {
+        val deferred = CompletableDeferred<Boolean>()
+        pendingDeferred = deferred
+        val request = PendingConfirmation(UUID.randomUUID().toString(), call)
+        _pendingRequest.value = request
+        Timber.tag("IcarusOwnerPermit").i("Waiting for owner request=%s tool=%s", request.id, call.name)
+        try {
+            kotlinx.coroutines.withTimeoutOrNull(CONFIRMATION_TIMEOUT_MS) { deferred.await() } ?: false
+        } finally {
+            _pendingRequest.value = null
+            pendingDeferred = null
+        }
+    }
+
+    suspend fun awaitConfirmation(call: ToolCall): Boolean = requestMutex.withLock {''')
+
     # The deferred-tool bridge calls raw Tool.execute directly. Close the
     # bypass at its actual target dispatch, not only the outer tool executor.
     bridge = engine / "core/tools/src/main/kotlin/com/hermes/agent/data/tools/ToolCallTool.kt"
