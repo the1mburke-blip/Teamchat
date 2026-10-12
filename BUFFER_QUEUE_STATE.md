@@ -1,6 +1,7 @@
 # HumanVibe Buffer Queue State
 
-SNAPSHOT_GENERATED_UTC: 2026-10-12T22:23:32Z
+SNAPSHOT_GENERATED_UTC: 2026-10-12T22:33:06Z
+VERIFIED_AT_UTC: 2026-10-12T22:23:32Z
 SOURCE: Independent fresh Composio session town, account HumanVibe Buffer Reauth, live BUFFER_LIST_POSTS per channel/status with pagination exhausted.
 AUTO_REFRESH: NOT_PROVEN; this is a timestamped manual verified snapshot.
 NEEDS_REFILL: YES
@@ -18,7 +19,7 @@ PUBLISHER: Buffer only.
 EXECUTOR: Actual Codex Work in SOL role, directly assigned by Michael; issue #94.
 VERIFIER: Separate actual Codex editorial_qa agent. Editorial accepted packet SHA256 FCDC81DA9139B6401241E563A5EFFB495C3467B3B9032B2732F68ECA30CB3F67.
 VERIFICATION: All nine exact captions, approved permanent image source URLs, unique IDs, due times, status=scheduled, publishing_error=null and sent_at=null independently reread. Independent readback log log_Vg4h3HdhbVEt. Separate native Buffer channel-state readback log log_tge0ZBB_wJWx confirms isQueuePaused=false, isDisconnected=false, isLocked=false for all three.
-LEGACY_ERRORS: 9 counted in separate error-status reads before scheduling; retained unchanged. New posts have no errors.
+LEGACY_ERRORS: Executor counted 9 in separate error-status reads before scheduling; executor reports retained unchanged. Independent verification covered the new scheduled posts; it did not independently recheck all old errors or queue pause state. New posts have no errors.
 STATUS: Nine-post rescue refill verified. Full delivery and ongoing continuity PARTIAL: no new post has been sent yet; target nine/channel not met.
 TASK: https://github.com/the1mburke-blip/Teamchat/issues/94
 
