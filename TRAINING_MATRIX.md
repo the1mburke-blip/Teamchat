@@ -1288,3 +1288,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `linked_evidence`: https://github.com/the1mburke-blip/Teamchat/issues/84 ; https://github.com/the1mburke-blip/Teamchat/issues/85 ; https://github.com/the1mburke-blip/Teamchat/issues/86 ; https://github.com/the1mburke-blip/Teamchat/pull/8#issuecomment-6056815330 ; https://github.com/the1mburke-blip/Teamchat/actions/runs/37756418528 .
 - `cost`: €0 monetary spend authorized, exact platform/allowance tokens unmeasured.
 - `confidence`: HIGH for issues/workflow source/run status and published skill re-read, UNKNOWN for any as-yet-unseen final DeepSeek output or Codex/Claude acceptance.
+
+
+## HV-EXP-085 — Live Buffer rescue, narrow verification and missed email monitor
+[SOL] 2026-10-12T22:34:10Z
+- Owner: Michael directly assigned Codex Work the SOL remediation in Teamchat issue #94. A routed comment alone had not repaired the queue.
+- Actual route: existing authenticated HumanVibe Buffer Reauth Composio proxy to documented Buffer createPost, stable approved V2 model imagery, no new publisher or OAuth reconnect. Source documents were reviewed locally and imagery compared to Drive Vault decoded pixels before execution.
+- Independent editorial QA was a real separate Codex agent, explicitly not represented as Claude. Following acceptance, one three-platform canary was created and read back, then six remaining posts. The independent verifier reread all nine in a separate session at 2026-10-12T22:23:32Z: exact captions, sources, times, unique IDs, scheduled status, no publishing error, not yet sent, all result pages exhausted.
+- Outcome: 3/channel for 13 October 09:00/13:00/19:00 Europe/Dublin. Full target 9/channel and actual publication not proven. Root observed old errors 9 and channel unpaused state separately; those checks are not independent verifier claims.
+- Evidence: https://github.com/the1mburke-blip/Teamchat/issues/94#issuecomment-6133889489 ; https://github.com/the1mburke-blip/Teamchat/blob/main/BUFFER_QUEUE_STATE.md ; independent read log log_Vg4h3HdhbVEt ; root channel state log_tge0ZBB_wJWx.
+- Timestamp failure: manually assigned approximate/future timestamps on preflight, editorial record and earlier claim can invert apparent event order. Preserve those records with a correction; use observed UTC clock values and distinguish verified_at from recorded_at. Do not invent retrospective times.
+- Automation failure: Gmail connector reads and website login work, but the daily Duty manager saved prompt still lacked the required email check. Different editor input methods followed by Save returned the old prompt on reopening. UI save attempts are not proof of persistence or a working unattended monitor.
+- Private-source boundary: full remote private-document export was rejected by automatic approval review. Use the approved local read route or bounded relevant extraction; never work around the rejected disclosure by printing the same private material through another helper.
+- Reusable procedure: search all relevant mail since the last successful checkpoint with overlap, not only unread; paginate and deduplicate. Missing access must produce CHECK FAILED. Keep email checking independent of stale queue/Prime gates and preserve production-mutation gates. Do not create a duplicate monitor to mask failure of an existing task. A prepared/saved prompt is not a successful runtime run.
+- Cost: €0 additional monetary spend. Actual allowance/tokens unmeasured.
