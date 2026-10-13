@@ -12,6 +12,9 @@ Approved HumanVibe production media must come from the Google Drive **Production
 - Folder ID: `1nPKBFXyBt9kpj6HnfyurRdfjrCaIBlA4`
 - Parent: `03 — Content & Social`
 - No generated substitute, lookalike, recreated tee artwork, or unapproved media may enter publishing.
+- **Owner override (13 October 2026): NEVER generate images for HumanVibe social publishing.** No image-generation model, synthetic lifestyle scene, redesign, edit, crop-as-new-asset, lookalike, or recreated tee/print. Reuse ONLY already existing, explicitly owner-approved original assets from the verified Production Asset Vault. No new media may be classified as approved just because it was generated or uploaded.
+- Insufficient distinct approved media is a real blocker. Do not fabricate replacements, silently loosen the previous-six exclusion, or mask an Instagram missing-image slot with text only. Record the exact shortage and hold non-compliant new posts.
+
 - Printful-native mockups are valid only after the exact source file is copied into this vault and the copy is physically verified.
 
 ## Product/version routing
@@ -52,6 +55,13 @@ Before any V2 post is drafted, scheduled, repaired, or recycled:
 4. Confirm no adjacent duplicate and no identical same-time cross-platform image blast unless a campaign explicitly requires it.
 5. Re-read the destination product page before publication when price, availability, variants, shipping, or product-specific claims are mentioned.
 6. Do not infer production facts from the image. Product claims come from verified Shopify/Printful state only.
+
+## Binding caption/editorial source — owner correction 13 October 2026
+
+- **Niche Business Blueprint V2 paraphrasing is mandatory.** Social captions must express a concrete idea from the approved V2 Playbook in fresh, simple words: niche specificity, audience/problem/outcome clarity, useful compact deliverables, AI-assisted but human-edited clarity, the two-minute usability test, value-first organic distribution, distinguishing clicks from conversion, or measured iteration.
+- HumanVibe is a **case study in progress** illustrating the lesson; the Signature Tee is a supporting visual or example, **not the subject of repetitive sales pitches**. Never imply validated demand, specific sales, customer feedback, or successful outcomes without current evidence.
+- Distinguish captions by platform and time; no repeated slogan or same-caption cross-platform blast. Preserve already scheduled approved content unless an authorised in-place editorial correction and independent readback are performed.
+- No image generation or other asset substitution may be used to satisfy publishing volume. When content/media constraints conflict with volume targets, content integrity takes precedence and the unresolved slot must be reported.
 
 ## Channel rules
 
