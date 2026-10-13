@@ -7,7 +7,7 @@ Host: GitHub Actions (EUR 0 within free minutes). Model: Gemini Flash-class via 
 Constitutional rules enforced here:
 - The model never self-awards PASS. Verdict is binary and comes only from deterministic gates
   (VERIFY_FILE / VERIFY_URL lines in the task). No gate supplied => FAIL (unverified).
-- No blind retries: each model attempt uses a different candidate model; approved routes only (icarus/runtime/approved-routes.json); one 60s cooldown retry on 429/503.
+- No blind retries: each model attempt uses a different candidate model; approved routes only (icarus/runtime/approved-routes.json); one 90s cooldown retry on 429/503; pool exhausted => 180s break then reset the pool (max 3 rounds).
 - No secrets are printed. Memory is never rewritten, only a new receipt file is added.
 """
 import os, re, json, time, pathlib, datetime, urllib.request, urllib.error
@@ -19,7 +19,9 @@ CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
 MAX_CALLS = 6
-COOLDOWN = 60  # seconds; one cooldown retry on 429/503, first candidate only (keeps the run inside the Actions timeout)
+COOLDOWN = 90  # seconds; per-minute peak window reset: one cooldown retry on 429/503, first candidate of the first round only
+POOL_BREAK = 180  # seconds; when the whole pool is exhausted: take a break, then reset the pool and go again
+MAX_ROUNDS = 3  # initial pass + 2 pool resets (bounded so the job cannot run forever on free Actions minutes)
 CALL_TIMEOUT = 60
 FAILOVER_CODES = (0, 404, 408, 429, 500, 502, 503, 504)  # 0 = network/timeout
 
@@ -101,8 +103,12 @@ def main():
     rest = [first[len("ICARUS_RUN"):].strip()] + lines[1:] if first.startswith("ICARUS_RUN") else lines
     gates = [l for l in rest if l.split(":")[0].strip() in ("VERIFY_FILE", "VERIFY_URL")]
     model_override = next((l.split(":", 1)[1].strip() for l in rest if l.startswith("MODEL:")), "")
+    try:
+        inject = int(next((l.split(":", 1)[1].strip() for l in rest if l.startswith("TEST_EXHAUST_ROUNDS:")), "0") or 0)
+    except Exception:
+        inject = 0
     list_q = next((l.split(":", 1)[1].strip().lower() for l in rest if l.startswith("LIST_MODELS:")), "")
-    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:") and not l.startswith("LIST_MODELS:")).strip()
+    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:") and not l.startswith("LIST_MODELS:") and not l.startswith("TEST_EXHAUST_ROUNDS:")).strip()
 
     system = (
         "You are Icarus, a persistent autonomous fixer. Memory belongs to Icarus, not the model.\n\n"
@@ -128,40 +134,53 @@ def main():
             e = e or f"MODEL override {model_override} is not an approved route"
         if not cands:
             err = e or "no approved route"
-        for idx, n in enumerate(cands[:MAX_CALLS]):
-            if n.startswith("gemma"):
-                # Gemma on the Gemini API: no systemInstruction / JSON mime mode; fold the system text into the prompt.
-                body = {
-                    "contents": [{"role": "user", "parts": [{"text": system + "\n\nTASK:\n" + task}]}],
-                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500},
-                }
-            else:
-                body = {
-                    "systemInstruction": {"parts": [{"text": system}]},
-                    "contents": [{"role": "user", "parts": [{"text": task}]}],
-                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
-                }
-            for tryno in (1, 2):
-                code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
-                log.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
-                if code in (429, 503) and tryno == 1 and idx == 0:
-                    time.sleep(COOLDOWN)
-                    continue
-                break
-            if code == 200:
-                try:
-                    parts = json.loads(txt)["candidates"][0]["content"]["parts"]
-                    part = "".join(p.get("text", "") for p in parts if not p.get("thought"))
-                    answer = parse_json(part) or {"answer": part, "unverified_claims": [], "needs_owner": False, "owner_reason": ""}
-                    used = n
+        hard = False
+        for rnd in range(1, MAX_ROUNDS + 1):
+            if rnd > 1:
+                log.append(f"pool exhausted -> {POOL_BREAK}s break, then pool reset (round {rnd}/{MAX_ROUNDS})")
+                time.sleep(POOL_BREAK)
+                err = ""
+            for idx, n in enumerate(cands[:MAX_CALLS]):
+                if n.startswith("gemma"):
+                    # Gemma on the Gemini API: no systemInstruction / JSON mime mode; fold the system text into the prompt.
+                    body = {
+                        "contents": [{"role": "user", "parts": [{"text": system + "\n\nTASK:\n" + task}]}],
+                        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500},
+                    }
+                else:
+                    body = {
+                        "systemInstruction": {"parts": [{"text": system}]},
+                        "contents": [{"role": "user", "parts": [{"text": task}]}],
+                        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
+                    }
+                for tryno in (1, 2):
+                    injected = rnd <= inject
+                    if injected:
+                        code, txt = 503, "injected test failure (no API call; TEST_EXHAUST_ROUNDS)"
+                    else:
+                        code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
+                    log.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
+                    if code in (429, 503) and tryno == 1 and idx == 0 and rnd == 1 and not injected:
+                        time.sleep(COOLDOWN)
+                        continue
                     break
-                except Exception as ex:
-                    err = f"parse error on {n}: {ex}"
-            elif code not in FAILOVER_CODES:
-                err = f"{n}: HTTP {code} {redact(txt)[:200]}"
+                if code == 200:
+                    try:
+                        parts = json.loads(txt)["candidates"][0]["content"]["parts"]
+                        part = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+                        answer = parse_json(part) or {"answer": part, "unverified_claims": [], "needs_owner": False, "owner_reason": ""}
+                        used = n
+                        break
+                    except Exception as ex:
+                        err = f"parse error on {n}: {ex}"
+                elif code not in FAILOVER_CODES:
+                    err = f"{n}: HTTP {code} {redact(txt)[:200]}"
+                    hard = True
+                    break
+            if answer is not None or hard:
                 break
         if answer is None and not err:
-            err = "all candidate attempts failed: " + "; ".join(log)
+            err = f"pool exhausted after {MAX_ROUNDS} rounds: " + "; ".join(log)
 
     diag = []
     if list_q and KEY:
