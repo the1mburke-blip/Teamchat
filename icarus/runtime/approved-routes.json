@@ -5,49 +5,56 @@
       "model": "gemini-3.5-flash-lite",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": true
+      "compatibilityVerified": true,
+      "rpd": 500
     },
     {
       "provider": "google",
       "model": "gemini-3.1-flash-lite",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": false
+      "compatibilityVerified": false,
+      "rpd": 500
     },
     {
       "provider": "google",
       "model": "gemma-4-26b-a4b-it",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": true
+      "compatibilityVerified": true,
+      "rpd": 14400
     },
     {
       "provider": "google",
       "model": "gemma-4-31b-it",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": false
+      "compatibilityVerified": false,
+      "rpd": 14400
     },
     {
       "provider": "google",
       "model": "gemini-3.6-flash",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": false
+      "compatibilityVerified": false,
+      "rpd": 20
     },
     {
       "provider": "google",
       "model": "gemini-3.7-flash",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": false
+      "compatibilityVerified": false,
+      "rpd": 20
     },
     {
       "provider": "google",
       "model": "gemini-3.8-flash",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": false
+      "compatibilityVerified": false,
+      "rpd": 20
     },
     {
       "provider": "openrouter",
@@ -71,5 +78,5 @@
       "compatibilityVerified": false
     }
   ],
-  "note": "Order = quota-first. Source: Google AI Studio rate-limit table (free tier, project gen-lang-client-0190888096), read live 2026-10-13; exact Gemma IDs from the Gemini API model list (runner LIST_MODELS diagnostic). RPD: 3.5-flash-lite 500, 3.1-flash-lite 500, gemma-4-26b 14400, gemma-4-31b 14400, 3.6-flash 20, 3.7-flash 20. 0/0 models excluded. gemini-3.8-flash (20 RPD) omitted (cap MAX_CALLS=6). compatibilityVerified=true = answered HTTP 200 with gates PASS via this runner (3.5-flash-lite, gemma-4-26b-a4b-it on 2026-10-13). gemma-4-31b-it returned one HTTP 500 'Internal error' on 2026-10-13 (inconclusive, kept as later fallback, unverified). Selection delegated by the owner. This file is the runner's list only; the owner's PC profile (cordis.patch.yml / icarus-quota-failover) is separate and unverified. OpenRouter (added 2026-10-13): free ':free' models only, verified pricing 0/0 on the public model list; always AFTER every Google route (OpenRouter free = ~20 req/day); skipped by the runner unless the OPENROUTER_API_KEY repo secret exists."
+  "note": "Order = quota-first. Source: Google AI Studio rate-limit table (free tier, project gen-lang-client-0190888096), read live 2026-10-13; exact Gemma IDs from the Gemini API model list (runner LIST_MODELS diagnostic). RPD: 3.5-flash-lite 500, 3.1-flash-lite 500, gemma-4-26b 14400, gemma-4-31b 14400, 3.6-flash 20, 3.7-flash 20. 0/0 models excluded. gemini-3.8-flash (20 RPD) added 2026-10-13 (cap MAX_CALLS=12). compatibilityVerified=true = answered HTTP 200 with gates PASS via this runner (3.5-flash-lite, gemma-4-26b-a4b-it on 2026-10-13). gemma-4-31b-it returned one HTTP 500 'Internal error' on 2026-10-13 (inconclusive, kept as later fallback, unverified). Selection delegated by the owner. This file is the runner's list only; the owner's PC profile (cordis.patch.yml / icarus-quota-failover) is separate and unverified. OpenRouter (added 2026-10-13): free ':free' models only, verified pricing 0/0 on the public model list; always AFTER every Google route (OpenRouter free = ~20 req/day); skipped by the runner unless the OPENROUTER_API_KEY repo secret exists. rpd = per-route daily request limit used by the runner's 95% own-usage guard (counts only Icarus's own calls; other users of the same key are not visible)."
 }
