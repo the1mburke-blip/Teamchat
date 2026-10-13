@@ -7,7 +7,7 @@ Host: GitHub Actions (EUR 0 within free minutes). Model: Gemini Flash-class via 
 Constitutional rules enforced here:
 - The model never self-awards PASS. Verdict is binary and comes only from deterministic gates
   (VERIFY_FILE / VERIFY_URL lines in the task). No gate supplied => FAIL (unverified).
-- No blind retries: each model attempt uses a different candidate model; approved routes only (icarus/runtime/approved-routes.json); one 90s cooldown retry on 429/503; pool exhausted => 180s break then reset the pool (max 3 rounds).
+- No blind retries: each model attempt uses a different candidate model; approved routes only (icarus/runtime/approved-routes.json); one 90s cooldown retry on 429/503 for every model; pool exhausted => 180s break then reset the pool (max 3 rounds).
 - No secrets are printed. Memory is never rewritten, only a new receipt file is added.
 """
 import os, re, json, time, pathlib, datetime, urllib.request, urllib.error
@@ -19,7 +19,7 @@ CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
 MAX_CALLS = 6
-COOLDOWN = 90  # seconds; per-minute peak window reset: one cooldown retry on 429/503, first candidate of the first round only
+COOLDOWN = 90  # seconds; per-minute peak window reset: one cooldown retry on 429/503 for EVERY model in EVERY round
 POOL_BREAK = 180  # seconds; when the whole pool is exhausted: take a break, then reset the pool and go again
 MAX_ROUNDS = 3  # initial pass + 2 pool resets (bounded so the job cannot run forever on free Actions minutes)
 CALL_TIMEOUT = 60
@@ -107,8 +107,12 @@ def main():
         inject = int(next((l.split(":", 1)[1].strip() for l in rest if l.startswith("TEST_EXHAUST_ROUNDS:")), "0") or 0)
     except Exception:
         inject = 0
+    try:
+        test_cap = int(next((l.split(":", 1)[1].strip() for l in rest if l.startswith("TEST_MAX_CANDIDATES:")), "0") or 0)
+    except Exception:
+        test_cap = 0
     list_q = next((l.split(":", 1)[1].strip().lower() for l in rest if l.startswith("LIST_MODELS:")), "")
-    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:") and not l.startswith("LIST_MODELS:") and not l.startswith("TEST_EXHAUST_ROUNDS:")).strip()
+    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:") and not l.startswith("LIST_MODELS:") and not l.startswith("TEST_EXHAUST_ROUNDS:") and not l.startswith("TEST_MAX_CANDIDATES:")).strip()
 
     system = (
         "You are Icarus, a persistent autonomous fixer. Memory belongs to Icarus, not the model.\n\n"
@@ -140,7 +144,7 @@ def main():
                 log.append(f"pool exhausted -> {POOL_BREAK}s break, then pool reset (round {rnd}/{MAX_ROUNDS})")
                 time.sleep(POOL_BREAK)
                 err = ""
-            for idx, n in enumerate(cands[:MAX_CALLS]):
+            for idx, n in enumerate(cands[:(test_cap or MAX_CALLS)]):
                 if n.startswith("gemma"):
                     # Gemma on the Gemini API: no systemInstruction / JSON mime mode; fold the system text into the prompt.
                     body = {
@@ -160,7 +164,7 @@ def main():
                     else:
                         code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
                     log.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
-                    if code in (429, 503) and tryno == 1 and idx == 0 and rnd == 1 and not injected:
+                    if code in (429, 503) and tryno == 1:
                         time.sleep(COOLDOWN)
                         continue
                     break
