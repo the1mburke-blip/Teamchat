@@ -18,7 +18,9 @@ GH_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 REPO = os.environ.get("GITHUB_REPOSITORY", "")
 LOG = []
 OR_BASE = "https://openrouter.ai/api/v1"
-PROVIDER = {}  # model id -> provider, filled by approved()
+PROVIDER = {}
+RPD = {}
+USAGE = {}  # model id -> provider, filled by approved()
 SKIPPED = []
 BASE = "https://generativelanguage.googleapis.com/v1beta"
 RAW = os.environ.get("COMMENT_BODY", "")
@@ -88,6 +90,8 @@ def approved():
             SKIPPED.append(r["model"])
             continue
         PROVIDER[r["model"]] = prov
+        if isinstance(r.get("rpd"), int):
+            RPD[r["model"]] = r["rpd"]
         out.append(r["model"])
     return out, ("" if out else "no approved routes")
 
@@ -209,6 +213,24 @@ def rules_text():
                    '"lesson": one reusable sentence or ""}.')
 
 
+def usage_today():
+    """Count Icarus's own real API calls today from the receipts (injected test failures excluded)."""
+    use = {}
+    d = pathlib.Path("icarus/runs")
+    if not d.is_dir():
+        return use
+    for f in d.glob(f"{NOW:%Y%m%d}T*.md"):
+        try:
+            line = next((l for l in f.read_text(encoding="utf-8", errors="replace").splitlines() if l.startswith("- Model attempts:")), "")
+        except Exception:
+            continue
+        for part in line[len("- Model attempts:"):].split(";"):
+            m = re.match(r"\s*(\S+?)#\d+: HTTP (\d+)", part)
+            if m and "injected test failure" not in part:
+                use[m.group(1)] = use.get(m.group(1), 0) + 1
+    return use
+
+
 def pool(system, user, cands, test_cap, inject):
     answer, used, err, hard = None, "none", "", False
     for rnd in range(1, MAX_ROUNDS + 1):
@@ -231,6 +253,10 @@ def pool(system, user, cands, test_cap, inject):
                 body = {"systemInstruction": {"parts": [{"text": system}]},
                         "contents": [{"role": "user", "parts": [{"text": user}]}],
                         "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"}}
+            lim = RPD.get(n)
+            if lim and USAGE.get(n, 0) >= int(lim * 0.95):
+                LOG.append(f"{n}: own usage {USAGE.get(n, 0)}/{lim} per day (>=95%) -> skip")
+                continue
             code, txt = 0, ""
             for tryno in (1, 2):
                 why = over_budget(0)
@@ -242,6 +268,7 @@ def pool(system, user, cands, test_cap, inject):
                 else:
                     url = f"{OR_BASE}/chat/completions" if is_or else f"{BASE}/models/{n}:generateContent"
                     code, txt = http("POST", url, body, timeout=CALL_TIMEOUT)
+                    USAGE[n] = USAGE.get(n, 0) + 1
                 LOG.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
                 daily_cap = code == 429 and re.search(r"per ?day|daily|free-models-per-day", txt, re.I) is not None
                 if daily_cap:
@@ -303,6 +330,7 @@ def run_step(system, step, context, cands, test_cap, inject, tool_log):
 
 
 def main():
+    USAGE.update(usage_today())
     lines = RAW.splitlines()
     first = lines[0] if lines else ""
     rest = [first[len("ICARUS_RUN"):].strip()] + lines[1:] if first.startswith("ICARUS_RUN") else lines
@@ -441,6 +469,7 @@ def main():
         f"- Memory read: icarus/memory/{{identity,inherited,current-state,learned}}.md (read-only)",
         *([f"- Plan: {len(plan_steps)} steps: " + " | ".join(plan_steps)] if plan_steps else []),
         f"- Lesson write-back: {wb_txt}",
+        "- Usage today (Icarus calls, incl. this run): " + (", ".join(f"{m} {c}" + (f"/{RPD[m]}" if m in RPD else "") for m, c in sorted(USAGE.items())) or "none"),
         f"- Model attempts: {'; '.join(log) or 'none'}",
         f"- Enforcement: API calls {STATE['calls']}/{CFG['maxApiCallsPerRun']}; runtime {int(time.time() - START)}s/{CFG['maxRuntimeSeconds']}s; runs today {daily}/{CFG['dailyRunCap']}; tools: {tools_txt}",
         *([f"- TEST HOOKS ACTIVE (owner-set): {', '.join(test_notes)}"] if test_notes else []),
