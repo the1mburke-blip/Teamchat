@@ -19,6 +19,8 @@ CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
 MAX_CALLS = 3
+CALL_TIMEOUT = 75
+FAILOVER_CODES = (0, 404, 408, 429, 500, 502, 503, 504)  # 0 = network/timeout
 
 
 def redact(s):
@@ -62,9 +64,10 @@ def candidates():
         if "flash" not in n or any(x in n for x in ("image", "tts", "live", "audio", "robotics", "computer", "embedding", "native")):
             continue
         ver = [-int(x) for x in re.findall(r"\d+", n.split("flash")[0])]
-        out.append((("lite" in n), ("preview" in n or "exp" in n), ver, n))
+        # explicit stable models first; -latest aliases last; lite before preview
+        out.append((n.endswith("-latest"), ("preview" in n or "exp" in n), ("lite" in n), ver, n))
     out.sort()
-    return [x[3] for x in out], ""
+    return [x[4] for x in out], ""
 
 
 def gate(line):
@@ -118,8 +121,8 @@ def main():
                 "contents": [{"role": "user", "parts": [{"text": task}]}],
                 "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
             }
-            code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body)
-            log.append(f"{n}: HTTP {code}")
+            code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
+            log.append(f"{n}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
             if code == 200:
                 try:
                     part = json.loads(txt)["candidates"][0]["content"]["parts"][0]["text"]
@@ -131,7 +134,7 @@ def main():
                     break
                 except Exception as ex:
                     err = f"parse error on {n}: {ex}"
-            elif code not in (429, 404, 500, 503):
+            elif code not in FAILOVER_CODES:
                 err = f"{n}: HTTP {code} {redact(txt)[:200]}"
                 break
         if answer is None and not err:
@@ -147,7 +150,7 @@ def main():
         reason = "all gates passed" if passed else "a gate failed"
     verdict = "PASS" if passed else "FAIL"
 
-    ans = answer or {}
+    ans = answer if isinstance(answer, dict) else {}
     lines_out = [
         f"# Icarus run {NOW:%Y-%m-%dT%H:%M:%SZ}",
         f"- Proposed by: {ACTOR} (comment {CID})",
