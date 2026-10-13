@@ -1,0 +1,39 @@
+{
+  "checks": [
+    {
+      "skill": "rest-graphql-debug",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "code-wiki",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "simple-english",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "creative-ideation",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "decision-questionnaire",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    }
+  ],
+  "actualLoader": "installed Hermes tools.skills_tool",
+  "modelCalls": 0,
+  "externalAccountCalls": 0,
+  "phoneRuntimeVerified": false,
+  "costEUR": 0
+}

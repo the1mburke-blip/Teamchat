@@ -1,0 +1,33 @@
+{
+  "desktopInstalled": true,
+  "nativeMemoryFreshStoreRead": true,
+  "initialLessons": 3,
+  "originalProtectedFilesUnchanged": 488,
+  "identityAndPermissionsUnchanged": true,
+  "nativeAuditAndUsageMetadataUpdated": [
+    "skills\\.curator_ledger.jsonl",
+    "skills\\.usage.json"
+  ],
+  "memoryCharLimitBefore": 2200,
+  "memoryCharLimitAfter": 6000,
+  "backgroundModelReviewEnabled": false,
+  "externalModelCalls": 0,
+  "costEUR": 0,
+  "liveChatLearningVerified": false,
+  "livePhoneChanged": false,
+  "activation": "Installed source registers profile hooks when a new Hermes agent/chat is constructed. No live model turn has been run.",
+  "nativeMemoryModifiedUtc": "2026-10-12T22:44:34.461857+00:00",
+  "knowledgePaths": [
+    "C:\\Users\\the1m\\AppData\\Local\\hermes\\profiles\\icarus\\workspace\\learning\\lessons\\6236249420df3e541faa2f815109e116d7c97018db6797ec0278a6a105d60d69.json",
+    "C:\\Users\\the1m\\AppData\\Local\\hermes\\profiles\\icarus\\workspace\\learning\\lessons\\e8fd92c6e7a58b4e039968a1935a9b4377aab6018e716f355b76fa18834e1020.json",
+    "C:\\Users\\the1m\\AppData\\Local\\hermes\\profiles\\icarus\\workspace\\learning\\lessons\\c83d1a63f13148db702f6048799c2cb560ba316844528ac9f168cf2ad02845ef.json"
+  ],
+  "nativeSkillLoadReadback": true,
+  "configuredLearningHookEvents": [
+    "on_session_end",
+    "post_tool_call",
+    "pre_llm_call"
+  ],
+  "desktopSkillDocumentCount": 70,
+  "hookSourceMatchesDeliveredPatch": true
+}

@@ -1,0 +1,56 @@
+{
+  "target": "actual modified ICARUS DSH Tether v0.1.20 source",
+  "files": [
+    {
+      "path": "client.js",
+      "beforeSha256": null,
+      "afterSha256": "92b884fbad3edcb4063f31477076c653eb97b3dda4fdf0d0c2d5e858c617663b"
+    },
+    {
+      "path": "index.js",
+      "beforeSha256": "d2c6c0ca6a90c720b983ac1abd99c061cb7a27d796016ca3616ca1ae037dd52c",
+      "afterSha256": "a50a6df8ae2a02671ecab5b2c049f69db087c185e18d667e2a0f7cb718df869b"
+    },
+    {
+      "path": "model-selector.js",
+      "beforeSha256": null,
+      "afterSha256": "18741c4e234ca13e4deffbf7735955566aabe278e51c5f7312cc25dca86278eb"
+    },
+    {
+      "path": "MODEL-SELECTOR.md",
+      "beforeSha256": null,
+      "afterSha256": "ee0eb844a6fb8fa6339f4aa1c2b9afca369bb3167fe56c5385e59ed4e05fba1c"
+    },
+    {
+      "path": "package.json",
+      "beforeSha256": "9e2dc128efc1a280a8e4de9959863b4e38e635939491d79d30d0b1ad7e1ee1a5",
+      "afterSha256": "528c67077a14f2f21ec2aae143cb51248571a007955b215a183e0fc19439868b"
+    },
+    {
+      "path": "quota-state.js",
+      "beforeSha256": null,
+      "afterSha256": "564a0630f823a12ccd3aa207abd1c44efb1ee28acee1f3f2906e30bcb88f945f"
+    },
+    {
+      "path": "scripts/build-android-runtime.mjs",
+      "beforeSha256": "905acbad44800c993aa60af251cb826ece29b1f575e0a086adbad6d98801d830",
+      "afterSha256": "5a2a1c19e51f7fe8e1dae0928499a5de51c8320a2d4ac54c8fc15d7b5872c0b4"
+    },
+    {
+      "path": "scripts/runtime-manifest.mjs",
+      "beforeSha256": null,
+      "afterSha256": "680aa294d1efed15706b744e9d95df4f9a7313a9d0903d0d903eaf7a112df579"
+    },
+    {
+      "path": "test/model-selector.test.js",
+      "beforeSha256": null,
+      "afterSha256": "d8b656adbb8b870ab413bf23c7cdc4b95a383e5a35489f8d710a47824e9e38d4"
+    }
+  ],
+  "gitApplyCheck": "succeeded on isolated baseline",
+  "appliedCopyMatchesTestedFiles": true,
+  "unchangedFilesPreserved": true,
+  "liveInstallationChanged": false,
+  "apkBuilt": false,
+  "newSpendingEUR": 0
+}

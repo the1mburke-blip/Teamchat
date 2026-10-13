@@ -1,0 +1,124 @@
+{
+  "checkedAt": "2026-10-12T23:23:19.032049+00:00",
+  "activation": {
+    "activatedAt": "2026-10-12T23:21:38.939Z",
+    "pid": 15784,
+    "moduleSha256": "8bd8a008be6c6d563c0f4eacc010a0e5fed9feadd744e25da63e7f2c50a15576",
+    "workspaces": [
+      "C:\\Users\\the1m\\OneDrive\\Desktop",
+      "C:\\Users\\the1m\\OneDrive\\Documents\\deepseek-harness\\default-workspace"
+    ],
+    "memoryFiles": {
+      "C:/Users/the1m/OneDrive/Documents/deepseek-harness/default-workspace": "icarus/memory/learned.md"
+    },
+    "integrityGuard": "native write/edit preserve learned history",
+    "modelCalls": 0,
+    "newTools": 0,
+    "identityChanged": false,
+    "permissionsChanged": false
+  },
+  "requestedSkillCatalog": [
+    {
+      "name": "adversarial-ux-test",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    },
+    {
+      "name": "agent-merge-conflict-arbiter",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    },
+    {
+      "name": "code-wiki",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    },
+    {
+      "name": "dynamic-workflow",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    },
+    {
+      "name": "grill-me",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    },
+    {
+      "name": "icarus-continuous-learning",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    },
+    {
+      "name": "rest-graphql-debug",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    },
+    {
+      "name": "subagent-driven-development",
+      "provider": "icarus-hermes-skills",
+      "source": "bundled"
+    }
+  ],
+  "client": {
+    "at": "2026-10-12T23:21:38.942Z",
+    "pid": 15784,
+    "tetherRegistered": true
+  },
+  "quotaEndpoint": {
+    "http": 200,
+    "autoFallback": false,
+    "providerCount": 6,
+    "modelCount": 70,
+    "observedAt": 1791847399023,
+    "externalInferenceRequestsByVerification": 0
+  },
+  "actualLearningEvents": [
+    {
+      "at": "2026-10-12T23:17:00.875Z",
+      "kind": "turn-checkpoint",
+      "session": "session-84d39b14-cd6d-4756-8e03-95b7219c4a1a",
+      "turn": 6,
+      "cwd": "C:\\Users\\the1m\\OneDrive\\Desktop",
+      "memorySha256": "658c75748b0a209b21875e148ff9ebde130654f2eb8b5e8cfbd5aa20e3c4e28a"
+    },
+    {
+      "at": "2026-10-12T23:18:49.970Z",
+      "kind": "native-write-readback",
+      "session": "session-0f7791d4-fa0c-42a1-ae06-023484cd2151",
+      "callId": "call_397307",
+      "tool": "write",
+      "path": "C:\\Users\\the1m\\OneDrive\\Desktop\\learned.md",
+      "bytes": 700,
+      "sha256": "80f94f285b2bfb9193130ab6603f5207f1b73dc1bd04b87e6cbeacb3d5556581",
+      "knowledgeTruth": "not-certified"
+    },
+    {
+      "at": "2026-10-12T23:20:29.250Z",
+      "kind": "native-write-readback",
+      "session": "session-0f7791d4-fa0c-42a1-ae06-023484cd2151",
+      "callId": "call_231616",
+      "tool": "write",
+      "path": "C:\\Users\\the1m\\OneDrive\\Desktop\\learned.md",
+      "bytes": 6140,
+      "sha256": "5709a2e23e72121b8e743b7f3695ce9ac85771d59042e823119f9c7e38a2ac4b",
+      "knowledgeTruth": "not-certified"
+    },
+    {
+      "at": "2026-10-12T23:22:36.311Z",
+      "kind": "turn-checkpoint",
+      "session": "session-84d39b14-cd6d-4756-8e03-95b7219c4a1a",
+      "turn": 7,
+      "cwd": "C:\\Users\\the1m\\OneDrive\\Desktop",
+      "memorySha256": "4690220981fd0bbcfb015af94f2e2d634b27ec4915666381d959fa19ea09c5c1"
+    }
+  ],
+  "originalLearnedHistoryPreserved": true,
+  "originalProfilePrefixPreserved": true,
+  "protectedFileCount": 19,
+  "protectedHashesMatch": true,
+  "newSpendEUR": 0,
+  "physicalPhoneVerified": false,
+  "liveUIInteractionVerified": false,
+  "newRouterAutomaticFallback": false,
+  "independentReview": "not performed"
+}

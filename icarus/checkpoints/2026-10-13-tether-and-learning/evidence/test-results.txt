@@ -1,0 +1,30 @@
+✔ unknown stays unknown; no fallback resets invented (4.357ms)
+✔ compound durations, milliseconds, zero and invalid values (3.1012ms)
+✔ Groq means RPD and TPM; unknown RPM (0.5295ms)
+✔ Anthropic separates input and output TPM (1.1362ms)
+✔ Retry-After HTTP date and malformed reset (0.7558ms)
+✔ structured Google RetryInfo and quota dimension (1.3408ms)
+✔ OpenRouter API RPD data is distinct from credit dollars and deprecated rate_limit (0.364ms)
+✔ provider shared limit blocks every sibling; another provider remains eligible (0.1552ms)
+✔ success without quota headers does not imply full quota or retain stale header data (0.3302ms)
+✔ safe fallback changes route only; frozen seed and agent identity untouched (3.1747ms)
+✔ local cooldown is labeled separately from actual provider retry/reset (0.3466ms)
+✔ paid, unapproved, duplicate, or unverified routes are rejected (0.2168ms)
+✔ cancelled, unrelated errors, unlisted selection and disabled mode compose (0.3772ms)
+✔ insufficient context or modalities stop fallback (0.9582ms)
+✔ transport captures real local HTTP headers without consuming body; concurrent routes isolated (84.4128ms)
+✔ stream cancellation closes original iterator (0.4105ms)
+✔ web quota endpoint retains trust fence and secrets are absent (0.8595ms)
+✔ packaging includes runtime modules and identity; Android skeleton includes modules (14.3405ms)
+✔ every exhausted metric reset constrains fallback; old retry header is not reused (0.4027ms)
+✔ client uses actual DSH browser module loader and unknown/countdown rendering (5.0951ms)
+✔ same-version Android rebuild changes manifest when plugin changes (126.1186ms)
+✔ negative budgets block without fabricating a reset; out-of-range dates stay unknown (0.6676ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 442.8929

@@ -1,0 +1,180 @@
+{
+  "archive": "ICARUS-Harness-and-mobile-patch.zip",
+  "sha256": "34908dc2cafeab14a439f64d8b0ede472e385e4e7d4bb2bbaa2d2f96dbe9d91b",
+  "changedSourceFiles": [
+    {
+      "path": "client.js",
+      "beforeSha256": null,
+      "afterSha256": "92b884fbad3edcb4063f31477076c653eb97b3dda4fdf0d0c2d5e858c617663b"
+    },
+    {
+      "path": "hermes-skills.js",
+      "beforeSha256": null,
+      "afterSha256": "aa3c64c263d28bf60dd48eab937323ec1d91bd44315c4e2d89aea364b28cbbc0"
+    },
+    {
+      "path": "icarus-learning.js",
+      "beforeSha256": null,
+      "afterSha256": "8bd8a008be6c6d563c0f4eacc010a0e5fed9feadd744e25da63e7f2c50a15576"
+    },
+    {
+      "path": "index.js",
+      "beforeSha256": "d2c6c0ca6a90c720b983ac1abd99c061cb7a27d796016ca3616ca1ae037dd52c",
+      "afterSha256": "11605b5481ebdeacd0586d4d70d4a602019637b96537a44db8983328537014bb"
+    },
+    {
+      "path": "model-selector.js",
+      "beforeSha256": null,
+      "afterSha256": "18741c4e234ca13e4deffbf7735955566aabe278e51c5f7312cc25dca86278eb"
+    },
+    {
+      "path": "MODEL-SELECTOR.md",
+      "beforeSha256": null,
+      "afterSha256": "ee0eb844a6fb8fa6339f4aa1c2b9afca369bb3167fe56c5385e59ed4e05fba1c"
+    },
+    {
+      "path": "package.json",
+      "beforeSha256": "9e2dc128efc1a280a8e4de9959863b4e38e635939491d79d30d0b1ad7e1ee1a5",
+      "afterSha256": "d321c77934d666ae089ddd44e9a7688422892843d609de0292db42ee416f54b4"
+    },
+    {
+      "path": "quota-state.js",
+      "beforeSha256": null,
+      "afterSha256": "564a0630f823a12ccd3aa207abd1c44efb1ee28acee1f3f2906e30bcb88f945f"
+    },
+    {
+      "path": "hermes-skills/LICENSE.txt",
+      "beforeSha256": null,
+      "afterSha256": "e29dfaf6905a8d396a58ea4bd84ad27057756bbd9599b5bec0971ae34d2a2118"
+    },
+    {
+      "path": "hermes-skills/manifest.json",
+      "beforeSha256": null,
+      "afterSha256": "9fbb8b0a5c2eb43e91003305b7646d84f08021b5258753cc8d7d3f8238bc2dbb"
+    },
+    {
+      "path": "scripts/build-android-runtime.mjs",
+      "beforeSha256": "905acbad44800c993aa60af251cb826ece29b1f575e0a086adbad6d98801d830",
+      "afterSha256": "a73f8ca1b94093e04894812205ab52c4ef392f05abfc384e6c8609576288cda5"
+    },
+    {
+      "path": "scripts/runtime-manifest.mjs",
+      "beforeSha256": null,
+      "afterSha256": "7ffb63180dbef94fefac2ad581968ed89fa76f938e079770ff521da99e1ae21d"
+    },
+    {
+      "path": "test/model-selector.test.js",
+      "beforeSha256": null,
+      "afterSha256": "2b16485b0ba179f06df4bde08bf4a336473bf8d7c10feb6766c71986df0f983f"
+    },
+    {
+      "path": "hermes-skills/adversarial-ux-test/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "e4d16eedd9ad70172c05d71d1f3e2dd9b5a7c602b22814ce90205a4ac81cd9bd"
+    },
+    {
+      "path": "hermes-skills/agent-merge-conflict-arbiter/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "f591006d5177374561a0952f76e64b6ffb4f913d1edc095a6c21e0cf115797b2"
+    },
+    {
+      "path": "hermes-skills/code-wiki/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "6a1eab497d85837cf7d297a923ab2af2f0bde05977d4512529972dd3ff617993"
+    },
+    {
+      "path": "hermes-skills/dynamic-workflow/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "2df2d484ae3fb4921ad9a56983549b0036c6c619f05bd0f671fb8107bc70c5ec"
+    },
+    {
+      "path": "hermes-skills/grill-me/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "e42bc7a380b860980826a6eff06fb15b54bba00ad4a4974763cc294c4ab3bc2b"
+    },
+    {
+      "path": "hermes-skills/icarus-continuous-learning/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "bdcb4beacf850ddb1ad2c652095831d4cf9eb58e85b06a97d1c1c12b71cbd924"
+    },
+    {
+      "path": "hermes-skills/rest-graphql-debug/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "7ccf7787ee299476e31e05711e78215a11f7284f58fe3dc5c608c76e2b467f48"
+    },
+    {
+      "path": "hermes-skills/subagent-driven-development/SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "c64ba6a4f95cfb046f832bff2d26f1ae65935db106db4afc6496ab43fce456d4"
+    },
+    {
+      "path": "hermes-skills/subagent-driven-development/references/context-budget-discipline.md",
+      "beforeSha256": null,
+      "afterSha256": "325d4f3b16db3215a1d7d8771b4c03af40cad62a468df5c44757c1e6366f2c9c"
+    },
+    {
+      "path": "hermes-skills/subagent-driven-development/references/gates-taxonomy.md",
+      "beforeSha256": null,
+      "afterSha256": "2740dbfb83cb58d2e8bffd6d2dca95c2dbccca3b60138dcb81b9be905554043a"
+    },
+    {
+      "path": "hermes-skills/subagent-driven-development/references/upstream-SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "52bf4892e66d9307fcbfa0c6e524be7f562273ba91921fc213e3b418d26082c9"
+    },
+    {
+      "path": "hermes-skills/rest-graphql-debug/references/upstream-SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "18228139612c555dbb4a53b74039dadb53cb1163507dd9325a4fcfa3326e475d"
+    },
+    {
+      "path": "hermes-skills/grill-me/references/upstream-SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "6e3b3b81c1ad3a0b3ba3d36ec725e376d225e7867bfbf23a5129cf245e94bb0c"
+    },
+    {
+      "path": "hermes-skills/dynamic-workflow/references/upstream-SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "a030cce5a966e68b5b283fd530416adbebd6c1dc10c7592edc8d96bcffb2edc6"
+    },
+    {
+      "path": "hermes-skills/code-wiki/references/upstream-SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "5d3e5b93dfd188483f45e75f00a7d4f16d044681f41c36b785aae900c7397576"
+    },
+    {
+      "path": "hermes-skills/code-wiki/templates/architecture.md",
+      "beforeSha256": null,
+      "afterSha256": "91f4c340c29460d777ba1317ec0d46da677f2768d848e74ee3ac90d1699bbc60"
+    },
+    {
+      "path": "hermes-skills/code-wiki/templates/getting-started.md",
+      "beforeSha256": null,
+      "afterSha256": "190b3e93cfa8872de69f846a86b7250a154ce3ed3c50d3127eeae8c0a02c1f36"
+    },
+    {
+      "path": "hermes-skills/code-wiki/templates/module.md",
+      "beforeSha256": null,
+      "afterSha256": "5a5f02b93dc45712a444c279e4b993a01937436082a0c8a9e64e2fa7f597a8d7"
+    },
+    {
+      "path": "hermes-skills/code-wiki/templates/README.md",
+      "beforeSha256": null,
+      "afterSha256": "0c38fb312fbe6f6f1c8169b93648966275e28f0ae5f312c7195023f6b91bc240"
+    },
+    {
+      "path": "hermes-skills/agent-merge-conflict-arbiter/references/upstream-SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "f8b1a0cf2392a1da0d3890e1ebc6429b1edb83a8f076e104b8f7c8cb7465d1be"
+    },
+    {
+      "path": "hermes-skills/adversarial-ux-test/references/upstream-SKILL.md",
+      "beforeSha256": null,
+      "afterSha256": "d687ee7727174fd58acbe638038b207f7fb86ea27603a34cb3b0f1b0889b0dd7"
+    }
+  ],
+  "binaryPatchAppliedAndReadbackMatched": true,
+  "identityPermissionsAndRustPreserved": true,
+  "phoneInstalled": false,
+  "newSpendEUR": 0
+}

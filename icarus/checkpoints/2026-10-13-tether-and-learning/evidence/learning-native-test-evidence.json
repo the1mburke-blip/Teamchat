@@ -1,0 +1,15 @@
+{
+  "nativeMemoryWriteAndFreshStoreRead": true,
+  "nativeSkillCreationAndLoading": true,
+  "nativeFileToolReadAccess": [
+    "generational_index",
+    "inherited_skill",
+    "original_learned_memory"
+  ],
+  "productionShellHookSubprocessReminder": true,
+  "productionHookJournalsActualNativeMemoryResult": true,
+  "isolatedProfile": "C:\\Users\\the1m\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-2\\work\\learning-native-fixture-e43f9a64",
+  "liveModelCalls": 0,
+  "phoneVerified": false,
+  "costEUR": 0
+}

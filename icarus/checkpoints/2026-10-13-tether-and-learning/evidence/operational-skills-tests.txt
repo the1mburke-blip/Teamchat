@@ -1,0 +1,33 @@
+✔ unknown stays unknown; no fallback resets invented (3.4156ms)
+✔ compound durations, milliseconds, zero and invalid values (0.4692ms)
+✔ Groq means RPD and TPM; unknown RPM (0.4698ms)
+✔ Anthropic separates input and output TPM (1.1422ms)
+✔ Retry-After HTTP date and malformed reset (1.0943ms)
+✔ structured Google RetryInfo and quota dimension (2.0444ms)
+✔ OpenRouter API RPD data is distinct from credit dollars and deprecated rate_limit (0.4592ms)
+✔ provider shared limit blocks every sibling; another provider remains eligible (0.2013ms)
+✔ success without quota headers does not imply full quota or retain stale header data (0.3525ms)
+✔ safe fallback changes route only; frozen seed and agent identity untouched (3.0431ms)
+✔ local cooldown is labeled separately from actual provider retry/reset (0.3904ms)
+✔ paid, unapproved, duplicate, or unverified routes are rejected (0.2341ms)
+✔ cancelled, unrelated errors, unlisted selection and disabled mode compose (0.4153ms)
+✔ insufficient context or modalities stop fallback (0.5838ms)
+✔ transport captures real local HTTP headers without consuming body; concurrent routes isolated (84.616ms)
+✔ stream cancellation closes original iterator (0.4838ms)
+✔ web quota endpoint retains trust fence and secrets are absent (1.0035ms)
+✔ packaging includes runtime modules and identity; Android skeleton includes modules (14.3096ms)
+✔ every exhausted metric reset constrains fallback; old retry header is not reused (0.5818ms)
+✔ client uses actual DSH browser module loader and unknown/countdown rendering (3.5762ms)
+✔ same-version Android rebuild changes manifest when plugin changes (700.7486ms)
+✔ negative budgets block without fabricating a reset; out-of-range dates stay unknown (1.5172ms)
+✔ real DSH registry discovers all requested operational skills and loads their resources (97.005ms)
+✔ existing user skill wins and the imported provider respects cancellation (10.6212ms)
+✔ actual Tether local-mode plugin registers the new provider when skills service is available (53.7524ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1045.334

@@ -1,0 +1,7 @@
+{
+  "name": "icarus-cross-save-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated cross-save journal and conflict engine; native UI/device integration is staged separately."
+}

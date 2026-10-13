@@ -1,0 +1,25 @@
+{
+  "fiveNewOperationalSkills": [
+    "grill-me",
+    "subagent-driven-development",
+    "dynamic-workflow",
+    "agent-merge-conflict-arbiter",
+    "adversarial-ux-test"
+  ],
+  "retiredWritingSkills": [
+    "creative-ideation",
+    "decision-questionnaire",
+    "simple-english"
+  ],
+  "retainedEarlierSkills": [
+    "rest-graphql-debug",
+    "code-wiki"
+  ],
+  "desktopSkillDocumentsBeforeOriginalTask": 62,
+  "desktopSkillDocumentsAfter": 69,
+  "allOriginalDesktopSkillFilesUnchanged": true,
+  "identityAndPermissionsUnchanged": true,
+  "actualTetherSourceUpdated": true,
+  "livePhoneInstallationChanged": false,
+  "costEUR": 0
+}

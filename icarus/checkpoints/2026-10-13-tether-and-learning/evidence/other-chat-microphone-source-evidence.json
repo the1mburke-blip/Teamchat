@@ -1,0 +1,28 @@
+{
+  "task": "DSH Tether tap dictation microphone source repair",
+  "status": "source patched; phone behavior unverified",
+  "owner": "Michael",
+  "executor": "Codex via deterministic PowerShell edit",
+  "monetaryCost": 0,
+  "sourceRoot": "C:\\Users\\the1m\\OneDrive\\Desktop\\dsh-tether-source\\dsh-tether-0.1.20",
+  "backup": "C:\\Users\\the1m\\Documents\\Codex\\2026-10-12\\how-many-credits-on-openrouter-how\\work\\tether-microphone-before",
+  "buildPerformed": false,
+  "phoneAppChanged": false,
+  "existingPairingChanged": false,
+  "files": [
+    {
+      "path": "C:\\Users\\the1m\\OneDrive\\Desktop\\dsh-tether-source\\dsh-tether-0.1.20\\app\\src-tauri\\gen\\android\\app\\src\\main\\AndroidManifest.xml",
+      "sha256": "C3618343FD3E06CC99FACF598BB4F0B6C83A9139B7D160ED1F50717F748C82E1"
+    },
+    {
+      "path": "C:\\Users\\the1m\\OneDrive\\Desktop\\dsh-tether-source\\dsh-tether-0.1.20\\app\\ui\\index.html",
+      "sha256": "2AA26D3C111FC20671C8664C02F1AA0CC93B4E4A638F22DB8BD92D1EA9F6FD9A"
+    }
+  ],
+  "evidence": [
+    "Installed APK permission dump lacks RECORD_AUDIO and MODIFY_AUDIO_SETTINGS.",
+    "Installed RustWebChromeClient already maps AUDIO_CAPTURE to Android permission requests.",
+    "Installed harness voice control uses onClick start and onClick stop/transcribe."
+  ],
+  "pending": "A source change does not update an installed Android app. No rebuild or installation authorized in this step. Phone spoken test remains pending."
+}

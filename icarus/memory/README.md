@@ -1,0 +1,11 @@
+# ICARUS canonical shared memory
+
+Owner: Michael. Repository: **the1mburke-blip/Teamchat**, branch **main**. These files are the central source-controlled home for ICARUS's durable knowledge across models and devices.
+
+Read identity.md and inherited.md for preserved identity/lineage; read learned.md and newer attributed current-state.md updates for task continuity. Read root [TRAINING_MATRIX.md](../../TRAINING_MATRIX.md) for relevant preflight experience and what not to retry. Follow references to dated lessons/ and ../checkpoints/ for evidence. Historical snapshots require current-state verification.
+
+After tasks/chats, append useful durable lessons with dates, provenance, evidence, uncertainty and corrections through existing authenticated repository tools. Preserve prior history, immutable identity/inherited content and current permissions. Verify GitHub readback before claiming a committed memory. Keep large evidence in dated files and link it from learned.md. No credentials or indiscriminate private transcripts. Recording learning is not model-weight training.
+
+Local learned.md, native MEMORY.md, lesson journals and skills are working copies. Offline or inaccessible repository writes stay explicitly pending locally until an authorized write/readback occurs. Automatic phone/PC cross-save is not yet implemented. Repository storage alone does not prove a runtime has refreshed its context.
+
+Latest checkpoint: [13 October 2026 — Tether and learning](../checkpoints/2026-10-13-tether-and-learning/HANDOFF.md).

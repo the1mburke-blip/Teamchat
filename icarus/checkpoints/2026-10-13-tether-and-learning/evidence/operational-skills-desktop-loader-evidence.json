@@ -1,0 +1,52 @@
+{
+  "checks": [
+    {
+      "skill": "rest-graphql-debug",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "code-wiki",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "grill-me",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "subagent-driven-development",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "dynamic-workflow",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "agent-merge-conflict-arbiter",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    },
+    {
+      "skill": "adversarial-ux-test",
+      "nativeCatalogDiscovered": true,
+      "nativeSkillViewLoaded": true,
+      "sha256MatchesPreparedSkill": true
+    }
+  ],
+  "retiredWritingSkillsAbsent": true,
+  "actualLoader": "installed Hermes tools.skills_tool",
+  "modelCalls": 0,
+  "externalAccountCalls": 0,
+  "phoneRuntimeVerified": false,
+  "costEUR": 0
+}

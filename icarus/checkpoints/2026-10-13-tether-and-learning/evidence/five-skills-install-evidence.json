@@ -1,0 +1,17 @@
+{
+  "desktopInstalledSkills": [
+    "rest-graphql-debug",
+    "code-wiki",
+    "simple-english",
+    "creative-ideation",
+    "decision-questionnaire"
+  ],
+  "desktopSkillDocumentsBefore": 62,
+  "desktopSkillDocumentsAfter": 67,
+  "existingDesktopFilesUnchanged": true,
+  "sourceFilesWritten": 51,
+  "sourceReadbackMatchesTestedOutput": true,
+  "livePhoneInstallationChanged": false,
+  "identityAndPermissionsChanged": false,
+  "costEUR": 0
+}

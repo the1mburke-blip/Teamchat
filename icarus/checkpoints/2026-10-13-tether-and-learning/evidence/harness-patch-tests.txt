@@ -1,0 +1,39 @@
+✔ unknown stays unknown; no fallback resets invented (4.5831ms)
+✔ compound durations, milliseconds, zero and invalid values (0.865ms)
+✔ Groq means RPD and TPM; unknown RPM (0.7677ms)
+✔ Anthropic separates input and output TPM (0.7582ms)
+✔ Retry-After HTTP date and malformed reset (2.5228ms)
+✔ structured Google RetryInfo and quota dimension (1.0729ms)
+✔ OpenRouter API RPD data is distinct from credit dollars and deprecated rate_limit (0.7772ms)
+✔ provider shared limit blocks every sibling; another provider remains eligible (0.3066ms)
+✔ success without quota headers does not imply full quota or retain stale header data (0.6734ms)
+✔ safe fallback changes route only; frozen seed and agent identity untouched (3.6162ms)
+✔ local cooldown is labeled separately from actual provider retry/reset (0.8493ms)
+✔ paid, unapproved, duplicate, or unverified routes are rejected (0.4883ms)
+✔ cancelled, unrelated errors, unlisted selection and disabled mode compose (0.8083ms)
+✔ insufficient context or modalities stop fallback (1.1608ms)
+✔ transport captures real local HTTP headers without consuming body; concurrent routes isolated (90.9516ms)
+✔ stream cancellation closes original iterator (0.5475ms)
+✔ web quota endpoint retains trust fence and secrets are absent (0.9136ms)
+✔ packaging includes runtime modules and identity; Android skeleton includes modules (11.8011ms)
+✔ every exhausted metric reset constrains fallback; old retry header is not reused (0.4624ms)
+✔ client uses actual DSH browser module loader and unknown/countdown rendering (4.4375ms)
+✔ same-version Android rebuild changes manifest when plugin changes (374.6461ms)
+✔ negative budgets block without fabricating a reset; out-of-range dates stay unknown (0.5523ms)
+✔ real DSH registry discovers all requested operational skills and loads their resources (34.854ms)
+✔ existing user skill wins and the imported provider respects cancellation (7.9182ms)
+✔ actual Tether local-mode plugin registers the new provider when skills service is available (79.1481ms)
+✔ native Cordis checkpoint reads fresh learned memory, keeps context immutable, no identity mutation (45.0277ms)
+✔ unregistered, delegated, unrelated agents and rejected/aborted steps do not gain a checkpoint (15.1161ms)
+✔ native memory integrity gate denies history truncation, allows appends, preserves downstream denial (20.7077ms)
+✔ only successful scoped native writes receive real file hash readback; truth is not certified (24.5711ms)
+✔ missing learned memory reports unavailable without inventing persistent learning (20.7514ms)
+✔ mobile runtime manifest includes learning observer and all eight skill resources (2.1593ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 721.5039

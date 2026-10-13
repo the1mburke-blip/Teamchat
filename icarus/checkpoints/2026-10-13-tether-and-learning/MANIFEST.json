@@ -1,0 +1,450 @@
+{
+  "schema": 1,
+  "localDate": "2026-10-13",
+  "timezone": "Europe/London",
+  "owner": "Michael",
+  "executor": "Codex",
+  "costEUR": 0,
+  "scope": "Preservation; no deployment",
+  "crossSave": "untested unfinished draft",
+  "files": [
+    {
+      "path": "evidence/HARNESS-PATCH-REPORT.md",
+      "bytes": 6412,
+      "sha256": "e7a35c49247d141f74b6e13e5f50efde002ebc89273d02d98445197902563846",
+      "gitBlobSha": "dcc7ae9804b48dfbf71eb892963c4b06ed835944"
+    },
+    {
+      "path": "evidence/IMPLEMENTATION-REPORT.md",
+      "bytes": 5457,
+      "sha256": "40d3dc26a8e2b3d3eb92d7e171d5f0598560de816e17ae58339b526a7edccb1f",
+      "gitBlobSha": "c904179013c6b24be9da34252c4a244f9bb2c3e5"
+    },
+    {
+      "path": "evidence/LEARNING-REPAIR-REPORT.md",
+      "bytes": 6571,
+      "sha256": "eecc49f1a3438e57791bf0798232723dbc7b78b84c134247663e29aba74d3c0d",
+      "gitBlobSha": "429494a3db4dc2fbe59f756ab8058f4ea3922503"
+    },
+    {
+      "path": "evidence/OPERATIONAL-SKILLS-REPORT.md",
+      "bytes": 3499,
+      "sha256": "fd073ef885f31aa50077962d00e91bf6503f22b946c6c7ea5334989dcdffc18a",
+      "gitBlobSha": "ff51b184fcb0176c67de5b7a8965550c27fba625"
+    },
+    {
+      "path": "evidence/harness-patch-tests.txt",
+      "bytes": 2871,
+      "sha256": "c4670ca146b36ba1c4f6eca8d6be8aad4e438829c48b800735976945e636f805",
+      "gitBlobSha": "b85da320b6e5c25eba43fabe0ca41e7622f4f27f"
+    },
+    {
+      "path": "evidence/harness-install-evidence.json",
+      "bytes": 4705,
+      "sha256": "d34af579e4381e5d675a9d59874b244ff49e07712bc9e81fbeed70772debd6fe",
+      "gitBlobSha": "3a38bb27c11c22b23d3f7f8f18d4cb82ffee8ab1"
+    },
+    {
+      "path": "evidence/harness-runtime-evidence.json",
+      "bytes": 3897,
+      "sha256": "f420d8bd6cd53bea1c97efdd5ad1fc6e70a0a6ba28475a1d6e6c198f0c13d14f",
+      "gitBlobSha": "fd684fad1ab016405f85354bbcfc6d055e2051cb"
+    },
+    {
+      "path": "evidence/harness-package-evidence.json",
+      "bytes": 7021,
+      "sha256": "d297275c128db996f86c4904f27e0329e06dd96f18e0af76a62395d8368877b3",
+      "gitBlobSha": "b86443d605fc4d6eb4fc752300d8803e009c40df"
+    },
+    {
+      "path": "evidence/learning-behaviour-tests.txt",
+      "bytes": 1249,
+      "sha256": "d0ab467f799a5c820ebca4be691bb2ce44f6f563383d143431efccc049ed91ea",
+      "gitBlobSha": "a3557e1658ef9bec954f166e3565f84beae88b02"
+    },
+    {
+      "path": "evidence/learning-install-evidence.json",
+      "bytes": 1482,
+      "sha256": "96c5e7c83853113f660ffab0cb4b6071bc07417f9c85641448798cd729ce0d6c",
+      "gitBlobSha": "d3bb0652729fb9bc2311aa33e165260f326fa436"
+    },
+    {
+      "path": "evidence/learning-native-test-evidence.json",
+      "bytes": 550,
+      "sha256": "ae114f2e3cc97aaf5817f9f10e1a96d0bef46a28521a8361afa6c87bdba172ca",
+      "gitBlobSha": "e6f4ca31db9c2952dcd20a3d610c0a55d0d09781"
+    },
+    {
+      "path": "evidence/operational-skills-tests.txt",
+      "bytes": 2190,
+      "sha256": "f00ad7ecb999135527144df6aff4f3ff1e78ea48ed612936961af2369a7bf5e3",
+      "gitBlobSha": "adb0fc84f31ade7ea3881012453ba2467252ff67"
+    },
+    {
+      "path": "evidence/operational-skills-install-evidence.json",
+      "bytes": 658,
+      "sha256": "91d5fd399a3241e8d89444434b28bdc25e7cfa5370aaace00d5bcdbba5caad91",
+      "gitBlobSha": "e81b2a670f8fb464c27a77ae3add3bc6773db90d"
+    },
+    {
+      "path": "evidence/operational-skills-desktop-loader-evidence.json",
+      "bytes": 1432,
+      "sha256": "9792392b4fdb18d88de3ddc206767b389509248ff8c1fc1d69fb8909faee1b12",
+      "gitBlobSha": "bb8aeadae0b35ee2f7666f83954622a3b61cfd0e"
+    },
+    {
+      "path": "evidence/five-skills-install-evidence.json",
+      "bytes": 460,
+      "sha256": "950f782a7458bdbb8808cf30311966a810c2f03c4c7205356eb5425569489bfd",
+      "gitBlobSha": "40e0ff40cd04afb5a16276b899447ee84eaac2d5"
+    },
+    {
+      "path": "evidence/five-skills-desktop-loader-evidence.json",
+      "bytes": 1038,
+      "sha256": "76458ea37606fad4b2ce0ef09bffc786173dab2b9f421355eaaa186013055f9c",
+      "gitBlobSha": "84c4117a50a1dfe80612d9c2518bc2a517ecb098"
+    },
+    {
+      "path": "evidence/test-results.txt",
+      "bytes": 1920,
+      "sha256": "1f6c26022cef00f84a8f2cba58d872b72a00c71945a88898b78b4760dc90317a",
+      "gitBlobSha": "fc8833c2428d3892202a3ec96997e42625341ca3"
+    },
+    {
+      "path": "evidence/patch-evidence.json",
+      "bytes": 2023,
+      "sha256": "a7d585f6f201f4f51fe4dcd51a438ddd9ff400e13526151409083b2d45cbee1c",
+      "gitBlobSha": "a368fa7eec50cb4452f6f3b65fddf035d1c6057e"
+    },
+    {
+      "path": "evidence/source-evidence.json",
+      "bytes": 6020,
+      "sha256": "5a069fdf901e06130a6c1978b4112efe4f4790e63dc189f6c194d07c8ac2500d",
+      "gitBlobSha": "d2b25d1fa965dadc99e1183eb8872277fed242bd"
+    },
+    {
+      "path": "evidence/runtime-evidence.json",
+      "bytes": 595,
+      "sha256": "6ce1bb9c3c1333b37917461d0b743443a519ac04a23ccea2b256e679c1ecd947",
+      "gitBlobSha": "fcab262f2129bef1555395e8e9fc9c1c29ac7e59"
+    },
+    {
+      "path": "evidence/source-writeback.json",
+      "bytes": 1848,
+      "sha256": "af7ccb578c1f048e871a0926dc81905e5e6070abe804c5deefbbba305ca060e8",
+      "gitBlobSha": "b0d27a2d7be3859fec454d94476ae134774db957"
+    },
+    {
+      "path": "evidence/repository-memory-install-evidence.json",
+      "bytes": 3681,
+      "sha256": "14f4feebdbfe1533601bfed6b1bb166ae8bc92b3b5f86b21e82b46d5a75c5d4b",
+      "gitBlobSha": "d1184e29d55df8b7e1a222b998ab06e55fb9da60"
+    },
+    {
+      "path": "evidence/repository-training-install-evidence.json",
+      "bytes": 3685,
+      "sha256": "f2fa49f1114f5e923b71237ae494583535a910f8b651064bdcc9cf898b779ee3",
+      "gitBlobSha": "774cc6f76e5661ce0817f064e91e89ac01f140db"
+    },
+    {
+      "path": "cross-save/cross-save-store.js",
+      "bytes": 10832,
+      "sha256": "ebb8b403ad2ecfb6f461f74fe5489bb8e2d852df7ac7f908f613dbec1b31fc1d",
+      "gitBlobSha": "e99ae87e184371f02c0d764997265f99345943e3"
+    },
+    {
+      "path": "cross-save/native-chat.js",
+      "bytes": 1423,
+      "sha256": "baff34bd0556aea3897d7dde4ac266f33bbaa8f2534dc8cdf1866aaf9a4c132e",
+      "gitBlobSha": "36d3fc8c17d36bc8bb8560dbcc3088673213f36d"
+    },
+    {
+      "path": "cross-save/package.json",
+      "bytes": 220,
+      "sha256": "20150cc2cd0b30cdc6a40570c0e21b71d1090ef0e4b673c3a203805fc5153e2f",
+      "gitBlobSha": "d564c7cec5b6e42618f5cb720381560de4fb3689"
+    },
+    {
+      "path": "repository-memory/ICARUS-REPOSITORY-MEMORY.md",
+      "bytes": 2087,
+      "sha256": "a23b74d8d4a768501d391777b317c45380cc1c81a5b11e453d8973f6000deb65",
+      "gitBlobSha": "9401342e7cab15b0bded61733ff1e8854ca66f16"
+    },
+    {
+      "path": "repository-memory/ICARUS-REPOSITORY-TRAINING.md",
+      "bytes": 1144,
+      "sha256": "e1d9f70c82411d218073202bddd1eb9c7a0bcdcebc9fa68d358c3f4e99938021",
+      "gitBlobSha": "71b3f2a6a86413d7eb00e47f35b90060653c2811"
+    },
+    {
+      "path": "HANDOFF.md",
+      "bytes": 10247,
+      "sha256": "9ec0ae87a3faa7244b9f051926d5223761d8367d3e6b08c1ad955d93d535ec73",
+      "gitBlobSha": "99929a854eba4f6d3bc368be09d20c936ac43103"
+    },
+    {
+      "path": "staged-tether/client.js",
+      "bytes": 7496,
+      "sha256": "92b884fbad3edcb4063f31477076c653eb97b3dda4fdf0d0c2d5e858c617663b",
+      "gitBlobSha": "70825fdc3915e49460ccbea1a0f3d07fa5de0f62"
+    },
+    {
+      "path": "staged-tether/hermes-skills.js",
+      "bytes": 1762,
+      "sha256": "aa3c64c263d28bf60dd48eab937323ec1d91bd44315c4e2d89aea364b28cbbc0",
+      "gitBlobSha": "a5f7b800f41a4f71241029b31fed492fc1fbbfff"
+    },
+    {
+      "path": "staged-tether/icarus-learning.js",
+      "bytes": 8902,
+      "sha256": "8bd8a008be6c6d563c0f4eacc010a0e5fed9feadd744e25da63e7f2c50a15576",
+      "gitBlobSha": "8c176a45a5041ca2bbfb9f8d5155548f24795b11"
+    },
+    {
+      "path": "staged-tether/index.js",
+      "bytes": 39074,
+      "sha256": "11605b5481ebdeacd0586d4d70d4a602019637b96537a44db8983328537014bb",
+      "gitBlobSha": "cc5399f103dd1c63806c1adaaf33358573d84245"
+    },
+    {
+      "path": "staged-tether/model-selector.js",
+      "bytes": 7855,
+      "sha256": "18741c4e234ca13e4deffbf7735955566aabe278e51c5f7312cc25dca86278eb",
+      "gitBlobSha": "aaeca7bd01986f443a0f4db6bde2d09dd1c736db"
+    },
+    {
+      "path": "staged-tether/MODEL-SELECTOR.md",
+      "bytes": 9122,
+      "sha256": "ee0eb844a6fb8fa6339f4aa1c2b9afca369bb3167fe56c5385e59ed4e05fba1c",
+      "gitBlobSha": "a66940ab6142076be64bc16e8bb573ca59de1edc"
+    },
+    {
+      "path": "staged-tether/package.json",
+      "bytes": 2520,
+      "sha256": "d321c77934d666ae089ddd44e9a7688422892843d609de0292db42ee416f54b4",
+      "gitBlobSha": "14863b69da4a67310399e819847a7b9f8e500ee9"
+    },
+    {
+      "path": "staged-tether/quota-state.js",
+      "bytes": 10492,
+      "sha256": "564a0630f823a12ccd3aa207abd1c44efb1ee28acee1f3f2906e30bcb88f945f",
+      "gitBlobSha": "fe41eb878d67b62be6a00f71243faeb5d64f9a4d"
+    },
+    {
+      "path": "staged-tether/hermes-skills/LICENSE.txt",
+      "bytes": 1091,
+      "sha256": "e29dfaf6905a8d396a58ea4bd84ad27057756bbd9599b5bec0971ae34d2a2118",
+      "gitBlobSha": "9e17600a6a6ff8432ce3704ab89d8d11085417a3"
+    },
+    {
+      "path": "staged-tether/hermes-skills/manifest.json",
+      "bytes": 5950,
+      "sha256": "9fbb8b0a5c2eb43e91003305b7646d84f08021b5258753cc8d7d3f8238bc2dbb",
+      "gitBlobSha": "a214b80c69101fe32b19b9b22ae1472253a3f335"
+    },
+    {
+      "path": "staged-tether/scripts/build-android-runtime.mjs",
+      "bytes": 16374,
+      "sha256": "a73f8ca1b94093e04894812205ab52c4ef392f05abfc384e6c8609576288cda5",
+      "gitBlobSha": "eb55d7f1692665f9bacafc84023bfcffef0ce043"
+    },
+    {
+      "path": "staged-tether/scripts/runtime-manifest.mjs",
+      "bytes": 863,
+      "sha256": "7ffb63180dbef94fefac2ad581968ed89fa76f938e079770ff521da99e1ae21d",
+      "gitBlobSha": "c0f751458d11e6ef770f2ee982f898cc09a1f333"
+    },
+    {
+      "path": "staged-tether/test/model-selector.test.js",
+      "bytes": 14603,
+      "sha256": "2b16485b0ba179f06df4bde08bf4a336473bf8d7c10feb6766c71986df0f983f",
+      "gitBlobSha": "be39f6d954b1dbfb5e6647a1c8f3e673231f0507"
+    },
+    {
+      "path": "staged-tether/hermes-skills/adversarial-ux-test/SKILL.md",
+      "bytes": 11141,
+      "sha256": "e4d16eedd9ad70172c05d71d1f3e2dd9b5a7c602b22814ce90205a4ac81cd9bd",
+      "gitBlobSha": "995c1fb8d8118f03b9ce63efdf2b65fc5a0a6afa"
+    },
+    {
+      "path": "staged-tether/hermes-skills/agent-merge-conflict-arbiter/SKILL.md",
+      "bytes": 9810,
+      "sha256": "f591006d5177374561a0952f76e64b6ffb4f913d1edc095a6c21e0cf115797b2",
+      "gitBlobSha": "643d5302011cd7528fe111b6faf643b7ed076dfc"
+    },
+    {
+      "path": "staged-tether/hermes-skills/code-wiki/SKILL.md",
+      "bytes": 15852,
+      "sha256": "6a1eab497d85837cf7d297a923ab2af2f0bde05977d4512529972dd3ff617993",
+      "gitBlobSha": "c2652138b07dcd77c15b11c5bbbae24fc8b7ff07"
+    },
+    {
+      "path": "staged-tether/hermes-skills/dynamic-workflow/SKILL.md",
+      "bytes": 13410,
+      "sha256": "2df2d484ae3fb4921ad9a56983549b0036c6c619f05bd0f671fb8107bc70c5ec",
+      "gitBlobSha": "1cf33726122417ac0a662a9ec3c29f42549fad53"
+    },
+    {
+      "path": "staged-tether/hermes-skills/grill-me/SKILL.md",
+      "bytes": 6870,
+      "sha256": "e42bc7a380b860980826a6eff06fb15b54bba00ad4a4974763cc294c4ab3bc2b",
+      "gitBlobSha": "657a532c76db4dbd83dacdcf1dabbdae7c38753a"
+    },
+    {
+      "path": "staged-tether/hermes-skills/icarus-continuous-learning/SKILL.md",
+      "bytes": 2037,
+      "sha256": "bdcb4beacf850ddb1ad2c652095831d4cf9eb58e85b06a97d1c1c12b71cbd924",
+      "gitBlobSha": "d1a755a1d2ad76c69e8eef168f1f609cee96b59a"
+    },
+    {
+      "path": "staged-tether/hermes-skills/rest-graphql-debug/SKILL.md",
+      "bytes": 17373,
+      "sha256": "7ccf7787ee299476e31e05711e78215a11f7284f58fe3dc5c608c76e2b467f48",
+      "gitBlobSha": "7852b913b7c4786276924aee5ef6e8122d1fa404"
+    },
+    {
+      "path": "staged-tether/hermes-skills/subagent-driven-development/SKILL.md",
+      "bytes": 12880,
+      "sha256": "c64ba6a4f95cfb046f832bff2d26f1ae65935db106db4afc6496ab43fce456d4",
+      "gitBlobSha": "1fffdecb256dd4de67d16a470dbb4d1cf6a46cc1"
+    },
+    {
+      "path": "staged-tether/hermes-skills/subagent-driven-development/references/context-budget-discipline.md",
+      "bytes": 4209,
+      "sha256": "325d4f3b16db3215a1d7d8771b4c03af40cad62a468df5c44757c1e6366f2c9c",
+      "gitBlobSha": "2728160c16bb48db78eeeb9899cb6f7784979b16"
+    },
+    {
+      "path": "staged-tether/hermes-skills/subagent-driven-development/references/gates-taxonomy.md",
+      "bytes": 4668,
+      "sha256": "2740dbfb83cb58d2e8bffd6d2dca95c2dbccca3b60138dcb81b9be905554043a",
+      "gitBlobSha": "206f71efc9049aed9c1eca5f731308b7fbc5f8ba"
+    },
+    {
+      "path": "staged-tether/hermes-skills/subagent-driven-development/references/upstream-SKILL.md",
+      "bytes": 10699,
+      "sha256": "52bf4892e66d9307fcbfa0c6e524be7f562273ba91921fc213e3b418d26082c9",
+      "gitBlobSha": "57904fd5b42c834127dcf5543a59e4517e68aec8"
+    },
+    {
+      "path": "staged-tether/hermes-skills/rest-graphql-debug/references/upstream-SKILL.md",
+      "bytes": 15636,
+      "sha256": "18228139612c555dbb4a53b74039dadb53cb1163507dd9325a4fcfa3326e475d",
+      "gitBlobSha": "ee46fedd1f9455316c39893ca34679a9cf6ce128"
+    },
+    {
+      "path": "staged-tether/hermes-skills/grill-me/references/upstream-SKILL.md",
+      "bytes": 4689,
+      "sha256": "6e3b3b81c1ad3a0b3ba3d36ec725e376d225e7867bfbf23a5129cf245e94bb0c",
+      "gitBlobSha": "18d9d06ac992045a6ee10fd78a1840a2f5d08580"
+    },
+    {
+      "path": "staged-tether/hermes-skills/dynamic-workflow/references/upstream-SKILL.md",
+      "bytes": 11229,
+      "sha256": "a030cce5a966e68b5b283fd530416adbebd6c1dc10c7592edc8d96bcffb2edc6",
+      "gitBlobSha": "a8232e1aa9b4c1d7ab24ede2273fed2545613b89"
+    },
+    {
+      "path": "staged-tether/hermes-skills/code-wiki/references/upstream-SKILL.md",
+      "bytes": 14115,
+      "sha256": "5d3e5b93dfd188483f45e75f00a7d4f16d044681f41c36b785aae900c7397576",
+      "gitBlobSha": "3dc69fbb5a4d343fa0483907049ceca8df888b30"
+    },
+    {
+      "path": "staged-tether/hermes-skills/code-wiki/templates/architecture.md",
+      "bytes": 654,
+      "sha256": "91f4c340c29460d777ba1317ec0d46da677f2768d848e74ee3ac90d1699bbc60",
+      "gitBlobSha": "e737b2c9814ea96844e26504f6cd1bb601259c22"
+    },
+    {
+      "path": "staged-tether/hermes-skills/code-wiki/templates/getting-started.md",
+      "bytes": 658,
+      "sha256": "190b3e93cfa8872de69f846a86b7250a154ce3ed3c50d3127eeae8c0a02c1f36",
+      "gitBlobSha": "bbc66dbbe0bfca7be34d2637dd2be3d85ddb7c54"
+    },
+    {
+      "path": "staged-tether/hermes-skills/code-wiki/templates/module.md",
+      "bytes": 634,
+      "sha256": "5a5f02b93dc45712a444c279e4b993a01937436082a0c8a9e64e2fa7f597a8d7",
+      "gitBlobSha": "8494438f5b44374c40b07742dccca964ca3faee3"
+    },
+    {
+      "path": "staged-tether/hermes-skills/code-wiki/templates/README.md",
+      "bytes": 667,
+      "sha256": "0c38fb312fbe6f6f1c8169b93648966275e28f0ae5f312c7195023f6b91bc240",
+      "gitBlobSha": "2fe65cea2e2aa437c54c91390b359dba34af0d81"
+    },
+    {
+      "path": "staged-tether/hermes-skills/agent-merge-conflict-arbiter/references/upstream-SKILL.md",
+      "bytes": 7629,
+      "sha256": "f8b1a0cf2392a1da0d3890e1ebc6429b1edb83a8f076e104b8f7c8cb7465d1be",
+      "gitBlobSha": "c7b481c2dcf9867b7b35870696f0790be7acb05b"
+    },
+    {
+      "path": "staged-tether/hermes-skills/adversarial-ux-test/references/upstream-SKILL.md",
+      "bytes": 8960,
+      "sha256": "d687ee7727174fd58acbe638038b207f7fb86ea27603a34cb3b0f1b0889b0dd7",
+      "gitBlobSha": "2c5ba20c513b2049416f5d570303309c27bab423"
+    },
+    {
+      "path": "repository-memory/HARNESS-SKILL.md",
+      "bytes": 5268,
+      "sha256": "b52a798849348a3d8980951ab50ac586dd678d8596264506b6efc4c3f44d3da1",
+      "gitBlobSha": "2e446e8623a6109f8fc19659a0c4289108c0a61c"
+    },
+    {
+      "path": "repository-memory/HERMES-SKILL.md",
+      "bytes": 6187,
+      "sha256": "577ef2ae82704ea2d9789bb117f5a04f9bde7c8771f7ce32a415a5ac18877f73",
+      "gitBlobSha": "7dc977a1eaba92473c9071d7cd1d81f5b77b3f75"
+    },
+    {
+      "path": "evidence/other-chat-microphone-source-evidence.json",
+      "bytes": 1490,
+      "sha256": "b0de5da071ba57a931e0e215581824fdb1bdbf925236ab33fe2e295cb0215911",
+      "gitBlobSha": "ff24dc6ec0e091cc678103793285f02ccf41e991"
+    },
+    {
+      "path": "ICARUS-Harness-and-mobile.patch",
+      "bytes": 262354,
+      "sha256": "87191214ad4539b51d71b3a9d02d019c910ddc8d247e576ee52472c5971acf6c",
+      "gitBlobSha": "76c9a36e548fbd97481e2970089027a540737538"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1775,
+      "sha256": "a6feb31e6a6df098d65bcf00343635f4cc02e72a8099f41aae658e778489301b",
+      "gitBlobSha": "413babcf7277e5bc802651a2f3d7bc08f45fbc9f"
+    },
+    {
+      "path": "cross-save/README.md",
+      "bytes": 731,
+      "sha256": "320e7955a6e9ee28bc3739a5cef0b9943aaccb33484f7956714ed7ea6f0c964c",
+      "gitBlobSha": "aadbb064021b28c58a21931ecd7c5466aa6692c0"
+    },
+    {
+      "path": "governance-record.md",
+      "bytes": 2133,
+      "sha256": "f0458013066e93090b7eb9d5b8f75b4dbb7cd08812ddb7dec21946609a701d28",
+      "gitBlobSha": "2e45b5d9b503b16b46c47cbbab801a2881edae9d"
+    },
+    {
+      "path": "archives/ICARUS-Harness-and-mobile-patch.zip",
+      "bytes": 203911,
+      "sha256": "34908dc2cafeab14a439f64d8b0ede472e385e4e7d4bb2bbaa2d2f96dbe9d91b",
+      "gitBlobSha": "baf1937c79276591274bb5eae8efede2a7829103"
+    },
+    {
+      "path": "archives/ICARUS-operational-skills-patch.zip",
+      "bytes": 270683,
+      "sha256": "85a97a2cc918192fea626aef96d105a4f8e3fe44896a292b59dd7b3a3a788c4f",
+      "gitBlobSha": "83147d8ef393685aa558361a0bf048060dd27855"
+    },
+    {
+      "path": "archives/ICARUS-desktop-learning-patch.zip",
+      "bytes": 6829,
+      "sha256": "5a0a1e760bdf786d008c337e247cb37afdad8879f3dad9483bd1ff775e9a0867",
+      "gitBlobSha": "47326ab4c40ef814a3496fd44551f1c529464b60"
+    }
+  ]
+}

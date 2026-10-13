@@ -1,0 +1,54 @@
+{
+  "sourceWriteback": "completed",
+  "liveInstallationChanged": false,
+  "timestampUTC": "2026-10-12T18:36:01.8238698+00:00",
+  "sourceRoot": "C:\\Users\\the1m\\OneDrive\\Desktop\\dsh-tether-source\\dsh-tether-0.1.20",
+  "identityPermissionsAndRustUnchanged": true,
+  "readback": [
+    {
+      "path": "index.js",
+      "matchesTestedOutput": true,
+      "sha256": "A50A6DF8AE2A02671ECAB5B2C049F69DB087C185E18D667E2A0F7CB718DF869B"
+    },
+    {
+      "path": "package.json",
+      "matchesTestedOutput": true,
+      "sha256": "528C67077A14F2F21EC2AAE143CB51248571A007955B215A183E0FC19439868B"
+    },
+    {
+      "path": "scripts/build-android-runtime.mjs",
+      "matchesTestedOutput": true,
+      "sha256": "5A2A1C19E51F7FE8E1DAE0928499A5DE51C8320A2D4AC54C8FC15D7B5872C0B4"
+    },
+    {
+      "path": "client.js",
+      "matchesTestedOutput": true,
+      "sha256": "92B884FBAD3EDCB4063F31477076C653EB97B3DDA4FDF0D0C2D5E858C617663B"
+    },
+    {
+      "path": "model-selector.js",
+      "matchesTestedOutput": true,
+      "sha256": "18741C4E234CA13E4DEFFBF7735955566AABE278E51C5F7312CC25DCA86278EB"
+    },
+    {
+      "path": "MODEL-SELECTOR.md",
+      "matchesTestedOutput": true,
+      "sha256": "EE0EB844A6FB8FA6339F4AA1C2B9AFCA369BB3167FE56C5385E59ED4E05FBA1C"
+    },
+    {
+      "path": "quota-state.js",
+      "matchesTestedOutput": true,
+      "sha256": "564A0630F823A12CCD3AA207ABD1C44EFB1EE28ACEE1F3F2906E30BCB88F945F"
+    },
+    {
+      "path": "scripts/runtime-manifest.mjs",
+      "matchesTestedOutput": true,
+      "sha256": "680AA294D1EFED15706B744E9D95DF4F9A7313A9D0903D0D903EAF7A112DF579"
+    },
+    {
+      "path": "test/model-selector.test.js",
+      "matchesTestedOutput": true,
+      "sha256": "D8B656ADBB8B870AB413BF23C7CDC4B95A383E5A35489F8D710A47824E9E38D4"
+    }
+  ]
+}

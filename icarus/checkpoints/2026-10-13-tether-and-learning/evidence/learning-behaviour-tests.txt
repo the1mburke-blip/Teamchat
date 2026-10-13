@@ -1,0 +1,13 @@
+test_false_verification_and_secrets_are_not_inferred (__main__.LearningContracts.test_false_verification_and_secrets_are_not_inferred) ... ok
+test_incomplete_record_does_not_disable_reminders (__main__.LearningContracts.test_incomplete_record_does_not_disable_reminders) ... ok
+test_incomplete_turn_is_not_learning (__main__.LearningContracts.test_incomplete_turn_is_not_learning) ... ok
+test_only_successful_native_writes_are_journalled_and_deduplicated (__main__.LearningContracts.test_only_successful_native_writes_are_journalled_and_deduplicated) ... ok
+test_reminder_each_turn_and_no_conversation_text_retention (__main__.LearningContracts.test_reminder_each_turn_and_no_conversation_text_retention) ... ok
+test_restart_keeps_lesson_and_duplicate_does_not_overwrite (__main__.LearningContracts.test_restart_keeps_lesson_and_duplicate_does_not_overwrite) ... ok
+test_skills_and_read_calls_are_distinguished (__main__.LearningContracts.test_skills_and_read_calls_are_distinguished) ... ok
+test_worker_unknown_and_delegated_primary_cannot_write (__main__.LearningContracts.test_worker_unknown_and_delegated_primary_cannot_write) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.872s
+
+OK

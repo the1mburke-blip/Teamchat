@@ -1,0 +1,18 @@
+{
+  "status": "runtime checks completed; independently unreviewed",
+  "cordis": "4.0.4",
+  "dsh": "0.2.0-rc.2",
+  "checks": [
+    "actual modified Tether plugin applies in local mode",
+    "real agentEvents and llm/stream waterfall",
+    "actual loopback 429 headers survive normalized UNKNOWN failure",
+    "different provider selected",
+    "downstream retry bypassed only for handled quota",
+    "exhaustion stops",
+    "frozen seed and agent identity unchanged",
+    "quota HTTP handler readback"
+  ],
+  "externalProviderCalls": 0,
+  "localHttpCalls": 1,
+  "liveInstallationChanged": false
+}

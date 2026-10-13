@@ -1,0 +1,97 @@
+{
+  "checkedAt": "2026-10-12T23:56:59.1048290Z",
+  "owner": "Michael",
+  "executor": "Codex deterministic append",
+  "costEUR": 0,
+  "identityChanged": false,
+  "permissionsChanged": false,
+  "phoneChanged": false,
+  "repository": "the1mburke-blip/Teamchat",
+  "branch": "main",
+  "memoryDirectory": "icarus/memory",
+  "receipts": [
+    {
+      "path": "C:\\Users\\the1m\\OneDrive\\Desktop\\learned.md",
+      "beforeBytes": 16130,
+      "afterBytes": 17274,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "e459e05cdb5b437e104a7b7157e56a3dc561b32ca444e03676b011631a1443ef"
+    },
+    {
+      "path": "C:\\Users\\the1m\\OneDrive\\Desktop\\AGENTS.local.md",
+      "beforeBytes": 2830,
+      "afterBytes": 3974,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "8a5784313068f34c93b1f92171cb48107cc9775883947c84becd423d33ecba72"
+    },
+    {
+      "path": "C:\\Users\\the1m\\OneDrive\\Documents\\deepseek-harness\\default-workspace\\icarus\\memory\\learned.md",
+      "beforeBytes": 9032,
+      "afterBytes": 10176,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "5258ec0bb1ee36805033690b98f7be78566715bceaca7a9fcb181fc8e8a69cfd"
+    },
+    {
+      "path": "C:\\Users\\the1m\\OneDrive\\Documents\\deepseek-harness\\default-workspace\\AGENTS.local.md",
+      "beforeBytes": 2844,
+      "afterBytes": 3988,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "e99c94f1c26dfb343943c9dece8ef78e5dae66beef9b58a685de4c0c38ca5743"
+    },
+    {
+      "path": "C:\\Users\\the1m\\.dsh\\plugins\\icarus-tether-patch\\hermes-skills\\icarus-continuous-learning\\SKILL.md",
+      "beforeBytes": 4124,
+      "afterBytes": 5268,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "b52a798849348a3d8980951ab50ac586dd678d8596264506b6efc4c3f44d3da1"
+    },
+    {
+      "path": "C:\\Users\\the1m\\.dsh\\skills\\icarus-continuous-learning\\SKILL.md",
+      "beforeBytes": 4124,
+      "afterBytes": 5268,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "b52a798849348a3d8980951ab50ac586dd678d8596264506b6efc4c3f44d3da1"
+    },
+    {
+      "path": "C:\\Users\\the1m\\AppData\\Local\\hermes\\profiles\\icarus\\skills\\icarus-continuous-learning\\SKILL.md",
+      "beforeBytes": 5043,
+      "afterBytes": 6187,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "577ef2ae82704ea2d9789bb117f5a04f9bde7c8771f7ce32a415a5ac18877f73"
+    },
+    {
+      "path": "C:\\Users\\the1m\\AppData\\Local\\hermes\\profiles\\icarus\\memories\\MEMORY.md",
+      "beforeBytes": 4225,
+      "afterBytes": 5369,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "523d7157ea8b9f542657ede6e714a643fc3c8e10f69ec73d88647617ec4abe71"
+    },
+    {
+      "path": "C:\\Users\\the1m\\AppData\\Local\\hermes\\profiles\\icarus\\workspace\\learning\\INDEX.md",
+      "beforeBytes": 2941,
+      "afterBytes": 4085,
+      "originalPrefixPreserved": true,
+      "directiveReadBack": true,
+      "alreadyPresent": false,
+      "sha256": "b2298261293a8a1c76e8c638171ae28b384dc4286e1d041281c8531da8ebf9c1"
+    }
+  ],
+  "liveModelAcknowledgement": "not tested",
+  "automaticCrossSave": "unfinished"
+}

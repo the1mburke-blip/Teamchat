@@ -1,0 +1,128 @@
+{
+  "skills": [
+    {
+      "name": "rest-graphql-debug",
+      "category": "software-development",
+      "description": "Debug REST/GraphQL APIs: status codes, auth, schemas, repro.",
+      "sourceRelativePath": "optional-skills/software-development/rest-graphql-debug",
+      "sourceSkillSha256": "18228139612c555dbb4a53b74039dadb53cb1163507dd9325a4fcfa3326e475d",
+      "installedSkillSha256": "7ccf7787ee299476e31e05711e78215a11f7284f58fe3dc5c608c76e2b467f48",
+      "resourceFiles": [
+        "references/upstream-SKILL.md",
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "code-wiki",
+      "category": "software-development",
+      "description": "Generate wiki docs + Mermaid diagrams for any codebase.",
+      "sourceRelativePath": "optional-skills/software-development/code-wiki",
+      "sourceSkillSha256": "5d3e5b93dfd188483f45e75f00a7d4f16d044681f41c36b785aae900c7397576",
+      "installedSkillSha256": "6a1eab497d85837cf7d297a923ab2af2f0bde05977d4512529972dd3ff617993",
+      "resourceFiles": [
+        "references/upstream-SKILL.md",
+        "SKILL.md",
+        "templates/architecture.md",
+        "templates/getting-started.md",
+        "templates/module.md",
+        "templates/README.md"
+      ]
+    },
+    {
+      "name": "grill-me",
+      "category": "software-development",
+      "description": "Adversarial plan interview before implementation.",
+      "sourceRelativePath": "optional-skills/software-development/grill-me",
+      "sourceSkillSha256": "6e3b3b81c1ad3a0b3ba3d36ec725e376d225e7867bfbf23a5129cf245e94bb0c",
+      "installedSkillSha256": "e42bc7a380b860980826a6eff06fb15b54bba00ad4a4974763cc294c4ab3bc2b",
+      "resourceFiles": [
+        "references/upstream-SKILL.md",
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "subagent-driven-development",
+      "category": "software-development",
+      "description": "Execute plans via delegate_task subagents (2-stage review).",
+      "sourceRelativePath": "optional-skills/software-development/subagent-driven-development",
+      "sourceSkillSha256": "52bf4892e66d9307fcbfa0c6e524be7f562273ba91921fc213e3b418d26082c9",
+      "installedSkillSha256": "c64ba6a4f95cfb046f832bff2d26f1ae65935db106db4afc6496ab43fce456d4",
+      "resourceFiles": [
+        "references/context-budget-discipline.md",
+        "references/gates-taxonomy.md",
+        "references/upstream-SKILL.md",
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "dynamic-workflow",
+      "category": "autonomous-ai-agents",
+      "description": "Plan-in-code fan-outs, adversarial verification, waves.",
+      "sourceRelativePath": "optional-skills/autonomous-ai-agents/dynamic-workflow",
+      "sourceSkillSha256": "a030cce5a966e68b5b283fd530416adbebd6c1dc10c7592edc8d96bcffb2edc6",
+      "installedSkillSha256": "2df2d484ae3fb4921ad9a56983549b0036c6c619f05bd0f671fb8107bc70c5ec",
+      "resourceFiles": [
+        "references/upstream-SKILL.md",
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "agent-merge-conflict-arbiter",
+      "category": "autonomous-ai-agents",
+      "description": "Neutral arbiter for merge conflicts between two agents.",
+      "sourceRelativePath": "optional-skills/autonomous-ai-agents/agent-merge-conflict-arbiter",
+      "sourceSkillSha256": "f8b1a0cf2392a1da0d3890e1ebc6429b1edb83a8f076e104b8f7c8cb7465d1be",
+      "installedSkillSha256": "f591006d5177374561a0952f76e64b6ffb4f913d1edc095a6c21e0cf115797b2",
+      "resourceFiles": [
+        "references/upstream-SKILL.md",
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "adversarial-ux-test",
+      "category": "dogfood",
+      "description": "Roleplay a hostile user to find and triage UX pain points.",
+      "sourceRelativePath": "optional-skills/dogfood/adversarial-ux-test",
+      "sourceSkillSha256": "d687ee7727174fd58acbe638038b207f7fb86ea27603a34cb3b0f1b0889b0dd7",
+      "installedSkillSha256": "e4d16eedd9ad70172c05d71d1f3e2dd9b5a7c602b22814ce90205a4ac81cd9bd",
+      "resourceFiles": [
+        "references/upstream-SKILL.md",
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "icarus-continuous-learning",
+      "category": "icarus-memory",
+      "description": "Persist evidenced lessons and maintain skills through native Harness file tools.",
+      "sourceRelativePath": "ICARUS-native-Harness-patch",
+      "sourceSkillSha256": "bdcb4beacf850ddb1ad2c652095831d4cf9eb58e85b06a97d1c1c12b71cbd924",
+      "installedSkillSha256": "bdcb4beacf850ddb1ad2c652095831d4cf9eb58e85b06a97d1c1c12b71cbd924",
+      "resourceFiles": [
+        "SKILL.md"
+      ]
+    }
+  ],
+  "runtimeFiles": [
+    "hermes-skills/adversarial-ux-test/SKILL.md",
+    "hermes-skills/adversarial-ux-test/references/upstream-SKILL.md",
+    "hermes-skills/agent-merge-conflict-arbiter/SKILL.md",
+    "hermes-skills/agent-merge-conflict-arbiter/references/upstream-SKILL.md",
+    "hermes-skills/code-wiki/SKILL.md",
+    "hermes-skills/code-wiki/references/upstream-SKILL.md",
+    "hermes-skills/code-wiki/templates/README.md",
+    "hermes-skills/code-wiki/templates/architecture.md",
+    "hermes-skills/code-wiki/templates/getting-started.md",
+    "hermes-skills/code-wiki/templates/module.md",
+    "hermes-skills/dynamic-workflow/SKILL.md",
+    "hermes-skills/dynamic-workflow/references/upstream-SKILL.md",
+    "hermes-skills/grill-me/SKILL.md",
+    "hermes-skills/grill-me/references/upstream-SKILL.md",
+    "hermes-skills/icarus-continuous-learning/SKILL.md",
+    "hermes-skills/rest-graphql-debug/SKILL.md",
+    "hermes-skills/rest-graphql-debug/references/upstream-SKILL.md",
+    "hermes-skills/subagent-driven-development/SKILL.md",
+    "hermes-skills/subagent-driven-development/references/context-budget-discipline.md",
+    "hermes-skills/subagent-driven-development/references/gates-taxonomy.md",
+    "hermes-skills/subagent-driven-development/references/upstream-SKILL.md"
+  ]
+}
