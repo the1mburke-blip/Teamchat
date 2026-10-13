@@ -16,14 +16,14 @@
     },
     {
       "provider": "google",
-      "model": "gemma-4-31b-it",
+      "model": "gemma-4-26b-a4b-it",
       "approved": true,
       "costPolicy": "verified-zero-cost",
-      "compatibilityVerified": false
+      "compatibilityVerified": true
     },
     {
       "provider": "google",
-      "model": "gemma-4-26b-a4b-it",
+      "model": "gemma-4-31b-it",
       "approved": true,
       "costPolicy": "verified-zero-cost",
       "compatibilityVerified": false
@@ -43,5 +43,5 @@
       "compatibilityVerified": false
     }
   ],
-  "note": "Order = quota-first. Source: Google AI Studio rate-limit table (free tier, project gen-lang-client-0190888096), read live 2026-10-13; exact Gemma IDs from the Gemini API model list via the runner's LIST_MODELS diagnostic. RPD: 3.5-flash-lite 500, 3.1-flash-lite 500, gemma-4-31b 14400, gemma-4-26b 14400, 3.6-flash 20, 3.7-flash 20. 0/0 models excluded. gemini-3.8-flash (20 RPD) omitted (candidate cap MAX_CALLS=6). compatibilityVerified=false means not yet exercised by this runner. Selection delegated by the owner. This file is the runner's list only; the owner's PC profile (cordis.patch.yml / icarus-quota-failover) is separate and unverified."
+  "note": "Order = quota-first. Source: Google AI Studio rate-limit table (free tier, project gen-lang-client-0190888096), read live 2026-10-13; exact Gemma IDs from the Gemini API model list (runner LIST_MODELS diagnostic). RPD: 3.5-flash-lite 500, 3.1-flash-lite 500, gemma-4-26b 14400, gemma-4-31b 14400, 3.6-flash 20, 3.7-flash 20. 0/0 models excluded. gemini-3.8-flash (20 RPD) omitted (cap MAX_CALLS=6). compatibilityVerified=true = answered HTTP 200 with gates PASS via this runner (3.5-flash-lite, gemma-4-26b-a4b-it on 2026-10-13). gemma-4-31b-it returned one HTTP 500 'Internal error' on 2026-10-13 (inconclusive, kept as later fallback, unverified). Selection delegated by the owner. This file is the runner's list only; the owner's PC profile (cordis.patch.yml / icarus-quota-failover) is separate and unverified."
 }
