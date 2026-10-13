@@ -1462,3 +1462,35 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - \`terminal_status\`: Historical stale-state assertion FAIL; corrective log file write initiated/committed; final matrix/journal PASS requires physical GitHub readback.
 - \`confidence\`: HIGH for the assertion-versus-GitHub discrepancy, live prior audit and existing commits.
 - \`superseded_by\`: NONE
+
+
+ 
+### HV-EXP-094 — HumanVibe media creation forbidden; approved-source-only publishing
+- `experience_id`: HV-EXP-094
+- `date_utc`: 2026-10-13
+- `source_agent`: SOL / GPT-6; Michael supplied the binding override.
+- `task_problem`: Restore HumanVibe Buffer continuity when the four approved Signature Tee V2 mockups do not satisfy the previous-six unique-image rule.
+- `symptoms_failure_signature`: Assistant proposed and attempted new image generation; a first generated result showed an unrelated supplement product, not HumanVibe streetwear, demonstrating ungrounded brand/product substitution. The image was rejected; no image was uploaded or published.
+- `owner_correction`: "Never generate images use the approved content ONLY".
+- `what_failed`: Attempting to solve the media scarcity through generative assets rather than respecting the canonical existing approved Production Asset Vault, product-version integrity and user editorial preferences.
+- `successful_recovery`: BOUNDED — generated output rejected, no publishing use; existing approved V2 images left untouched, 21 future Buffer captions corrected in place as paraphrases of Niche Business Blueprint V2, and explicit no-generation/approved-only policy added to CONTENT_PIPELINE.md.
+- `verification_evidence`: https://github.com/the1mburke-blip/Teamchat/issues/94 ; https://github.com/the1mburke-blip/Teamchat/commit/1ce33826d17f7044beb56100b281e87c40e26f5f ; native BUFFER_LIST_POSTS readback returned 21/21 future scheduled posts, existing approved V2 mockup URLs, original publication times, no new errors and 21 unique Blueprint-derived captions.
+- `what_not_to_retry`: NEVER generate, recreate, crop into a purported new asset, synthesize, substitute or edit media for HumanVibe posts; no unapproved art, lifestyle scenes, V1-to-V2 confusion, media-free Instagram workaround or loosening the previous-six rule just to hit queue volume.
+- `reusable_principle`: **The owner's approved-content boundary outranks volume targets; reuse only preapproved source media and treat insufficient distinct assets as a blocker, not a license to generate imagery.**
+- `capability_tool_prerequisites`: Live Production Asset Vault and CONTENT_PIPELINE.md, authentic Buffer post-media readback, approved Niche Business Blueprint V2 and owner-authorised caption editing through existing Buffer route.
+- `confidence`: HIGH on observed image-generation error and subsequent live Buffer/policy readbacks. Full autonomous continuity NOT verified.
+- `superseded_by`: NONE
+
+### HV-EXP-095 — Instagram scheduled caption edit requires preserving original media explicitly
+- `experience_id`: HV-EXP-095
+- `date_utc`: 2026-10-13
+- `source_agent`: SOL / GPT-6
+- `task_problem`: Correct existing scheduled Instagram post caption to paraphrase Blueprint V2 without generating or modifying approved image, scheduled time or post ID.
+- `failure_signature`: Native authenticated Buffer GraphQL editPost with id/text and Instagram metadata (type=post, shouldShareToFeed=true), but with assets omitted, returned InvalidInputError; independent Buffer readback confirmed no mutation.
+- `successful_recovery`: Following failure logging and read-only live schema introspection, resend via same authorised Buffer OAuth/native GraphQL editPost INCLUDING the identical original media URL under assets.image.url and thumbnailUrl, and required Instagram metadata. Returned PostActionSuccess.
+- `verification_evidence`: Buffer post 6ace0618b8e63d8727df497d reread exact corrected text, original V2 mockup-01 Shopify CDN URL unchanged, 2026-10-14T08:00:00Z due_at unchanged, status=scheduled, publishing_error=null; https://github.com/the1mburke-blip/Teamchat/issues/94 .
+- `what_not_to_retry`: Do not repeat Instagram text-only native edit with omitted assets, do not alter the image to bypass this validation, do not reconnect OAuth or reroute directly to Instagram.
+- `reusable_principle`: **When editing scheduled Instagram media posts with Buffer native GraphQL, explicitly pass the unchanged approved media asset to preserve platform validation; then independently reread caption, media URL, due time, status and error.**
+- `capability_tool_prerequisites`: Active Buffer OAuth, GraphQL EditPostInput/PostInputMetaData schema, existing approved image URL, independent BUFFER_LIST_POSTS readback.
+- `confidence`: HIGH for the observed post-specific rejection and recovery; no general claim for all platform/post types.
+- `superseded_by`: NONE
