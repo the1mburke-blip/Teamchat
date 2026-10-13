@@ -43,6 +43,13 @@
       "compatibilityVerified": false
     },
     {
+      "provider": "google",
+      "model": "gemini-3.8-flash",
+      "approved": true,
+      "costPolicy": "verified-zero-cost",
+      "compatibilityVerified": false
+    },
+    {
       "provider": "openrouter",
       "model": "nvidia/nemotron-3-super-120b-a12b:free",
       "approved": true,
