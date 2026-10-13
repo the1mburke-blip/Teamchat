@@ -16,3 +16,10 @@
 - No gain expected from model choice: offline phone/PC cross-save, APK signing mismatch blocking RECORD_AUDIO, unfinished multi-model routing, NotebookLM access. These need harness work or owner action.
 - Terminology: DSH = DeepSeek Harness (runtime, deepseek-ai/deepseek-harness), distinct from DeepSeek the roster agent.
 - Test to replace the guess: run the same 10-20 tasks on the current model and on Claude; score PASS/FAIL against the repo evidence gates; compare success rate, retries, token cost. TRAINING_MATRIX.md and CHAT_LOG.md are the candidate baseline and are still unread.
+
+
+[SOL] 2026-10-13T20:47:24Z
+
+## ALLOWANCE-SNAPSHOTS-2026-10-13 — allowance visibility and learning from blockers
+At Michael's instruction, preserve the executor's failure to investigate allowance tracking proactively and the working snapshot method for Icarus's shared learning. His exact principle: "A blocker is not a blocker. It's a data point." Record the failure signature, change the approach, go around/through/over the obstacle within the authorized scope, and verify the endpoint.
+Full reusable lesson: [Allowance snapshots and learning from blockers](lessons/2026-10-13-allowance-snapshots.md). It documents the tested Codex reader and three-minute scheduled snapshot procedure, plus provider-specific adaptation for Claude and other premium models. Keep meter identities separate; use actual dated readings; preserve failed observations as stale; verify an actual automatic run. Other provider readers and live Icarus uptake are not claimed as implemented. Owner Michael; executor Codex/Sol under Claude; Icarus adjudicates.
