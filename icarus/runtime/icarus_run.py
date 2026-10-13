@@ -25,7 +25,7 @@ RAW = os.environ.get("COMMENT_BODY", "")
 CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
-MAX_CALLS = 9
+MAX_CALLS = 12
 COOLDOWN = 90  # seconds; per-minute peak window reset: one cooldown retry on 429/503 for EVERY model in EVERY round
 POOL_BREAK = 180  # seconds; when the whole pool is exhausted: take a break, then reset the pool and go again
 MAX_ROUNDS = 3  # initial pass + 2 pool resets (bounded so the job cannot run forever on free Actions minutes)
@@ -243,6 +243,10 @@ def pool(system, user, cands, test_cap, inject):
                     url = f"{OR_BASE}/chat/completions" if is_or else f"{BASE}/models/{n}:generateContent"
                     code, txt = http("POST", url, body, timeout=CALL_TIMEOUT)
                 LOG.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
+                daily_cap = code == 429 and re.search(r"per ?day|daily|free-models-per-day", txt, re.I) is not None
+                if daily_cap:
+                    LOG.append(f"{n}: daily quota exhausted -> skip (a cooldown cannot reset a daily cap)")
+                    break
                 if code in (429, 503) and tryno == 1:
                     why = over_budget(COOLDOWN)
                     if why:
@@ -360,7 +364,7 @@ def main():
     else:
         cands, e = approved()
         if model_override:
-            cands = [model_override] if model_override in cands else []
+            cands = ([model_override] + [c for c in cands if c != model_override]) if model_override in cands else []
             e = e or f"MODEL override {model_override} is not an approved route"
         if SKIPPED:
             log.append("openrouter routes skipped (OPENROUTER_API_KEY not set): " + ", ".join(SKIPPED))
