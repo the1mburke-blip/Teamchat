@@ -1365,3 +1365,79 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - \`superseded_by\`: NONE
 
 - \`daily_2026_10_13_learning_writeback_metadata\`: Proposed by Michael; executed by SOL / GPT-6 using existing authenticated GitHub connection through Composio; scope strictly \`TRAINING_MATRIX.md\`; €0 additional monetary spend; no production pipeline, permissions or secrets changed; exact tokens/allowance not measurable.
+
+
+[SOL] 2026-10-13 — supplementary lessons from comprehensive incident audit
+### HV-EXP-089 — Icarus Android phone chat retention and real host governance
+- \`experience_id\`: HV-EXP-089
+- \`date_utc\`: 2026-10-13
+- \`source_agent\`: SOL / ChatGPT GPT-6; Michael direct owner reports; Issue #93 repository evidence.
+- \`task_problem\`: Prevent Icarus phone-session loss and make ICARUS govern the **real Android-local DSH runtime**, not only staged repository files.
+- \`environment_context\`: DSH Tether Android local mode derives \`DSH_HOME\` under \`app-data/dsh-home\` and starts its own runtime; a separately staged source checkout \`AGENTS.md\` and four memory copies exist on a branch but do not create phone-wide authority. Owner reported that Tether wiped Icarus chats on 13 Oct.
+- \`symptoms_failure_signature\`: Chat loss owner-reported; no confirmed recovery, packaged phone-local global instructions, non-bypassable authorization gateway or fresh-device acceptance. Issue #93 routing/addenda exist, but executor acceptance not proven.
+- \`attempts_made\`: Previously staged source-root identity files; 13 Oct issue #93 comments identified local.rs DSH_HOME and specified Android-local packaging/non-destructive installation and deterministic governance. No installed phone build was observed.
+- \`what_failed\`: Conflating repository-source staging with runtime installation and governing authority; no persistence/chat-wipe recovery proof.
+- \`why_it_failed\`: Distinct source checkout, app-data home, and deterministic enforcement boundaries were not implemented and tested together.
+- \`successful_recovery\`: NONE for on-phone chat retention/governance.
+- \`verification_evidence\`: https://github.com/the1mburke-blip/Teamchat/issues/93#issuecomment-6141148963 ; owner report about wiped chats; prior GitHub source-staging record in issue #93.
+- \`what_not_to_retry\`: Do not claim checkout-level AGENTS.md controls the phone or builds hard enforcement. Do not clear app data or overwrite newer chats; do not claim PC tests prove Android-local authority.
+- \`reusable_principle\`: **Staging the agent's identity is not deploying its authority. Phone-local persistence, startup instruction load and deny/bypass policy tests each need physical on-device proof.**
+- \`capability_tool_prerequisites\`: Actual Android app package, runtime-global DSH_HOME startup path, safe backup/non-destructive writes, deterministic tool gateway, fresh offline phone session, independent persistence and deny-path tests.
+- \`confidence\`: HIGH for repo implementation gap; owner-reported chat loss has no independent device dump.
+- \`superseded_by\`: NONE
+
+### HV-EXP-090 — Dual Tether modes are not a unified Icarus memory and training system
+- \`experience_id\`: HV-EXP-090
+- \`date_utc\`: 2026-10-13
+- \`source_agent\`: SOL / ChatGPT GPT-6; Michael owner requirement; Issue #93 source review.
+- \`task_problem\`: Share Icarus's verified memory and learning between local Android and PC-mirror modes without merging independent runtime/chat databases.
+- \`environment_context\`: Local and remote modes have separate sessions/settings/workspaces; 13 Oct #93 addendum documents a desired single logical, versioned evidence-scoped ledger. Existing Tether transport messages do not themselves provide memory sync.
+- \`symptoms_failure_signature\`: Two-mode UI and source copies were mistaken as potentially enough for continuity; no actual phone-originated learning round-trip to PC and back was verified.
+- \`attempts_made\`: Requirements recorded and architecture decision made in issue #93; no code acceptance or runtime test proved.
+- \`what_failed\`: No implemented and independently tested two-way memory/training continuity.
+- \`why_it_failed\`: UI merging and repository persistence solve neither causal synchronization nor conflict/permission adjudication across distinct runtimes.
+- \`successful_recovery\`: NONE for deployed cross-device sync.
+- \`verification_evidence\`: https://github.com/the1mburke-blip/Teamchat/issues/93#issuecomment-6141827204
+- \`what_not_to_retry\`: Do not assert memory sync from a single panel, mirrored PC chat, GitHub commit or a common persona. Do not sync credentials, secrets or unapproved raw transcripts.
+- \`reusable_principle\`: **Continuity requires a verified round-trip of approved memories/lessons across disconnected runtimes, not shared branding or screens.**
+- \`capability_tool_prerequisites\`: Versioned ledger with ID/hash/provenance/permissions, safe offline queue/conflict resolution, gateway adjudication, reconnect replay tests, phone->PC and PC->phone readbacks.
+- \`confidence\`: HIGH for source/requirement gap; no on-device acceptance.
+- \`superseded_by\`: NONE
+
+### HV-EXP-091 — Snapshot/ledger reconciliation does not prove an automatic source bridge
+- \`experience_id\`: HV-EXP-091
+- \`date_utc\`: 2026-10-13
+- \`source_agent\`: SOL / ChatGPT GPT-6; historical issue #94 and earlier assistant report.
+- \`task_problem\`: Prime Snapshot Sync and \`PRIME_LIVE_SYNC\` versus ingress/ledger drift blocked safe HumanVibe continuity.
+- \`environment_context\`: Earlier assistant on 13 Oct reported a Google Form HTTP 500 after snapshot generation; exact failed request not independently reproduced in this audit. Issue #94 records manual Oct 12 snapshot/ledger reconciliation and warns it is NOT an automatic ingress bridge.
+- \`symptoms_failure_signature\`: Stale snapshot generation/run markers and conflicting ledger data treated as operational truth; manual spreadsheet repair later confused with automated propagation or a working consumer.
+- \`attempts_made\`: Read and reported Prime mismatch/HTTP500; earlier separate manual reconciliation of snapshot cells and Buffer ledger row was documented with bounded verification.
+- \`what_failed\`: Automatic source-to-snapshot-to-operational-consumer delivery and monitoring not proven; failure of a stale Prime gate to remain separate from live Buffer read.
+- \`why_it_failed\`: Treating saved or manually reconciled state as evidence of a scheduled ongoing data pipeline.
+- \`successful_recovery\`: Manual ledger/snapshot equality reported and source-backed for its bounded scope, **not** an automated bridge.
+- \`verification_evidence\`: https://github.com/the1mburke-blip/Teamchat/issues/94 ; https://github.com/the1mburke-blip/Teamchat/issues/94#issuecomment-6143994175 ; reported HTTP500 remains unreplicated here.
+- \`what_not_to_retry\`: Do not let old \`PRIME_LIVE_SYNC\` hard-block authoritative live Buffer recovery; do not assert an automatic bridge from Google Sheet equality or successful Form generation.
+- \`reusable_principle\`: **Manual source reconciliation is a bounded data correction, not an unattended source-to-ledger integration. Validate actual future producer, consumer and checkpoint behavior.**
+- \`capability_tool_prerequisites\`: Live ingress and snapshot versions, immutable record IDs/timestamps, error response and retry policy, consumer run receipts, independent next-update verification and existing protected connector authorization.
+- \`confidence\`: HIGH for repo-acknowledged manual/automatic boundary; HTTP500 only earlier assistant reported.
+- \`superseded_by\`: NONE
+
+### HV-EXP-092 — A configured Duty Manager is not a working email/refill monitor
+- \`experience_id\`: HV-EXP-092
+- \`date_utc\`: 2026-10-13
+- \`source_agent\`: SOL / ChatGPT GPT-6, Issue #94 evidence and earlier assistant reports.
+- \`task_problem\`: Restore actual autonomous HumanVibe Buffer refill while preserving Gmail monitoring, content policy, deduplication and media provenance.
+- \`environment_context\`: 13 Oct Issue #94 showed scheduled posts could fall below 9/channel, nine legacy errors, first post at 09:00 Dublin, old monitoring schedule 10:00. On 13 Oct existing task was changed to 08:00 Dublin starting 14 Oct and returned enabled prompt/readback. Earlier assistant said 150 Gmail messages were read but checkpoint not saved; checkpoint absence not independently reread here. Make on-demand was reported to have no runs since 1 Oct.
+- \`symptoms_failure_signature\`: Running monitor after required first post, missing persisted mail checkpoint, no observed unattended post creation, and approved-V2-image shortage (four approved recent V2 lifestyle media already reused; other Vault files mismatched).
+- \`attempts_made\`: Existing Duty Manager prompt control-flow restructured to consult live Buffer instead of stale Prime gate, schedule changed 10:00 -> 08:00 and read back; late queue-restoration attempt/claim did not establish future cycle.
+- \`what_failed\`: End-to-end future unattended monitor/Buffer refill, durable dedupe and compliant unique-media availability remain unproven.
+- \`why_it_failed\`: Testing configuration writes instead of future executions; late schedule; false capacity assumptions about media and stale ledger authority.
+- \`successful_recovery\`: BOUNDED: updated enabled scheduled task/prompt with source-backed readback; no autonomous refill recovery proven.
+- \`verification_evidence\`: https://github.com/the1mburke-blip/Teamchat/issues/94#issuecomment-6143962219 ; https://github.com/the1mburke-blip/Teamchat/issues/94#issuecomment-6143994175 ; latest historical Buffer errors are repo-recorded; mail checkpoint is an earlier assistant report, not independently tested.
+- \`what_not_to_retry\`: Do not create a duplicate task or switch publisher. Do not claim a saved task is a run. Do not use incorrect/unapproved V1 images to satisfy V2 counts, and do not ignore exact missing content or historical errors.
+- \`reusable_principle\`: **Configuration and scheduling PASS are narrower than autonomous service PASS: require a real next-run receipt, persisted Gmail checkpoint, compliant uniquely sourced media and independently reread Buffer outcomes.**
+- \`capability_tool_prerequisites\`: Existing authorized Duty Manager and Gmail/Buffer access, 08:00 recurrence readback, approved image inventory, live post ID/status/error readback, persisted checkpoint and independent future-run confirmation.
+- \`confidence\`: HIGH for GitHub-documented schedule/pipeline boundaries; reported checkpoint and Make status not independently replayed here.
+- \`superseded_by\`: NONE
+
+- \`2026-10-13_comprehensive_audit\`: https://github.com/the1mburke-blip/Teamchat/blob/main/logs/2026-10-13-sol-comprehensive-failure-audit.md — 19 evidence-labelled incidents F01–F19. Existing HV-EXP-086–088 remain as written. Owner proposed; SOL / GPT-6 executed; €0 additional external cost; repository write/readback are not production/runtime acceptance.
