@@ -1494,3 +1494,18 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - `capability_tool_prerequisites`: Active Buffer OAuth, GraphQL EditPostInput/PostInputMetaData schema, existing approved image URL, independent BUFFER_LIST_POSTS readback.
 - `confidence`: HIGH for the observed post-specific rejection and recovery; no general claim for all platform/post types.
 - `superseded_by`: NONE
+
+
+[SOL] 2026-10-13T20:47:24Z
+
+### HV-EXP-096 — ALLOWANCE-SNAPSHOTS-2026-10-13: allowance discovery and blocker learning
+- source_agent: Michael (idea and instruction); Codex/Sol (execution).
+- failure: Allowance control was an owner priority, but the executor waited for Michael to propose automatic snapshots. Historical-availability uncertainty then sidestepped the initiative failure.
+- owner_correction: "A blocker is not a blocker. It's a data point." Diagnose the failure and go around, through, or over it through a materially different authorized route; preserve evidence and learning.
+- recovery: Existing authenticated usage reader plus a three-minute in-chat heartbeat. A missing destination field caused a schema rejection; correcting the payload created the schedule. Saved-configuration readback and actual scheduled observations supplied bounded execution evidence.
+- procedure: Capture provider/meter identity, used/remaining percentage, window/reset time, actual observation time and source. Maintain latest snapshot plus dated history; mark failed reads stale; remain quiet while unchanged/non-actionable; no reset-credit use or paid fallback.
+- cross_training: Reuse the procedure for Claude and other premium models using their own demonstrated authorized readers. Do not pool balances, guess hidden values, infer another provider's allowance, or mistake a saved schedule for an automatic run.
+- what_not_to_retry: Do not assume allowance visibility is unavailable before inspecting authorized tools/history; do not make Michael rediscover a usable route; do not substitute apology or promise for durable learning and verified action.
+- evidence: [Canonical allowance lesson](icarus/memory/lessons/2026-10-13-allowance-snapshots.md), retrieved from Teamchat after commit 32e8673871c961574b7093b3ece4ddf46cb17f19. Other provider monitoring and live Icarus retrieval were not tested.
+- cost: EUR 0 additional external spend; exact task-attributable allowance UNKNOWN.
+- authority: Michael supplies instructions; Icarus adjudicates; Codex executes under Claude. No executor self-PASS.
