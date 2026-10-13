@@ -10,7 +10,7 @@ Constitutional rules enforced here:
 - No blind retries: each model attempt uses a different candidate model; approved routes only (icarus/runtime/approved-routes.json); one 90s cooldown retry on 429/503 for every model; pool exhausted => 180s break then reset the pool (max 3 rounds).
 - No secrets are printed. Memory is never rewritten, only a new receipt file is added.
 """
-import os, re, json, time, pathlib, datetime, urllib.request, urllib.error
+import os, re, json, time, pathlib, datetime, urllib.request, urllib.error, urllib.parse
 
 KEY = os.environ.get("GEMINI_API_KEY", "")
 OR_KEY = os.environ.get("OPENROUTER_API_KEY", "")
@@ -87,6 +87,37 @@ def approved():
     return out, ("" if out else "no approved routes")
 
 
+START = time.time()
+STATE = {"calls": 0}
+DEFAULT_CFG = {
+    "dailyRunCap": 30,
+    "maxApiCallsPerRun": 24,
+    "maxRuntimeSeconds": 3000,
+    "verifyUrlHosts": ["github.com", "raw.githubusercontent.com", "api.github.com"],
+    "riskyActionPattern": r"\b(publish|post to|send (?:an? )?(?:email|message|dm)|delete|purchase|buy|pay|transfer|deploy|force.push|wipe)\b",
+}
+
+
+def load_cfg():
+    cfg = dict(DEFAULT_CFG)
+    try:
+        cfg.update(json.loads(pathlib.Path("icarus/runtime/enforcement.json").read_text(encoding="utf-8")))
+    except Exception:
+        pass
+    return cfg
+
+
+CFG = load_cfg()
+
+
+def over_budget(extra=0):
+    if STATE["calls"] >= CFG["maxApiCallsPerRun"]:
+        return f"call budget exhausted ({STATE['calls']}/{CFG['maxApiCallsPerRun']})"
+    if time.time() - START + extra > CFG["maxRuntimeSeconds"]:
+        return f"runtime budget would be exceeded ({int(time.time() - START)}s + {extra}s > {CFG['maxRuntimeSeconds']}s)"
+    return ""
+
+
 def parse_json(s):
     s = (s or "").strip()
     m = re.search(r"```(?:json)?\s*(.*?)```", s, re.S)
@@ -108,6 +139,9 @@ def gate(line):
     if kind == "VERIFY_URL":
         if not val.startswith("https://"):
             return False, f"VERIFY_URL {val}: rejected (https only)"
+        host = urllib.parse.urlparse(val).hostname or ""
+        if host not in CFG["verifyUrlHosts"]:
+            return False, f"VERIFY_URL {val}: host '{host}' not on the allowlist (icarus/runtime/enforcement.json)"
         c, _ = http("GET", val, timeout=20)
         return c == 200, f"VERIFY_URL {val}: HTTP {c}"
     return False, f"unknown gate {kind}"
@@ -128,7 +162,31 @@ def main():
     except Exception:
         test_cap = 0
     list_q = next((l.split(":", 1)[1].strip().lower() for l in rest if l.startswith("LIST_MODELS:")), "")
-    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:") and not l.startswith("LIST_MODELS:") and not l.startswith("TEST_EXHAUST_ROUNDS:") and not l.startswith("TEST_MAX_CANDIDATES:")).strip()
+    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:") and not l.startswith("LIST_MODELS:") and not l.startswith("TEST_EXHAUST_ROUNDS:") and not l.startswith(("TEST_MAX_CANDIDATES:", "TEST_CAP_RUNS:", "TEST_CAP_CALLS:", "TEST_DEADLINE:", "OWNER_APPROVED:"))).strip()
+
+    def hook(name):
+        v = next((l.split(":", 1)[1].strip() for l in rest if l.startswith(name + ":")), "")
+        return int(v) if v.isdigit() else None
+
+    test_notes = []
+    for hk, key in (("TEST_CAP_RUNS", "dailyRunCap"), ("TEST_CAP_CALLS", "maxApiCallsPerRun"), ("TEST_DEADLINE", "maxRuntimeSeconds")):
+        hv = hook(hk)
+        if hv is not None:
+            CFG[key] = hv
+            test_notes.append(f"{hk}={hv}")
+    if inject:
+        test_notes.append(f"TEST_EXHAUST_ROUNDS={inject}")
+    if test_cap:
+        test_notes.append(f"TEST_MAX_CANDIDATES={test_cap}")
+    approved_line = next((l.split(":", 1)[1].strip() for l in rest if l.startswith("OWNER_APPROVED:")), "")
+    risky = re.search(CFG["riskyActionPattern"], task, re.I)
+    today = list(pathlib.Path("icarus/runs").glob(f"{NOW:%Y%m%d}T*.md")) if pathlib.Path("icarus/runs").is_dir() else []
+    daily = len(today)
+    stop_pre = ""
+    if daily >= CFG["dailyRunCap"]:
+        stop_pre = f"HARD STOP: daily run cap reached ({daily}/{CFG['dailyRunCap']})"
+    elif risky and not approved_line:
+        stop_pre = f"HARD STOP: owner approval required for action '{risky.group(0)}' (add an OWNER_APPROVED: <what you approve> line)"
 
     system = (
         "You are Icarus, a persistent autonomous fixer. Memory belongs to Icarus, not the model.\n\n"
@@ -143,7 +201,9 @@ def main():
     )
 
     log, answer, used, err = [], None, "none", ""
-    if not KEY:
+    if stop_pre:
+        err = stop_pre
+    elif not KEY:
         err = "GEMINI_API_KEY missing"
     elif not task:
         err = "empty task"
@@ -159,6 +219,11 @@ def main():
             log.append("openrouter routes skipped (OPENROUTER_API_KEY not set): " + ", ".join(SKIPPED))
         for rnd in range(1, MAX_ROUNDS + 1):
             if rnd > 1:
+                why = over_budget(POOL_BREAK)
+                if why:
+                    err = "HARD STOP: " + why
+                    hard = True
+                    break
                 log.append(f"pool exhausted -> {POOL_BREAK}s break, then pool reset (round {rnd}/{MAX_ROUNDS})")
                 time.sleep(POOL_BREAK)
                 err = ""
@@ -180,6 +245,12 @@ def main():
                         "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
                     }
                 for tryno in (1, 2):
+                    why = over_budget(0)
+                    if why:
+                        err = "HARD STOP: " + why
+                        hard = True
+                        break
+                    STATE["calls"] += 1
                     injected = rnd <= inject
                     if injected:
                         code, txt = 503, "injected test failure (no API call; TEST_EXHAUST_ROUNDS)"
@@ -188,8 +259,15 @@ def main():
                         code, txt = http("POST", url, body, timeout=CALL_TIMEOUT)
                     log.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
                     if code in (429, 503) and tryno == 1:
+                        why = over_budget(COOLDOWN)
+                        if why:
+                            err = "HARD STOP: " + why
+                            hard = True
+                            break
                         time.sleep(COOLDOWN)
                         continue
+                    break
+                if hard:
                     break
                 if code == 200:
                     try:
@@ -244,6 +322,8 @@ def main():
         f"- Cost: EUR 0 (free-tier model, free Actions minutes)",
         f"- Memory read: icarus/memory/{{identity,inherited,current-state,learned}}.md (read-only)",
         f"- Model attempts: {'; '.join(log) or 'none'}",
+        f"- Enforcement: API calls {STATE['calls']}/{CFG['maxApiCallsPerRun']}; runtime {int(time.time() - START)}s/{CFG['maxRuntimeSeconds']}s; runs today {daily}/{CFG['dailyRunCap']}; tools: none (allowlist empty)",
+        *([f"- TEST HOOKS ACTIVE (owner-set): {', '.join(test_notes)}"] if test_notes else []),
         f"- VERDICT: {verdict} - {reason}",
         "",
         "## Task", task or "(empty)", "",
