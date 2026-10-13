@@ -7,10 +7,10 @@ Host: GitHub Actions (EUR 0 within free minutes). Model: Gemini Flash-class via 
 Constitutional rules enforced here:
 - The model never self-awards PASS. Verdict is binary and comes only from deterministic gates
   (VERIFY_FILE / VERIFY_URL lines in the task). No gate supplied => FAIL (unverified).
-- No blind retries: each model attempt uses a different candidate model; max 3 calls per run.
+- No blind retries: each model attempt uses a different candidate model; approved routes only (icarus/runtime/approved-routes.json); one 60s cooldown retry on 429/503.
 - No secrets are printed. Memory is never rewritten, only a new receipt file is added.
 """
-import os, re, json, pathlib, datetime, urllib.request, urllib.error
+import os, re, json, time, pathlib, datetime, urllib.request, urllib.error
 
 KEY = os.environ.get("GEMINI_API_KEY", "")
 BASE = "https://generativelanguage.googleapis.com/v1beta"
@@ -19,6 +19,7 @@ CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
 MAX_CALLS = 4
+COOLDOWN = 60  # seconds; matches modelSelector.localCooldownMs, one cooldown retry on 429/503 only
 CALL_TIMEOUT = 75
 FAILOVER_CODES = (0, 404, 408, 429, 500, 502, 503, 504)  # 0 = network/timeout
 
@@ -52,22 +53,20 @@ def http(method, url, body=None, timeout=60):
         return 0, str(e)
 
 
-def candidates():
-    code, txt = http("GET", f"{BASE}/models?pageSize=200")
-    if code != 200:
-        return [], f"model list HTTP {code}"
-    out = []
-    for m in json.loads(txt).get("models", []):
-        n = m["name"].split("/")[-1]
-        if "generateContent" not in m.get("supportedGenerationMethods", []):
-            continue
-        if "flash" not in n or any(x in n for x in ("image", "tts", "live", "audio", "robotics", "computer", "embedding", "native")):
-            continue
-        ver = [-int(x) for x in re.findall(r"\d+", n.split("flash")[0])]
-        # explicit stable models first; -latest aliases last; lite (spare capacity) first, newest first within class
-        out.append((n.endswith("-latest"), ("preview" in n or "exp" in n), ("lite" not in n), ver, n))
-    out.sort()
-    return [x[4] for x in out], ""
+def approved():
+    """Only routes listed in icarus/runtime/approved-routes.json (owner-edited). No model discovery."""
+    try:
+        cfg = json.loads(pathlib.Path("icarus/runtime/approved-routes.json").read_text(encoding="utf-8"))
+    except Exception as ex:
+        return [], f"approved-routes.json unreadable: {ex}"
+    out, seen = [], set()
+    for r in cfg.get("routes", []):
+        ok = r.get("provider") == "google" and r.get("model") and r.get("approved") is True and r.get("costPolicy") == "verified-zero-cost"
+        if not ok or r["model"] in seen:
+            return [], f"invalid route entry: {r}"
+        seen.add(r["model"])
+        out.append(r["model"])
+    return out, ("" if out else "no approved routes")
 
 
 def gate(line):
@@ -110,19 +109,25 @@ def main():
     elif not task:
         err = "empty task"
     else:
-        cands, e = candidates()
+        cands, e = approved()
         if model_override:
-            cands = [model_override]
+            cands = [model_override] if model_override in cands else []
+            e = e or f"MODEL override {model_override} is not an approved route"
         if not cands:
-            err = e or "no flash-class candidate"
+            err = e or "no approved route"
         for n in cands[:MAX_CALLS]:
             body = {
                 "systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": task}]}],
                 "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
             }
-            code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
-            log.append(f"{n}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
+            for tryno in (1, 2):
+                code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
+                log.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
+                if code in (429, 503) and tryno == 1:
+                    time.sleep(COOLDOWN)
+                    continue
+                break
             if code == 200:
                 try:
                     part = json.loads(txt)["candidates"][0]["content"]["parts"][0]["text"]
