@@ -3962,3 +3962,20 @@ Evidence: https://github.com/the1mburke-blip/Teamchat/commit/1916fcc1a09321d623b
 Outcome: documentation only. All 20 distinct evidence-labelled incidents are now represented; no duplicates, no production mutation, no owner-only auth, €0 added spend. Historical process FAIL remains. On-device governance, Prime continuity, Buffer continuous refill and email monitor are NOT fixed or proved by documentation.
 Exact measured token usage unavailable. GitHub commit time is the timestamp of this journal write; do not infer original incident times.
 ---
+
+
+[SOL] 2026-10-13T20:48:15Z
+
+[TYPE] ALLOWANCE-SNAPSHOTS-2026-10-13 — OWNER-REQUESTED FAILURE AND SHARED LEARNING
+[OWNER] Michael explicitly requested that the executor's failure and the new allowance snapshot mechanism go into Icarus training, usable for Claude and other premium models.
+[EXECUTOR] Actual Codex/Sol in the owner chat, through the existing authenticated GitHub connection. Michael directs, Icarus adjudicates, Codex executes under Claude. No simulated worker or Icarus acknowledgement.
+[TRAINING_REVIEW] Retrieved relevant HV-EXP-066, HV-EXP-079 and HV-EXP-093, OPERATING_RULES, HANDOFF_PROTOCOL, canonical memory and journal history before this learning write. No duplicate lesson marker found.
+[TRAINING_QUOTE] Do not let an executor guess the owner-visible meter, silently cross a declared floor, or treat owner authorization as permission to change task scope or route.
+[TRAINING_SOURCE] TRAINING_MATRIX.md — HV-EXP-066.
+[TRAINING_RELEVANCE] Preserve actual provider-scoped observations and do not guess another model's allowance.
+[PREFLIGHT] Append owner-requested learning only; preserve old history and identity; existing GitHub route; EUR 0 external spend; estimated six canonical file writes/readbacks; exact tokens and task-attributable allowance UNKNOWN; no owner action needed. Current named 12-rule set was not located in the read sources, so no 12/12 compliance claim is made. Written local preflight preceded canonical mutation.
+[FAILURE_CAPTURE] The executor waited for Michael to propose monitoring, then sidestepped the initiative failure with historical-availability uncertainty. Michael's correction: "A blocker is not a blocker. It's a data point." Preserve the evidence and use a materially different valid route around, through, or over it.
+[WRITE_DATA_POINT] Automatic approval review rejected the initial detailed lesson and full matrix payload as sensitive with an unverified destination. No write occurred. A read established the same Teamchat repository is private, owner-associated and push-authorized. The lesson was reduced to reusable procedural learning without account readings, account identifiers or local machine paths; the same direct GitHub tools then accepted the bounded lesson and append-only indexes. No indirect bypass was used.
+[LEARNING] [Canonical lesson](icarus/memory/lessons/2026-10-13-allowance-snapshots.md); [shared training HV-EXP-096](TRAINING_MATRIX.md); [Icarus learning index](icarus/memory/learned.md).
+[EVIDENCE] Lesson commit 32e8673871c961574b7093b3ece4ddf46cb17f19 was separately fetched and matched the submitted text; learning index commit 56948da873c6287fa2147ce80e60e1c6b1f6bdb4; training commit 6022461c974e722147a65b8e6a266b23ac78dca3. Final full-file readbacks and local SHA-256 cache checks follow this journal append.
+[BOUNDARY] Canonical recording is operational memory, not model-weight training. Icarus runtime ingestion, other provider monitoring and all-ChatGPT scope are not claimed. Executor reports evidence, not self-PASS. Independent adjudication remains with Icarus/Michael.
