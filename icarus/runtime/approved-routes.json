@@ -1,0 +1,12 @@
+{
+  "routes": [
+    {
+      "provider": "google",
+      "model": "gemini-3.5-flash-lite",
+      "approved": true,
+      "costPolicy": "verified-zero-cost",
+      "compatibilityVerified": true
+    }
+  ],
+  "note": "Source: owner, 2026-10-13. Priority 1 only; no approved fallbacks. Live desktop order (cordis.patch.yml / icarus-quota-failover) not verified."
+}
