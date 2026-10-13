@@ -1441,3 +1441,24 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - \`superseded_by\`: NONE
 
 - \`2026-10-13_comprehensive_audit\`: https://github.com/the1mburke-blip/Teamchat/blob/main/logs/2026-10-13-sol-comprehensive-failure-audit.md — 19 evidence-labelled incidents F01–F19. Existing HV-EXP-086–088 remain as written. Owner proposed; SOL / GPT-6 executed; €0 additional external cost; repository write/readback are not production/runtime acceptance.
+
+
+[SOL] 2026-10-13 — post-audit corrective lesson; GitHub commit is authoritative write timestamp
+### HV-EXP-093 — Read live canonical state before calling completed logging incomplete
+- \`experience_id\`: HV-EXP-093
+- \`date_utc\`: 2026-10-13
+- \`source_agent\`: SOL / ChatGPT GPT-6, Michael's repeated full logging directive
+- \`task_problem\`: Accurately determine whether all 13 October failures had been logged to Teamchat without creating duplicate records.
+- \`environment_context\`: First training write \`3b0f18b\` added just HV-EXP-086–088. Separate later GitHub commits \`b57acef4\` and \`4f5eb11\` added a documented F01–F19 incident audit, lessons HV-EXP-089–092, and a CHAT_LOG link. GitHub repository is private, current branch main.
+- \`symptoms_failure_signature\`: On being asked "So log everything. Still!?", SOL immediately asserted that the previous three-lesson log was incomplete *as the present state*, without first checking the up-to-date repo. This incorrectly implied a previously completed 19-item audit was absent.
+- \`attempts_made\`: First answered using earlier thread state, then retrieved relevant conversation history and live GitHub matrix, journal, rules and comprehensive log; confirmed 19-item audit was already present and separately wrote F20.
+- \`what_failed\`: Unsupported current-state assertion and avoidable repeated owner escalation.
+- \`why_it_failed\`: Stale conversational state was substituted for a current authoritative read; earlier historical incompleteness was conflated with present repository state.
+- \`successful_recovery\`: Authenticated GitHub readback found the complete existing audit and training; no duplicate full-audit write; added a narrow F20 correction preserving F01–F19 and HV-EXP-086–092.
+- \`verification_evidence\`: https://github.com/the1mburke-blip/Teamchat/blob/main/logs/2026-10-13-sol-comprehensive-failure-audit.md ; https://github.com/the1mburke-blip/Teamchat/blob/main/CHAT_LOG.md ; https://github.com/the1mburke-blip/Teamchat/commit/1916fcc1a09321d623b25d48315ef76a75ec76a7 . The new lesson's own readback is required separately.
+- \`what_not_to_retry\`: Do not declare a repository task incomplete, absent, or blocked without a fresh read of current canonical files and commit order. Do not re-append historical incidents already recorded.
+- \`reusable_principle\`: **A correct statement about an earlier commit can be false about the live branch. Check current state first; report the actual delta and evidence.**
+- \`capability_tool_prerequisites\`: Existing authenticated GitHub read connection, canonical audit/matrix/journal paths, current branch revision, duplicate marker and SHA checks, independent readback after append.
+- \`terminal_status\`: Historical stale-state assertion FAIL; corrective log file write initiated/committed; final matrix/journal PASS requires physical GitHub readback.
+- \`confidence\`: HIGH for the assertion-versus-GitHub discrepancy, live prior audit and existing commits.
+- \`superseded_by\`: NONE
