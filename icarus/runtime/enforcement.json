@@ -1,6 +1,6 @@
 {
   "_note": "Owner-editable enforcement limits read by icarus_run.py (looser = raise numbers, tighter = lower). Defaults apply if a key is missing. Hard stops end the run with FAIL and a receipt; they are never silently retried.",
-  "dailyRunCap": 30,
+  "dailyRunCap": 60,
   "maxApiCallsPerRun": 24,
   "maxRuntimeSeconds": 3000,
   "verifyUrlHosts": [
