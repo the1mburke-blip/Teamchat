@@ -8,5 +8,18 @@
     "raw.githubusercontent.com",
     "api.github.com"
   ],
-  "riskyActionPattern": "\\b(publish|post to|send (?:an? )?(?:email|message|dm)|delete|purchase|buy|pay|transfer|deploy|force.push|wipe)\\b"
+  "riskyActionPattern": "\\b(publish|post to|send (?:an? )?(?:email|message|dm)|delete|purchase|buy|pay|transfer|deploy|force.push|wipe)\\b",
+  "tools": [
+    "read_file",
+    "list_dir",
+    "read_issue"
+  ],
+  "maxToolCalls": 6,
+  "maxPlanSteps": 4,
+  "readPathPrefixes": [
+    "icarus/",
+    ".github/workflows/",
+    "README.md"
+  ],
+  "writeBack": true
 }
