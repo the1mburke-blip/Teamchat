@@ -13,12 +13,16 @@ Constitutional rules enforced here:
 import os, re, json, time, pathlib, datetime, urllib.request, urllib.error
 
 KEY = os.environ.get("GEMINI_API_KEY", "")
+OR_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OR_BASE = "https://openrouter.ai/api/v1"
+PROVIDER = {}  # model id -> provider, filled by approved()
+SKIPPED = []
 BASE = "https://generativelanguage.googleapis.com/v1beta"
 RAW = os.environ.get("COMMENT_BODY", "")
 CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
-MAX_CALLS = 6
+MAX_CALLS = 9
 COOLDOWN = 90  # seconds; per-minute peak window reset: one cooldown retry on 429/503 for EVERY model in EVERY round
 POOL_BREAK = 180  # seconds; when the whole pool is exhausted: take a break, then reset the pool and go again
 MAX_ROUNDS = 3  # initial pass + 2 pool resets (bounded so the job cannot run forever on free Actions minutes)
@@ -27,7 +31,10 @@ FAILOVER_CODES = (0, 404, 408, 429, 500, 502, 503, 504)  # 0 = network/timeout
 
 
 def redact(s):
-    return s.replace(KEY, "[REDACTED]") if KEY else s
+    for k in (KEY, OR_KEY):
+        if k:
+            s = s.replace(k, "[REDACTED]")
+    return s
 
 
 def read(path, head=0, tail=0):
@@ -44,6 +51,8 @@ def http(method, url, body=None, timeout=60):
     headers = {}
     if url.startswith(BASE):
         headers = {"x-goog-api-key": KEY, "content-type": "application/json"}
+    elif url.startswith(OR_BASE):
+        headers = {"Authorization": "Bearer " + OR_KEY, "content-type": "application/json"}
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, method=method, data=data, headers=headers)
     try:
@@ -63,10 +72,17 @@ def approved():
         return [], f"approved-routes.json unreadable: {ex}"
     out, seen = [], set()
     for r in cfg.get("routes", []):
-        ok = r.get("provider") == "google" and r.get("model") and r.get("approved") is True and r.get("costPolicy") == "verified-zero-cost"
+        prov = r.get("provider")
+        ok = prov in ("google", "openrouter") and r.get("model") and r.get("approved") is True and r.get("costPolicy") == "verified-zero-cost"
+        if ok and prov == "openrouter" and not str(r["model"]).endswith(":free"):
+            ok = False  # OpenRouter: free (:free) variants only
         if not ok or r["model"] in seen:
             return [], f"invalid route entry: {r}"
         seen.add(r["model"])
+        if prov == "openrouter" and not OR_KEY:
+            SKIPPED.append(r["model"])
+            continue
+        PROVIDER[r["model"]] = prov
         out.append(r["model"])
     return out, ("" if out else "no approved routes")
 
@@ -139,13 +155,19 @@ def main():
         if not cands:
             err = e or "no approved route"
         hard = False
+        if SKIPPED:
+            log.append("openrouter routes skipped (OPENROUTER_API_KEY not set): " + ", ".join(SKIPPED))
         for rnd in range(1, MAX_ROUNDS + 1):
             if rnd > 1:
                 log.append(f"pool exhausted -> {POOL_BREAK}s break, then pool reset (round {rnd}/{MAX_ROUNDS})")
                 time.sleep(POOL_BREAK)
                 err = ""
             for idx, n in enumerate(cands[:(test_cap or MAX_CALLS)]):
-                if n.startswith("gemma"):
+                is_or = PROVIDER.get(n) == "openrouter"
+                if is_or:
+                    body = {"model": n, "temperature": 0.2, "max_tokens": 1500,
+                            "messages": [{"role": "system", "content": system}, {"role": "user", "content": task}]}
+                elif n.startswith("gemma"):
                     # Gemma on the Gemini API: no systemInstruction / JSON mime mode; fold the system text into the prompt.
                     body = {
                         "contents": [{"role": "user", "parts": [{"text": system + "\n\nTASK:\n" + task}]}],
@@ -162,7 +184,8 @@ def main():
                     if injected:
                         code, txt = 503, "injected test failure (no API call; TEST_EXHAUST_ROUNDS)"
                     else:
-                        code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
+                        url = f"{OR_BASE}/chat/completions" if is_or else f"{BASE}/models/{n}:generateContent"
+                        code, txt = http("POST", url, body, timeout=CALL_TIMEOUT)
                     log.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
                     if code in (429, 503) and tryno == 1:
                         time.sleep(COOLDOWN)
@@ -170,14 +193,19 @@ def main():
                     break
                 if code == 200:
                     try:
-                        parts = json.loads(txt)["candidates"][0]["content"]["parts"]
-                        part = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+                        if is_or:
+                            part = json.loads(txt)["choices"][0]["message"].get("content") or ""
+                            if not part.strip():
+                                raise ValueError("empty OpenRouter content")
+                        else:
+                            parts = json.loads(txt)["candidates"][0]["content"]["parts"]
+                            part = "".join(p.get("text", "") for p in parts if not p.get("thought"))
                         answer = parse_json(part) or {"answer": part, "unverified_claims": [], "needs_owner": False, "owner_reason": ""}
                         used = n
                         break
                     except Exception as ex:
                         err = f"parse error on {n}: {ex}"
-                elif code not in FAILOVER_CODES:
+                elif code not in FAILOVER_CODES and not is_or:
                     err = f"{n}: HTTP {code} {redact(txt)[:200]}"
                     hard = True
                     break
