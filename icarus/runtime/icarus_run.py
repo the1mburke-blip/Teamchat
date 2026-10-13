@@ -371,9 +371,11 @@ def main():
         if not cands:
             err = e or "no approved route"
         else:
-            steps = [task]
+            gpaths = [g.partition(":")[2].strip() for g in gates if g.startswith("VERIFY_FILE")]
+            hint = ("\n\nOWNER-NAMED EVIDENCE FILES (read_file these first, answer only from them): " + ", ".join(gpaths)) if gpaths else ""
+            steps = [task + hint]
             if plan_flag:
-                pa, _u, perr, phard = pool(system + "\nPLANNING MODE: do NOT answer yet. Reply ONLY as JSON {\"steps\": [string]} with at most " + str(CFG["maxPlanSteps"]) + " short, ordered steps.", task, cands, test_cap, inject)
+                pa, _u, perr, phard = pool(system + "\nPLANNING MODE: do NOT answer yet. Reply ONLY as JSON {\"steps\": [string]} with at most " + str(CFG["maxPlanSteps"]) + " short, ordered steps.", task + hint, cands, test_cap, inject)
                 if pa and isinstance(pa.get("steps"), list) and pa["steps"]:
                     steps = [str(s)[:300] for s in pa["steps"]][:CFG["maxPlanSteps"]]
                     plan_steps = steps
@@ -382,7 +384,7 @@ def main():
                     steps = []
             outs, claims, owner, why_owner, lesson = [], [], False, "", ""
             for si, st in enumerate(steps, 1):
-                step_text = task if not plan_steps else f"OVERALL TASK: {task}\nCURRENT STEP {si}/{len(steps)}: {st}"
+                step_text = st if not plan_steps else f"OVERALL TASK: {task}{hint}\nCURRENT STEP {si}/{len(steps)}: {st}"
                 ans, used, err, hard = run_step(system, step_text, "\n".join(outs), cands, test_cap, inject, tool_log)
                 if ans is None:
                     outs = outs or []
