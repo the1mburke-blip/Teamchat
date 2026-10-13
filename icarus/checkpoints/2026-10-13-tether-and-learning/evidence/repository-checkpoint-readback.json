@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-10-13 00:00:39 UTC",
+  "repository": "the1mburke-blip/Teamchat",
+  "branch": "main",
+  "commit": "35b577ce1dbde1829312bf235a1cb013f7401963",
+  "checkpoint": "icarus/checkpoints/2026-10-13-tether-and-learning",
+  "checkpointFilesHashMatched": 73,
+  "originalUnrelatedFilesPreserved": 106,
+  "canonicalLearnedReadbackMatched": true,
+  "originalLearnedPrefixPreserved": true,
+  "handoffReadbackMatched": true,
+  "identityPreserved": true,
+  "inheritedPreserved": true,
+  "costEUR": 0,
+  "phoneChanged": false,
+  "crossSave": "unfinished untested draft",
+  "modelIngestion": "new pointer not exercised in model turn; owner separately reports existing preflight behavior"
+}
