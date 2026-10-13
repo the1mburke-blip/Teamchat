@@ -23,7 +23,7 @@ jobs:
       github.event.comment.author_association == 'OWNER' &&
       startsWith(github.event.comment.body, 'ICARUS_RUN')
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 35
     steps:
       - name: Checkout Teamchat (memory is read from main)
         uses: actions/checkout@v6
