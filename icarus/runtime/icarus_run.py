@@ -18,7 +18,7 @@ RAW = os.environ.get("COMMENT_BODY", "")
 CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
-MAX_CALLS = 3
+MAX_CALLS = 4
 CALL_TIMEOUT = 75
 FAILOVER_CODES = (0, 404, 408, 429, 500, 502, 503, 504)  # 0 = network/timeout
 
@@ -64,8 +64,8 @@ def candidates():
         if "flash" not in n or any(x in n for x in ("image", "tts", "live", "audio", "robotics", "computer", "embedding", "native")):
             continue
         ver = [-int(x) for x in re.findall(r"\d+", n.split("flash")[0])]
-        # explicit stable models first; -latest aliases last; lite before preview
-        out.append((n.endswith("-latest"), ("preview" in n or "exp" in n), ("lite" in n), ver, n))
+        # explicit stable models first; -latest aliases last; lite (spare capacity) first, newest first within class
+        out.append((n.endswith("-latest"), ("preview" in n or "exp" in n), ("lite" not in n), ver, n))
     out.sort()
     return [x[4] for x in out], ""
 
