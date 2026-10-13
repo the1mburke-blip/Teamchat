@@ -1,85 +1,13 @@
-# HumanVibe Content Pipeline
+# Content Pipeline Strategy - Revised Oct 13, 2026
 
-Status: ACTIVE  
-Effective: 2026-09-26  
-Owner authority: Michael  
-Publisher: Buffer only
+## Strategy Overview
+To maximize content reach and variety while managing media inventory constraints:
+1. **Lean Heavy on V1 Assets:** Repurpose and revitalize existing V1 approved content as the primary media backbone.
+2. **Drip V2 Mockups:** Strategically rotate the four approved V2 lifestyle/model images across channels. Ensure rotation avoids same-time image collisions.
+3. **Integrated Text-Only Posts:** Increase the frequency of text-only content (Blueprint V2 paraphrases/insights) to decouple the posting schedule from visual media availability and reach the 9 posts/channel target.
+4. **Target:** 9 posts per channel, distributed via rotation of V1 assets, dripped V2 assets, and systematic text-only insertions.
 
-## Canonical asset source
-
-Approved HumanVibe production media must come from the Google Drive **Production Asset Vault**:
-
-- Folder ID: `1nPKBFXyBt9kpj6HnfyurRdfjrCaIBlA4`
-- Parent: `03 — Content & Social`
-- No generated substitute, lookalike, recreated tee artwork, or unapproved media may enter publishing.
-- **Owner override (13 October 2026): NEVER generate images for HumanVibe social publishing.** No image-generation model, synthetic lifestyle scene, redesign, edit, crop-as-new-asset, lookalike, or recreated tee/print. Reuse ONLY already existing, explicitly owner-approved original assets from the verified Production Asset Vault. No new media may be classified as approved just because it was generated or uploaded.
-- Insufficient distinct approved media is a real blocker. Do not fabricate replacements, silently loosen the previous-six exclusion, or mask an Instagram missing-image slot with text only. Record the exact shortage and hold non-compliant new posts.
-
-- Printful-native mockups are valid only after the exact source file is copied into this vault and the copy is physically verified.
-
-## Product/version routing
-
-### Signature Tee V1
-
-- Shopify product: `gid://shopify/Product/9255737884726`
-- Handle: `unisex-t-shirt`
-- V1 assets may link only to the V1 product path.
-- Do not use V1 imagery to promote or imply V2.
-
-### Signature Tee V2
-
-- Shopify product: `gid://shopify/Product/9412600528950`
-- Canonical title: **HumanVibe Signature Tee V2 | Pro-Human Graphic Streetwear**
-- Handle: `unisex-t-shirt-1`
-- V2 destination: `https://kivmp6-mw.myshopify.com/products/unisex-t-shirt-1`
-- Printful-linked SKU currently observed: `7241488_9526`
-- Never change or recreate the Printful fulfillment linkage as part of content work.
-
-Approved V2 Drive assets:
-
-- `HumanVibe_Signature_Tee_V2_Artwork.jpg` — Drive ID `1xoFs-aS43N-ciot_Md30d8DvkFGW8v-P`
-- `HumanVibe_Signature_Tee_V2_Mockup_01.png` — Drive ID `1DbQJE0ef2XuvoCmMOI-OronrhBIquaVJ`
-- `HumanVibe_Signature_Tee_V2_Mockup_02.png` — Drive ID `1VVAY12uuIGznd2eGkf5cCYrK19WBQuWz`
-- `HumanVibe_Signature_Tee_V2_Mockup_03.png` — Drive ID `1ftH5KbMIlYU0U7PEDrIIsBtcMrNzSsw5`
-- `HumanVibe_Signature_Tee_V2_Mockup_04.png` — Drive ID `10Nks2M7JcgtFelzDn2F-bKP3S7OMiGC_`
-
-The artwork JPG is a design/reference/message asset; it is not product-fit or lifestyle proof.
-
-## V2 asset gate — binding
-
-Before any V2 post is drafted, scheduled, repaired, or recycled:
-
-1. Confirm the candidate asset is one of the approved V2 assets in the Production Asset Vault.
-2. Confirm the post destination is the V2 Shopify product, not V1.
-3. Confirm the asset is not already used within that channel's previous six live/scheduled posts.
-4. Confirm no adjacent duplicate and no identical same-time cross-platform image blast unless a campaign explicitly requires it.
-5. Re-read the destination product page before publication when price, availability, variants, shipping, or product-specific claims are mentioned.
-6. Do not infer production facts from the image. Product claims come from verified Shopify/Printful state only.
-
-## Binding caption/editorial source — owner correction 13 October 2026
-
-- **Niche Business Blueprint V2 paraphrasing is mandatory.** Social captions must express a concrete idea from the approved V2 Playbook in fresh, simple words: niche specificity, audience/problem/outcome clarity, useful compact deliverables, AI-assisted but human-edited clarity, the two-minute usability test, value-first organic distribution, distinguishing clicks from conversion, or measured iteration.
-- HumanVibe is a **case study in progress** illustrating the lesson; the Signature Tee is a supporting visual or example, **not the subject of repetitive sales pitches**. Never imply validated demand, specific sales, customer feedback, or successful outcomes without current evidence.
-- Distinguish captions by platform and time; no repeated slogan or same-caption cross-platform blast. Preserve already scheduled approved content unless an authorised in-place editorial correction and independent readback are performed.
-- No image generation or other asset substitution may be used to satisfy publishing volume. When content/media constraints conflict with volume targets, content integrity takes precedence and the unresolved slot must be reported.
-
-## Channel rules
-
-- **Instagram:** fresh approved model/lifestyle media required. Hold the slot rather than recycle stale or repeated imagery.
-- **Facebook:** approved fresh model/lifestyle/product/editorial visual media by default; text-on-background may be used occasionally when the concept genuinely benefits from it, but it must not become the standing format.
-- **Threads:** platform-native text + approved visual media by default; text-only may be used occasionally when the concept genuinely benefits from it, but it must not become the standing format.
-- Maximum one direct commercial pitch per day per platform.
-- Buffer remains the sole authorised publisher/scheduler. Do not bypass through direct social APIs or alternate publishers.
-
-## Version integrity
-
-- V1 and V2 are separate product/media lanes.
-- Never send V2 imagery to a V1 destination or V1 imagery to a V2 destination.
-- Caption, CTA, UTM, destination, and media version must agree before scheduling.
-- A product/image/title mutation is not publication proof; destination-level verification remains required.
-
-## Pipeline state
-
-`SOURCE → VAULT VERIFIED → VERSION MATCH → DRAFT → QA → SCHEDULED → SENT → DESTINATION VERIFIED → PERFORMANCE → REUSE`
-
-A file is not publish-eligible merely because it exists in Drive. The **VAULT VERIFIED + VERSION MATCH** gates are mandatory.
+## Workflow Rules
+- Audit media inventory before every scheduling batch.
+- If V2 assets are insufficient for rotation, prioritize V1 assets or text-only insights.
+- Document any blocker (e.g., media rotation conflict) immediately in the Teamchat issue.
