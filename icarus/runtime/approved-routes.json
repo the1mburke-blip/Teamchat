@@ -6,7 +6,28 @@
       "approved": true,
       "costPolicy": "verified-zero-cost",
       "compatibilityVerified": true
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.1-flash-lite",
+      "approved": true,
+      "costPolicy": "verified-zero-cost",
+      "compatibilityVerified": false
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.6-flash",
+      "approved": true,
+      "costPolicy": "verified-zero-cost",
+      "compatibilityVerified": false
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.7-flash",
+      "approved": true,
+      "costPolicy": "verified-zero-cost",
+      "compatibilityVerified": false
     }
   ],
-  "note": "Primary only. Source: a pasted summary the owner relayed on 2026-10-13, NOT the live config. The complete approved fallback order is unverified; it lives in the owner's PC profile (cordis.patch.yml / icarus-quota-failover plugin). Absence of fallbacks here means 'unknown', not 'none'."
+  "note": "Order = quota-first. Source: Google AI Studio rate-limit table (free tier, project gen-lang-client-0190888096), read live on 2026-10-13. Daily limits (RPD): 3.5-flash-lite 500, 3.1-flash-lite 500, 3.6-flash 20, 3.7-flash 20. Models showing 0/0 were excluded. Selection delegated by the owner. gemini-3.8-flash (20 RPD) is omitted only because the runner caps at MAX_CALLS=4 candidates. Gemma 4 (14.4K RPD) is NOT listed: runner sends systemInstruction + JSON mime type, untested on Gemma, and a 400 is not a failover code. This file is the runner's list only; the owner's PC profile (cordis.patch.yml / icarus-quota-failover) is separate and unverified."
 }
