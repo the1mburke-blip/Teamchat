@@ -18,9 +18,9 @@ RAW = os.environ.get("COMMENT_BODY", "")
 CID = os.environ.get("COMMENT_ID", "0")
 ACTOR = os.environ.get("COMMENT_ACTOR", "unknown")
 NOW = datetime.datetime.now(datetime.timezone.utc)
-MAX_CALLS = 4
-COOLDOWN = 60  # seconds; matches modelSelector.localCooldownMs, one cooldown retry on 429/503 only
-CALL_TIMEOUT = 75
+MAX_CALLS = 6
+COOLDOWN = 60  # seconds; one cooldown retry on 429/503, first candidate only (keeps the run inside the Actions timeout)
+CALL_TIMEOUT = 60
 FAILOVER_CODES = (0, 404, 408, 429, 500, 502, 503, 504)  # 0 = network/timeout
 
 
@@ -69,6 +69,18 @@ def approved():
     return out, ("" if out else "no approved routes")
 
 
+def parse_json(s):
+    s = (s or "").strip()
+    m = re.search(r"```(?:json)?\s*(.*?)```", s, re.S)
+    if m:
+        s = m.group(1).strip()
+    try:
+        v = json.loads(s)
+        return v if isinstance(v, dict) else None
+    except Exception:
+        return None
+
+
 def gate(line):
     kind, _, val = line.partition(":")
     kind, val = kind.strip(), val.strip()
@@ -89,7 +101,8 @@ def main():
     rest = [first[len("ICARUS_RUN"):].strip()] + lines[1:] if first.startswith("ICARUS_RUN") else lines
     gates = [l for l in rest if l.split(":")[0].strip() in ("VERIFY_FILE", "VERIFY_URL")]
     model_override = next((l.split(":", 1)[1].strip() for l in rest if l.startswith("MODEL:")), "")
-    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:")).strip()
+    list_q = next((l.split(":", 1)[1].strip().lower() for l in rest if l.startswith("LIST_MODELS:")), "")
+    task = "\n".join(l for l in rest if l not in gates and not l.startswith("MODEL:") and not l.startswith("LIST_MODELS:")).strip()
 
     system = (
         "You are Icarus, a persistent autonomous fixer. Memory belongs to Icarus, not the model.\n\n"
@@ -115,26 +128,31 @@ def main():
             e = e or f"MODEL override {model_override} is not an approved route"
         if not cands:
             err = e or "no approved route"
-        for n in cands[:MAX_CALLS]:
-            body = {
-                "systemInstruction": {"parts": [{"text": system}]},
-                "contents": [{"role": "user", "parts": [{"text": task}]}],
-                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
-            }
+        for idx, n in enumerate(cands[:MAX_CALLS]):
+            if n.startswith("gemma"):
+                # Gemma on the Gemini API: no systemInstruction / JSON mime mode; fold the system text into the prompt.
+                body = {
+                    "contents": [{"role": "user", "parts": [{"text": system + "\n\nTASK:\n" + task}]}],
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500},
+                }
+            else:
+                body = {
+                    "systemInstruction": {"parts": [{"text": system}]},
+                    "contents": [{"role": "user", "parts": [{"text": task}]}],
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500, "responseMimeType": "application/json"},
+                }
             for tryno in (1, 2):
                 code, txt = http("POST", f"{BASE}/models/{n}:generateContent", body, timeout=CALL_TIMEOUT)
                 log.append(f"{n}#{tryno}: HTTP {code}" + ("" if code == 200 else f" ({redact(txt)[:90]})"))
-                if code in (429, 503) and tryno == 1:
+                if code in (429, 503) and tryno == 1 and idx == 0:
                     time.sleep(COOLDOWN)
                     continue
                 break
             if code == 200:
                 try:
-                    part = json.loads(txt)["candidates"][0]["content"]["parts"][0]["text"]
-                    try:
-                        answer = json.loads(part)
-                    except Exception:
-                        answer = {"answer": part, "unverified_claims": [], "needs_owner": False, "owner_reason": ""}
+                    parts = json.loads(txt)["candidates"][0]["content"]["parts"]
+                    part = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+                    answer = parse_json(part) or {"answer": part, "unverified_claims": [], "needs_owner": False, "owner_reason": ""}
                     used = n
                     break
                 except Exception as ex:
@@ -144,6 +162,18 @@ def main():
                 break
         if answer is None and not err:
             err = "all candidate attempts failed: " + "; ".join(log)
+
+    diag = []
+    if list_q and KEY:
+        c, t = http("GET", f"{BASE}/models?pageSize=200")
+        if c == 200:
+            for m in json.loads(t).get("models", []):
+                nm = m["name"].split("/")[-1]
+                if list_q in nm.lower():
+                    diag.append(f"- {nm}: {','.join(m.get('supportedGenerationMethods', []))}")
+            diag = diag or [f"- no model names contain '{list_q}'"]
+        else:
+            diag = [f"- model list HTTP {c}"]
 
     gate_results = [gate(g) for g in gates]
     passed = bool(gate_results) and all(ok for ok, _ in gate_results) and answer is not None
@@ -167,6 +197,7 @@ def main():
         "",
         "## Task", task or "(empty)", "",
         "## Gates", *(f"- {'ok' if ok else 'FAIL'}: {d}" for ok, d in gate_results), *([] if gate_results else ["- none"]), "",
+        *(["## Diagnostics (LIST_MODELS, read-only)", *diag, ""] if diag else []),
         "## Model output (UNVERIFIED)", redact(str(ans.get("answer", "")) or f"(none) {err}"), "",
         "## Unverified claims", *(f"- {c}" for c in ans.get("unverified_claims", [])), "",
         f"## Owner needed: {ans.get('needs_owner', False)} {ans.get('owner_reason', '')}",
