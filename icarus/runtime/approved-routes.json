@@ -8,5 +8,5 @@
       "compatibilityVerified": true
     }
   ],
-  "note": "Source: owner, 2026-10-13. Priority 1 only; no approved fallbacks. Live desktop order (cordis.patch.yml / icarus-quota-failover) not verified."
+  "note": "Primary only. Source: a pasted summary the owner relayed on 2026-10-13, NOT the live config. The complete approved fallback order is unverified; it lives in the owner's PC profile (cordis.patch.yml / icarus-quota-failover plugin). Absence of fallbacks here means 'unknown', not 'none'."
 }
