@@ -44,7 +44,7 @@ jobs:
           COMMENT_ACTOR: ${{ github.event.comment.user.login }}
         run: |
           if [ -z "$COMMENT_BODY" ]; then
-            export COMMENT_BODY=$'ICARUS_RUN Hourly repo check (first duty of every hour): list icarus/memory, icarus/proposals and icarus/runs, read icarus/memory/current-state.md, and report what is new since the last receipt and anything that needs the owner.\nVERIFY_FILE: icarus/memory/identity.md'
+            export COMMENT_BODY=$'ICARUS_RUN Hourly repo check (first duty of every hour): read icarus/runtime/endpoints.json and icarus/endpoints/ and report each endpoint's status and any with no check-in in 24 hours; then list icarus/memory, icarus/proposals and icarus/runs, read icarus/memory/current-state.md, and report what is new since the last receipt and anything that needs the owner.\nVERIFY_FILE: icarus/memory/identity.md\nVERIFY_FILE: icarus/runtime/endpoints.json'
             export COMMENT_ID="hourly-${{ github.run_id }}"
             export COMMENT_ACTOR="schedule"
           fi
