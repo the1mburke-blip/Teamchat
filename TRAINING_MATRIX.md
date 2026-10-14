@@ -1521,3 +1521,9 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - evidence: Build-repo commit fa38d0b00dbbd95f65d2ee7ff37de7030e9811f9, CI run 15 success, release icarus-15 (signed, package com.icarus.agent). Owner-verified on the phone at 14:41 Dublin on 2026-10-14: asked to tell what he learned yesterday, Icarus answered from live repo memory (allowance snapshots HV-EXP-096, handoff updates, three verified upgrades). Not yet tested on the phone: the icarus_repo note write, shell approval handling.
 - cost: EUR 0 external spend; task-attributable allowance about 30% of the weekly allowance per Michael.
 - authority: Michael supplies instructions and verifies on device; Icarus decides in the runtime; Claude executed. No executor self-PASS beyond the cited CI and owner-device evidence.
+
+## HV-EXP-098 Icarus repo runtime live deployment check (2026-10-14)
+- Proposed by: Michael. Executed by: Claude via Composio (trigger); Icarus runtime v0 on GitHub Actions (gemini-3.5-flash-lite).
+- Trigger: owner comment ICARUS_RUN on issue #49 (comment 6174781575). Cost EUR 0.
+- Result: VERDICT PASS, gate VERIFY_FILE icarus/memory/identity.md ok. Run: https://github.com/the1mburke-blip/Teamchat/actions/runs/38610589608
+- Lesson: the runtime is live on main (icarus-runtime.yml, issue_comment, owner-only, body starts with ICARUS_RUN). Deploy = post the comment. Model hit 429 once and failed over to a second attempt as designed.
