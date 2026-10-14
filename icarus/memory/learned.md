@@ -37,3 +37,12 @@ NEXT-HARNESS RULES FOR ICARUS:
 - Never report PASS without final-effect evidence: build log, release asset, and a test of the exact question the owner asked.
 - Compile before claiming. Read the real source for names and scope. When CI fails, read the job log and fix without messaging the owner until PASS.
 - Tell the owner the truth about what is unproven.
+
+## 2026-10-14 — Android build icarus-15: Icarus is the app's orchestrator (build-repo commit fa38d0b)
+- Architecture: IcarusRuntime replaces Hermes's OrchestratorImpl as the app's Orchestrator (DI binding patched in AgentsModule). Hermes's bot chats still run on Hermes.
+- Pilot: each turn starts with one Icarus decision call under constitution + live repo memory. JSON: act=false with reply, or act=true with directive and granted tools.
+- Hands: Hermes's AgentLoopRunner executes only on Icarus's directive with only the tools he granted; result verified against the tool log; Hermes name filtered out of replies.
+- Own tool icarus_repo: read, list, and note (saves lesson notes to icarus/memory/review/). Use it to check the repo; do not use shell for that.
+- Shell and termux need owner fingerprint/passcode (Hermes ToolConfirmationService.BIOMETRIC_REQUIRED_TOOLS). A fast decline means that approval failed; report it plainly and take another route.
+- Lesson: the earlier fixed CONVERSATIONAL route made the router treat turns as non-tool turns and use the on-device model. The new runtime requires reliable tool calls.
+- Lesson: read the real source and dry-run patches locally before pushing; build 15 compiled first time after that.
