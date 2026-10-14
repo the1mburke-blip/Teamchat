@@ -7,6 +7,9 @@ name: Icarus Runtime v0
 on:
   issue_comment:
     types: [created]
+  schedule:
+    - cron: '0 * * * *'   # every hour on the hour (GitHub may start it a few minutes late)
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,9 +22,10 @@ concurrency:
 jobs:
   run:
     if: >-
-      github.event.issue.pull_request == null &&
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request == null &&
       github.event.comment.author_association == 'OWNER' &&
-      startsWith(github.event.comment.body, 'ICARUS_RUN')
+      startsWith(github.event.comment.body, 'ICARUS_RUN'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -38,7 +42,13 @@ jobs:
           COMMENT_BODY: ${{ github.event.comment.body }}
           COMMENT_ID: ${{ github.event.comment.id }}
           COMMENT_ACTOR: ${{ github.event.comment.user.login }}
-        run: python3 icarus/runtime/icarus_run.py
+        run: |
+          if [ -z "$COMMENT_BODY" ]; then
+            export COMMENT_BODY=$'ICARUS_RUN Hourly repo check (first duty of every hour): list icarus/memory, icarus/proposals and icarus/runs, read icarus/memory/current-state.md, and report what is new since the last receipt and anything that needs the owner.\nVERIFY_FILE: icarus/memory/identity.md'
+            export COMMENT_ID="hourly-${{ github.run_id }}"
+            export COMMENT_ACTOR="schedule"
+          fi
+          python3 icarus/runtime/icarus_run.py
 
       - name: Save receipt (append-only new file)
         if: always()
@@ -47,12 +57,12 @@ jobs:
           git config user.email "icarus-runtime@users.noreply.github.com"
           mkdir -p icarus/proposals
           git add icarus/runs icarus/proposals
-          git diff --cached --quiet || git commit -m "chore(icarus): run receipt ${{ github.event.comment.id }}"
+          git diff --cached --quiet || git commit -m "chore(icarus): run receipt ${{ github.event.comment.id || github.run_id }}"
           git pull --rebase --quiet origin main || true
           git push origin HEAD:main || echo "receipt push failed"
 
       - name: Reply with receipt
-        if: always()
+        if: always() && github.event_name == 'issue_comment'
         uses: actions/github-script@v8
         with:
           script: |
