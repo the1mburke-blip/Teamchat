@@ -18,9 +18,9 @@
     {
       "name": "laptop-harness",
       "where": "Windows desktop-at0s5vo: ~/Icarus-Harness (AGENTS.md, icarus/memory), ~/.dsh (DeepSeek harness, plugin icarus-tether-patch)",
-      "reach": "none yet from the runtime. Laptop memory is a separate copy of icarus/memory with no sync or check-in to the repo",
-      "status": "not-linked",
-      "evidence": "read from the laptop on 2026-10-14; no repo heartbeat found"
+      "reach": "Harness (~/.dsh, workspace ~/Icarus-Harness) uses the skill icarus-runtime-link and its existing icarus_teamchat GitHub connection: checks in by writing icarus/endpoints/laptop-harness.md and sends ICARUS_RUN comments on issue #49",
+      "status": "unverified",
+      "evidence": "skill and AGENTS.md line written to the laptop 2026-10-14 and read back; no check-in file in the repo yet"
     }
   ],
   "checkin": "Endpoints report in by writing icarus/endpoints/<name>.md (one line: UTC time, version, what ran). The hourly run flags any endpoint with no check-in in the last 24 hours."
