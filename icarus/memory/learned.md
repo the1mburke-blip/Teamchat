@@ -46,3 +46,9 @@ NEXT-HARNESS RULES FOR ICARUS:
 - Shell and termux need owner fingerprint/passcode (Hermes ToolConfirmationService.BIOMETRIC_REQUIRED_TOOLS). A fast decline means that approval failed; report it plainly and take another route.
 - Lesson: the earlier fixed CONVERSATIONAL route made the router treat turns as non-tool turns and use the on-device model. The new runtime requires reliable tool calls.
 - Lesson: read the real source and dry-run patches locally before pushing; build 15 compiled first time after that.
+
+## 2026-10-14 — Android runtime verified on the owner's phone
+- Result: build icarus-15 (run 15, commit fa38d0b) passed the owner's device test. Asked to tell what he learned yesterday, Icarus answered from live repo memory. Owner verdict: "Well done (finally)".
+- Cost of the road there: a full day and about 30% of the weekly allowance (owner-stated). The cause was text-level patching and blind CI iteration instead of reading the host source and seating a runtime at its orchestrator interface.
+- Standing rule for any harness: own the decision in code, let the host only execute, read the real source and dry-run patches before the first build. Training entry: HV-EXP-097 in TRAINING_MATRIX.md.
+- Untested on the phone: icarus_repo note write, shell approval handling.
