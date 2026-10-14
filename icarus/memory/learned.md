@@ -52,3 +52,10 @@ NEXT-HARNESS RULES FOR ICARUS:
 - Cost of the road there: a full day and about 30% of the weekly allowance (owner-stated). The cause was text-level patching and blind CI iteration instead of reading the host source and seating a runtime at its orchestrator interface.
 - Standing rule for any harness: own the decision in code, let the host only execute, read the real source and dry-run patches before the first build. Training entry: HV-EXP-097 in TRAINING_MATRIX.md.
 - Untested on the phone: icarus_repo note write, shell approval handling.
+
+## 2026-10-14 — Correction, root cause and icarus-18 (build-repo commit ac908d4)
+- Correction: the entry above saying the Android runtime was "verified on the owner's phone" (icarus-15) proves only that Icarus answered from live repo memory. It did not prove he commanded Hermes's tools, and the same entry lists the tool paths as untested. The owner later reported Icarus saying he only has memory functions. Tool control is UNVERIFIED on a phone until a real tool call is seen.
+- Cause found in code (overlay/IcarusRuntime.kt): when the decision step returned a reply that was not JSON (no '{'), it was returned as the final chat answer and never reached the tool-granting path, so a chatty model reply meant chat only.
+- Fix (ac908d4): removed that fallback so a non-JSON reply falls through to the hands path, and the decision prompt now states Icarus has full tool control via act=true and must never say he can only chat or use memory. Built as release icarus-18 (Actions run 18 success, signed with the Icarus key, package com.icarus.agent). Not yet tested on a phone.
+- Pass test: ask "Read your own learned.md and tell me its first line." PASS only if a tool call is visible in the app and the answer matches the file's real first line.
+- Rule: a memory answer is not evidence of tool control. Test with a task that needs a tool and check the tool log.
