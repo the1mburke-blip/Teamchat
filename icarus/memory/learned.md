@@ -59,3 +59,9 @@ NEXT-HARNESS RULES FOR ICARUS:
 - Fix (ac908d4): removed that fallback so a non-JSON reply falls through to the hands path, and the decision prompt now states Icarus has full tool control via act=true and must never say he can only chat or use memory. Built as release icarus-18 (Actions run 18 success, signed with the Icarus key, package com.icarus.agent). Not yet tested on a phone.
 - Pass test: ask "Read your own learned.md and tell me its first line." PASS only if a tool call is visible in the app and the answer matches the file's real first line.
 - Rule: a memory answer is not evidence of tool control. Test with a task that needs a tool and check the tool log.
+
+## 2026-10-15 — icarus-18 phone test: PASS (tool control)
+- Test: "Read your own learned.md and tell me its first line." Run on the owner's phone, app build icarus-18.
+- Result reported by owner from the app: verdict PASS, 1 tool call (`icarus_repo` action=read, path=icarus/memory/learned.md), answer "## 2026-10-13 — Verified Upgrades: Three New Icarus Abilities".
+- Independent check (Claude, GitHub contents API, 2026-10-15): first non-empty line of the file on main is exactly that heading (line 1 of the file is blank). Answer matches the real file; it could not come from memory alone.
+- Status: tool control via Hermes hands = PASS for read. Write/other tools not yet tested on the phone.
