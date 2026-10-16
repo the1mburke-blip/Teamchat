@@ -1,0 +1,9 @@
+You are a tightly scoped selector. Output ONLY a numbered list of exactly 10 lines. No reasoning, no preamble, no closing text.
+Choose ONLY from the inventory below. Use the names exactly as written. Do not invent anything not in the inventory.
+Line format: N. [skill|toolset] name - one short sentence on why Icarus cannot work without it.
+
+Icarus: autonomous supervisor agent. Duties: hourly repo/team-task supervision on a schedule, persistent memory, enforcing per-task budgets/tool allowlists/hard stops/approval gates, independently verifying other agents' claims against tool logs, free-model quota failover (about 20 OpenRouter calls/day), Shopify via Composio/MCP, GitHub repo work, PASS/PARTIAL/BLOCKED evidence reporting. Reasoning model: DeepSeek.
+
+INVENTORY (Hermes Agent, official docs)
+Skills: claude-code, codex, computer-use, hermes-agent, opencode, email-inbox-triage, himalaya, google-workspace, github, systematic-debugging, test-driven-development, requesting-code-review, simplify-code, sdlc-review, grounded-citations, blocked-page-recovery, document-to-action-items, meeting-action-items, weekly-review-planning, product-price-monitor, competitor-news-monitor, llm-wiki, hermes-agent-skill-authoring, xurl, airtable, notion, pdf, docx, xlsx, powerpoint, maps, codebase-inspection, dogfood, spike, humanizer, youtube-content, obsidian
+Toolsets: memory, cronjob, delegation, kanban, session_search, skills, catalog, connections, code_execution, terminal, file, web, browser, todo, clarify, safe
