@@ -1,0 +1,396 @@
+{
+ "created": "2026-10-16",
+ "source": "NousResearch/hermes-agent @ 275b15fc35193b8ddafcf16776539c04587e6ccf",
+ "selected_by": "nvidia/nemotron-3-super-120b-a12b:free via OpenRouter (2 calls, cost 0); names verified against catalog; obsidian path corrected",
+ "status": "STAGED ONLY - not installed anywhere",
+ "skills": [
+  {
+   "name": "shopify",
+   "upstream_path": "optional-skills/productivity/shopify",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "optional-skills/productivity/shopify/SKILL.md",
+     "sha256": "f7669570b5e69870607f715466035ec41792c180b0aba444c7719c619fed2388",
+     "size": 15159,
+     "upstream_blob": "eae4d17d975bc5240d8d5ebbe094bcf357523b63"
+    }
+   ]
+  },
+  {
+   "name": "social-media-content-calendar",
+   "upstream_path": "optional-skills/creative/social-media-content-calendar",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "optional-skills/creative/social-media-content-calendar/SKILL.md",
+     "sha256": "f12b235ea3eedf611022c0a89a967f08a5dc25bbd1531572f1c37f7545177298",
+     "size": 3970,
+     "upstream_blob": "694dff81c510528d28e51e49e6fb82a0d87ac40f"
+    }
+   ]
+  },
+  {
+   "name": "github",
+   "upstream_path": "skills/software-development/github",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "skills/software-development/github/SKILL.md",
+     "sha256": "9d70e7c842fe7db75b5a50526552a69862f5bcfc1e59aa93785241649a09d5a3",
+     "size": 2446,
+     "upstream_blob": "8e843115e3693da9ecb992225e74716dddec9b15"
+    },
+    {
+     "file": "skills/software-development/github/references/auth.md",
+     "sha256": "eba9d0edf896036718612bb557ec7a6432532a9395bd66277c3b7417d8960a37",
+     "size": 11586,
+     "upstream_blob": "7d13a5110bbd652621d420d89550ee8191631c41"
+    },
+    {
+     "file": "skills/software-development/github/references/ci-troubleshooting.md",
+     "sha256": "ada022d91c8abff55a15505fe630ba02abdece5afa3751433fa4014a33defa23",
+     "size": 4936,
+     "upstream_blob": "c1341bacbce0e85d96225dd7c6c67befacb6281f"
+    },
+    {
+     "file": "skills/software-development/github/references/code-review.md",
+     "sha256": "11ad06e6d49bcfc3433530b40f95b72f568cae0a2d7ca6e2450b22d3e0626d7b",
+     "size": 13295,
+     "upstream_blob": "7e52dd2779a9d36ab4ba2dc66aa9d360b684f230"
+    },
+    {
+     "file": "skills/software-development/github/references/conventional-commits.md",
+     "sha256": "2d71a3b701b08c2e5ed5248d17928eb11e27d7b357f9e2dca27caee9cc017aab",
+     "size": 2417,
+     "upstream_blob": "9c7532f27ca3117e709e2ffafde5b4041fe1a056"
+    },
+    {
+     "file": "skills/software-development/github/references/github-api-cheatsheet.md",
+     "sha256": "a9081d4a108b67b4edd3c92c73d823fd1730e37e23be6f069d9bd67dd3b32486",
+     "size": 6092,
+     "upstream_blob": "501a81af19e0638fa0784d8d8a4ee0ae2de2871b"
+    },
+    {
+     "file": "skills/software-development/github/references/issue-to-pr.md",
+     "sha256": "9fc6de82f9b8e65a1611a5e3eee9f6f35cc9118a90a9df3de547cb65f2766dab",
+     "size": 5638,
+     "upstream_blob": "f25717cb0ca59a7fc4415a5bb24f58de24edc6ee"
+    },
+    {
+     "file": "skills/software-development/github/references/issues.md",
+     "sha256": "86cf4a98232ee6362cd7893e76bed6ed25c21eb660e878432c6df3286c02d6d8",
+     "size": 8981,
+     "upstream_blob": "3ceef2ffc31f5d00cd864a1278888c32e3f32ef8"
+    },
+    {
+     "file": "skills/software-development/github/references/pr-workflow.md",
+     "sha256": "f75f8cc23266a3675a67c8d06385c561befab23a8e6a9683b5418c8b656bb2b5",
+     "size": 9746,
+     "upstream_blob": "61548800fb127561969ab3d2bd77603503d2c44e"
+    },
+    {
+     "file": "skills/software-development/github/references/repo-management.md",
+     "sha256": "e5b92a6d2edf1dc317ed4d4ba1b37734b78f391438d58f3f86139df398996301",
+     "size": 13416,
+     "upstream_blob": "16c7b0bb111ce672f60ba1ec8d85e0ddf4efc2c7"
+    },
+    {
+     "file": "skills/software-development/github/references/review-output-template.md",
+     "sha256": "4560662913e8f89d558c7ba4f34daf77a35a88367c2d480ad86de7085cbcaf34",
+     "size": 2465,
+     "upstream_blob": "f4aa6c137cc02f47a242b3ab3c1f28335b8adf2b"
+    },
+    {
+     "file": "skills/software-development/github/scripts/gh-env.sh",
+     "sha256": "eb04179d859635b56cdd0da71da59cd5d94d7a69c9a856f9f562d1cd5cb9412f",
+     "size": 2556,
+     "upstream_blob": "5017aa732f5a5156aa755d8a6767a4648417dba6"
+    },
+    {
+     "file": "skills/software-development/github/scripts/git-credential-token.py",
+     "sha256": "4c0f3dfdc75df9043fe7b62b0807e7b4392c59ee81082d2fcc8d39b75c593efb",
+     "size": 1788,
+     "upstream_blob": "7955aed6fac90d8b171a32175d2bd9b09558e6a2"
+    },
+    {
+     "file": "skills/software-development/github/templates/bug-report.md",
+     "sha256": "4b3144ccf47a85dcec889c7610d6b739a7ae6f19aa8d4709942112ef09e11a5b",
+     "size": 469,
+     "upstream_blob": "c07a782f0c1508ca256af627fa13654a547698b3"
+    },
+    {
+     "file": "skills/software-development/github/templates/feature-request.md",
+     "sha256": "43962f5a398b4badeeb94280299ba4511940ad0e32afcfce5f2a6e1afd21c7a8",
+     "size": 598,
+     "upstream_blob": "449ad82d548d3767e48c0808fa2b3850a9236e15"
+    },
+    {
+     "file": "skills/software-development/github/templates/pr-body-bugfix.md",
+     "sha256": "e8c31915b87dba0454d7520a3aa45ef8650fd0e50e48e277db855ff919e6251a",
+     "size": 513,
+     "upstream_blob": "c80f220c8f275168fc31e08d9b4db7ff7abc7392"
+    },
+    {
+     "file": "skills/software-development/github/templates/pr-body-feature.md",
+     "sha256": "875e815da6e0e3df2763a85c9c2a56a776461da39d4181a1487333c0bf5b9276",
+     "size": 580,
+     "upstream_blob": "495aa162400a7a9b68b335cff835ceeea7993e90"
+    }
+   ]
+  },
+  {
+   "name": "systematic-debugging",
+   "upstream_path": "skills/software-development/systematic-debugging",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "skills/software-development/systematic-debugging/SKILL.md",
+     "sha256": "bd480f51a2e9969c88544003c30b7539b7df0b7358703f99b0495514c2dd878a",
+     "size": 14059,
+     "upstream_blob": "275746e7bb9bf0ed4cc45a9284f3a6277894fd4e"
+    }
+   ]
+  },
+  {
+   "name": "hermes-agent",
+   "upstream_path": "skills/autonomous-ai-agents/hermes-agent",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/SKILL.md",
+     "sha256": "dcdc4b2d232ad415c76e09cc229a2c861f3e1225fd1f1262b33a965ea4732b24",
+     "size": 13190,
+     "upstream_blob": "a184b3a47a59848dc015b525d438cc5b2e2dffae"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/background-systems.md",
+     "sha256": "70099ca64774cc7e70a33330d180f862cf19a02c0f936dc4c50d51c6d0b73556",
+     "size": 5069,
+     "upstream_blob": "efb1ae2497ffa73fecd7f1dd4833afbacadedf5f"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/cli-reference.md",
+     "sha256": "a15c6838f9ac1e35b0e113a66738b3ce27bb6500d31218797467a2f8691341b5",
+     "size": 6617,
+     "upstream_blob": "f68b358cb5f7df865a02b1e36c044460bbaf1a25"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/configuration.md",
+     "sha256": "ba075f369ff66e60134d4a472894599b18dd9f8f715840a928a5ff7e818f2455",
+     "size": 4431,
+     "upstream_blob": "a3bcffe307463be982dd09bc7804d90adec9ec60"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/contributor-guide.md",
+     "sha256": "097c860be377fcfc0c414d07dffe2ba5470ae33e3805a6536c2956dc6f520087",
+     "size": 5900,
+     "upstream_blob": "b23f07c17605f391c1616c47fce7273451c29e04"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/delegate-task-concurrency-diagnosis.md",
+     "sha256": "41019dd37c0c048b002d3639fe01455513b5c9aba142a21ff9c3bd4c7718a77b",
+     "size": 4660,
+     "upstream_blob": "34851bb0ed5a20ea66b9ee15e4aa2866e3ca391f"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/desktop-plugins.md",
+     "sha256": "2bd78982684a2612f27756b3e2f7eb744d17f72e523e5586d2b388f6d7db1037",
+     "size": 14019,
+     "upstream_blob": "eee55adecb4b9575c85efdac6f38acf4925e549c"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/native-mcp.md",
+     "sha256": "ded08718d2eb141262a31b323f8e66eeb40f35e074e1f0e70abb76860891ec92",
+     "size": 12581,
+     "upstream_blob": "0fed2652193019efbcd5d5209014ea2ce1760ce2"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/petdex.md",
+     "sha256": "2254eabf40c360efb54e4df482f3b84820b54a15e6954c4a7e9e7fee4eb90f77",
+     "size": 3244,
+     "upstream_blob": "4fc564f240a31c3910a8dd4fb8ce88caa81b842e"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/portal-auth-for-third-party-apps.md",
+     "sha256": "4890617a80d8c70fc388a49201d5a718049a64c0ddd5fac3f35754641f063b99",
+     "size": 6579,
+     "upstream_blob": "37a8feba9516168f87f48326727438268b889d03"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/project-context-files.md",
+     "sha256": "20b51406102e6498f62ed837978e5c67ebd91a917b985de7bbddfaaf23c1f593",
+     "size": 3285,
+     "upstream_blob": "7a6d8ee190719bc4355d6dc34f190009968ddb6d"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/providers-and-models.md",
+     "sha256": "41c9c8e9de3a66c5e7f12c6fe39916d58a13e315be1dfd712fbf8cdaab4af203",
+     "size": 3381,
+     "upstream_blob": "71d46afe525efbb97da21c54669d98bfcad8c920"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/security-privacy.md",
+     "sha256": "f27913f7775915d8065b2dea782197907ff90cf37f07b865135c7f61aee98e83",
+     "size": 3393,
+     "upstream_blob": "4465fef93a2b0578fc740d32ca5e21c0ebe82d5e"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/slash-commands.md",
+     "sha256": "690dc6c2543dfa028bbf2918c229f27f4962e9d897fce25ebb1de67d56f3b822",
+     "size": 5379,
+     "upstream_blob": "e501fa00c659a807feff61421c505b5dc6cb60d1"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/themes.md",
+     "sha256": "f5a8269a7312173f0caa6736156a3f76d32e56b4e15511e84dc2e902f48e8157",
+     "size": 6887,
+     "upstream_blob": "b4ded40cb0caf6cbff4d0618d6abe8153746835c"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/troubleshooting.md",
+     "sha256": "70045d9a3dd4f8ff4001b3a7ccfa7f967c130ce89877ee5f052c87752fcd5f5b",
+     "size": 3767,
+     "upstream_blob": "7d76e6fa4eead500e1932cb7b5d2bd3148d078e0"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/tui-widgets.md",
+     "sha256": "20e21aabb757a9d3c7d895db8f05a3782fe8b28feef3768ac5550c8860b4a3db",
+     "size": 6484,
+     "upstream_blob": "c9eb6717f05e3a40179296692e8e61670e327807"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/webhooks.md",
+     "sha256": "f668c57d1900e249cb4b54e5d624e9aacb399ecf1452f9b258a1bf857ffa8a42",
+     "size": 8466,
+     "upstream_blob": "78b0d12c4b7de28c03ba4d800a5ced4d26b0f009"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/references/windows-quirks.md",
+     "sha256": "4af2c0907983376f1b21d2164de17f1229faeb0609c61762cfc026b806bc5501",
+     "size": 2671,
+     "upstream_blob": "b94595ed82f70a6eb961b5efdce0c443f1dab300"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/templates/clock.mjs",
+     "sha256": "44ec25d560e16c7815a633039a783ddbba2d8e8cf1659560c0cd1cddec83f89d",
+     "size": 1423,
+     "upstream_blob": "fea22af3499f5ef518718f49d343253933b2b62e"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/templates/plugin.js",
+     "sha256": "a63c8f879756854b45373f5d6b1ae0a7fefcdd4a5af840be8a60d83b64724744",
+     "size": 3141,
+     "upstream_blob": "e3e75ed474aa59883d413a671ad85536be77cb79"
+    },
+    {
+     "file": "skills/autonomous-ai-agents/hermes-agent/templates/skin.yaml",
+     "sha256": "bc8fddd7e5373b074c1c7dd423bb59d6e04769977e8a18354e3a6b3983209994",
+     "size": 1389,
+     "upstream_blob": "1316511413b71dfa14e20bf8b208ea415f487564"
+    }
+   ]
+  },
+  {
+   "name": "requesting-code-review",
+   "upstream_path": "skills/software-development/requesting-code-review",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "skills/software-development/requesting-code-review/SKILL.md",
+     "sha256": "1e26ced9f05e357950e035b93ad1a937dd8a9e578a44d3c8d4fa734a09b7f814",
+     "size": 8781,
+     "upstream_blob": "24c20b8a1b74fefefba5897e6112eeaf79cfc6db"
+    }
+   ]
+  },
+  {
+   "name": "google-workspace",
+   "upstream_path": "skills/productivity/google-workspace",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "skills/productivity/google-workspace/SKILL.md",
+     "sha256": "4ab062fe5131d123a6c4f1297e58c7f75b8d517fd282b68547da7ebfabb2a0b9",
+     "size": 14241,
+     "upstream_blob": "5d72dd0b9bc5f13062a480962d13d8c64abc69c6"
+    },
+    {
+     "file": "skills/productivity/google-workspace/references/daily-brief.md",
+     "sha256": "d4b78bad4121fea470dfe1aa92b2fc0ae2368af6ffbdd0b29ef40c7c8f99067c",
+     "size": 3217,
+     "upstream_blob": "aced18f4505320f55fceeaa89c21401471512f43"
+    },
+    {
+     "file": "skills/productivity/google-workspace/references/gmail-search-syntax.md",
+     "sha256": "340b78000fba67b9c5373978185446eb549a474870decf8c439edb03b3883bc5",
+     "size": 2150,
+     "upstream_blob": "f662346791b62eff1bd9907f4b48c95f5ce4ca55"
+    },
+    {
+     "file": "skills/productivity/google-workspace/scripts/_hermes_home.py",
+     "sha256": "190126d124bf673dbb1f4d082013d6f64bd90907ac4ffe89b871ab6c01a1d1b6",
+     "size": 1594,
+     "upstream_blob": "b2d7606862b54b74525baf0190d3ace98f6af50b"
+    },
+    {
+     "file": "skills/productivity/google-workspace/scripts/google_api.py",
+     "sha256": "7e21f8b277fce049ab833b90b2e3421a40db09e57c3fca39d102905330a30fc8",
+     "size": 47034,
+     "upstream_blob": "c418491030bfa80a9bc5b065e8b341c46cb9326d"
+    },
+    {
+     "file": "skills/productivity/google-workspace/scripts/gws_bridge.py",
+     "sha256": "dcc1541980b60c1b32b65da91e14900d7757cc53b1e3dc1cf8bbf6df721f5d94",
+     "size": 4336,
+     "upstream_blob": "857dabd3efed321941a8c624812fb32b102b17d6"
+    },
+    {
+     "file": "skills/productivity/google-workspace/scripts/setup.py",
+     "sha256": "a5ba2941cca7e90d452ec08fb5ab8f5ed4bc5b50111f94acb7f56c6452c33f67",
+     "size": 17414,
+     "upstream_blob": "eaffdee8a877c75fd96b6588d537ac5a1df9aacd"
+    }
+   ]
+  },
+  {
+   "name": "obsidian",
+   "upstream_path": "skills/note-taking/obsidian",
+   "install_on": "both",
+   "files": [
+    {
+     "file": "skills/note-taking/obsidian/SKILL.md",
+     "sha256": "7aea4e8f89f94ab2876d79898d10a5d4cdab31390c53f72ad6934b071179f826",
+     "size": 3092,
+     "upstream_blob": "cc8f3cf737a78fc68e73e5770ef0158815cb4028"
+    }
+   ]
+  },
+  {
+   "name": "hermes-s6-container-supervision",
+   "upstream_path": "optional-skills/devops/hermes-s6-container-supervision",
+   "install_on": "desktop-only",
+   "files": [
+    {
+     "file": "optional-skills/devops/hermes-s6-container-supervision/SKILL.md",
+     "sha256": "b9b65b6d74ef9d9fee60813700bf93da7bb2f28d1f952686c82c178ebe158246",
+     "size": 11991,
+     "upstream_blob": "dc3184feac4094ce1cfeca235eba4e38cd59fc6d"
+    }
+   ]
+  },
+  {
+   "name": "docker-management",
+   "upstream_path": "optional-skills/devops/docker-management",
+   "install_on": "desktop-only",
+   "files": [
+    {
+     "file": "optional-skills/devops/docker-management/SKILL.md",
+     "sha256": "6425a2cf3f682f4b6812522dcb7ceaea7dab9ba0fbf159fb900280edc5f69e50",
+     "size": 10426,
+     "upstream_blob": "428eb43c45b0091099297f6c222ccf9fc85ebb3c"
+    }
+   ]
+  }
+ ]
+}
