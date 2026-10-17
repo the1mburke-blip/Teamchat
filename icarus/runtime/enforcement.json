@@ -31,7 +31,10 @@
     ".git/"
   ],
   "writeDenyPathPrefixes": [
-    ".git/"
+    ".git/",
+    ".github/workflows/",
+    "icarus/runtime/enforcement.json",
+    "icarus/runtime/icarus_run.py"
   ],
   "maxWrites": 50,
   "maxWriteBytes": 1000000,
