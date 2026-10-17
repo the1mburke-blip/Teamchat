@@ -183,6 +183,19 @@ def gate(line):
         if sep and needle and ".." not in path and not path.startswith(("/", ".git")) and pathlib.Path(path).is_file():
             ok = needle in pathlib.Path(path).read_text(encoding="utf-8", errors="replace")
         return ok, f"VERIFY_CONTAINS {path}: contains {needle[:60]!r}={ok}"
+    if kind == "VERIFY_ISSUE_HAS":
+        num, sep, needle = val.partition("::")
+        num, needle = num.strip().lstrip("#"), needle.strip()
+        if not (num.isdigit() and sep and needle):
+            return False, f"VERIFY_ISSUE_HAS {val}: rejected (use: <issue number> :: <text>)"
+        c, t = http("GET", f"https://api.github.com/repos/{REPO}/issues/{num}/comments?per_page=100", timeout=20)
+        try:
+            rows = json.loads(t) if c == 200 else []
+        except Exception:
+            rows = []
+        ok = any(needle.lower() in str(x.get("body", "")).lower() for x in rows
+                 if not str(x.get("body", "")).startswith(("# Icarus run", "[ICARUS via runtime]", "ICARUS_RUN")))
+        return ok, f"VERIFY_ISSUE_HAS #{num}: HTTP {c}, a comment not written by ICARUS or the ping contains {needle[:50]!r}={ok}"
     return False, f"unknown gate {kind}"
 
 
@@ -552,6 +565,10 @@ def tool_delegate(args):
         cw, _tw = http("POST", f"https://api.github.com/repos/{REPO}/issues/{w}/comments",
                        {"body": f"[TEAMCHAT_WAKE] NEW_TASK #{num}\nTARGET: {to}\nTITLE: {title}\nURL: {url}"}, timeout=30)
         wake = f"; wake comment on #{w}: HTTP {cw}"
+    if to == "PRIME":
+        cd, _td = http("POST", f"https://api.github.com/repos/{REPO}/actions/workflows/teamchat-gemini-notebook.yml/dispatches",
+                       {"ref": BRANCH, "inputs": {"issue": str(num)}}, timeout=30)
+        wake += f"; PRIME notebook dispatch: HTTP {cd} (204 = started)"
     DELEGATED.append(f"{to}: #{num} {url}")
     DELEG_KEYS[(to, obj.lower())] = f"#{num} {url}"
     return redact(f"DELEGATED (status REQUESTED, NOT executed): task #{num} {url} -> {to}; readback {'OK' if ok else 'FAILED'}{wake}. The target has not acted; do not claim it did.")
@@ -794,7 +811,7 @@ def main():
     lines = RAW.splitlines()
     first = lines[0] if lines else ""
     rest = [first[len("ICARUS_RUN"):].strip()] + lines[1:] if first.startswith("ICARUS_RUN") else lines
-    gates = [l for l in rest if l.split(":")[0].strip() in ("VERIFY_FILE", "VERIFY_URL", "VERIFY_PR_MERGED", "VERIFY_CONTAINS")]
+    gates = [l for l in rest if l.split(":")[0].strip() in ("VERIFY_FILE", "VERIFY_URL", "VERIFY_PR_MERGED", "VERIFY_CONTAINS", "VERIFY_ISSUE_HAS")]
     model_override = next((l.split(":", 1)[1].strip() for l in rest if l.startswith("MODEL:")), "")
     try:
         inject = int(next((l.split(":", 1)[1].strip() for l in rest if l.startswith("TEST_EXHAUST_ROUNDS:")), "0") or 0)
