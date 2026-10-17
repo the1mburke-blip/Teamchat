@@ -1553,3 +1553,11 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - capability_tool_prerequisites: Authenticated Teamchat GitHub read/write to update documentation, distinct device/runtime verification for uptake. EUR 0 spend, exact token count unavailable.
 - confidence: High for directly read files/issue/config staleness; device/runtime status unverified.
 - superseded_by: NONE
+
+## HV-EXP-101 Icarus phone runtime: FAIL (2026-10-17)
+- Proposed by: Michael. Executed by: Claude via Composio, 2026-10-17. Verdict: FAIL (owner-recorded) for the original task.
+- Result: no Icarus runtime on the phone; app not delivered. Partial PASS for interface only: Gmail reply to the notification's reply+ address with ICARUS_RUN triggers a run (comment 6241299729, receipt PASS).
+- Lesson: check past records before proposing a route (Termux had already failed behind Hermes's fingerprint gate); never suggest unverified routes; a working interface is not the requested runtime.
+- what_not_to_retry: Termux on the phone; replying via the Gmail connector without setting the Reply-To address explicitly; raising run/call caps without owner approval and a calculation.
+- cost: EUR 0; 6 Icarus test runs today on #120.
+- authority: Michael instructs and records the verdict; Claude executed. No self-PASS.
