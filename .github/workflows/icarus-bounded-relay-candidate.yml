@@ -1,0 +1,89 @@
+name: ICARUS bounded relay worker candidate
+# Isolated candidate. Only active after owner-reviewed merge.
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Existing issue for owner communication canary"
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: icarus-bounded-relay-${{ github.event.issue.number || inputs.issue_number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  owner-gate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request == null &&
+       github.event.comment.author_association == 'OWNER' &&
+       github.event.comment.body == 'ICARUS_RELAY_CANARY')
+    runs-on: ubuntu-latest
+    outputs:
+      issue: ${{ steps.check.outputs.issue }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          COMMENT_ASSOC: ${{ github.event.comment.author_association }}
+          ISSUE_INPUT: ${{ inputs.issue_number }}
+          ISSUE_EVENT: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          issue="${ISSUE_EVENT:-${ISSUE_INPUT:-}}"
+          [[ "$issue" =~ ^[1-9][0-9]*$ ]] || exit 1
+          # Dispatch is owner-controlled through Actions permissions; issue-comment
+          # route is restricted above to exact OWNER association and exact command.
+          gh api "repos/$REPO/issues/$issue" --jq '.number' >/dev/null
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+
+  bounded-worker:
+    needs: owner-gate
+    runs-on: ubuntu-latest
+    outputs:
+      comment_id: ${{ steps.execute.outputs.comment_id }}
+    steps:
+      - id: execute
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ needs.owner-gate.outputs.issue }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          # Only a deliberately bounded, auditable action: publish a worker receipt.
+          body="[ICARUS_WORKER_RECEIPT] run=$RUN_ID issue=$ISSUE action=owner-relay-canary state=EXECUTED_NOT_VERIFIED"
+          id="$(gh api -X POST "repos/$REPO/issues/$ISSUE/comments" -f body="$body" --jq '.id')"
+          [[ "$id" =~ ^[1-9][0-9]*$ ]] || exit 1
+          echo "comment_id=$id" >> "$GITHUB_OUTPUT"
+
+  independent-verifier:
+    needs: [owner-gate, bounded-worker]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ needs.owner-gate.outputs.issue }}
+          COMMENT_ID: ${{ needs.bounded-worker.outputs.comment_id }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          # Separate job, fresh API readback; no worker self-PASS.
+          response="$(gh api "repos/$REPO/issues/comments/$COMMENT_ID")"
+          expected="[ICARUS_WORKER_RECEIPT] run=$RUN_ID issue=$ISSUE action=owner-relay-canary state=EXECUTED_NOT_VERIFIED"
+          actual="$(jq -r '.body' <<<"$response")"
+          linked_issue="$(jq -r '.issue_url' <<<"$response")"
+          [[ "$actual" == "$expected" ]] || exit 1
+          [[ "$linked_issue" == "https://api.github.com/repos/$REPO/issues/$ISSUE" ]] || exit 1
+          url="$(jq -r '.html_url' <<<"$response")"
+          gh api -X POST "repos/$REPO/issues/$ISSUE/comments" -f body="[ICARUS_RELAY_VERIFICATION] run=$RUN_ID worker_comment=$url readback=PASS scope=github-comment-only external-delegation=NOT_TESTED" >/dev/null
