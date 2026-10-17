@@ -59,44 +59,56 @@ _STOP = set("this that with from have been were will would should could there th
 
 def recall(query, maxchars=6000, k=5, tag="task"):
     """Keyword recall over lessons: split learned.md, TRAINING_MATRIX.md and memory/lessons/*.md into
-    '## ' entries, score by task keywords, return the best few (capped). Never raises; read-only."""
+    '## ' entries; score by task keywords weighted by rarity (idf), heading hits and adjacent-word phrase hits
+    count extra, long entries are damped; return the best few (capped). Never raises; read-only."""
     try:
+        import math
         words = []
         for w in re.findall(r"[a-z0-9][a-z0-9_.\-]{3,}", str(query).lower()):
-            if w not in _STOP and w not in words:
+            w = w.strip(".-_")
+            if len(w) >= 4 and w not in _STOP:
                 words.append(w)
-        words = words[:40]
-        if not words:
+        uniq = list(dict.fromkeys(words))[:60]
+        if not uniq:
             return ""
+        pairs = list(dict.fromkeys(f"{a} {b}" for a, b in zip(words, words[1:])))[:60]
         srcs = ["icarus/memory/learned.md", "TRAINING_MATRIX.md"]
         ld = pathlib.Path("icarus/memory/lessons")
         if ld.is_dir():
             srcs += sorted(str(p) for p in ld.glob("*.md"))
-        scored = []
-        order = 0
+        entries = []
         for sp in srcs:
             txt = read(sp)
             if not txt:
                 continue
-            parts = re.split(r"(?m)^(?=## )", txt)
-            for part in parts:
-                if not part.startswith("## "):
-                    continue
-                order += 1
-                head = part.splitlines()[0][3:].strip()
-                hl, bl = head.lower(), part.lower()
-                s = sum(3 * min(hl.count(w), 2) + min(bl.count(w), 3) for w in words)
-                if s > 0:
-                    scored.append((s, order, sp, head, part))
+            for part in re.split(r"(?m)^(?=## )", txt):
+                if part.startswith("## "):
+                    entries.append((sp, part.splitlines()[0][3:].strip(), part))
+        if not entries:
+            return ""
+        low = [(h.lower(), p.lower()) for _s, h, p in entries]
+        n_ent = len(entries)
+        idf = {w: max(0.0, math.log((n_ent + 1) / (sum(1 for _h, b in low if w in b) + 0.5))) for w in uniq}
+        scored = []
+        for idx, ((sp, head, part), (hl, bl)) in enumerate(zip(entries, low)):
+            s = sum(idf[w] * (4 * (w in hl) + (w in bl)) for w in uniq if idf[w] > 0)
+            for pr in pairs:
+                if pr in hl:
+                    s += 8
+                elif pr in bl:
+                    s += 4
+            s = s / (1 + math.log10(max(len(part), 200) / 200.0))
+            if s > 0:
+                scored.append((s, idx, sp, head, part))
         scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
         out, used = [], 0
-        for s, _o, sp, head, part in scored[:k]:
+        for s, _i, sp, head, part in scored[:k]:
             chunk = part.strip()[:1800]
             if used + len(chunk) > maxchars:
                 break
             out.append(f"[{sp}] {chunk}")
             used += len(chunk)
-            RECALLED.append(f"{tag}:{sp.split('/')[-1]} > {head[:60]} (score {s})")
+            RECALLED.append(f"{tag}:{sp.split('/')[-1]} > {head[:60]} (score {s:.0f})")
         return "\n\n".join(out)
     except Exception as ex:
         RECALLED.append(f"{tag}:recall error {type(ex).__name__}")
