@@ -1,5 +1,5 @@
 {
-  "_note": "Owner-editable enforcement limits read by icarus_run.py (looser = raise numbers, tighter = lower). Defaults apply if a key is missing. Hard stops end the run with FAIL and a receipt; they are never silently retried.",
+  "_note": "Owner-editable enforcement limits read by icarus_run.py (looser = raise numbers, tighter = lower). Defaults apply if a key is missing. Hard stops end the run with FAIL and a receipt; they are never silently retried. Reads are repo-wide except denyPathPrefixes. write_file/delete_file need an OWNER_APPROVED: line and never touch writeDenyPathPrefixes (the governor files stay owner-only).",
   "dailyRunCap": 60,
   "maxApiCallsPerRun": 24,
   "maxRuntimeSeconds": 3000,
@@ -12,14 +12,26 @@
   "tools": [
     "read_file",
     "list_dir",
-    "read_issue"
+    "read_issue",
+    "write_file",
+    "delete_file"
   ],
-  "maxToolCalls": 6,
+  "maxToolCalls": 10,
   "maxPlanSteps": 4,
   "readPathPrefixes": [
-    "icarus/",
-    ".github/workflows/",
-    "README.md"
+    ""
   ],
+  "denyPathPrefixes": [
+    ".git/"
+  ],
+  "writeDenyPathPrefixes": [
+    ".git/",
+    ".github/workflows/",
+    "icarus/runtime/enforcement.json",
+    "icarus/runtime/icarus_run.py"
+  ],
+  "maxWrites": 8,
+  "maxWriteBytes": 100000,
+  "readChunkChars": 4000,
   "writeBack": true
 }
