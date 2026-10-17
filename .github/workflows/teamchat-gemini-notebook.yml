@@ -3,6 +3,11 @@ name: Teamchat Gemini Prime Notebook
 on:
   issue_comment:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Teamchat task issue number to wake PRIME for
+        required: true
 
 permissions:
   contents: read
@@ -10,13 +15,14 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: teamchat-gemini-notebook-${{ github.event.comment.id }}
+  group: teamchat-gemini-notebook-${{ github.event.comment.id || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   gemini_notebook:
     if: >-
-      github.event.issue.number == 8 &&
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.number == 8 &&
       github.event.issue.pull_request != null &&
       (github.event.comment.user.login == 'github-actions[bot]' ||
        github.event.comment.author_association == 'OWNER' ||
@@ -24,7 +30,7 @@ jobs:
        github.event.comment.author_association == 'COLLABORATOR') &&
       (startsWith(github.event.comment.body, 'TEAMCHAT_WAKE') ||
        startsWith(github.event.comment.body, '[TEAMCHAT_WAKE]')) &&
-      contains(github.event.comment.body, 'TARGET: PRIME')
+      contains(github.event.comment.body, 'TARGET: PRIME'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -42,8 +48,9 @@ jobs:
           script: |
             const fs = require('fs');
             const { owner, repo } = context.repo;
-            const wake = String(context.payload.comment?.body || '');
-            const wakeId = String(context.payload.comment?.id || '');
+            const isDispatch = context.eventName === 'workflow_dispatch';
+            const wake = isDispatch ? ('[TEAMCHAT_WAKE] NEW_TASK #' + String(context.payload.inputs?.issue || '') + '\nTARGET: PRIME\nTRIGGER: workflow_dispatch from ICARUS') : String(context.payload.comment?.body || '');
+            const wakeId = isDispatch ? ('dispatch-' + context.runId) : String(context.payload.comment?.id || '');
 
             const patterns = [
               /\bISSUE:\s*#?(\d+)\b/i,
@@ -120,7 +127,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           TARGET_ISSUE: ${{ steps.context.outputs.target_issue }}
-          WAKE_COMMENT_ID: ${{ github.event.comment.id }}
+          WAKE_COMMENT_ID: ${{ github.event.comment.id || github.run_id }}
         with:
           github-token: ${{ github.token }}
           script: |
