@@ -166,6 +166,23 @@ def gate(line):
             return False, f"VERIFY_URL {val}: host '{host}' not on the allowlist (icarus/runtime/enforcement.json)"
         c, _ = http("GET", val, timeout=20)
         return c == 200, f"VERIFY_URL {val}: HTTP {c}"
+    if kind == "VERIFY_PR_MERGED":
+        if not val.isdigit():
+            return False, f"VERIFY_PR_MERGED {val}: rejected (PR number only)"
+        c, t = http("GET", f"https://api.github.com/repos/{REPO}/pulls/{val}", timeout=20)
+        try:
+            d = json.loads(t) if c == 200 else {}
+        except Exception:
+            d = {}
+        ok = bool(d.get("merged")) if isinstance(d, dict) else False
+        return ok, f"VERIFY_PR_MERGED #{val}: HTTP {c}, merged={ok}"
+    if kind == "VERIFY_CONTAINS":
+        path, sep, needle = val.partition("::")
+        path, needle = path.strip(), needle.strip()
+        ok = False
+        if sep and needle and ".." not in path and not path.startswith(("/", ".git")) and pathlib.Path(path).is_file():
+            ok = needle in pathlib.Path(path).read_text(encoding="utf-8", errors="replace")
+        return ok, f"VERIFY_CONTAINS {path}: contains {needle[:60]!r}={ok}"
     return False, f"unknown gate {kind}"
 
 
@@ -660,7 +677,7 @@ def main():
     lines = RAW.splitlines()
     first = lines[0] if lines else ""
     rest = [first[len("ICARUS_RUN"):].strip()] + lines[1:] if first.startswith("ICARUS_RUN") else lines
-    gates = [l for l in rest if l.split(":")[0].strip() in ("VERIFY_FILE", "VERIFY_URL")]
+    gates = [l for l in rest if l.split(":")[0].strip() in ("VERIFY_FILE", "VERIFY_URL", "VERIFY_PR_MERGED", "VERIFY_CONTAINS")]
     model_override = next((l.split(":", 1)[1].strip() for l in rest if l.startswith("MODEL:")), "")
     try:
         inject = int(next((l.split(":", 1)[1].strip() for l in rest if l.startswith("TEST_EXHAUST_ROUNDS:")), "0") or 0)
@@ -780,7 +797,7 @@ def main():
     gate_results = [gate(g) for g in gates]
     passed = bool(gate_results) and all(ok for ok, _ in gate_results) and answer is not None
     if not gates:
-        reason = "no evidence gate supplied (add VERIFY_FILE:/VERIFY_URL: lines); output is UNVERIFIED"
+        reason = "no evidence gate supplied (add VERIFY_FILE:/VERIFY_URL:/VERIFY_PR_MERGED:/VERIFY_CONTAINS: lines); output is UNVERIFIED"
     elif answer is None:
         reason = "no model output"
     else:
