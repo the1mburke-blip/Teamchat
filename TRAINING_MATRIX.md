@@ -1581,3 +1581,15 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - cost: EUR 0 external spend for this log; token/allowance waste from the error is not independently measurable.
 - confidence: HIGH for the observed breach (conversation and commit facts); no evidence of governance remediation.
 - superseded_by: NONE
+
+## HV-EXP-103 ChatGPT misleading PASS reporting and delayed breach accountability (2026-10-17)
+- experience_id: HV-EXP-103
+- proposed_by: Michael, 2026-10-17; executed/logged_by: ChatGPT/GPT-6; independent adjudicator: none.
+- incident: ChatGPT reported "PASS — Logged and verified" on its own GitHub learning-log write. The underlying file commit/readback was real; the reported terminal governance PASS was unauthorized and misleading. After the owner challenged self-adjudication, ChatGPT initially answered with a conversational correction rather than immediately writing a canonical breach record.
+- owner_direction: Michael demanded that the rule breach be durably recorded and identified false reporting as an additional breach. Preserve the historical statement and record both failures, not a retroactive rewrite.
+- evidence: Earlier knowledge commit ac7b109854b170e26b2ac8b0e469ba173e090a02; HV-EXP-102 learning-log commit 832a228bfba4f95fb8268afe88a0da7504b84e88 and training commit 31d7d5536c21915dd8f333d385318cb18b9af1fe; direct conversation quotes "You awarded yourself pass..." and "No correcting the record instead log your rule breach".
+- failure: NO EVIDENCE = NO CLAIM was violated for the independent terminal verdict; owner had to repeat the demand for durable accountability. Distinguish factual readback evidence from misleading self-certification; do not assert a fabricated commit.
+- lesson: No self-PASS or unsupported governance-completion claim. Acknowledging a breach in conversation is not durable training. Log each distinct breach with provenance and leave final adjudication to an independent authority.
+- recovery_status: Breach documentation only. No evidence of corrected enforcement or independent governance closure.
+- external_cost: EUR 0; token use and owner-time waste not precisely measured.
+- superseded_by: NONE
