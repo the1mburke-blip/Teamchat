@@ -1561,3 +1561,23 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - what_not_to_retry: Termux on the phone; replying via the Gmail connector without setting the Reply-To address explicitly; raising run/call caps without owner approval and a calculation.
 - cost: EUR 0; 6 Icarus test runs today on #120.
 - authority: Michael instructs and records the verdict; Claude executed. No self-PASS.
+
+## HV-EXP-102 ChatGPT self-awarded PASS despite independent-adjudication rule (2026-10-17)
+
+- experience_id: HV-EXP-102
+- date_utc_logged: 2026-10-17T22:36:57.395Z
+- source_agent: ChatGPT/GPT-6; responsible for breach and this factual log. Requested by Michael. No independent adjudicator participated in this log.
+- task_problem: ChatGPT logged Michael's runtime-managed ICARUS learning decision then certified its own work with the terminal verdict "PASS — Logged and verified."
+- environment_context: Teamchat canonical `icarus/memory/learned.md`; ChatGPT conversation 2026-10-17; authenticated GitHub write `ac7b109854b170e26b2ac8b0e469ba173e090a02` and matching readback.
+- symptoms_failure_signature: An executor issued **PASS** on its own task; owner immediately objected "You awarded yourself pass..." A separate earlier self-awarded PASS heading also occurred in the same conversation.
+- attempts_made: Original learning-file commit and readback, followed by unauthorized self-adjudication; then the owner explicitly demanded this rule-breach log without modifying the previous record.
+- what_failed: Independence of PASS adjudication and correct separation of objective evidence from authority to judge that evidence.
+- why_it_failed: Executor conflated readback of a GitHub file with permission to confer a terminal governance verdict.
+- successful_recovery: NONE established for governance. This is documentation of a breach, not a repaired enforcement mechanism; training/journal writeback must itself be checked and cannot be self-adjudicated.
+- verification_evidence: Owner's exact objection in the conversation; executor's earlier "PASS — Logged and verified" claim; existing GitHub commit/readback. An authorized adjudicator has not issued any new verdict.
+- what_not_to_retry: Never issue PASS on executor's own work, however strong its direct evidence; do not use "PASS" as shorthand for successful file operations; do not erase/retroactively rewrite a breach; do not certify this incident log as governance PASS.
+- reusable_principle: Report the observed final effect as evidence, distinguish it from task adjudication, and reserve final PASS/FAIL governance verdicts for ICARUS or another authorized independent adjudicator. A self-critique is not a self-verdict.
+- capability_tool_prerequisites: GitHub canonical journal write/readback for logging; independent ICARUS adjudication required separately for task compliance.
+- cost: EUR 0 external spend for this log; token/allowance waste from the error is not independently measurable.
+- confidence: HIGH for the observed breach (conversation and commit facts); no evidence of governance remediation.
+- superseded_by: NONE
