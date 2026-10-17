@@ -350,6 +350,8 @@ def tool_delete_file(args):
 
 CHAIRS_NOTE = "routing guide: CLAUDE code review/logic/long context; PRIME Google Workspace (Docs/Sheets/Calendar/Gmail); DEEPSEEK bulk drafts/volume/data transforms; SOL orchestration/owner-facing/publishing; LUNA and CODEX only when the task names them"
 DELEGATED = []
+DELEG_KEYS = {}
+LOOP_READ = {"read_file", "list_dir", "read_issue", "list_issues"}
 ISSUE_N = {"n": 0}
 LOOP_STEPS = [
     "STEP 1 DISCOVER (read-only): use list_dir, read_file, read_issue, list_issues to gather only the facts the task needs. Cite paths and issue numbers. Do not write or delegate yet.",
@@ -452,6 +454,9 @@ def tool_delegate(args):
     if len(obj) < 10:
         return "DENIED: objective too short"
     ev = _one_line(args.get("evidence"), 300) or "Physical/readback proof required for PASS"
+    dup = DELEG_KEYS.get((to, obj.lower()))
+    if dup:
+        return f"ALREADY DELEGATED this run (no new task created): {dup}. Do not delegate it again."
     if not REPO or not GH_TOKEN:
         return "DENIED: no GitHub token/repo in this run"
     if len(DELEGATED) >= _int(CFG["maxDelegations"], 2):
@@ -487,6 +492,7 @@ def tool_delegate(args):
                        {"body": f"[TEAMCHAT_WAKE] NEW_TASK #{num}\nTARGET: {to}\nTITLE: {title}\nURL: {url}"}, timeout=30)
         wake = f"; wake comment on #{w}: HTTP {cw}"
     DELEGATED.append(f"{to}: #{num} {url}")
+    DELEG_KEYS[(to, obj.lower())] = f"#{num} {url}"
     return redact(f"DELEGATED (status REQUESTED, NOT executed): task #{num} {url} -> {to}; readback {'OK' if ok else 'FAILED'}{wake}. The target has not acted; do not claim it did.")
 
 
@@ -603,7 +609,7 @@ def pool(system, user, cands, test_cap, inject):
     return None, used, err or (f"pool exhausted after {MAX_ROUNDS} rounds: " + "; ".join(LOG)), False
 
 
-def run_step(system, step, context, cands, test_cap, inject, tool_log):
+def run_step(system, step, context, cands, test_cap, inject, tool_log, allowed=None):
     scratch = ""
     for i in range(CFG["maxToolCalls"] + 1):
         user = step
@@ -626,6 +632,8 @@ def run_step(system, step, context, cands, test_cap, inject, tool_log):
         name, args = str(t["name"]), (t.get("args") if isinstance(t.get("args"), dict) else {})
         if name not in CFG["tools"] or name not in TOOLS:
             res = "DENIED: tool is not on the allowlist"
+        elif allowed is not None and name not in allowed:
+            res = "DENIED: tool is not allowed in this step (DISCOVER is read-only, DECIDE has no tools, ACT may write or delegate)"
         else:
             res = TOOLS[name](args)
         tool_log.append(f"{name}({json.dumps(args)[:70]})")
@@ -709,9 +717,11 @@ def main():
             gpaths = [g.partition(":")[2].strip() for g in gates if g.startswith("VERIFY_FILE")]
             hint = ("\n\nOWNER-NAMED EVIDENCE FILES (read_file these first, answer only from them): " + ", ".join(gpaths)) if gpaths else ""
             steps = [task + hint]
+            step_tools = None
             if ACTOR != "schedule" and not plan_flag and not loop_off:
                 steps = list(LOOP_STEPS)
                 plan_steps = steps
+                step_tools = [LOOP_READ, set(), None]
             if plan_flag:
                 pa, _u, perr, phard = pool(system + "\nPLANNING MODE: do NOT answer yet. Reply ONLY as JSON {\"steps\": [string]} with at most " + str(CFG["maxPlanSteps"]) + " short, ordered steps.", task + hint, cands, test_cap, inject)
                 if pa and isinstance(pa.get("steps"), list) and pa["steps"]:
@@ -723,7 +733,7 @@ def main():
             outs, claims, owner, why_owner, lesson = [], [], False, "", ""
             for si, st in enumerate(steps, 1):
                 step_text = st if not plan_steps else f"OVERALL TASK: {task}{hint}\nCURRENT STEP {si}/{len(steps)}: {st}"
-                ans, used, err, hard = run_step(system, step_text, "\n".join(outs), cands, test_cap, inject, tool_log)
+                ans, used, err, hard = run_step(system, step_text, "\n".join(outs), cands, test_cap, inject, tool_log, step_tools[si - 1] if step_tools else None)
                 if ans is None:
                     outs = outs or []
                     break
