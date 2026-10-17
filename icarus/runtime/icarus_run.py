@@ -373,7 +373,7 @@ LOOP_READ = {"read_file", "list_dir", "read_issue", "list_issues"}
 ISSUE_N = {"n": 0}
 LOOP_STEPS = [
     "STEP 1 DISCOVER (read-only), ALWAYS, whatever the task says: call list_issues (state open) to read the board; read STATUS.md and any evidence files the owner named; read_issue for any issue you may act on. Note which open items already have a '[T1] [REQUESTED]' task issue (already delegated, with their task numbers). Cite paths and issue numbers. Do not write or delegate yet.",
-    "STEP 2 DECIDE (no tools): your default is DELEGATE. Pick the highest-priority open item that is not already delegated and choose DELEGATE to one of LUNA, SOL, PRIME, DEEPSEEK, CLAUDE, CODEX (name agent, objective that includes the source issue number, evidence required, why; " + CHAIRS_NOTE + "). Choose DO_MYSELF only when the task itself names a specific file change you can finish and read back. Choose NOTHING_TO_DO only when every open item is already delegated or blocked: list each with its task number. Choose ASK_OWNER only for credentials, legal, payment, security, safety, or facts only the owner has. Check-in, status or reply tasks still end in DELEGATE when an undelegated open item exists. State who proposed and who executes.",
+    "STEP 2 DECIDE (no tools): your default is DELEGATE. Pick the highest-priority open work item that is not already delegated (never the issue this comment is on, and never a [TEST] issue) and choose DELEGATE to one of LUNA, SOL, PRIME, DEEPSEEK, CLAUDE, CODEX (name agent, objective that includes the source issue number, evidence required, why; " + CHAIRS_NOTE + "). Choose DO_MYSELF only when the task itself names a specific file change you can finish and read back. Choose NOTHING_TO_DO only when every open item is already delegated or blocked: list each with its task number. Choose ASK_OWNER only for credentials, legal, payment, security, safety, or facts only the owner has. Check-in, status or reply tasks still end in DELEGATE when an undelegated open item exists. State who proposed and who executes.",
     "STEP 3 ACT: carry out the decision now. DELEGATE: you MUST call the delegate tool (a delegated task is REQUESTED, never done) and report the NEW task's own issue number from the tool result. DO_MYSELF: use tools and read back before claiming anything. NOTHING_TO_DO: say so and list the existing task numbers. ASK_OWNER: set needs_owner true with the exact question. End with PASS, PARTIAL or BLOCKED and the evidence.",
 ]
 
@@ -512,6 +512,9 @@ def tool_delegate(args):
         return "DENIED: no GitHub token/repo in this run"
     if len(DELEGATED) >= _int(CFG["maxDelegations"], 2):
         return f"DENIED: delegation budget exhausted ({len(DELEGATED)}/{CFG['maxDelegations']})"
+    orefs = set(re.findall(r"#(\d+)", obj))
+    if ISSUE_N["n"] and orefs == {str(ISSUE_N["n"])}:
+        return f"DENIED: #{ISSUE_N['n']} is this conversation thread, not a work item. Pick a different open item from the board (not this thread)."
     odup = _open_task_dup(obj)
     if odup:
         return f"ALREADY DELEGATED: open task {odup} covers this (no new task created). Pick a different undelegated open item, or choose NOTHING_TO_DO and list the existing task numbers."
