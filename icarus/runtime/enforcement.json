@@ -1,7 +1,7 @@
 {
   "_note": "Owner-editable enforcement limits read by icarus_run.py (looser = raise numbers, tighter = lower). Defaults apply if a key is missing. Hard stops end the run with FAIL and a receipt; they are never silently retried. Reads are repo-wide except denyPathPrefixes. write_file/delete_file need an OWNER_APPROVED: line and never touch writeDenyPathPrefixes (the governor files stay owner-only). Owner pings (not the hourly schedule) run discover -> decide -> act; add a line 'LOOP: off' to skip it. delegate opens a REQUESTED Teamchat task issue for a chair and wakes via PR #8; it is never proof the chair did anything.",
   "dailyRunCap": 60,
-  "maxApiCallsPerRun": 24,
+  "maxApiCallsPerRun": 80,
   "maxRuntimeSeconds": 3000,
   "verifyUrlHosts": [
     "github.com",
@@ -14,11 +14,15 @@
     "list_dir",
     "read_issue",
     "list_issues",
+    "list_prs",
+    "read_pr",
     "write_file",
     "delete_file",
-    "delegate"
+    "delegate",
+    "comment_issue",
+    "close_issue"
   ],
-  "maxToolCalls": 12,
+  "maxToolCalls": 40,
   "maxPlanSteps": 4,
   "readPathPrefixes": [
     ""
@@ -27,14 +31,11 @@
     ".git/"
   ],
   "writeDenyPathPrefixes": [
-    ".git/",
-    ".github/workflows/",
-    "icarus/runtime/enforcement.json",
-    "icarus/runtime/icarus_run.py"
+    ".git/"
   ],
-  "maxWrites": 8,
-  "maxWriteBytes": 100000,
-  "readChunkChars": 4000,
+  "maxWrites": 50,
+  "maxWriteBytes": 1000000,
+  "readChunkChars": 12000,
   "writeBack": true,
   "delegateTargets": [
     "LUNA",
@@ -44,6 +45,6 @@
     "CLAUDE",
     "CODEX"
   ],
-  "maxDelegations": 2,
+  "maxDelegations": 10,
   "wakeIssue": 8
 }
