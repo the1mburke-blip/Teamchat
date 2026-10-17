@@ -8,7 +8,9 @@ After tasks/chats, append useful durable lessons with dates, provenance, evidenc
 
 Local learned.md, native MEMORY.md, lesson journals and skills are working copies. Offline or inaccessible repository writes stay explicitly pending locally until an authorized write/readback occurs. Automatic phone/PC cross-save is not yet implemented. Repository storage alone does not prove a runtime has refreshed its context.
 
-Latest checkpoint: [13 October 2026 — Tether and learning](../checkpoints/2026-10-13-tether-and-learning/HANDOFF.md).
+Latest reconciled operational state: [17 October 2026 — current state and outstanding verification](current-state.md), cross-training [HV-EXP-100](../../TRAINING_MATRIX.md) and [dated learning](learned.md). These are documentation/learning updates only; physical phone/PC uptake remains unverified.
+
+Historical checkpoint (not present operating state): [13 October 2026 — Tether and learning](../checkpoints/2026-10-13-tether-and-learning/HANDOFF.md).
 
 
 [SOL] 2026-10-13T20:48:15Z
