@@ -857,8 +857,8 @@ def main():
         + read("icarus/memory/identity.md") + "\n\n"
         + read("icarus/memory/inherited.md") + "\n\n"
         + read("icarus/memory/current-state.md", 1500, 2500) + "\n\n"
-        + "RECENT LEARNED (tail):\n" + read("icarus/memory/learned.md", 0, 3000) + "\n\n"
-        + "RECENT TRAINING (tail of TRAINING_MATRIX.md):\n" + read("TRAINING_MATRIX.md", 0, 3000) + "\n\n"
+        + "LEARNED (full history):\n" + read("icarus/memory/learned.md", 0, 400000) + "\n\n"
+        + "TRAINING (full TRAINING_MATRIX.md history):\n" + read("TRAINING_MATRIX.md", 0, 400000) + "\n\n"
         + thread_txt + rules_text()
     )
 
@@ -966,7 +966,7 @@ def main():
         f"- Proposed by: {ACTOR} (comment {CID})",
         f"- Executed by: Icarus runtime v0 on GitHub Actions; model: {used}",
         f"- Cost: EUR 0 (free-tier model, free Actions minutes)",
-        f"- Memory read: icarus/memory/{{identity,inherited,current-state,learned}}.md + TRAINING_MATRIX.md tail (read-only)",
+        f"- Memory read: icarus/memory/{{identity,inherited,current-state,learned}}.md + TRAINING_MATRIX.md (full history, read-only)",
         *(["- Loop: DISCOVER (read-only) -> DECIDE (no tools) -> ACT"] if LOOP_ON["v"] else ([f"- Plan: {len(plan_steps)} steps: " + " | ".join(plan_steps)] if plan_steps else [])),
         f"- Lesson write-back: {wb_txt}",
         "- Usage today (Icarus calls, incl. this run): " + (", ".join(f"{m} {c}" + (f"/{RPD[m]}" if m in RPD else "") for m, c in sorted(USAGE.items())) or "none"),
