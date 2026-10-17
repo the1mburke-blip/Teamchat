@@ -1,1 +1,1 @@
-canary v1
+canary v2
