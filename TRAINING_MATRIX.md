@@ -1535,3 +1535,21 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - what_not_to_retry: blind CI iteration; claiming history without reading prior chats; leaving the daily log unwritten.
 - cost: EUR 0 external spend; owner reports about 75% of token allowance consumed.
 - authority: Michael instructs; Claude executed and is the author of the failures logged. No self-PASS.
+
+## HV-EXP-100 ICARUS stale historical-memory reconciliation (2026-10-17)
+- experience_id: HV-EXP-100
+- date_utc: 2026-10-17T20:13:41Z
+- source_agent: ChatGPT/GPT-6 backup, proposed by Michael. Documentation write only, not ICARUS or Claude execution.
+- task_problem: Outdated ICARUS historical state masked October 15–17 owner decisions and led to SOL requests after Sol was benched.
+- environment_context: Teamchat main, icarus/memory/current-state.md and learned.md, TRAINING_MATRIX.md, Icarus GitHub runtime, phone app issue board.
+- symptoms_failure_signature: current-state had no post-13-October entry; learned had 17 October evidence; issues #137/#138 requested benched SOL; old Hermes-era descriptions risked being mistaken for current standalone app.
+- attempts_made: Direct authenticated GitHub reads of canonical memory, rules, runtime/config, endpoint registry, issues and logs; prepare dated append-only reconciliation.
+- what_failed: Historical-to-current-state reconciliation and authorization freshness, not a proven model or code fault.
+- why_it_failed: Owner role/architecture/status changes were recorded in newer journals without matching current-state refresh; repository file storage was mistaken for downstream learning.
+- successful_recovery: Dated current-state and learned reconciliation and this cross-training lesson, subject to separate commit/readback verification; not a device fix.
+- verification_evidence: Readbacks of canonical files after GitHub writes to be evaluated separately. NO evidence yet of live ICARUS context refresh, fixed Android OAuth, or end-to-end phone/tool PASS.
+- what_not_to_retry: Treat October 8–13 snapshot as current; delegate to benched SOL; equate issue REQUESTED to done; conflate Hermes donor device tests, repo read, CI build or APK with present standalone governance and tool authorization; assert commit means the phone refreshed.
+- reusable_principle: After owner changes roles/architecture/acceptance, reconcile latest state with cross-training before further work; preserve chronology and provenance. Verify storage and runtime uptake independently.
+- capability_tool_prerequisites: Authenticated Teamchat GitHub read/write to update documentation, distinct device/runtime verification for uptake. EUR 0 spend, exact token count unavailable.
+- confidence: High for directly read files/issue/config staleness; device/runtime status unverified.
+- superseded_by: NONE
