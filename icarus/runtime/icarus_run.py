@@ -297,6 +297,10 @@ def tool_list_dir(args):
     return "\n".join(page) + f"\n[entries {off}-{end} of {len(names)}; {note}"
 
 
+# Owner rule: ICARUS may never edit his own runtime, limits, workflows or git internals. Hardcoded so a config edit cannot remove it.
+HARD_DENY = [".git/", ".github/", "icarus/runtime/"]
+
+
 def _mutate_gate(p):
     if not APPROVED["v"]:
         return "DENIED: write tools need an OWNER_APPROVED: line in the owner's ICARUS_RUN comment"
@@ -306,7 +310,7 @@ def _mutate_gate(p):
         return f"DENIED: write budget exhausted ({WRITES['n']}/{CFG['maxWrites']})"
     if _bad_path(p):
         return "DENIED: path must be repo-relative with no '..'"
-    hit = _denied(p, CFG["writeDenyPathPrefixes"])
+    hit = _denied(p, list(CFG["writeDenyPathPrefixes"]) + HARD_DENY)
     if hit:
         return f"DENIED: '{hit}' is never writable by the runtime"
     return ""
