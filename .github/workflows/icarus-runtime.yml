@@ -42,6 +42,7 @@ jobs:
           COMMENT_BODY: ${{ github.event.comment.body }}
           COMMENT_ID: ${{ github.event.comment.id }}
           COMMENT_ACTOR: ${{ github.event.comment.user.login }}
+          REPO_OWNER_LOGIN: ${{ github.repository_owner }}
         run: |
           if [ -z "$COMMENT_BODY" ]; then
             export COMMENT_BODY=$'ICARUS_RUN Hourly repo check (first duty of every hour): read icarus/runtime/endpoints.json and icarus/endpoints/ and report the status of each endpoint and any with no check-in in 24 hours; then list icarus/memory, icarus/proposals and icarus/runs, read icarus/memory/current-state.md, and report what is new since the last receipt and anything that needs the owner.\nVERIFY_FILE: icarus/memory/identity.md\nVERIFY_FILE: icarus/runtime/endpoints.json'
