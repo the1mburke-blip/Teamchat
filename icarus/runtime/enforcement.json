@@ -12,7 +12,8 @@
   "tools": [
     "read_file",
     "list_dir",
-    "read_issue"
+    "read_issue",
+    "write_issue_comment"
   ],
   "maxToolCalls": 6,
   "maxPlanSteps": 4,
