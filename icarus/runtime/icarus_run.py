@@ -351,6 +351,7 @@ def tool_delete_file(args):
 CHAIRS_NOTE = "routing guide: CLAUDE code review/logic/long context; PRIME Google Workspace (Docs/Sheets/Calendar/Gmail); DEEPSEEK bulk drafts/volume/data transforms; SOL orchestration/owner-facing/publishing; LUNA and CODEX only when the task names them"
 DELEGATED = []
 DELEG_KEYS = {}
+LOOP_ON = {"v": False}
 LOOP_READ = {"read_file", "list_dir", "read_issue", "list_issues"}
 ISSUE_N = {"n": 0}
 LOOP_STEPS = [
@@ -358,6 +359,18 @@ LOOP_STEPS = [
     "STEP 2 DECIDE (no tools): from the findings choose ONE: DO_MYSELF (bounded, you can finish and verify it), DELEGATE to one of LUNA, SOL, PRIME, DEEPSEEK, CLAUDE, CODEX (name agent, objective, evidence required, why; " + CHAIRS_NOTE + "), or ASK_OWNER (only credentials, legal, payment, security, safety, or facts only the owner has). State who proposed and who executes.",
     "STEP 3 ACT: carry out the decision. DO_MYSELF: use tools and read back before claiming anything. DELEGATE: call the delegate tool; a delegated task is REQUESTED, never done. ASK_OWNER: set needs_owner true with the exact question. End with PASS, PARTIAL or BLOCKED and the evidence.",
 ]
+
+
+def _digest(body, per):
+    body = str(body or "").replace("\r", "")
+    if not body.startswith("# Icarus run"):
+        return body[:per]
+    keep = [l for l in body.splitlines() if l.startswith(("# Icarus run", "- Proposed by", "- Delegations", "- VERDICT", "- Loop"))]
+    k = body.find("## Model output")
+    out = "\n    ".join(keep)
+    if k >= 0:
+        out += "\n    " + body[k:k + per].replace("\n", "\n    ")
+    return "[ICARUS RECEIPT DIGEST] " + out[: per + 600]
 
 
 def _issue_comments(n, count, per, skip_id=""):
@@ -379,7 +392,7 @@ def _issue_comments(n, count, per, skip_id=""):
     out = []
     for r in rows[-count:]:
         who = (r.get("user") or {}).get("login", "?")
-        out.append(f"- {who} ({r.get('author_association', '?')}): " + str(r.get("body") or "")[:per].replace("\r", ""))
+        out.append(f"- {who} ({r.get('author_association', '?')}): " + _digest(r.get("body"), per))
     return out
 
 
@@ -421,7 +434,8 @@ def tool_read_issue(args):
     out = f"#{n} [{j.get('state')}] {j.get('title')} (comments {j.get('comments')})\n" + body[off:off + 2000]
     if off + 2000 < len(body):
         out += f"\n[body continues; call read_issue again with offset={off + 2000}]"
-    k = min(10, max(0, _int(args.get("comments", 0))))
+    kk = args.get("comments", 0)
+    k = min(10, max(0, 5 if kk is True else _int(kk)))
     if k:
         out += "\nLAST COMMENTS (data):\n" + ("\n".join(_issue_comments(n, k, 800)) or "(none)")
     return redact(out)
@@ -722,6 +736,7 @@ def main():
                 steps = list(LOOP_STEPS)
                 plan_steps = steps
                 step_tools = [LOOP_READ, set(), None]
+                LOOP_ON["v"] = True
             if plan_flag:
                 pa, _u, perr, phard = pool(system + "\nPLANNING MODE: do NOT answer yet. Reply ONLY as JSON {\"steps\": [string]} with at most " + str(CFG["maxPlanSteps"]) + " short, ordered steps.", task + hint, cands, test_cap, inject)
                 if pa and isinstance(pa.get("steps"), list) and pa["steps"]:
@@ -787,7 +802,7 @@ def main():
         f"- Executed by: Icarus runtime v0 on GitHub Actions; model: {used}",
         f"- Cost: EUR 0 (free-tier model, free Actions minutes)",
         f"- Memory read: icarus/memory/{{identity,inherited,current-state,learned}}.md (read-only)",
-        *([f"- Plan: {len(plan_steps)} steps: " + " | ".join(plan_steps)] if plan_steps else []),
+        *(["- Loop: DISCOVER (read-only) -> DECIDE (no tools) -> ACT"] if LOOP_ON["v"] else ([f"- Plan: {len(plan_steps)} steps: " + " | ".join(plan_steps)] if plan_steps else [])),
         f"- Lesson write-back: {wb_txt}",
         "- Usage today (Icarus calls, incl. this run): " + (", ".join(f"{m} {c}" + (f"/{RPD[m]}" if m in RPD else "") for m, c in sorted(USAGE.items())) or "none"),
         f"- Model attempts: {'; '.join(log) or 'none'}",
