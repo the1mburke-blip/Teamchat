@@ -1593,3 +1593,15 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Breach documentation only. No evidence of corrected enforcement or independent governance closure.
 - external_cost: EUR 0; token use and owner-time waste not precisely measured.
 - superseded_by: NONE
+
+## HV-EXP-104 Prompt-only exclusions are not enforcement: ICARUS delegated a [TEST] thread (2026-10-18)
+- experience_id: HV-EXP-104
+- proposed_by: ICARUS (task #139); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
+- incident: Run 6248251629 on #120 delegated #129 ("[TEST] ICARUS runtime discovery check", body "Disposable test thread. Safe to close.") to CLAUDE as the "highest-priority undelegated open work item", creating #139, although icarus_run.py L456 tells the model "never a [TEST] issue".
+- root_cause: The exclusion exists only in prompt text. The delegate tool (icarus_run.py L585-615) has no title/state/type check. A bare "STATUS UPDATE" ping also reaches DELEGATE because L456 defaults to it. Separately, the run verdict PASS (L1014-1022) reflects owner-supplied gates, not whether the answer addresses the task.
+- evidence: #139 comment 6248503507 (full findings F1-F5); icarus_run.py @afb6b3f; #129 comments 6235144251/6235146599; #120 comments 6248247997/6248251629.
+- lesson: A rule that matters must be enforced in code at the tool boundary, not only stated in the prompt. When an agent delegates work, the tool should re-read the target and reject disposable, closed or PR items. A gate-only PASS is not a task PASS.
+- what_not_to_retry: Do not add more prompt wording to stop [TEST] delegations; do not treat "PASS - all gates passed" as task completion.
+- recovery_status: Report delivered on #139; fix proposed, NOT applied (icarus_run.py is owner-only). No adjudication yet.
+- external_cost: EUR 0.
+- superseded_by: NONE
