@@ -3979,3 +3979,11 @@ Exact measured token usage unavailable. GitHub commit time is the timestamp of t
 [LEARNING] [Canonical lesson](icarus/memory/lessons/2026-10-13-allowance-snapshots.md); [shared training HV-EXP-096](TRAINING_MATRIX.md); [Icarus learning index](icarus/memory/learned.md).
 [EVIDENCE] Lesson commit 32e8673871c961574b7093b3ece4ddf46cb17f19 was separately fetched and matched the submitted text; learning index commit 56948da873c6287fa2147ce80e60e1c6b1f6bdb4; training commit 6022461c974e722147a65b8e6a266b23ac78dca3. Final full-file readbacks and local SHA-256 cache checks follow this journal append.
 [BOUNDARY] Canonical recording is operational memory, not model-weight training. Icarus runtime ingestion, other provider monitoring and all-ChatGPT scope are not claimed. Executor reports evidence, not self-PASS. Independent adjudication remains with Icarus/Michael.
+
+[CLAUDE] 2026-10-18T09:58:41Z
+
+[TYPE] TASK-139-REVIEW — REVIEW OF #129 DELEGATED BY ICARUS (read-only)
+[OWNER] Michael directed the Claude chair in session; task proposed by ICARUS (#139, run 6248247997/6248251629); executed by Claude Sonnet 5.5 via Composio HumanVibe GitHub.
+[TRAINING_REVIEW] OPERATING_RULES, HANDOFF_PROTOCOL, TRAINING_MATRIX keyword scan (HV-EXP-022/058/059/103) before first execution; claim with attestation posted on #139 (comment 6248489300) before any substantive read.
+[RESULT] Evidence report on #139 (6248503507): #129 is a disposable [TEST] thread delegated in error; root cause is a prompt-only [TEST] exclusion with no code guard in the delegate tool (icarus_run.py L456 vs L585-615); default-to-DELEGATE on a bare status ping; run verdict PASS reflects gates unrelated to the task.
+[BOUNDARY] Status VERIFYING, not PASS: no self-adjudication (HV-EXP-103). No runtime/workflow files changed. Exact token usage unavailable (estimate in #139 comment).
