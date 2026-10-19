@@ -1,0 +1,47 @@
+name: Icarus Cloud Daemon
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_file:
+        description: 'Target file path'
+        required: true
+      instruction:
+        description: 'Task instruction'
+        required: true
+
+jobs:
+  execute-kernel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Execute Task via CordisKernel
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          TARGET_FILE: ${{ github.event.inputs.target_file }}
+          INSTRUCTION: ${{ github.event.inputs.instruction }}
+        run: |
+          python -m dsh.runner "$TARGET_FILE" "$INSTRUCTION"
+
+      - name: Commit and Push Verified Changes
+        run: |
+          git config user.name "Icarus Kernel Daemon"
+          git config user.email "icarus-daemon@users.noreply.github.com"
+          git add .
+          git commit -m "chore(icarus): verified kernel update" || exit 0
+          git push origin main
