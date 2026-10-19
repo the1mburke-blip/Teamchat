@@ -81,6 +81,19 @@ class RunnerChecks(unittest.TestCase):
         self.assertEqual(extract_code_block("```python\nvalue = 1\n```"), "value = 1\n")
         self.assertEqual(extract_code_block(" value = 1 "), "value = 1")
 
+    def test_markdown_extraction_preserves_nested_code_fences(self):
+        content = "# README\n\n```powershell\npython -m pytest\n```\n\n# Cloud Kernel Test Pass\n"
+        self.assertEqual(extract_code_block("```markdown\n" + content + "```"), content)
+        self.assertEqual(extract_code_block("````markdown\n" + content + "````"), content)
+
+    def test_unfenced_markdown_is_not_replaced_by_its_inner_code_block(self):
+        content = "# README\n\n```powershell\npython -m pytest\n```\n\nMore text"
+        self.assertEqual(extract_code_block(content), content)
+
+    def test_code_extraction_preserves_crlf_and_supports_tilde_fences(self):
+        self.assertEqual(extract_code_block("```python\r\nvalue = 1\r\n```"), "value = 1\r\n")
+        self.assertEqual(extract_code_block("~~~python\nvalue = 1\n~~~"), "value = 1\n")
+
     def test_runner_includes_existing_file_contents_in_prompt(self):
         (self.root / "sample.py").write_text("value = 7\n", encoding="utf-8")
         with patch("dsh.runner.sync_repository_state"), patch(

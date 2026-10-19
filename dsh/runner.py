@@ -20,9 +20,14 @@ def sync_repository_state():
 
 
 def extract_code_block(raw_response: str) -> str:
-    match = re.search(r"```(?:\w+)?\n(.*?)```", raw_response, re.DOTALL)
-    if match:
-        return match.group(1)
+    lines = raw_response.strip().splitlines(keepends=True)
+    if len(lines) >= 2:
+        opening = re.fullmatch(r"(`{3,}|~{3,})[^\r\n]*\r?\n", lines[0])
+        if opening:
+            fence = opening.group(1)
+            closing = lines[-1].strip()
+            if len(closing) >= len(fence) and set(closing) == {fence[0]}:
+                return "".join(lines[1:-1])
     return raw_response.strip()
 
 
