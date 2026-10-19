@@ -1,26 +1,7 @@
-name: Icarus Cloud Daemon
+name: Icarus Cloud Kernel Execution
 
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: 'Process managed GOAL.md tasks or one explicit task'
-        type: choice
-        options:
-          - goals
-          - task
-        default: goals
-        required: true
-      max_tasks:
-        description: 'Maximum verified tasks this run (1-100)'
-        default: '20'
-        required: true
-      target_file:
-        description: 'Target file path'
-        required: false
-      instruction:
-        description: 'Task instruction'
-        required: false
   schedule:
     - cron: '*/10 * * * *'
 
@@ -51,14 +32,139 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
 
-      - name: Execute Task via CordisKernel
+      - name: Run Bounded GOAL.md Completion Loop
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          TARGET_FILE: ${{ github.event.inputs.target_file }}
-          INSTRUCTION: ${{ github.event.inputs.instruction }}
-          MODE: ${{ github.event.inputs.mode || 'goals' }}
-          MAX_TASKS: ${{ github.event.inputs.max_tasks || '20' }}
         run: |
-          python -m dsh.completion --owner cloud --mode "$MODE" \
-            --max-tasks "$MAX_TASKS" --target-file "$TARGET_FILE" --instruction "$INSTRUCTION"
+          python - <<'PY'
+          import hashlib
+          import os
+          import re
+          import shutil
+          import subprocess
+          import sys
+          import tempfile
+          from pathlib import Path
+
+          from dsh.completion import _check_changes, _sync, parse_goal
+          from dsh.cordis.kernel import (
+              CordisKernel, GitLeaseStore, LeaseBusyError, LeaseError,
+              LeaseLock, VerificationError,
+          )
+
+          def fingerprint(directory):
+              result = {}
+              for path in directory.rglob("*"):
+                  relative = path.relative_to(directory)
+                  if {"__pycache__", ".pytest_cache"} & set(relative.parts):
+                      continue
+                  if relative.as_posix() == ".icarus_lease.lock":
+                      continue
+                  if path.is_symlink():
+                      raise VerificationError("Runner produced a symbolic link")
+                  if path.is_file():
+                      result[relative.as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+              return result
+
+          def run_task(root, store, lease, target, instruction):
+              # A non-Git draft avoids the runner acquiring a competing remote
+              # lease or publishing before coordinator-owned goal bookkeeping.
+              with tempfile.TemporaryDirectory(prefix="icarus-cloud-draft-") as temporary:
+                  draft = Path(temporary).resolve()
+                  if not draft.is_relative_to(Path(tempfile.gettempdir()).resolve()):
+                      raise VerificationError("Unexpected draft directory")
+                  for name in filter(None, store.git("ls-files", "-z").stdout.split("\0")):
+                      source = root / name
+                      if source.is_symlink():
+                          raise VerificationError("Symbolic links require explicit task support")
+                      destination = draft / name
+                      destination.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copy2(source, destination)
+                  before = fingerprint(draft)
+                  environment = os.environ.copy()
+                  for name in store.git("rev-parse", "--local-env-vars").stdout.splitlines():
+                      environment.pop(name, None)
+                  environment["GIT_CEILING_DIRECTORIES"] = str(draft)
+                  probe = subprocess.run(
+                      ["git", "rev-parse", "--is-inside-work-tree"], cwd=draft,
+                      env=environment, capture_output=True, text=True, timeout=30,
+                  )
+                  if probe.returncode == 0:
+                      raise VerificationError("Draft unexpectedly belongs to a Git repository")
+                  lease.assert_owned()
+                  subprocess.run(
+                      [sys.executable, "-m", "dsh.runner", target, instruction],
+                      cwd=draft, env=environment, check=True, timeout=1200,
+                  )
+                  lease.assert_owned()
+                  after = fingerprint(draft)
+                  changed = {name for name in before.keys() | after.keys()
+                             if before.get(name) != after.get(name)}
+                  if changed - {target} or not (draft / target).is_file():
+                      raise VerificationError("Runner changed files outside its declared target")
+                  # Re-apply through the real checkout's kernel: integrity checks,
+                  # actual project pytest, rollback, and ownership checks all run.
+                  CordisKernel(root, lease=lease, notify=False).apply_and_verify(
+                      target, (draft / target).read_text(encoding="utf-8"),
+                  )
+
+          def run_loop():
+              root = Path.cwd().resolve()
+              goal = root / "GOAL.md"
+              if not goal.is_file():
+                  raise VerificationError("GOAL.md is missing; cannot claim completion")
+              store = GitLeaseStore(root)
+              lease = LeaseLock(root, owner="cloud", store=store)
+              with lease.hold():
+                  _sync(store)
+                  for iteration in range(1, 11):
+                      before = goal.read_bytes()
+                      text = before.decode("utf-8")
+                      pending = [task for task in parse_goal(text) if not task.done]
+                      if not pending:
+                          if re.search(r"(?m)^\s*- \[ \]", text):
+                              print("[ICARUS CLOUD] Managed queue complete; audit checkboxes remain unresolved.")
+                          else:
+                              print("[ICARUS CLOUD] All GOAL.md tasks complete.")
+                          return 0
+                      task = pending[0]
+                      kernel = CordisKernel(root, notify=False)
+                      kernel.validate_path(task.target)
+                      target = (root / task.target).resolve().relative_to(root).as_posix()
+                      ignored = store.git("check-ignore", "--quiet", "--", target, check=False)
+                      if ignored.returncode != 1:
+                          raise VerificationError("Target is ignored or cannot be checked for publication")
+                      print(f"[ICARUS CLOUD] Iteration {iteration}/10: {target}", flush=True)
+                      run_task(root, store, lease, target, task.instruction)
+                      lease.assert_owned()
+                      if goal.read_bytes() != before:
+                          raise VerificationError("Worker modified GOAL.md; refusing completion")
+                      _check_changes(store, [target])
+                      lines = text.splitlines(keepends=True)
+                      lines[task.line] = lines[task.line].replace("[ ]", "[x]", 1)
+                      goal.write_bytes("".join(lines).encode("utf-8"))
+                      _check_changes(store, [target, "GOAL.md"])
+                      lease.assert_owned()
+                      store.git("add", ".")
+                      store.git("commit", "-m", f"ci(icarus): autonomous progress iteration {iteration}")
+                      # Atomic, ownership-fenced push to origin/main plus renewal;
+                      # never publish a stale worker's commit or force main.
+                      store.publish_main(lease)
+                  if any(not task.done for task in parse_goal(goal.read_text(encoding="utf-8"))):
+                      print("[ICARUS CLOUD] Ten iterations reached; tasks remain for the next run.")
+                      return 2
+                  print("[ICARUS CLOUD] All managed tasks completed within ten iterations.")
+                  return 0
+
+          try:
+              sys.exit(run_loop())
+          except LeaseBusyError:
+              print("[ICARUS CLOUD] Active laptop/worker lease; yielding without executing tasks.")
+          except subprocess.CalledProcessError as error:
+              print(f"[ICARUS CLOUD] Command failed with exit {error.returncode}; stopping.", file=sys.stderr)
+              sys.exit(error.returncode or 1)
+          except (LeaseError, VerificationError, OSError, ValueError, subprocess.TimeoutExpired) as error:
+              print(f"[ICARUS CLOUD] Verification failed: {error}", file=sys.stderr)
+              sys.exit(1)
+          PY
