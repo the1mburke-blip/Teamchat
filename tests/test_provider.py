@@ -38,6 +38,7 @@ class ProviderChecks(unittest.TestCase):
             "model": model,
             "messages": [{"role": "user", "content": "Update this file"}],
             "temperature": 0.0,
+            "max_tokens": 2048,
         })
 
     def test_openrouter_precedence_and_trimmed_key(self):
@@ -87,3 +88,14 @@ class ProviderChecks(unittest.TestCase):
         self.assertIn("value = 1", result)
         self.assertIn("Return ONLY the complete updated file content", result)
         self.assertEqual(result.count("```"), 2)
+
+    def test_token_limited_response_is_rejected(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({
+            "choices": [{"finish_reason": "length", "message": {"content": "incomplete file"}}]
+        }).encode("utf-8")
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "dummy-or"}, clear=True), patch(
+            "dsh.provider.urllib.request.urlopen", return_value=response
+        ):
+            with self.assertRaisesRegex(RuntimeError, "output token limit"):
+                call_llm_raw("Update this file")

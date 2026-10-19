@@ -40,6 +40,7 @@ def call_llm_raw(prompt: str) -> str:
         "model": model_name,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.0,
+        "max_tokens": 2048,
     }
 
     req = urllib.request.Request(
@@ -52,7 +53,10 @@ def call_llm_raw(prompt: str) -> str:
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            return data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            if choice.get("finish_reason") == "length":
+                raise RuntimeError("Provider response reached the output token limit; no patch applied.")
+            return choice["message"]["content"]
     except urllib.error.HTTPError as e:
         err_body = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"API Error (HTTP {e.code}): {err_body}")
