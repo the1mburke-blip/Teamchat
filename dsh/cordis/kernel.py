@@ -1,13 +1,254 @@
 # dsh/cordis/kernel.py
 import ast
+import contextlib
+import hashlib
+import json
+import math
+import os
 import pathlib
 import platform
 import re
 import shutil
 import subprocess
 import sys
+import threading
+import time
+import uuid
+from dataclasses import dataclass
 
-HARD_DENY = {".git", ".github", "dsh/cordis", "icarus/runtime"}
+HARD_DENY = {".git", ".github", "dsh/cordis", "icarus/runtime", ".icarus_lease.lock"}
+
+
+class LeaseError(RuntimeError):
+    """Lease authority could not be established; do not mutate or publish."""
+
+
+class LeaseBusyError(LeaseError):
+    """Another worker currently holds the lease."""
+
+
+@dataclass(frozen=True)
+class LeaseSnapshot:
+    record: dict | None
+    revision: str | None
+
+
+def _lease_record(raw):
+    try:
+        record = json.loads(raw)
+        if (record["version"] != 1 or not isinstance(record["token"], str)
+                or record["owner"] not in ("laptop", "cloud", "released")
+                or not math.isfinite(record["expires_at"])
+                or not math.isfinite(record["heartbeat_at"])):
+            raise ValueError("invalid fields")
+        return record
+    except (ValueError, KeyError, TypeError) as error:
+        raise LeaseError("Invalid lease record; refusing takeover") from error
+
+
+class FileLeaseStore:
+    """Atomic lease comparisons for workers sharing one filesystem.
+
+    The lock inode is never replaced or removed: all readers/writers use the
+    same OS advisory lock. Independent cloud/laptop files need GitLeaseStore.
+    """
+
+    def __init__(self, root):
+        self.path = pathlib.Path(root) / ".icarus_lease.lock"
+
+    @contextlib.contextmanager
+    def _locked(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("a+b") as handle:
+            if os.name == "nt":
+                import msvcrt
+                deadline = time.monotonic() + 5
+                while True:
+                    try:
+                        handle.seek(0)
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                        break
+                    except OSError:
+                        if time.monotonic() >= deadline:
+                            raise LeaseError("Local lease file is busy")
+                        time.sleep(0.02)
+            else:
+                import fcntl
+                fcntl.flock(handle, fcntl.LOCK_EX)
+            try:
+                handle.seek(0)
+                yield handle
+            finally:
+                if os.name == "nt":
+                    handle.seek(0)
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(handle, fcntl.LOCK_UN)
+
+    @staticmethod
+    def _read(handle):
+        raw = handle.read()
+        return LeaseSnapshot(_lease_record(raw) if raw else None,
+                             hashlib.sha256(raw).hexdigest() if raw else None)
+
+    def read(self):
+        with self._locked() as handle:
+            return self._read(handle)
+
+    def compare_and_swap(self, expected, record):
+        with self._locked() as handle:
+            if self._read(handle).revision != expected:
+                return False
+            handle.seek(0)
+            handle.truncate()
+            handle.write(json.dumps(record, sort_keys=True).encode("utf-8"))
+            handle.flush()
+            os.fsync(handle.fileno())
+            return True
+
+
+class GitLeaseStore:
+    """Shared lease on origin's isolated icarus-lease branch; no main churn."""
+
+    ref = "refs/heads/icarus-lease"
+
+    def __init__(self, root):
+        self.root = pathlib.Path(root).resolve()
+        self.mutex = threading.RLock()
+
+    def git(self, *args, input=None, check=True):
+        try:
+            result = subprocess.run(
+                ["git", "-c", "user.name=Icarus Kernel Daemon", "-c",
+                 "user.email=icarus-daemon@users.noreply.github.com", *args],
+                cwd=self.root, input=input, capture_output=True, text=True,
+                encoding="utf-8", timeout=30,
+                env={**os.environ, "GIT_TERMINAL_PROMPT": "0", "GCM_INTERACTIVE": "Never"},
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise LeaseError(f"Git {args[0]} unavailable or timed out") from error
+        if check and result.returncode:
+            # Do not leak remote URLs or credential-helper output into logs.
+            raise LeaseError(f"Git {args[0]} failed (exit {result.returncode})")
+        return result
+
+    def read(self):
+        with self.mutex:
+            result = self.git("ls-remote", "--exit-code", "origin", self.ref, check=False)
+            if result.returncode == 2:
+                return LeaseSnapshot(None, None)
+            if result.returncode:
+                raise LeaseError("Cannot read remote lease authority")
+            revision = result.stdout.split()[0]
+            self.git("fetch", "--quiet", "--no-tags", "--no-write-fetch-head", "origin", revision)
+            record = _lease_record(self.git("show", f"{revision}:.icarus_lease.lock").stdout)
+            mirror = FileLeaseStore(self.root)
+            mirror.compare_and_swap(mirror.read().revision, record)
+            return LeaseSnapshot(record, revision)
+
+    def _commit_record(self, record, parent):
+        blob = self.git("hash-object", "-w", "--stdin", input=json.dumps(record, sort_keys=True)).stdout.strip()
+        tree = self.git("mktree", "-z", input=f"100644 blob {blob}\t.icarus_lease.lock\0").stdout.strip()
+        parents = ["-p", parent] if parent else []
+        return self.git("commit-tree", tree, *parents, input="Icarus lease heartbeat\n").stdout.strip()
+
+    def compare_and_swap(self, expected, record):
+        with self.mutex:
+            commit = self._commit_record(record, expected)
+            result = self.git("push", "--quiet", f"--force-with-lease={self.ref}:{expected or ''}",
+                              "origin", f"{commit}:{self.ref}", check=False)
+            if result.returncode:
+                if self.read().revision != expected:
+                    return False
+                raise LeaseError("Remote lease update rejected or unreachable")
+            mirror = FileLeaseStore(self.root)
+            mirror.compare_and_swap(mirror.read().revision, record)
+            return True
+
+    def publish_main(self, lease):
+        """Publish main and renew ownership in one fenced, atomic push.
+
+        main is never force-pushed. A takeover or concurrent main update rejects
+        the entire transaction, including publication of task completion.
+        """
+        with self.mutex:
+            snapshot = self.read()
+            lease.check_snapshot(snapshot)
+            renewed = lease.record()
+            commit = self._commit_record(renewed, snapshot.revision)
+            self.git("push", "--atomic", f"--force-with-lease={self.ref}:{snapshot.revision}",
+                     "origin", "HEAD:refs/heads/main", f"{commit}:{self.ref}")
+
+
+class LeaseLock:
+    """Renewable, token-fenced ownership; stale owners cannot revive leases."""
+
+    def __init__(self, workspace_root=".", owner="laptop", ttl=300, *, store=None, clock=time.time):
+        if owner not in ("laptop", "cloud") or not math.isfinite(ttl) or ttl <= 0:
+            raise ValueError("Lease requires a laptop/cloud owner and positive finite TTL")
+        self.store = store if store is not None else FileLeaseStore(workspace_root)
+        self.owner, self.ttl, self.clock = owner, ttl, clock
+        self.token = uuid.uuid4().hex
+        self._heartbeat_error = None
+        self._mutex = getattr(self.store, "mutex", threading.RLock())
+
+    def record(self):
+        now = self.clock()
+        return {"version": 1, "owner": self.owner, "token": self.token,
+                "heartbeat_at": now, "expires_at": now + self.ttl}
+
+    def acquire(self):
+        snapshot = self.store.read()
+        if snapshot.record and snapshot.record["expires_at"] > self.clock():
+            return False
+        return self.store.compare_and_swap(snapshot.revision, self.record())
+
+    def check_snapshot(self, snapshot):
+        if (self._heartbeat_error is not None or snapshot.record is None
+                or snapshot.record["token"] != self.token
+                or snapshot.record["expires_at"] <= self.clock()):
+            raise LeaseError("Lease lost, expired, or heartbeat failed; stopping work")
+
+    def assert_owned(self):
+        self.check_snapshot(self.store.read())
+
+    def heartbeat(self):
+        with self._mutex:
+            snapshot = self.store.read()
+            self.check_snapshot(snapshot)
+            if not self.store.compare_and_swap(snapshot.revision, self.record()):
+                raise LeaseError("Lease changed during heartbeat")
+
+    def release(self):
+        snapshot = self.store.read()
+        if snapshot.record is None or snapshot.record["token"] != self.token:
+            return False
+        record = {**snapshot.record, "owner": "released", "expires_at": 0}
+        return self.store.compare_and_swap(snapshot.revision, record)
+
+    @contextlib.contextmanager
+    def hold(self):
+        if not self.acquire():
+            raise LeaseBusyError("Active lease held by another worker; yielding")
+        stopped = threading.Event()
+
+        def renew():
+            while not stopped.wait(self.ttl / 3):
+                try:
+                    self.heartbeat()
+                except Exception as error:
+                    self._heartbeat_error = error
+                    return
+
+        worker = threading.Thread(target=renew, daemon=True)
+        worker.start()
+        try:
+            yield self
+            self.assert_owned()
+        finally:
+            stopped.set()
+            worker.join()
+            self.release()
 
 
 class VerificationError(RuntimeError):
@@ -253,8 +494,14 @@ def notify_human(title: str, message: str):
 
 class CordisKernel:
 
-    def __init__(self, workspace_root: str = "."):
+    def __init__(self, workspace_root: str = ".", *, lease=None, notify=True):
         self.root = pathlib.Path(workspace_root).resolve()
+        self.lease = lease
+        self.notifications = notify
+
+    def _notify(self, title, message):
+        if self.notifications:
+            notify_human(title, message)
 
     def validate_path(self, target_file: str) -> None:
         p = (self.root / target_file).resolve()
@@ -263,7 +510,7 @@ class CordisKernel:
         try:
             rel = p.relative_to(self.root).as_posix()
         except ValueError:
-            notify_human(
+            self._notify(
                 "Icarus Kernel Halt",
                 f"BLOCKED: Out-of-workspace path attempt on {target_file}",
             )
@@ -283,7 +530,7 @@ class CordisKernel:
                 or rel_lower.startswith(d_lower + "/")
                 or f"/{d_lower}/" in f"/{rel_lower}/"
             ):
-                notify_human(
+                self._notify(
                     "Icarus Kernel Halt",
                     f"BLOCKED: Protected path attempt on {target_file}",
                 )
@@ -295,6 +542,14 @@ class CordisKernel:
 
     def apply_and_verify(self, target_file: str, patch_content: str) -> None:
         self.validate_path(target_file)
+        if self.lease is None:
+            with LeaseLock(self.root).hold() as lease:
+                self.lease = lease
+                try:
+                    return self.apply_and_verify(target_file, patch_content)
+                finally:
+                    self.lease = None
+        self.lease.assert_owned()
         p = (self.root / target_file).resolve()
         p.parent.mkdir(parents=True, exist_ok=True)
 
@@ -317,6 +572,7 @@ class CordisKernel:
 
         mode_desc = f"deliverable integrity check before {test_desc}"
         try:
+            self.lease.assert_owned()
             p.write_text(patch_content, encoding="utf-8")
             verify_deliverable_integrity(str(p))
             mode_desc = test_desc
@@ -328,6 +584,7 @@ class CordisKernel:
             if passed:
                 mode_desc = f"post-test deliverable integrity check after {test_desc}"
                 verify_deliverable_integrity(str(p))
+                self.lease.assert_owned()
                 mode_desc = f"{test_desc} and deliverable integrity checks"
         except Exception as ex:
             passed = False
@@ -340,7 +597,7 @@ class CordisKernel:
             elif not had_original and p.is_file():
                 p.unlink(missing_ok=True)
 
-            notify_human(
+            self._notify(
                 "Icarus Kernel Rollback",
                 f"FAILED: Verification failed ({mode_desc}) on {target_file}. Changes wiped.",
             )
@@ -353,7 +610,7 @@ class CordisKernel:
         if backup_file.is_file():
             backup_file.unlink(missing_ok=True)
 
-        notify_human(
+        self._notify(
             "Icarus Kernel Success",
             f"PASSED: Changes verified ({mode_desc}) and applied to {target_file}.",
         )

@@ -6,10 +6,27 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from dsh.runner import extract_code_block, run_harness_task, sync_repository_state
+from dsh.runner import extract_code_block, main, run_harness_task, sync_repository_state
 
 
 class RunnerChecks(unittest.TestCase):
+    def test_non_git_cli_keeps_filesystem_only_mode(self):
+        with patch("dsh.runner.subprocess.run", return_value=subprocess.CompletedProcess(
+            ["git"], 128, "", "not a repository"
+        )), patch("dsh.runner.run_harness_task") as task, patch("dsh.completion.main") as shared:
+            self.assertEqual(main(["sample.py", "Implement value"]), 0)
+        task.assert_called_once_with("sample.py", "Implement value")
+        shared.assert_not_called()
+
+    def test_git_cli_uses_shared_lease_coordinator(self):
+        with patch("dsh.runner.subprocess.run", return_value=subprocess.CompletedProcess(
+            ["git"], 0, "true\n", ""
+        )), patch("dsh.completion.main", return_value=0) as shared:
+            self.assertEqual(main(["sample.py", "Implement value"]), 0)
+        shared.assert_called_once_with([
+            "--mode", "task", "--target-file", "sample.py", "--instruction", "Implement value",
+        ])
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

@@ -3,16 +3,33 @@ name: Icarus Cloud Daemon
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'Process managed GOAL.md tasks or one explicit task'
+        type: choice
+        options:
+          - goals
+          - task
+        default: goals
+        required: true
+      max_tasks:
+        description: 'Maximum verified tasks this run (1-100)'
+        default: '20'
+        required: true
       target_file:
         description: 'Target file path'
-        required: true
+        required: false
       instruction:
         description: 'Task instruction'
-        required: true
+        required: false
+
+concurrency:
+  group: icarus-main
+  cancel-in-progress: false
 
 jobs:
   execute-kernel:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: write
     steps:
@@ -20,6 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,13 +55,8 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           TARGET_FILE: ${{ github.event.inputs.target_file }}
           INSTRUCTION: ${{ github.event.inputs.instruction }}
+          MODE: ${{ github.event.inputs.mode }}
+          MAX_TASKS: ${{ github.event.inputs.max_tasks }}
         run: |
-          python -m dsh.runner "$TARGET_FILE" "$INSTRUCTION"
-
-      - name: Commit and Push Verified Changes
-        run: |
-          git config user.name "Icarus Kernel Daemon"
-          git config user.email "icarus-daemon@users.noreply.github.com"
-          git add .
-          git commit -m "chore(icarus): verified kernel update" || exit 0
-          git push origin main
+          python -m dsh.completion --owner cloud --mode "$MODE" \
+            --max-tasks "$MAX_TASKS" --target-file "$TARGET_FILE" --instruction "$INSTRUCTION"

@@ -31,12 +31,15 @@ def extract_code_block(raw_response: str) -> str:
     return raw_response.strip()
 
 
-def run_harness_task(target_file: str, instruction: str):
+def run_harness_task(target_file: str, instruction: str, *, lease=None, sync=True):
     # Pull latest cloud state before running
-    sync_repository_state()
+    if sync:
+        sync_repository_state()
 
-    kernel = CordisKernel(workspace_root=".")
+    kernel = CordisKernel(workspace_root=".", lease=lease, notify=lease is None)
     kernel.validate_path(target_file)
+    if lease is not None:
+        lease.assert_owned()
 
     p = pathlib.Path(target_file)
     current_code = p.read_text(encoding="utf-8") if p.is_file() else ""
@@ -51,9 +54,27 @@ def run_harness_task(target_file: str, instruction: str):
     kernel.apply_and_verify(target_file, clean_patch)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
+def main(argv=None):
+    arguments = sys.argv[1:] if argv is None else argv
+    if len(arguments) < 2:
         print("Usage: python -m dsh.runner <target_file> <instruction>")
-        sys.exit(1)
+        return 1
+    try:
+        repository = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            capture_output=True, text=True,
+        )
+        in_git = repository.returncode == 0 and repository.stdout.strip() == "true"
+    except OSError:
+        in_git = False
+    if not in_git:
+        run_harness_task(arguments[0], arguments[1])
+        return 0
+    from dsh.completion import main as completion_main
+    return completion_main([
+        "--mode", "task", "--target-file", arguments[0], "--instruction", arguments[1],
+    ])
 
-    run_harness_task(sys.argv[1], sys.argv[2])
+
+if __name__ == "__main__":
+    sys.exit(main())
