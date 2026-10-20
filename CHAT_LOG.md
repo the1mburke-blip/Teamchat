@@ -3987,3 +3987,22 @@ Exact measured token usage unavailable. GitHub commit time is the timestamp of t
 [TRAINING_REVIEW] OPERATING_RULES, HANDOFF_PROTOCOL, TRAINING_MATRIX keyword scan (HV-EXP-022/058/059/103) before first execution; claim with attestation posted on #139 (comment 6248489300) before any substantive read.
 [RESULT] Evidence report on #139 (6248503507): #129 is a disposable [TEST] thread delegated in error; root cause is a prompt-only [TEST] exclusion with no code guard in the delegate tool (icarus_run.py L456 vs L585-615); default-to-DELEGATE on a bare status ping; run verdict PASS reflects gates unrelated to the task.
 [BOUNDARY] Status VERIFYING, not PASS: no self-adjudication (HV-EXP-103). No runtime/workflow files changed. Exact token usage unavailable (estimate in #139 comment).
+
+
+[SOL] 2026-10-20T19:52:46Z
+[TYPE] DAILY-LOG-HANDOFF-2026-10-20
+[OWNER/PROPOSED_BY] Michael, direct laptop-chat request.
+[EXECUTOR] Actual Codex desktop, chat 01a15adb-bb66-7330-be84-0c5c7088ed7a. Journal SOL label is not native scheduled Sol identity.
+[STATUS] VERIFYING — canonical writes/readbacks and independent adjudication separated.
+[HISTORY/TRAINING] Current journal, matrix, memory/state, operating/handoff rules, boundary doctrine; today's available chats; #120/#142/#144-147/#6; current Aker source/workflow and root README. Relevant HV-EXP-096/100/102/103/104. Missing reference-only assistant text not fabricated.
+[TRAINING_QUOTE] "- reusable_principle: After owner changes roles/architecture/acceptance, reconcile latest state with cross-training before further work; preserve chronology and provenance. Verify storage and runtime uptake independently."
+[TRAINING_SOURCE] HV-EXP-100. [RELEVANCE] Shared storage and actual Icarus retrieval require different evidence.
+[PREFLIGHT] Private Teamchat main documentation only; old prefixes preserved; EUR 0 additional spend; token impact unknown, remaining estimate 8-12k tokens; no owner action for log writes. Readback exact content required. Protected production/runtime/identity/credentials, phone, publishing and active Claude work untouched.
+[RESULTS] Consolidated Aker/handoff-vs-execution; Tooluse Python-script correction and unclaimed worker requests; owner-observed Grace/Gemini routing and unresolved quota audit; native Sol GitHub safety rejections, relay/trigger mismatch and corrected run visibility; Sheets canary rows with unresolved provenance and reciprocal unattended chain; sheet-alert request; morning oversight, midnight prior-day audit blocker and allowance snapshot scope.
+[CORRECTIONS] Morning missing Aker workflow statement is superseded: workflow now exists but reports handoff only. Tooluse is not a verified plugin package. #145/#146 requests do not prove execution. Claude Sheets row exists per his report; unattended full communication remains unverified. Shared file storage is not runtime uptake.
+[DAILY_REPORT] [Full evidence and open work](logs/2026-10-20-daily-handoff.md)
+[TRAINING] HV-EXP-107 (actual Tooluse source before worker dispatch); HV-EXP-108 (scheduled-runtime refusal/provenance and full-chain verification). Existing HV-EXP-100/102/103/104 retained, not duplicated as new incidents.
+[COVERAGE] Available 20 October chats and canonical records, with reference-only gaps identified; no complete private Claude/account-wide history claimed.
+[NEXT] Icarus retrieves DAILY-LOG-HANDOFF-2026-10-20 and cites its open states. No new runtime trigger or downstream receipt produced.
+[COMPLIANCE] Separate logs/2026-10-20-daily-handoff-compliance.md; no executor self-PASS.
+[CONCURRENT_LOG_RECONCILIATION] A fresh pre-write read found Claude's 20 October log and new HV-EXP-105/106. Preserved them and allocated unused HV-EXP-107/108. Claude's log stops at 17:24Z; this handoff appends later refusal/Sheets evidence and labels superseded assumptions without rewriting his text.
