@@ -1629,3 +1629,27 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Permanent task exists; first run unconfirmed; overlap left for Michael to decide.
 - external_cost: EUR 0.
 - superseded_by: NONE
+
+
+[SOL] 2026-10-20T19:52:46Z
+## HV-EXP-107 — Tooluse: prove source and actual worker invocation before profiling (2026-10-20)
+- owner/proposer: Michael. Incident responsible: ChatGPT owner-facing session. Daily recorder: actual Codex desktop, not the Qwen/Codex repo workers named in requests.
+- failure: #144 described a plugin and delegated before establishing implementation, source, call chain or baseline. Michael corrected that Tooluse is an Icarus-authored Python script; later said issues are not the intended coder invocation route. #144 explicitly preserves the preflight failure.
+- evidence: [#144](https://github.com/the1mburke-blip/Teamchat/issues/144); #145 correction 6291188294 and #146 correction 6291189175; fetched comments show no worker claim; available Find Harness Connection and ICARUS Refinement Status owner messages.
+- learned: treat nicknames as unverified implementation descriptions. Locate/read actual source and caller, record version, measure cold/warm latency, then use a verified authorized executor route. Request-created, worker-accepted, executing, patch-saved and independently verified are distinct states.
+- what_not_to_retry: assume plugin hooks/SDK/APK packaging; substitute an unrelated script; claim source absent from the whole laptop because a repository-tree search found none; say workers are refining when only issues exist.
+- recovery_status: factual correction/request exists; actual source, worker acceptance, benchmark, candidate, tests and PR remain unverified. No build/deploy authorized by this entry.
+- related: HV-EXP-100/104 and [daily handoff](logs/2026-10-20-daily-handoff.md). EUR 0 for logging; exact token cost unknown; independent adjudication pending.
+
+[SOL] 2026-10-20T19:52:46Z
+## HV-EXP-108 — Native scheduled communication: verify refusal layer, provenance and recipient response (2026-10-20)
+- owner/proposer: Michael. Investigation executors: native Sol scheduled runtimes, Work/Codex, Claude in their separately attributed records. Daily recorder: Codex desktop; no impersonated/delegated worker.
+- failure_signatures: active Composio connection but authenticated scheduled GitHub read/write rejected; scheduled trigger/run mistaken for write success; opaque metadata treated as unavailable run output; relay completion conflated with eligible Work wake; rows and typed timestamps treated as full unattended exchange.
+- evidence: #147 Work report [6296360277](https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6296360277), Claude follow-up 6296501278; native read-diagnostic and hourly-task saved chat results; Sheets observations [6297666769](https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6297666769), Claude append report 6297738551, saved Sol Sheets Canary result. Full run IDs/coverage in [daily handoff](logs/2026-10-20-daily-handoff.md).
+- observed_boundary: "This tool call was blocked by OpenAI's safety checks. Please double check what you are sending." Underlying reason unknown; no demonstrated owner approval toggle fixes it. Do not retry via proxies, substitute identities or use another wrapper to defeat denial.
+- learned: inspect exact native task/run results and distinguish discovery, read, write, approval pause and rejection. Verify each transport hop and trigger eligibility. Match row/comment creation to actual run start/completion and runtime identity; a shared author login or typed timestamp does not prove origin. Require genuine recipient receipt and response before full-loop acceptance.
+- recovery_status: run-result visibility diagnosis corrected; Work reported no repaired GitHub loop. Sheets shows narrower evidence: Sol canary row exists, Claude independently saw it, Claude reports reciprocal append; early timestamp/provenance and full unattended bilateral sequence remain unverified. Claude's write was authorized during the scheduler-started session. No change-trigger installation or Gmail send test established.
+- what_not_to_retry: equate interactive messages with autonomous writes; infer quota/permissions as cause without evidence; equate armed task, row existence, HANDOFF_READY or isolated tool operation with end-to-end completion; let executor award itself PASS.
+- related: existing HV-EXP-027/100/102/103 already govern outcome vs mutation, runtime uptake and self-adjudication. EUR 0 logging cost; exact token impact unknown; independent adjudication pending.
+
+- reconciliation_with_existing_105_106: Claude concurrently appended HV-EXP-105/106 from transcripts ending 17:24Z. Preserve those records. Newer Work/native-run/Sheets evidence above supersedes their missing-error/reads-only assumptions; an approval pause is not an established cause for the explicit safety denial. Existing overlapping Claude schedules remain unresolved; no scheduler change made. Existing HV-EXP-106 already teaches poll deduplication; this addendum records later evidence rather than another scheduler incident.
