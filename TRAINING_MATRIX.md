@@ -1653,3 +1653,51 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - related: existing HV-EXP-027/100/102/103 already govern outcome vs mutation, runtime uptake and self-adjudication. EUR 0 logging cost; exact token impact unknown; independent adjudication pending.
 
 - reconciliation_with_existing_105_106: Claude concurrently appended HV-EXP-105/106 from transcripts ending 17:24Z. Preserve those records. Newer Work/native-run/Sheets evidence above supersedes their missing-error/reads-only assumptions; an approval pause is not an established cause for the explicit safety denial. Existing overlapping Claude schedules remain unresolved; no scheduler change made. Existing HV-EXP-106 already teaches poll deduplication; this addendum records later evidence rather than another scheduler incident.
+
+## HV-EXP-107 Claude hand-typed timestamps were wrong on three #147 comments (2026-10-20)
+- experience_id: HV-EXP-107
+- proposed_by: Claude's own process; executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
+- incident: Claude comments on #147 were stamped by hand and disagreed with GitHub: comment 6294222659 stamped 15:20Z, real 15:13:58Z; 6295158974 stamped 15:59Z, real 15:57:27Z; 6293841736 stamped 14:57Z, real 14:56:22Z. Second session also told Michael the first :01 run was 15:01 Irish, when 15:01Z is 16:01 Irish.
+- root_cause: Time typed from estimate instead of read from the write response.
+- evidence: GitHub `created_at` readbacks quoted in #147 comments 6294454333 and the 16:03Z status report.
+- lesson: Never hand-type [TS] or convert time zones from memory. Quote GitHub `created_at` after posting. Fix applied to the :55 task prompt only (stamp from created_at).
+- what_not_to_retry: Do not state a time as verified unless it came from a readback or scheduler record.
+- recovery_status: Corrected in-thread for 6294222659; prompt fix applied to trig_0138Mh6Nz7c4oyUrJ7NLxSuv.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-108 Four root-cause hypotheses for Sol's unattended write failure were held and then falsified (2026-10-20)
+- experience_id: HV-EXP-108
+- proposed_by: Claude (hypotheses); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
+- incident: Claude proposed (1) content-safety filter, (2) ChatGPT GitHub app is read-only, (3) issue-comment event triggers as a fix, (4) asymmetric "Option A" as the operating mode. All four were withdrawn: (2) and (3) by comment metadata (Sol's interactive comment 6294766188 shows ChatGPT Codex Connector, so the app can write) and Sol's own source; (1) in favour of an approval-pause theory that Sol's "Allow all actions" settings mostly ruled out; (4) by Michael's requirement.
+- root_cause: Reasoned from help pages and blogs (weaker evidence) before seeing Sol's task run record.
+- evidence: #147 comments 6294222659, 6294577623, 6294808786, and the 15:28:41Z ack; Sol's 15:35Z settings report.
+- lesson: Do not propose a root cause before the failing run's own record (status, tool called, exact error, approval pause) is read. Post candidates as hypotheses only.
+- what_not_to_retry: Do not re-propose any of the four without new evidence.
+- recovery_status: OPEN. Run record still not provided; cause unknown.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-109 Writing the Codex mention token in a comment pinged the Codex bot (2026-10-20)
+- experience_id: HV-EXP-109
+- proposed_by: Claude (comment content); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
+- incident: Claude's comment 6294222659 contained the literal Codex mention token. 9 seconds later bot chatgpt-codex-connector[bot] posted comment 6294225761 saying Codex needs an environment for the repo.
+- root_cause: Mention token in comment text triggers the installed ChatGPT Codex Connector app (inference from timing).
+- evidence: comment 6294225761, 15:14:07Z, performed_via_github_app = ChatGPT Codex Connector.
+- lesson: Do not write the Codex mention token in #147 except as a deliberate test. A side effect that exposed that the app is installed with issue_comment access and has no environment.
+- what_not_to_retry: Do not test the token again until Michael creates a Codex environment (cost unverified).
+- recovery_status: Documented in-thread (6294454333). No environment exists.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-110 Claude could not confirm two things Michael said Claude had said (2026-10-20)
+- experience_id: HV-EXP-110
+- proposed_by: Michael (questions); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
+- incident: Asked about a "toolkit review" (17:16Z) and told "you said Google sheets would work" (17:19Z), Claude searched the session transcript and past chats and found neither. It declined to confirm both under NO EVIDENCE = NO CLAIM and offered the closest match (Icarus/Cordis review) and a €0 Sheets test.
+- root_cause: UNKNOWN. The statements may sit in a chat or agent output Claude cannot see.
+- evidence: transcript and conversation_search results at that time (no hits).
+- lesson: When the owner attributes a statement to Claude that cannot be found, say so, offer the nearest match, and propose a test; do not adopt it.
+- what_not_to_retry: n/a
+- recovery_status: Sheets stopgap canary was built after Michael's decision; outcome unverified.
+- external_cost: EUR 0.
+- superseded_by: NONE
