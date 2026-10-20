@@ -1,49 +1,72 @@
-name: ICARUS Aker Handoff Check
+name: ICARUS Aker Primary Runner
+
+# Aker is the primary autonomous runner. It takes the shared cloud lease and runs
+# the managed GOAL.md loop (dsh.completion, owner=cloud). Laptop work yields to a
+# live Aker lease and may resume between runs. Shares the icarus-main concurrency
+# group with icarus_cloud.yml so the two never overlap.
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '19 3 * * *'
-
-permissions:
-  contents: read
+    - cron: '*/5 * * * *'
 
 concurrency:
-  group: icarus-aker-handoff
+  group: icarus-main
   cancel-in-progress: false
 
 jobs:
-  aker-preflight:
+  aker:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 45
+    permissions:
+      contents: write
     steps:
       - name: Checkout canonical repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
 
-      - name: Validate required transition files
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
         run: |
-          set -euo pipefail
-          test -s icarus/aker.py
-          test -s requirements.txt
-          test -s .github/workflows/aker_loop.yml
+          python -m pip install --upgrade pip
+          pip install pytest
 
-      - name: Run Aker handoff module
-        run: python3 icarus/aker.py
+      - name: Test Aker status logic
+        run: python -m pytest tests/test_aker.py -q
 
-      - name: Verify output and refuse false completion
-        shell: bash
+      - name: Run Aker
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: python icarus/aker.py
+
+      - name: Verify receipt and refuse false completion
+        if: always()
         run: |
-          set -euo pipefail
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           receipt = Path('icarus/runs/aker_status.json')
           if not receipt.is_file():
               raise SystemExit('AKER FAILED: no status receipt')
           data = json.loads(receipt.read_text(encoding='utf-8'))
-          print('AKER_RECEIPT_STATUS:', data.get('status', 'MISSING'))
-          if data.get('status') == 'HANDOFF_READY':
-              print('AKER HANDOFF ONLY: this does not verify autonomous task execution.')
-          if data.get('status') not in {'HANDOFF_READY', 'BLOCKED', 'EXECUTING', 'VERIFYING', 'PASS', 'FAIL'}:
-              raise SystemExit('AKER FAILED: unknown status')
+          status = data.get('status', 'MISSING')
+          line = f"AKER_RECEIPT_STATUS: {status} run_id={data.get('run_id')} details={data.get('details')}"
+          print(line)
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(line + "\n", encoding='utf-8')
+          if status not in {'IDLE', 'EXECUTING', 'VERIFYING', 'YIELDED'}:
+              raise SystemExit(f'AKER NOT OK: {status}')
           PY
+
+      - name: Upload receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aker-receipt
+          path: icarus/runs/aker_status.json
