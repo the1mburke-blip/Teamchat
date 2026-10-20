@@ -23,3 +23,10 @@ The repository requires a contextual review of a separately numbered canonical t
 - icarus/memory/README.md: exact match, blob 13a9639110fe4292a38b1a3669f4d04b93246eb3
 - CHAT_LOG.md: exact match, blob 76eb104209aee4b1494e51a7a13246fcf9be199a
 - logs/2026-10-20-daily-handoff.md: exact match, blob 690499222f34fb51e459da9c0b3458be41230411
+
+
+## Laptop working-memory propagation
+
+After repository readback, the scope was explicitly extended to append the owner's exact Athena naming direction to the active laptop workspace's learned.md and current-state.md. The automatic approval reviewer accepted the outside-workspace append; all prior text was preserved, duplicate marker checked, then a separate read confirmed both tails contain ATHENA-RENAME-20261020 and the canonical commit link. No identity, instructions entry point, runtime code or model call changed. This establishes saved local memory availability, not that Icarus has consumed it yet.
+
+An optional GitHub Actions workflow-list read was refused by the connector URL allowlist; source-file readbacks already establish saved workflow names. No wrapper bypass or dispatch followed. The initial parser attempted JSON.parse on the error envelope, then the actual error was inspected. Exact extra allowance cost is unknown. Live Actions-list display is therefore unverified; no runtime verification claim relies on it.
