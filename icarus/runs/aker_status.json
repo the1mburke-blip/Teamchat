@@ -1,10 +1,8 @@
 {
-  "timestamp": "2026-10-19T22:15:00Z",
-  "status": "HANDOFF_READY",
+  "timestamp": "2026-10-20T00:00:00Z",
+  "status": "BLOCKED",
   "details": {
-    "message": "Autonomous repository runner stack staged (icarus/aker.py, requirements.txt). Handoff ready for unattended operation.",
-    "controller": "repository-driven",
-    "laptop_tether": "disconnected"
+    "message": "Superseded: the earlier HANDOFF_READY receipt was a hand-committed status, not evidence of task execution. No verified Aker execution yet; the next real run replaces this file's content in its job artifact."
   },
-  "version": "1.0.0-aker"
+  "version": "2.0.0-aker"
 }
