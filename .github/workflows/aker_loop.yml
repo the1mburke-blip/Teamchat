@@ -1,0 +1,49 @@
+name: ICARUS Aker Handoff Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '19 3 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icarus-aker-handoff
+  cancel-in-progress: false
+
+jobs:
+  aker-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout canonical repository
+        uses: actions/checkout@v4
+
+      - name: Validate required transition files
+        run: |
+          set -euo pipefail
+          test -s icarus/aker.py
+          test -s requirements.txt
+          test -s .github/workflows/aker_loop.yml
+
+      - name: Run Aker handoff module
+        run: python3 icarus/aker.py
+
+      - name: Verify output and refuse false completion
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          receipt = Path('icarus/runs/aker_status.json')
+          if not receipt.is_file():
+              raise SystemExit('AKER FAILED: no status receipt')
+          data = json.loads(receipt.read_text(encoding='utf-8'))
+          print('AKER_RECEIPT_STATUS:', data.get('status', 'MISSING'))
+          if data.get('status') == 'HANDOFF_READY':
+              print('AKER HANDOFF ONLY: this does not verify autonomous task execution.')
+          if data.get('status') not in {'HANDOFF_READY', 'BLOCKED', 'EXECUTING', 'VERIFYING', 'PASS', 'FAIL'}:
+              raise SystemExit('AKER FAILED: unknown status')
+          PY
