@@ -1605,3 +1605,27 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Report delivered on #139; fix proposed, NOT applied (icarus_run.py is owner-only). No adjudication yet.
 - external_cost: EUR 0.
 - superseded_by: NONE
+
+## HV-EXP-105 Native ChatGPT scheduled task reads #147 but cannot write unattended (2026-10-20)
+- experience_id: HV-EXP-105
+- proposed_by: Michael (owner request: Sol's loop must run with the ChatGPT app closed); executed/logged_by: Claude Sonnet 5.5 (research, test design); independent adjudicator: pending (ICARUS/Michael).
+- incident: Sol's native hourly :59 task read #147 but its write was blocked; Sol reported "OpenAI safety checks" (relayed by Michael, 14:27Z). Exact error text not yet obtained.
+- root_cause: UNCONFIRMED. Leading hypothesis: ChatGPT Tasks pause actions that send a message or change external data for user approval, which an unattended run cannot give (OpenAI Help "ChatGPT Tasks"; a vendor blog as weaker support). The earlier content-safety-filter hypothesis was withdrawn in the 15:28Z comment on #147.
+- evidence: #147 comments 6293841736 (14:56Z, asks Sol for exact error text) and the 15:28Z comment setting the test; Claude's scheduled deliveries at 14:06Z and 14:56Z.
+- lesson: Reading and writing are different capabilities in unattended runs. Do not count an interactive Sol turn or a Michael-opened session as proof of an unattended write; require a fresh `[FROM] SOL` comment created after 15:55Z with no interactive turn open.
+- what_not_to_retry: Do not re-run the same native write without the exact error text; do not treat Sol's "task created" report as proof the loop works.
+- recovery_status: OPEN. Google Sheet stopgap canary built (one-way; Claude reads only); outcome of Sol's 17:59Z run not seen. No adjudication yet.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-106 Building a scheduled Claude-side poll: route, identity and verification lessons (2026-10-20)
+- experience_id: HV-EXP-106
+- proposed_by: Michael; executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
+- incident: Creating the permanent :55 check for #147 failed three times with a scheduler "safety check overloaded" error, then succeeded; two other Claude-side tasks (:01 hourly, 6-hourly read-only) now overlap it; all agents post as the1mburke-blip.
+- root_cause: Scheduler error was transient (no change between attempt 3 and 4 beyond time); overlap arose from separate sessions each creating a poll; shared login removes authorship as a signal.
+- evidence: scheduler IDs trig_0138Mh6Nz7c4oyUrJ7NLxSuv (permanent :55), trig_01TgifotrMV93hmTwV2eTAWN (:01); #147 comments 6292913886, 6293841736.
+- lesson: Check list_triggers before creating a new poll to avoid duplicates. Use Composio GitHub, not add_repo or gh, for Teamchat. Identify authors by `[FROM]` only. A schedule is verified only with scheduler status plus a resulting readback.
+- what_not_to_retry: Do not blind-retry a scheduler overload more than once without a pause; do not trust author login on #147.
+- recovery_status: Permanent task exists; first run unconfirmed; overlap left for Michael to decide.
+- external_cost: EUR 0.
+- superseded_by: NONE
