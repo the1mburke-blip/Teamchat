@@ -1,4 +1,4 @@
-name: Icarus Cloud Kernel Execution
+name: ICARUS Athena Cloud Execution
 
 on:
   workflow_dispatch:
@@ -124,9 +124,9 @@ jobs:
                       pending = [task for task in parse_goal(text) if not task.done]
                       if not pending:
                           if re.search(r"(?m)^\s*- \[ \]", text):
-                              print("[ICARUS CLOUD] Managed queue complete; audit checkboxes remain unresolved.")
+                              print("[ATHENA] Managed queue complete; audit checkboxes remain unresolved.")
                           else:
-                              print("[ICARUS CLOUD] All GOAL.md tasks complete.")
+                              print("[ATHENA] All GOAL.md tasks complete.")
                           return 0
                       task = pending[0]
                       kernel = CordisKernel(root, notify=False)
@@ -135,7 +135,7 @@ jobs:
                       ignored = store.git("check-ignore", "--quiet", "--", target, check=False)
                       if ignored.returncode != 1:
                           raise VerificationError("Target is ignored or cannot be checked for publication")
-                      print(f"[ICARUS CLOUD] Iteration {iteration}/10: {target}", flush=True)
+                      print(f"[ATHENA] Iteration {iteration}/10: {target}", flush=True)
                       run_task(root, store, lease, target, task.instruction)
                       lease.assert_owned()
                       if goal.read_bytes() != before:
@@ -152,19 +152,19 @@ jobs:
                       # never publish a stale worker's commit or force main.
                       store.publish_main(lease)
                   if any(not task.done for task in parse_goal(goal.read_text(encoding="utf-8"))):
-                      print("[ICARUS CLOUD] Ten iterations reached; tasks remain for the next run.")
+                      print("[ATHENA] Ten iterations reached; tasks remain for the next run.")
                       return 2
-                  print("[ICARUS CLOUD] All managed tasks completed within ten iterations.")
+                  print("[ATHENA] All managed tasks completed within ten iterations.")
                   return 0
 
           try:
               sys.exit(run_loop())
           except LeaseBusyError:
-              print("[ICARUS CLOUD] Active laptop/worker lease; yielding without executing tasks.")
+              print("[ATHENA] Active laptop/worker lease; yielding without executing tasks.")
           except subprocess.CalledProcessError as error:
-              print(f"[ICARUS CLOUD] Command failed with exit {error.returncode}; stopping.", file=sys.stderr)
+              print(f"[ATHENA] Command failed with exit {error.returncode}; stopping.", file=sys.stderr)
               sys.exit(error.returncode or 1)
           except (LeaseError, VerificationError, OSError, ValueError, subprocess.TimeoutExpired) as error:
-              print(f"[ICARUS CLOUD] Verification failed: {error}", file=sys.stderr)
+              print(f"[ATHENA] Verification failed: {error}", file=sys.stderr)
               sys.exit(1)
           PY

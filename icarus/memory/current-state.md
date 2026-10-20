@@ -50,3 +50,8 @@ Owner Michael requested a full available-day log on returning to the laptop. Act
 - Sheets: both canary rows reported and Sol row independently observed by Claude; native Sol task provenance/early time and full reciprocal unattended processing remain unresolved. Claude's append was owner-authorized during its scheduler-started session, not proof of no-owner operation. No sheet-change alert implementation established.
 - Latest narrower support duty evidenced on 20 October does not grant all historical SOL tasks new authorization. No roster expansion or other agent dispatch performed by this updater.
 - Repository memory availability is distinct from a live Icarus refresh. Read marker DAILY-LOG-HANDOFF-2026-10-20 in the dated report before resuming. No automatic phone/PC sync, runtime ingestion, phone acceptance or independent adjudication claimed.
+
+
+[SOL] 2026-10-20T22:20:29Z
+## ATHENA-RENAME-20261020 — owner-directed name change
+Michael renamed Aker (spoken as Acar) to **Athena**, spelled A-T-H-E-N-A. Actual executor: Codex desktop via authenticated GitHub tools. Use Athena when referring to Icarus's cloud counterpart. Active workflow/display/status labels adopt Athena; `icarus/aker.py`, `aker_loop.yml`, `aker_status.json`, existing job/concurrency identifiers and historical logs remain stable compatibility references. No execution logic, schedule, goal creation, quota, credentials, lease or permissions are changed. The handoff script still only reports HANDOFF_READY; the separate cloud execution workflow retains its existing behavior. Repository persistence and runtime uptake are separate evidence; no new cloud run or Icarus context refresh is claimed. See [current repository documentation](../../README.md#athena--icarus-cloud-execution).

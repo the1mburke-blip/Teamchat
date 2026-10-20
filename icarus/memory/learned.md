@@ -218,3 +218,8 @@ NEXT-HARNESS RULES FOR ICARUS:
 - ~20:25 PARTIAL second log (commit 57cf568): chronological ledger from transcripts only; omitted events after 17:24Z; wrongly said Sol's :59 run posted nothing at 15:59Z (his task ran 16:02:13Z); described Sol as able to read, contradicted by Work's run records. Owner objected again.
 - ~20:35 first attempt at this entry failed on an assertion: a third entry (DAILY-LOG-HANDOFF-2026-10-20, written by another agent) sits between the two Claude sections, and TRAINING_MATRIX.md already held another agent's HV-EXP-107 and 108. Nothing was committed. This entry preserves their entries and renumbers Claude's.
 - Lesson: read primary records (issue thread, scheduler list, sheet) before logging; one line per attempt; list sources read and unread; inspect file structure before replacing sections.
+
+
+[SOL] 2026-10-20T22:20:29Z
+## ATHENA-RENAME-20261020 — owner-directed name change
+Michael renamed Aker (spoken as Acar) to **Athena**, spelled A-T-H-E-N-A. Actual executor: Codex desktop via authenticated GitHub tools. Use Athena when referring to Icarus's cloud counterpart. Active workflow/display/status labels adopt Athena; `icarus/aker.py`, `aker_loop.yml`, `aker_status.json`, existing job/concurrency identifiers and historical logs remain stable compatibility references. No execution logic, schedule, goal creation, quota, credentials, lease or permissions are changed. The handoff script still only reports HANDOFF_READY; the separate cloud execution workflow retains its existing behavior. Repository persistence and runtime uptake are separate evidence; no new cloud run or Icarus context refresh is claimed. See [current repository documentation](../../README.md#athena--icarus-cloud-execution).

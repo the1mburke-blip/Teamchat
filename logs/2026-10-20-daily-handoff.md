@@ -95,3 +95,7 @@ Several ChatGPT assistant messages resolve only to reference markers. Original m
 Protected: historical text, identity/inherited files, governance, code/runtime/workflows, credentials, router hierarchy, phone, Claude's active work, publishing/storefront and live Sheets. No model call, new worker dispatch, build, scheduler change, email, social post or Icarus trigger was performed by this log update.
 
 Next admissible action for Icarus: retrieve this file and the newest learned/current-state entries, cite marker DAILY-LOG-HANDOFF-2026-10-20, and distinguish the open projects above before proposing execution. No automatic ingestion is claimed. Repository persistence requires matching fresh GitHub readbacks; governance closure requires independent Icarus/Michael review. Companion record: [separate compliance review](2026-10-20-daily-handoff-compliance.md).
+
+
+## 2026-10-20T22:20:29Z — Athena naming update
+Michael explicitly renamed Aker (spoken Acar) to **Athena**, A-T-H-E-N-A. This supersedes the component name in earlier sections, while preserving their historical wording. Codex desktop updates active display/status labels and current documentation/memory. Existing `aker` technical paths stay compatible. The handoff-only check and the separate cloud executor remain distinct; no new continuity behavior, automatic goal setting, schedule, cloud dispatch, credential or permission change is part of this rename. Marker: ATHENA-RENAME-20261020. Persistence is checked separately from live Icarus uptake.

@@ -20,3 +20,7 @@ Shared learning: [13 October 2026 — Allowance snapshots and learning from bloc
 
 [SOL] 2026-10-20T19:52:46Z
 Latest available daily reconciliation: [20 October daily handoff](../../logs/2026-10-20-daily-handoff.md), [newest current state](current-state.md), [daily learned index](learned.md), and TRAINING_MATRIX HV-EXP-107/108. This newer dated pointer supersedes the 17 October "latest" description above; history remains intact. Actual recorder: Codex desktop at Michael's request. GitHub storage/readback and live Icarus retrieval are separate gates; no downstream refresh is claimed.
+
+
+[SOL] 2026-10-20T22:20:29Z
+Owner naming update: **Athena** replaces Aker as the name of Icarus's cloud counterpart. Read the newest ATHENA-RENAME-20261020 entries in [current-state.md](current-state.md) and [learned.md](learned.md). Legacy technical paths remain compatible; historical entries retain their original wording.

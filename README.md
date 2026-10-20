@@ -42,11 +42,13 @@ including case variants. Verification uses `pytest` when it is on PATH; otherwis
 it compiles the target as Python and identifies this syntax-only mode explicitly.
 Failed verification restores the original file or removes a newly created file.
 
-## Icarus cloud execution
+## Athena — Icarus cloud execution
+
+**Athena** is Icarus's cloud counterpart, renamed from Aker at Michael's request on 20 October 2026. Existing `aker` filenames and receipt paths remain compatibility identifiers; the name change does not enable additional execution.
 
 The canonical engine is `dsh/cordis/kernel.py`, with provider routing in
 `dsh/provider.py` and task orchestration in `dsh/runner.py`.
-Use the **Icarus Cloud Daemon** workflow in
+Use the **ICARUS Athena Cloud Execution** workflow in
 `.github/workflows/icarus_cloud.yml`. Its default `goals` mode processes the
 managed `GOAL.md` tasks below; `task` mode accepts `target_file` and `instruction`.
 Inputs remain bound through environment variables. Only the declared target and

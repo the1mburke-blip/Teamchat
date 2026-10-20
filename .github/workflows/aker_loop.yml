@@ -1,4 +1,4 @@
-name: ICARUS Aker Handoff Check
+name: ICARUS Athena Handoff Check
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ jobs:
           test -s requirements.txt
           test -s .github/workflows/aker_loop.yml
 
-      - name: Run Aker handoff module
+      - name: Run Athena handoff module
         run: python3 icarus/aker.py
 
       - name: Verify output and refuse false completion
@@ -39,11 +39,11 @@ jobs:
           from pathlib import Path
           receipt = Path('icarus/runs/aker_status.json')
           if not receipt.is_file():
-              raise SystemExit('AKER FAILED: no status receipt')
+              raise SystemExit('ATHENA FAILED: no status receipt')
           data = json.loads(receipt.read_text(encoding='utf-8'))
-          print('AKER_RECEIPT_STATUS:', data.get('status', 'MISSING'))
+          print('ATHENA_RECEIPT_STATUS:', data.get('status', 'MISSING'))
           if data.get('status') == 'HANDOFF_READY':
-              print('AKER HANDOFF ONLY: this does not verify autonomous task execution.')
+              print('ATHENA HANDOFF ONLY: this does not verify autonomous task execution.')
           if data.get('status') not in {'HANDOFF_READY', 'BLOCKED', 'EXECUTING', 'VERIFYING', 'PASS', 'FAIL'}:
-              raise SystemExit('AKER FAILED: unknown status')
+              raise SystemExit('ATHENA FAILED: unknown status')
           PY
