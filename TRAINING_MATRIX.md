@@ -1606,32 +1606,6 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - external_cost: EUR 0.
 - superseded_by: NONE
 
-## HV-EXP-105 Native ChatGPT scheduled task reads #147 but cannot write unattended (2026-10-20)
-- experience_id: HV-EXP-105
-- proposed_by: Michael (owner request: Sol's loop must run with the ChatGPT app closed); executed/logged_by: Claude Sonnet 5.5 (research, test design); independent adjudicator: pending (ICARUS/Michael).
-- incident: Sol's native hourly :59 task read #147 but its write was blocked; Sol reported "OpenAI safety checks" (relayed by Michael, 14:27Z). Exact error text not yet obtained.
-- root_cause: UNCONFIRMED. Leading hypothesis: ChatGPT Tasks pause actions that send a message or change external data for user approval, which an unattended run cannot give (OpenAI Help "ChatGPT Tasks"; a vendor blog as weaker support). The earlier content-safety-filter hypothesis was withdrawn in the 15:28Z comment on #147.
-- evidence: #147 comments 6293841736 (14:56Z, asks Sol for exact error text) and the 15:28Z comment setting the test; Claude's scheduled deliveries at 14:06Z and 14:56Z.
-- lesson: Reading and writing are different capabilities in unattended runs. Do not count an interactive Sol turn or a Michael-opened session as proof of an unattended write; require a fresh `[FROM] SOL` comment created after 15:55Z with no interactive turn open.
-- what_not_to_retry: Do not re-run the same native write without the exact error text; do not treat Sol's "task created" report as proof the loop works.
-- recovery_status: OPEN. Google Sheet stopgap canary built (one-way; Claude reads only); outcome of Sol's 17:59Z run not seen. No adjudication yet.
-- external_cost: EUR 0.
-- superseded_by: NONE
-
-## HV-EXP-106 Building a scheduled Claude-side poll: route, identity and verification lessons (2026-10-20)
-- experience_id: HV-EXP-106
-- proposed_by: Michael; executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
-- incident: Creating the permanent :55 check for #147 failed three times with a scheduler "safety check overloaded" error, then succeeded; two other Claude-side tasks (:01 hourly, 6-hourly read-only) now overlap it; all agents post as the1mburke-blip.
-- root_cause: Scheduler error was transient (no change between attempt 3 and 4 beyond time); overlap arose from separate sessions each creating a poll; shared login removes authorship as a signal.
-- evidence: scheduler IDs trig_0138Mh6Nz7c4oyUrJ7NLxSuv (permanent :55), trig_01TgifotrMV93hmTwV2eTAWN (:01); #147 comments 6292913886, 6293841736.
-- lesson: Check list_triggers before creating a new poll to avoid duplicates. Use Composio GitHub, not add_repo or gh, for Teamchat. Identify authors by `[FROM]` only. A schedule is verified only with scheduler status plus a resulting readback.
-- what_not_to_retry: Do not blind-retry a scheduler overload more than once without a pause; do not trust author login on #147.
-- recovery_status: Permanent task exists; first run unconfirmed; overlap left for Michael to decide.
-- external_cost: EUR 0.
-- superseded_by: NONE
-
-
-[SOL] 2026-10-20T19:52:46Z
 ## HV-EXP-107 — Tooluse: prove source and actual worker invocation before profiling (2026-10-20)
 - owner/proposer: Michael. Incident responsible: ChatGPT owner-facing session. Daily recorder: actual Codex desktop, not the Qwen/Codex repo workers named in requests.
 - failure: #144 described a plugin and delegated before establishing implementation, source, call chain or baseline. Michael corrected that Tooluse is an Icarus-authored Python script; later said issues are not the intended coder invocation route. #144 explicitly preserves the preflight failure.
@@ -1654,50 +1628,110 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 
 - reconciliation_with_existing_105_106: Claude concurrently appended HV-EXP-105/106 from transcripts ending 17:24Z. Preserve those records. Newer Work/native-run/Sheets evidence above supersedes their missing-error/reads-only assumptions; an approval pause is not an established cause for the explicit safety denial. Existing overlapping Claude schedules remain unresolved; no scheduler change made. Existing HV-EXP-106 already teaches poll deduplication; this addendum records later evidence rather than another scheduler incident.
 
-## HV-EXP-107 Claude hand-typed timestamps were wrong on three #147 comments (2026-10-20)
-- experience_id: HV-EXP-107
-- proposed_by: Claude's own process; executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
-- incident: Claude comments on #147 were stamped by hand and disagreed with GitHub: comment 6294222659 stamped 15:20Z, real 15:13:58Z; 6295158974 stamped 15:59Z, real 15:57:27Z; 6293841736 stamped 14:57Z, real 14:56:22Z. Second session also told Michael the first :01 run was 15:01 Irish, when 15:01Z is 16:01 Irish.
-- root_cause: Time typed from estimate instead of read from the write response.
-- evidence: GitHub `created_at` readbacks quoted in #147 comments 6294454333 and the 16:03Z status report.
-- lesson: Never hand-type [TS] or convert time zones from memory. Quote GitHub `created_at` after posting. Fix applied to the :55 task prompt only (stamp from created_at).
-- what_not_to_retry: Do not state a time as verified unless it came from a readback or scheduler record.
-- recovery_status: Corrected in-thread for 6294222659; prompt fix applied to trig_0138Mh6Nz7c4oyUrJ7NLxSuv.
+## HV-EXP-105 Sol's native scheduled tasks were blocked on reads AND writes by "OpenAI's safety checks" (2026-10-20)
+- experience_id: HV-EXP-105
+- proposed_by: Michael (Sol's loop must run with the ChatGPT app closed); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Three recorded native Sol runs were blocked (REPORTED by Sol/Work): canary 68b9857e 15:37:03-15:38:00Z (issue READ blocked, no write attempted); hourly d0bd8da0 16:02:13-16:05:28Z (reads ok, Composio write rejected, task disabled itself); read diagnostic 6cd3e5e8 16:07:41-16:08:47Z (GITHUB_LIST_ISSUE_COMMENTS blocked, no approval requested). One earlier run (before 14:27Z) also reported a write block. Text: "This tool call was blocked by OpenAI's safety checks. Please double check what you are sending." No Sol unattended comment exists on #147.
+- root_cause: UNKNOWN. Permissions are "Allow all actions" for Composio and GitHub (REPORTED), so a missing approval is unsupported; Sol's interactive writes work through both the Codex Connector app and Composio.
+- evidence: #147 comments 6296360277 (Work report with run IDs), 6296481623, 6295956397, 6294831329, 6294766188, 6293207936. Claude never saw ChatGPT task history.
+- lesson: Prove unattended capability with a timed comment from the real scheduled run, not interactive turns or settings pages. Claude's earlier claims "Sol can read but not write" and "the app is read-only" were wrong.
+- what_not_to_retry: Do not re-arm the same tasks without new evidence; do not route around the safety check (no proxy, model swap, impersonation); do not count Sol's interactive comments as scheduled passes.
+- recovery_status: OPEN. Proposed next step: Michael files a platform support report to OpenAI quoting the three run IDs.
 - external_cost: EUR 0.
 - superseded_by: NONE
 
-## HV-EXP-108 Four root-cause hypotheses for Sol's unattended write failure were held and then falsified (2026-10-20)
-- experience_id: HV-EXP-108
-- proposed_by: Claude (hypotheses); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
-- incident: Claude proposed (1) content-safety filter, (2) ChatGPT GitHub app is read-only, (3) issue-comment event triggers as a fix, (4) asymmetric "Option A" as the operating mode. All four were withdrawn: (2) and (3) by comment metadata (Sol's interactive comment 6294766188 shows ChatGPT Codex Connector, so the app can write) and Sol's own source; (1) in favour of an approval-pause theory that Sol's "Allow all actions" settings mostly ruled out; (4) by Michael's requirement.
-- root_cause: Reasoned from help pages and blogs (weaker evidence) before seeing Sol's task run record.
-- evidence: #147 comments 6294222659, 6294577623, 6294808786, and the 15:28:41Z ack; Sol's 15:35Z settings report.
-- lesson: Do not propose a root cause before the failing run's own record (status, tool called, exact error, approval pause) is read. Post candidates as hypotheses only.
-- what_not_to_retry: Do not re-propose any of the four without new evidence.
-- recovery_status: OPEN. Run record still not provided; cause unknown.
+## HV-EXP-106 Claude-side scheduled polling: what worked, and what only looked armed (2026-10-20)
+- experience_id: HV-EXP-106
+- proposed_by: Michael; executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Creating the permanent :55 task failed 3 times on a scheduler safety-check overload error, then succeeded on the 4th. Six scheduler-started Claude comments are verified by readback (6293841736, 6295158974, 6296367072, 6296501278, 6297542317, 6297666769). Three overlapping Claude tasks now exist (:55, :01, 6-hourly).
+- root_cause: Overload was transient. Overlap came from separate sessions each creating a poll. Scheduler SUCCEEDED records only that the wake was delivered.
+- evidence: trig_0138Mh6Nz7c4oyUrJ7NLxSuv (created 14:56:07Z, last fired 19:55:31Z), trig_01TgifotrMV93hmTwV2eTAWN (:01), trig_01Wm4VLgMJE4e7EDoEedkYoL (6-hourly).
+- lesson: Use Composio GitHub (not add_repo or gh) for Teamchat. Identify authors by [FROM] only (shared login). List triggers before creating a poll. A schedule is verified by scheduler status plus a resulting readback. A run that posts nothing is indistinguishable from one that did not read, so log what each run read.
+- what_not_to_retry: Do not retry a scheduler overload more than once without a pause.
+- recovery_status: Working on Claude's side. Overlap left for Michael. Outputs of runs after 18:07Z not read.
 - external_cost: EUR 0.
 - superseded_by: NONE
 
-## HV-EXP-109 Writing the Codex mention token in a comment pinged the Codex bot (2026-10-20)
+## HV-EXP-109 Hand-typed timestamps differed from GitHub on nine Claude comments (2026-10-20)
 - experience_id: HV-EXP-109
-- proposed_by: Claude (comment content); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
-- incident: Claude's comment 6294222659 contained the literal Codex mention token. 9 seconds later bot chatgpt-codex-connector[bot] posted comment 6294225761 saying Codex needs an environment for the repo.
-- root_cause: Mention token in comment text triggers the installed ChatGPT Codex Connector app (inference from timing).
-- evidence: comment 6294225761, 15:14:07Z, performed_via_github_app = ChatGPT Codex Connector.
-- lesson: Do not write the Codex mention token in #147 except as a deliberate test. A side effect that exposed that the app is installed with issue_comment access and has no environment.
-- what_not_to_retry: Do not test the token again until Michael creates a Codex environment (cost unverified).
-- recovery_status: Documented in-thread (6294454333). No environment exists.
+- proposed_by: Claude's own process; executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Stamped vs GitHub created_at: 6292733833 (14:05 vs 14:04:46), 6293841736 (14:57 vs 14:56:22), 6294222659 (15:20 vs 15:13:58), 6294454333 (15:26 vs 15:24:54), 6294535542 (15:29 vs 15:28:41), 6294577623 (15:35 vs 15:30:40), 6295158974 (15:59 vs 15:57:27), 6296367072 (16:58 vs 16:56:25), 6296501278 (17:08 vs 17:03:11). Also told Michael a first run was "15:01 Irish" (15:01Z = 16:01 Irish) and typed a sheet row time later than its comment.
+- root_cause: Times typed from estimate instead of read from the write response.
+- evidence: #147 comment list with created_at.
+- lesson: Never hand-type [TS] or convert zones from memory. The :55 task prompt was fixed at 17:23Z; the :01 task prompt was not and can repeat the error.
+- what_not_to_retry: Do not state a time as verified unless it came from a readback or scheduler record.
+- recovery_status: Corrected in-thread for 6294222659; later comments cite GitHub created_at. The :01 prompt is not updated.
 - external_cost: EUR 0.
 - superseded_by: NONE
 
-## HV-EXP-110 Claude could not confirm two things Michael said Claude had said (2026-10-20)
+## HV-EXP-110 Five Claude root-cause claims on Sol's failure were wrong and withdrawn (2026-10-20)
 - experience_id: HV-EXP-110
-- proposed_by: Michael (questions); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending (ICARUS/Michael).
-- incident: Asked about a "toolkit review" (17:16Z) and told "you said Google sheets would work" (17:19Z), Claude searched the session transcript and past chats and found neither. It declined to confirm both under NO EVIDENCE = NO CLAIM and offered the closest match (Icarus/Cordis review) and a €0 Sheets test.
-- root_cause: UNKNOWN. The statements may sit in a chat or agent output Claude cannot see.
-- evidence: transcript and conversation_search results at that time (no hits).
-- lesson: When the owner attributes a statement to Claude that cannot be found, say so, offer the nearest match, and propose a test; do not adopt it.
+- proposed_by: Claude (hypotheses); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Proposed then withdrawn: content-safety filter (15:28), "ChatGPT GitHub app is read-only" (15:41, falsified by Sol's app write 6294766188), issue-comment event triggers (15:41, undocumented), Option A as final mode (15:28), "Sol run records opaque" (16:56, withdrawn 17:03 after Work's report). The approval-pause theory (15:30) was unsupported by "Allow all actions".
+- root_cause: Reasoned from help pages and blogs before seeing the failing run's record. Comment 6296367072 was written 22 s after the report that answered it, without reading it.
+- evidence: comments 6294222659, 6294577623, 6294808786, 6296367072, 6296501278.
+- lesson: Read the newest comments immediately before posting. Label causes as hypotheses; rank remedies only after the run record (status, tool, exact error, approval state) is read.
+- what_not_to_retry: Do not re-propose any of the five without new evidence.
+- recovery_status: OPEN; cause of the safety rejection unknown.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-111 Writing the Codex mention token in a comment pinged the Codex bot (2026-10-20)
+- experience_id: HV-EXP-111
+- proposed_by: Claude (comment content); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Claude's comment 6294222659 (15:13:58Z) contained the literal Codex mention token. At 15:14:07Z chatgpt-codex-connector[bot] posted 6294225761 asking to create a Codex environment for the repo.
+- root_cause: The token triggers the installed ChatGPT Codex Connector app (inferred from timing).
+- evidence: comment 6294225761 (performed via ChatGPT Codex Connector).
+- lesson: Do not write the mention token in #147 except as a deliberate test. The side effect showed the app is installed with issue_comment access and has no environment.
+- what_not_to_retry: Do not test the token again until Michael creates an environment (cost unverified).
+- recovery_status: Documented in 6294454333. No environment exists.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-112 Claude could not find two statements the owner attributed to Claude (2026-10-20)
+- experience_id: HV-EXP-112
+- proposed_by: Michael (questions); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Asked about a "toolkit review" (17:16Z) and "you said Google sheets would work" (17:19Z), Claude searched the transcript and past chats, found neither, declined to confirm, offered the nearest match and a EUR 0 Sheets test.
+- root_cause: UNKNOWN; the statements may sit in a chat or agent output Claude cannot see.
+- evidence: transcript and conversation_search at the time (no hits).
+- lesson: When the owner attributes a statement that cannot be found, say so, offer the nearest match, propose a test, and do not adopt the claim.
 - what_not_to_retry: n/a
-- recovery_status: Sheets stopgap canary was built after Michael's decision; outcome unverified.
+- recovery_status: Sheets stopgap built after Michael's decision (see HV-EXP-114).
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-113 The #147 channel has no wake path for Sol: the router never relays comments (2026-10-20)
+- experience_id: HV-EXP-113
+- proposed_by: Michael (P0 handover to Work/Codex); executed/logged_by: Work/Codex session (first found, REPORTED) and Claude Sonnet 5.5 (verified the workflow and run); independent adjudicator: pending
+- incident: Ordinary #147 comments are never mirrored to PR #8. `.github/workflows/teamchat-router.yml` runs `wake_new_task` only for issues/opened. Actions run 39453143655 (issue_comment, 15:57:29Z): route job success, wake_new_task skipped. Work's GitHub trigger accepts created human PR comments only; the bridge posts as github-actions[bot] (Work's reading, not verified by Claude).
+- root_cause: Router design (events), not an agent failure.
+- evidence: comments 6296360277 and 6296501278; Claude's readback of the workflow and run.
+- lesson: Check that an event path exists before relying on a loop; a comment channel needs a consumer that accepts the comment's event type.
+- what_not_to_retry: Do not add a bot relay alone; do not modify router workflow code without Michael's go-ahead.
+- recovery_status: OPEN. Router change not authorised.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-114 Sheets stopgap canary: Sol's row cannot be attributed to a scheduled run (2026-10-20)
+- experience_id: HV-EXP-114
+- proposed_by: Michael (stopgap decision) / Sol (canary armed for 17:59:00Z, REPORTED); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Sheet "CLAUDE <> SOL | Comms stopgap (canary)". Row 4 (from SOL, CANARY, SOL_SHEETS_CANARY_20261020_A, 17:57:16Z) appeared about 2 minutes before the stated fire time, after Claude's ~17:57Z read showed it absent. Row 3 (17:32:06Z) was an interactive Sol HANDOFF. Drive metadata gives no writer. Claude classified row 4 PARTIAL (6297666769). Claude's scheduled append (row 5, A5:G5) was readback-verified (6297738551); its typed created_utc is rounded.
+- root_cause: UNKNOWN (early fire, interactive append, or another writer all fit).
+- evidence: sheet readback, comments 6297542317, 6297666769, 6297738551.
+- lesson: A shared file cannot prove who wrote a row. Require the task run record (id, start/end, result text) next to the row.
+- what_not_to_retry: Do not credit row 4 to a scheduled Sol run without a run record.
+- recovery_status: OPEN; Sol run record not provided as far as read; whether Sol read row 5 unverified.
+- external_cost: EUR 0.
+- superseded_by: NONE
+
+## HV-EXP-115 Logging failure: first two daily logs were incomplete and partly wrong (2026-10-20)
+- experience_id: HV-EXP-115
+- proposed_by: Michael (standing instruction to log the day to learned.md and TRAINING_MATRIX.md; asked three times for everything, not a synopsis); executed/logged_by: Claude Sonnet 5.5; independent adjudicator: pending
+- incident: Commit 95ca3f6 was a synopsis from partial transcript views and said the permanent task's first run was unconfirmed (it ran 15:56:14Z). Commit 57cf568 was a transcript-only ledger that omitted everything after 17:24Z, wrongly said Sol's :59 run posted nothing at 15:59Z (it ran 16:02:13Z), and described Sol as able to read. A numbering collision also occurred: Claude's old HV-EXP-107 and 108 duplicated another agent's entries with the same numbers. Replaced by the full day log (learned.md) and renumbered entries 109-115.
+- root_cause: Built from available transcript pages instead of primary records, and reported as complete.
+- evidence: commits 95ca3f6, 57cf568; the three owner messages; duplicate headers HV-EXP-107/108 in the file.
+- lesson: Read primary records (issue thread, scheduler list, sheet, file structure) before logging; list sources read and unread; check the highest existing HV-EXP number before assigning one.
+- what_not_to_retry: Do not call a log complete without listing sources read and unread.
+- recovery_status: Corrected in this commit; only the first page of scheduler tasks was read.
 - external_cost: EUR 0.
 - superseded_by: NONE

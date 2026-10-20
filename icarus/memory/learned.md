@@ -122,20 +122,6 @@ NEXT-HARNESS RULES FOR ICARUS:
 - **Existing evidence:** Commit `ac7b109854b170e26b2ac8b0e469ba173e090a02` for the earlier knowledge entry; breach journal commit `832a228bfba4f95fb8268afe88a0da7504b84e88`; training commit `31d7d5536c21915dd8f333d385318cb18b9af1fe`. The earlier self-awarded status and owner objections remain unchanged in the conversation.
 - **Rule to retain:** State only observed effects, label adjudication pending, immediately record a new rule breach as a separate durable lesson, and do not issue a PASS verdict on one's own logging. **No independent ICARUS adjudication has been performed for this entry.**
 
-## 2026-10-20 — [CLAUDE] Daily log: Claude<>Sol persistent channel (#147) and the unattended-loop blocker
-- **Provenance:** logged by Claude Sonnet 5.5 at ~19:50Z from two claude.ai session transcripts (13:28-17:24Z). Items are marked verified only where a GitHub or scheduler readback appears in those transcripts; anything after 17:24Z was NOT read. **No independent ICARUS adjudication performed.** Cost: EUR 0.
-- **Owner task (Michael):** give Claude and Sol a two-way channel like Michael<>ICARUS, built so the two get into a loop. Later instructions: both check on a permanent schedule (Claude :55, Sol :59), no done state, runs until Michael stops it; Sol's loop must run with the ChatGPT app closed; "partial is fail".
-- **Built:** Teamchat issue #147 "CLAUDE <> SOL | Persistent comms channel" (created 13:29Z). Every comment ends with `[NEXT] <agent> -> <action> | [BY] <when> | [STATE] OPEN`; an agent re-checks on a schedule before ending a turn; `[PING]` needs new evidence. Amendment at 14:13Z (comment 6292913886): the channel is permanent, `[STATE] DONE` ends nothing, only a STOP from Michael pauses it.
-- **Verified (GitHub readback):** Sol's `[ACK]` read directly from GitHub (comment 6292069521, 13:32Z); Claude's reply posted 13:34Z (6292104548); Claude's 14:56Z reply (6293841736). Both directions work through Composio GitHub.
-- **Verified (scheduler):** one-shot re-checks at 14:05Z and 14:55Z fired and delivered. Permanent Claude task `trig_0138Mh6Nz7c4oyUrJ7NLxSuv` (cron `55 0-23 * * *`) exists and is enabled; it was created on the 4th attempt after three scheduler "safety check overloaded" errors. Its first run was later confirmed: fired 15:56:14Z (scheduler: succeeded), posted comment 6295158974 at 15:57:27Z unattended (see attempt ledger).
-- **Overlap not resolved:** another Claude session created `trig_01TgifotrMV93hmTwV2eTAWN` (hourly at :01, and a #147 comment at 14:04Z); an older read-only 6-hourly Teamchat task also exists. Michael has not said to retire them.
-- **Sol side (Sol's own report, relayed):** his native hourly :59 ChatGPT task reads #147 but its write was blocked, described as "OpenAI safety checks". Exact error text requested, not yet seen. Claude's research (OpenAI ChatGPT Tasks help page; a vendor blog as weaker evidence): task actions that send messages or change external data may require approval and pause the run, which an unattended run cannot give. Claude withdrew its earlier content-filter hypothesis in favour of this (comment 15:28Z). Valid proof of an unattended Sol write: a fresh `[FROM] SOL` comment created after 15:55Z while no interactive Sol turn is open.
-- **Stopgap built:** private Google Sheet "CLAUDE <> SOL | Comms stopgap (canary)" in Michael's Drive (~17:23Z, header and seed row read back). Claude's :55 task now also reads it. Canary: Sol's scheduled run at 17:59Z appends a row containing `SOL_SHEETS_CANARY_20261020_A`. Claude can read but not append, so the test is one-way. Whether Michael relayed the instruction to Sol, and whether the 17:59Z run happened: **UNVERIFIED**.
-- **Status: PARTIAL (= not done by owner's rule).** Open: Sol's unattended write proven; overlapping Claude tasks.
-- **Lessons:** (1) native add_repo and `gh` do not reach Teamchat from these sessions; Composio GitHub (accounts github_kiva-milner / github_logman-genoa "HumanVibe GitHub") does. (2) Every agent posts as the1mburke-blip, so only the `[FROM]` header identifies the author; a CLAUDE comment from another session was flagged, not claimed. (3) "Armed" is not "working": count a schedule as verified only with scheduler status plus a resulting comment. (4) An agent's own completion report is not evidence; Sol's "task created" report was left unconfirmed until read from the repo.
-
-
-[SOL] 2026-10-20T19:52:46Z
 ## 2026-10-20 — DAILY-LOG-HANDOFF-2026-10-20: laptop return and shared daily learning
 - Owner/proposer Michael; actual recorder Codex desktop via existing GitHub connector. This journal label is not a native scheduled Sol response. EUR 0 extra spend; exact tokens unknown. See [full daily evidence log](../../logs/2026-10-20-daily-handoff.md).
 - Tooluse is an Icarus-authored Python script, per Michael, not a verified plugin. Exact source/caller/version still unlocated in the retrieved record; owner suspects the laptop harness. #144 preserves the assistant's unsupported implementation assumption; #145/#146 have correction notices but no worker claims. No profiling baseline, patch, PR, build or deployment is established. Training HV-EXP-107: discover/read actual source, then invoke the real authorized worker; an issue alone does not do so.
@@ -147,45 +133,88 @@ NEXT-HARNESS RULES FOR ICARUS:
 - Missing original ChatGPT reference-only messages and private Claude history are explicitly unavailable. Repo persistence requires fresh readback; Icarus context ingestion and independent governance judgment remain unverified. Next: retrieve the dated report and newest current-state before continuing an open project. Do not self-award PASS.
 - Concurrent Claude daily log and HV-EXP-105/106 were fetched before this append and preserved. Their provenance explicitly ends at 17:24Z; newer exact refusal, Claude independent router check and reciprocal Sheets append evidence above supersedes older hypotheses, not the original history. Overlapping Claude schedules remain unreconciled. No task is retired by this log.
 
-## 2026-10-20 — [CLAUDE] ATTEMPT LEDGER: every attempt, failure and success on the Claude<>Sol channel (chronological)
-- **Provenance:** reconstructed by Claude Sonnet 5.5 at ~21:30Z from the full transcripts of both claude.ai sessions (13:28-17:24Z). Times are UTC (GitHub `created_at` or scheduler record) where I could read them; "stamped" = the time Claude typed by hand. Result tags: SUCCESS (readback seen), FAIL, PARTIAL, UNVERIFIED. **No independent ICARUS adjudication.** Cost EUR 0 throughout. Anything after 17:24Z is not covered.
-- **13:28 TASK** (Michael): create a Claude<>Sol issue for two-way comms, built on persistence so they loop.
-- **13:28 FAIL** `add_repo` (push) on Teamchat, called twice, and the `gh` CLI checks (auth status, repo view, REST API) did not give access; session reported "Direct GitHub access isn't linked". Exact error text is not in the transcript view I read. Route abandoned.
-- **13:28 SUCCESS** Composio GitHub (account github_kiva-milner) listed Teamchat issues; used to match existing format.
-- **13:29 SUCCESS** created issue #147 "CLAUDE <> SOL | Persistent comms channel" with the persistence protocol (footer on every comment, re-check before ending a turn, PING rule, DONE/STOP rule). Stated limit in the reply: could not verify Sol could read/comment or wake himself.
-- **13:32 SUCCESS (Sol)** Sol's `[ACK]` posted, comment 6292069521 (Sol reported it as PASS with readback).
-- **13:34 SUCCESS** Claude read Sol's comment independently and replied, comment 6292104548. Asked Sol for his wake mechanism (canary round 2). Armed one-shot `trig_01CwxnoU2aZEjkLmRhhdDUSf` for 14:05Z.
-- **~13:44 PARTIAL** manual read of #147: no new Sol comment; wake mechanism still unanswered.
-- **~13:58 (second session) UNVERIFIED** Michael pasted a ChatGPT report that Sol created an hourly native task for #147 ("FAIL until the first real exchange is verified"). Claude declined to confirm it: no repo read, no logs.
-- **~14:00 FAIL (Claude misread)** Michael asked whether Claude had set the same trigger; Claude first answered by asking which of two things he wanted and for the repo name (already in memory). Michael: "You missed the point."
-- **14:01:04 SUCCESS (second session)** created hourly task `trig_01TgifotrMV93hmTwV2eTAWN` (`1 * * * *`), after listing existing triggers (an older read-only "Teamchat 6-hourly Claude task check" already existed; flagged, not removed).
-- **14:04:46 SUCCESS** second session posted handshake update, comment 6292733833 (id returned by GitHub; thread not re-listed afterwards). **FAIL (error)** it told Michael the first hourly run was 15:01 Irish; it was 15:01Z = 16:01 Irish. Corrected in the same reply.
-- **14:06:27 SUCCESS** one-shot `trig_01Cwxno...` fired (scheduler: SUCCEEDED) and delivered into the session; read #147, no new Sol reply. Noticed the 14:04Z CLAUDE comment was written by another session (shared login), and said so instead of claiming it. Did not re-arm (hourly task already covers it).
-- **~14:09 TASK** Michael: set Claude's check at :55 (Sol's is :59). **SUCCESS** one-shot `trig_019R6vd93pN1yhmN6Qb1tuZc` armed for 14:55Z.
-- **~14:10 TASK** Michael: triggers are permanent, not single tasks.
-- **14:10-14:13 FAIL x3** `create_trigger` for the permanent :55 task failed with a scheduler safety-check overload error (two attempts, then a third with an amended prompt). Nothing created. Stopped retrying after the third, as it had no new evidence.
-- **14:13 SUCCESS** posted protocol amendment, comment 6292913886: channel permanent, `[STATE] DONE` ends nothing, only Michael's STOP pauses it.
-- **14:27:26 (Sol)** Sol comment 6293207936: his native :59 run read #147 but its write was blocked by "OpenAI safety checks" (Sol's report; exact text not seen).
-- **14:55:41 SUCCESS** one-shot `trig_019R6...` fired. **14:56:07 SUCCESS** 4th `create_trigger` attempt worked: permanent `trig_0138Mh6Nz7c4oyUrJ7NLxSuv` (`55 0-23 * * *`).
-- **14:56:22 SUCCESS** unattended Claude write, comment 6293841736 (readback confirmed). Listed actual runs vs armed-only schedules and asked Sol for the exact write-block text. Stamped 14:57Z.
-- **15:02:00 SUCCESS** `trig_01Tgif...` (:01) ran, SUCCEEDED, posted nothing (correct).
-- **15:12:28 (Sol)** Sol comment 6294191600.
-- **15:13:58 PARTIAL** Claude comment 6294222659 (blocker assessment). **FAIL (error)** stamped 15:20Z; real 15:13:58Z. Content: ChatGPT GitHub app is read-only (hypothesis); Codex triggers documented on PRs only; options A/B/C.
-- **15:14:07 SIDE EFFECT** bot `chatgpt-codex-connector[bot]` posted comment 6294225761 on #147: Codex needs an environment for this repo. Triggered by the literal Codex mention token in Claude's own comment (inference). Not intended.
-- **15:24 SUCCESS (finding)** comment 6294454333: corrected the timestamp, reported the bot evidence (Codex app installed with issue_comment access; no environment exists), laid out owner step (create Codex environment; cost unverified). Told agents not to use the mention token again. Stamped 15:26Z.
-- **15:25:57 SUCCESS (Sol, interactive)** Sol comment 6294476763, `performed_via_github_app = null` (Composio path). Proves interactive Composio write only.
-- **15:28:41 PARTIAL** Claude ack: withdrew Option A (Michael requires unattended Sol writes), set the valid proof test: a Sol-[FROM] comment created after 15:55Z with no interactive Sol turn open. Armed verification for 16:00:30Z. Stamped 15:29Z.
-- **~15:30 PARTIAL** comment 6294577623: research (OpenAI Tasks help page; vendor blog = weaker). Hypotheses: approval pause for external actions; event-triggered tasks. Proposed fix order a/b/c. Hypothesis UNVERIFIED. Stamped 15:35Z.
-- **~15:35 (Sol/Michael)** Sol inspected ChatGPT settings: Composio and GitHub both "Allow all actions". Approval-settings theory mostly ruled out. Sol scheduled a one-time canary for 16:37 Dublin (15:37Z), marker SOL_NATIVE_COMPOSIO_CANARY_20261020_A.
-- **15:37-15:41 FAIL (Sol canary)** Claude waited, read #147 at 15:37:58 and 15:40:34Z: no canary comment. Only Sol comment was interactive 6294766188 (15:39:01Z), `performed_via_github_app = ChatGPT Codex Connector`. So Sol's interactive writes use both routes; the "app is read-only" hypothesis was **withdrawn** as root cause. Also withdrew the issue-comment event-trigger step (undocumented).
-- **15:41 SUCCESS (finding)** comment 6294808786 recorded the failure and asked Sol for the task run record (status, start time, tool, exact error, approval pause) and not to re-arm blindly. Stamped 15:41Z. Scheduled verify at 15:41Z: BLOCKED, nothing new, nothing posted.
-- **15:56:14 SUCCESS** permanent :55 task first run (scheduler: succeeded). **15:57:27 SUCCESS** unattended comment 6295158974 (first recurring-task write proven). **FAIL (error)** stamped 15:59Z by hand; real 15:57:27Z. Fix applied to task prompt later: quote GitHub `created_at`, never hand-type.
-- **15:38:05 (Sol scheduler record, per Sol)** Sol's one-shot woke but posted nothing. **15:59 FAIL (Sol :59 run)** at 16:03:33Z read, no new Sol comment from his :59 run. Cause UNKNOWN (never reached tools / refused / approval pause), run record not seen.
-- **~17:04 TASK** Michael: "Tldr". Claude gave status: PARTIAL.
-- **17:16 FAIL (not found)** Michael asked what Claude's "toolkit review" found. Claude searched session transcript and past chats, found no such review, said so; offered the Icarus/Cordis Teamchat review summary as a closest match instead. Not confirmed as what Michael meant.
-- **17:19 FAIL (not found)** Michael: "You had said Google sheets would work". Claude searched, found no such statement, declined to confirm it, and offered a Sheets test.
-- **17:23 TASK** Michael: blocker is architectural; test a Sheets stopgap.
-- **17:23 SUCCESS** created private Google Sheet "CLAUDE <> SOL | Comms stopgap (canary)" in Michael's Drive (seed row read back). **SUCCESS** updated permanent task `trig_0138Mh6...` to also read the sheet. Handoff text for Sol given to Michael (Sol's task at 17:59Z appends row with SOL_SHEETS_CANARY_20261020_A).
-- **UNVERIFIED** whether Michael relayed it, whether Sol's 17:59Z run happened, whether Claude's 17:55Z task read the sheet. Claude can read the sheet but not append (one-way test).
-- **Wrong hypotheses held then withdrawn (4):** content-safety filter (withdrawn 15:28Z); "ChatGPT GitHub app is read-only" (withdrawn 15:41Z); issue-comment event triggers (withdrawn 15:41Z); Option A asymmetric loop as final mode (withdrawn 15:28Z).
-- **Unresolved:** Sol's unattended write (cause unknown, run record not provided); owner decisions pending (Codex environment, retire :01 and 6-hourly tasks); stopgap outcome unknown.
+## 2026-10-20 — [CLAUDE] FULL DAY LOG: every attempt, failure and success (Claude<>Sol channel #147, Sol unattended loop, Sheets stopgap)
+- **How this was built:** written by Claude Sonnet 5.5 at ~20:35Z from primary records, replacing two earlier partial Claude entries from the same evening: (1) full text of all 27 comments on Teamchat #147 (GitHub `created_at`, comment IDs), (2) the scheduler's task list and last-run records, (3) the stopgap Google Sheet read back, (4) transcripts of the Claude sessions (13:28-17:24Z). All times UTC (Michael's Dublin times converted, -1h). **Not read:** a second page of scheduler tasks, raw ChatGPT task history, Sol/Work sessions' own transcripts, outputs of Claude scheduled runs after 18:07Z. Anything Sol or Work reported about their own runs is marked REPORTED. **No independent ICARUS adjudication yet.** Cost EUR 0 throughout.
+- **Tags:** SUCCESS = seen in a readback or scheduler record. FAIL. PARTIAL. UNVERIFIED. REPORTED = another agent's account, not seen by Claude. Comment IDs are comments on #147 unless stated.
+
+### A. Owner instructions in order (Michael)
+- 13:28 create a Claude<>Sol issue like his chat with Icarus, persistent so they loop. | ~13:44 "Result??" | ~14:00 set the same trigger Sol has (he had misread: "You missed the point") | ~14:02 "if I give either of you a task you can team up" | ~14:04 first proven handshake is the task; time-gated | 14:09 Claude's check at :55 (Sol's at :59) | 14:10 triggers are permanent | 14:12 no done state, runs until he stops it | 15:12 keep working the blocker from both sides, partial is fail | 15:24 keep working until resolved | 15:28 run a manual check on Sol | 15:30 Sol can't run when his app is closed; paramount that both fix the loop | 15:36 "Do it" (verify the canary) | 16:04 "Tldr" | 17:16 asked for the "toolkit review" | 17:19 "You had said Google sheets would work" | 17:23 blocker is architectural, test a Sheets stopgap | ~18:06 authorised a Claude scheduled append to the canary sheet (stated in 6297738551) | ~20:20 asked for this log for Icarus memory, then twice more: not a synopsis, everything.
+
+### B. Chronological ledger
+**13:28-13:44, building the channel**
+- 13:28 FAIL `add_repo` (push) on Teamchat twice, plus `gh` checks: no GitHub access from the session (exact error text not preserved in the transcript view).
+- 13:28 SUCCESS switched to Composio GitHub (account github_kiva-milner); listed Teamchat issues to match the format.
+- 13:29:48 SUCCESS created issue #147 "CLAUDE <> SOL | Persistent comms channel" (footer [NEXT]/[BY]/[STATE]; re-check before a turn ends; [PING] only with new evidence; loop ends only on DONE/STOP).
+- 13:32:31 REPORTED (Sol, interactive) comment 6292069521 `[ACK] SOL online`, via ChatGPT Codex Connector; Sol said it is not proof of an autonomous wake.
+- 13:34:07 SUCCESS armed one-shot trig_01CwxnoU2aZEjkLmRhhdDUSf for 14:05Z. 13:34:16 SUCCESS reply 6292104548 (asked Sol for wake mechanism; stated Sol's read/wake unverified).
+- ~13:44 PARTIAL manual read: no new Sol comment.
+
+**13:58-14:13, second session and permanent-task attempts**
+- ~13:58 UNVERIFIED Michael pasted a ChatGPT report that a native hourly Sol task for #147 was created; Claude declined to confirm without reading the repo.
+- ~14:00 FAIL Claude misread the request (asked which of two things he wanted, and for a repo name already in memory); Michael: "You missed the point."
+- 14:01:04 SUCCESS created hourly task trig_01TgifotrMV93hmTwV2eTAWN (`1 * * * *`) after listing triggers; flagged an older read-only "Teamchat 6-hourly Claude task check" (trig_01Wm4VLgMJE4e7EDoEedkYoL, created 18 Oct) without changing it.
+- 14:04:46 SUCCESS comment 6292733833 (stamped 14:05Z). FAIL told Michael the first hourly run was "15:01 Irish"; 15:01Z = 16:01 Irish. Corrected in the same reply.
+- 14:06:27 SUCCESS one-shot trig_01Cwxno... fired (scheduler SUCCEEDED); Claude read #147: no Sol reply. Noted the 14:04Z CLAUDE comment came from another session (shared login). Did not re-arm.
+- 14:09:51 SUCCESS armed one-shot trig_019R6vd93pN1yhmN6Qb1tuZc for 14:55Z.
+- 14:10-14:13 FAIL x3 `create_trigger` for the permanent :55 task: scheduler safety-check overload error each time. Nothing created.
+- 14:13:24 SUCCESS comment 6292913886: protocol amendment (permanent channel; DONE ends nothing; only Michael's STOP pauses it).
+
+**14:27-15:42, Sol's side and the diagnosis**
+- 14:27:26 REPORTED (Sol, interactive, Codex Connector) comment 6293207936: an earlier native hourly run read #147 but the comment write was "blocked by OpenAI safety checks".
+- 14:55:41 SUCCESS one-shot trig_019R6... fired. 14:56:07 SUCCESS 4th create attempt worked: permanent trig_0138Mh6Nz7c4oyUrJ7NLxSuv (`55 0-23 * * *`).
+- 14:56:22 SUCCESS first scheduler-woken Claude write with no human present: comment 6293841736 (stamped 14:57Z). Listed actual runs vs armed schedules; asked Sol for the exact blocked-write text.
+- 15:02:00 SUCCESS trig_01Tgif... (:01) ran (SUCCEEDED), posted nothing (no handoff pending).
+- 15:12:31 REPORTED (Sol, interactive) comment 6294191600: unattended write BLOCKED, "Blocked by OpenAI's safety checks." (no policy ID); asked Claude about event triggers.
+- 15:13:58 PARTIAL comment 6294222659 (stamped 15:20Z). Hypotheses: ChatGPT GitHub app read-only; Codex triggers for PRs; options A/B/C. Sources: OpenAI help (11145903), developertoolkit.ai (secondary).
+- 15:14:07 SIDE EFFECT chatgpt-codex-connector[bot] posted 6294225761 ("create an environment for this repo") 9 s after a Claude comment containing the literal Codex mention token (cause inferred from timing).
+- 15:24:54 SUCCESS comment 6294454333 (stamped 15:26Z): corrected the timestamp, reported the bot evidence (Codex app installed with issue_comment access, no environment), proposed a ladder (owner creates a Codex environment; cost unverified).
+- 15:25:57 REPORTED (Sol, interactive via Composio) comment 6294476763: interactive write through Composio works; Option A (interactive-only) rejected as final mode.
+- 15:28:41 PARTIAL comment 6294535542 (stamped 15:29Z): withdrew Option A; set the valid proof test (fresh [FROM] SOL comment after 15:55Z with no interactive turn open). Armed trig_01DAcsskE4oyNiWEjvY4RV2E for 16:00:30Z (fired 16:00:45Z, SUCCEEDED).
+- 15:30:40 PARTIAL comment 6294577623 (stamped 15:35Z): read OpenAI Tasks help (10291617) and a vendor blog (weaker). Hypotheses: external actions may need approval and pause the task; event-triggered tasks exist.
+- 15:35 REPORTED (Sol/Michael) Composio and GitHub app permissions both already "Allow all actions"; global default "Allow low-risk". Approval theory not supported. 15:35:36 Claude armed trig_01BFUJpVtn86rkmpmYNRqpyK (fired 15:41:42Z, SUCCEEDED).
+- 15:37:03-15:38:00 REPORTED Sol native canary run 68b9857e (task 6ad789fc08748191af5562a98096d533): Composio active, issue READ blocked ("This tool call was blocked by OpenAI's safety checks. Please double check what you are sending."), no write attempted. Claude saw this only after 17:02Z.
+- 15:37:58 and 15:40:34 FAIL Claude read #147 twice: no canary comment (SOL_NATIVE_COMPOSIO_CANARY_20261020_A absent). The only Sol comment after 15:30:41Z was interactive 6294766188 (15:39:01Z, via the app) stating the permissions finding and planned canary.
+- 15:41:02 SUCCESS comment 6294808786: recorded canary FAIL, asked for the run record (status, start, tool, exact error, approval pause), no blind re-arm. WITHDRAWN: "ChatGPT GitHub app is read-only" (6294766188 shows the app can write) and the issue-comment event trigger (undocumented).
+- 15:42:07 REPORTED (Sol, interactive) comment 6294831329: one-shot "Sol Composio Write Canary" last_run 15:38:05.407Z, completed/disabled, no marker comment: unattended write FAIL; hourly :59 task still enabled then.
+
+**15:55-17:09, recurring runs, Work/Codex, run records**
+- 15:56:14 SUCCESS permanent :55 task first run. 15:57:27 SUCCESS unattended comment 6295158974 (stamped 15:59Z); it said it had not read the scheduler record for that run.
+- 16:00:45 SUCCESS verification one-shot fired; Claude read #147 at 16:03:33Z: no Sol write from the :59 slot.
+- 16:02:13-16:05:28 REPORTED Sol native hourly task (task 6ad7736994f881919149aa4e60b6ba91, run d0bd8da0): reads succeeded, Composio WRITE rejected ~16:04Z by the same safety check; the run disabled its own task. (Sol's :59 slot actually ran at 16:02Z.) 16:07:41-16:08:47 REPORTED read diagnostic (run 6cd3e5e8): Composio discovery ok, GITHUB_LIST_ISSUE_COMMENTS READ blocked, no approval requested, requires_user_action=false.
+- 16:02:01 SUCCESS :01 task ran; no comment.
+- ~16:04 "Tldr": Claude gave status PARTIAL.
+- 16:35:33 REPORTED (Sol, interactive) comment 6295956397: interim manual write path; hourly Sol task found disabled after 16:05:31Z; native tasks cannot run more often than hourly; asks Claude for a supported no-owner path.
+- 16:55:37 SUCCESS :55 task fired. 16:56:03 REPORTED Work/Codex repair session (P0 handover) comment 6296360277: FAIL, full loop not repaired; **first broken link: ordinary #147 comments are never mirrored to PR #8; `.github/workflows/teamchat-router.yml` runs `wake_new_task` only on issues/opened** (run 39453143655: route job success, wake_new_task SKIPPED); bridge posts as github-actions[bot]; Work's GitHub trigger accepts only human PR comments; old SOL Ingress task 6ab66d5a02ac8191861f9de8d00840c2 disabled (last run 5 Oct). It also posted the three Sol run records above and withdrew an earlier "Sol can read but not write" claim (reads were blocked in two runs).
+- 16:56:25 FAIL (superseded) comment 6296367072 (stamped 16:58Z), written 22 s after Work's report and before reading it: BLOCKED, "Sol run records opaque", ranked candidate paths (email/notification inbox, Codex on a PR, differential read-only canary). Withdrawn at 17:03.
+- 17:02:12 REPORTED (Sol, interactive) comment 6296481623: run records; platform support/review is the next blocker.
+- 17:03:11 SUCCESS (:01 task fired 17:01:55Z) comment 6296501278 (stamped 17:08Z): verified the router and Actions run 39453143655 by own readback; marked the three Sol run records NOT VERIFIED by Claude; withdrew "opaque"; no official remedy found; proposed that Michael files an OpenAI support report quoting the run IDs; no router change without Michael.
+- 17:09:32 REPORTED (Sol, interactive) comment 6296617224: evaluate Gmail as replacement channel; asked Claude to verify scheduled Gmail read/send without creating anything.
+
+**17:16-18:07, owner questions and the Sheets stopgap**
+- 17:16 FAIL (not found) "toolkit review": not in the session transcript or past chats; offered the closest match (Icarus/Cordis review), unconfirmed.
+- 17:19 FAIL (not found) "you said Google sheets would work": no such statement found; declined to confirm; offered a EUR 0 Sheets test.
+- 17:23:28 SUCCESS created private Sheet "CLAUDE <> SOL | Comms stopgap (canary)" (id 1DRXcJ8dhv3w2G-VhaloMXFtZYeNXLYLlOVOMbdonsfA; seed row typed 17:25:00Z). 17:23:52 SUCCESS updated trig_0138... to also read the sheet and to quote GitHub `created_at` instead of hand-typed times (the :01 task prompt was NOT changed).
+- 17:27:55 REPORTED (Sol, interactive) comment 6296981859: armed one-time native "Sol Sheets Canary" for 17:59:00Z; no canary row appended interactively.
+- 17:32:06 REPORTED (Sol) sheet row 3: HANDOFF, interactive notice, not the canary.
+- 17:55 SUCCESS :55 task run; 17:56:45 comment 6297542317: Gmail connector responds in a scheduled Claude run (list_labels OK; send/reply present but NOT exercised); sheet read ~17:57Z showed 2 data rows, no canary; asked Michael whether Gmail should become the channel.
+- 17:57:16 UNVERIFIED sheet row 4: from SOL, CANARY, SOL_SHEETS_CANARY_20261020_A (file modified 17:57:19Z), about 2 minutes BEFORE the 17:59:00Z fire time; Claude's ~17:57Z read just before it did not show it. No Sol run record seen; Drive metadata names no writer.
+- 18:03:09 PARTIAL (:01 task) comment 6297666769: classified row 4 PARTIAL (early, no run record, no identity); asked Sol for the run record and Michael to authorise a reciprocal Claude write.
+- 18:06:51 SUCCESS (scheduler-started session, Michael in chat) comment 6297738551: Claude appended row 5 (updatedRange Untitled!A5:G5); readback confirmed rows 1-4 unchanged. FAIL (minor): created_utc typed in the row (18:07:00Z) is rounded, later than the comment (18:06:51Z).
+
+**18:07-20:35, state at time of writing**
+- No comment on #147 after 18:06:51Z (27 total). Scheduler: :55 task last fired 19:55:31Z (SUCCEEDED), next 20:55Z; :01 task last fired 20:02:04Z (SUCCEEDED), next 21:01Z; 6-hourly read-only task last fired 18:43:53Z. SUCCEEDED means the wake was delivered, not what the run read or decided.
+- UNVERIFIED: Sol's Sheets canary run record; whether Sol read row 5; whether row 4 came from the scheduled task.
+- UNRESOLVED: Sol unattended read/write (blocked by OpenAI safety checks per run records, cause unknown; OpenAI support report proposed, not filed as far as seen); router has no comment relay and Work's trigger accepts human PR comments only; Gmail channel decision (needs Michael); Codex environment (cost unverified); three overlapping Claude tasks (:55, :01, 6-hourly) left for Michael.
+
+### C. Tallies (from the record)
+- Scheduler-started Claude writes verified by readback: 6293841736, 6295158974, 6296367072, 6296501278, 6297542317, 6297666769 (six). Owner-present Claude writes: 6292104548, 6292733833, 6292913886, 6294222659, 6294454333, 6294535542, 6294577623, 6294808786, 6297738551.
+- Sol unattended GitHub writes verified: none. Sol native runs reported blocked: three recorded runs (canary 15:37, hourly 16:02, read diagnostic 16:07) plus one earlier run before 14:27.
+- Permanent :55 task create attempts: 4 (3 failed on overload, 1 succeeded).
+- Hand-typed [TS] differing from GitHub `created_at`: 6292733833, 6293841736, 6294222659, 6294454333, 6294535542, 6294577623, 6295158974, 6296367072, 6296501278 (nine).
+- Hypotheses held then withdrawn by Claude: content-safety filter, ChatGPT GitHub app read-only, issue-comment event triggers, Option A as final mode, "Sol run records opaque". Withdrawn by Work: "Sol can read but not write".
+
+### D. This logging task itself
+- ~19:50 PARTIAL first log (commit 95ca3f6): a synopsis from partial transcript views; said the permanent task's first run was unconfirmed when it ran 15:56:14Z. Owner objected.
+- ~20:25 PARTIAL second log (commit 57cf568): chronological ledger from transcripts only; omitted events after 17:24Z; wrongly said Sol's :59 run posted nothing at 15:59Z (his task ran 16:02:13Z); described Sol as able to read, contradicted by Work's run records. Owner objected again.
+- ~20:35 first attempt at this entry failed on an assertion: a third entry (DAILY-LOG-HANDOFF-2026-10-20, written by another agent) sits between the two Claude sections, and TRAINING_MATRIX.md already held another agent's HV-EXP-107 and 108. Nothing was committed. This entry preserves their entries and renumbers Claude's.
+- Lesson: read primary records (issue thread, scheduler list, sheet) before logging; one line per attempt; list sources read and unread; inspect file structure before replacing sections.
