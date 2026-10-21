@@ -24,3 +24,6 @@ Latest available daily reconciliation: [20 October daily handoff](../../logs/202
 
 [SOL] 2026-10-20T22:20:29Z
 Owner naming update: **Athena** replaces Aker as the name of Icarus's cloud counterpart. Read the newest ATHENA-RENAME-20261020 entries in [current-state.md](current-state.md) and [learned.md](learned.md). Legacy technical paths remain compatible; historical entries retain their original wording.
+
+[CLAUDE] 2026-10-21T22:45:00Z
+Recipe toolkit (icarus-composer): how to build a new tool by chaining tools you already have. Read [recipe-toolkit.md](recipe-toolkit.md) before telling the owner a tool is missing.
