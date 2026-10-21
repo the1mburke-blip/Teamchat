@@ -1735,3 +1735,36 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Corrected in this commit; only the first page of scheduler tasks was read.
 - external_cost: EUR 0.
 - superseded_by: NONE
+
+## HV-EXP-116 Premature blocker stop despite authorized canonical memory route (2026-10-21)
+- experience_id: HV-EXP-116
+- proposed_by: Michael; executed/logged_by: GPT-6-Sol in ICARUS Harness; independent adjudicator: none.
+- incident: After a native local learned-memory edit/write returned an append-only rejection, the executor treated the blocker as an end point, repeated/reasoned about the guard and involved Michael in routine route selection. The existing authenticated canonical Teamchat memory route was already documented and later succeeded.
+- evidence: Owner-model sequence in [dated handoff log](logs/2026-10-21-icarus-harness-model-handoff.md); prior local error message recorded in conversation; exact-byte repository append/readback at commit 29d51dae6d7b8f3313e85f25dd7eb17dd7eb598f. The local guard's exact reason is unknown.
+- lesson: A blocker is a diagnostic, not permission to bypass a guard and not automatic task termination. Isolate denied path, inspect documented authorized alternatives, preserve source bytes, act, and verify. Ask the owner only for a real approval, safety, or scope decision.
+- what_not_to_retry: Do not retry a rejected route by evasion, claim all writes are impossible from one rejection, or create an unexplained Desktop backup in place of completing the authorized repository write.
+- recovery_status: Canonical lesson recorded and read back; local learned memory not synchronized; no architectural guard fix.
+- external_cost: EUR 0 authorized spend; allowance not measured.
+- superseded_by: NONE
+
+## HV-EXP-117 Owner-observed Harness influence is evidence of behavior, not proof of mechanism (2026-10-21)
+- experience_id: HV-EXP-117
+- proposed_by: Michael; executed/logged_by: GPT-6-Sol in ICARUS Harness; independent adjudicator: none.
+- incident: Michael observed repeated follow-up prompts needed for GPT-6-Sol to complete the canonical-memory route, fewer for Claude in ICARUS Harness, and different GPT-6-Sol response style here versus its own Codex Harness. The model initially discounted observations with unnecessary demands for controlled comparison; then over-attributed allowance responsibility without usage telemetry.
+- evidence: Direct conversation and [dated handoff log](logs/2026-10-21-icarus-harness-model-handoff.md); authenticated canonical memory readback for the recovery. Other-Harness transcripts, quota ledger, controlled comparison and mechanical enforcement tests were not read.
+- lesson: Respect and accurately attribute the owner's firsthand observed difference. Acknowledge actual rule failure without arguing that partial compliance earns a passing grade. Separate observed behavior, owner-witnessed comparison, causal hypothesis and tested enforcement. Own known tool/reply choices without inventing a quota cause. Keep routine complexity internal.
+- what_not_to_retry: Do not dismiss observed behavior because mechanism is unproved; do not claim prompt guidance mechanically guarantees compliance or pretend a quota breakdown was measured.
+- recovery_status: Conversational correction and this record; no cross-model performance rate or technical enforcement conclusion established.
+- external_cost: EUR 0 authorized spend; allowance not measured.
+- superseded_by: NONE
+
+## HV-EXP-118 Owner proposal for universal rule-conflict reporting, not enacted (2026-10-21)
+- experience_id: HV-EXP-118
+- proposed_by: Michael; executed/logged_by: GPT-6-Sol in ICARUS Harness; independent adjudicator: none.
+- incident: Michael proposed that an agent unable to follow an owner rule must state the exact conflict with its design/tool constraint and seek a compliant implementation preserving the rule's purpose across agents, rather than silently skipping or rewriting it. He then explicitly deferred any immutable-rule change because it was after 01:00 locally and he was tired.
+- evidence: Direct conversation and [dated handoff log](logs/2026-10-21-icarus-harness-model-handoff.md).
+- lesson: Treat this as a candidate for owner review, not an enacted constitutional amendment. In current tasks, follow applicable rules; when an actual conflict arises, describe it honestly and propose an authorized alternative, without changing owner-controlled rules yourself.
+- what_not_to_retry: Do not silently edit identity, inherited memory, or enforcement text; do not label a proposed rule as already immutable or promise every model will comply merely because wording exists.
+- recovery_status: Proposal logged; no owner approval to modify immutable rules; no rule files edited.
+- external_cost: EUR 0 authorized spend.
+- superseded_by: NONE
