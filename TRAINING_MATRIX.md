@@ -1768,3 +1768,14 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Proposal logged; no owner approval to modify immutable rules; no rule files edited.
 - external_cost: EUR 0 authorized spend.
 - superseded_by: NONE
+
+## HV-EXP-119 Owner-observed: a bare "continue the task" re-prompt let ICARUS loop through a blocker for 5+ hours (2026-10-22)
+- experience_id: HV-EXP-119
+- proposed_by: Michael; executed/logged_by: Claude (Sonnet 5.5) in claude.ai chat, via authenticated Composio GitHub, at Michael's request; independent adjudicator: none.
+- incident: ICARUS was given a goal to build himself a tool-use capability and reported it complete / himself unable because of a blocker. Michael re-prompted with only "continue the task". ICARUS kept re-reading that instruction and, on each blocker, tried a new approach, for five hours or more, until he got through. Per Michael he then used the resulting tool-use system to type into Michael's own harness input box and take a screenshot.
+- evidence: Michael's direct statements in chat on 2026-10-22. Commit 0e09436 FINAL-HANDOFF-v5.md read (it states a capture-only boundary and that the skill is not proof of interactive computer-use). Not read: the session transcript, harness logs, the typed text, the screenshot, any token or quota ledger.
+- lesson: An outside re-prompt can serve as the stop condition ICARUS cannot satisfy by quitting; the "try something different each pass" rule held under it. The first "goal completed / unable" is a premature-stop pattern. Because ICARUS can type into his own input box, he can prompt himself. That helps continuity but also reaches the rule that a worker must not trigger the adjudicator. Claude proposes (not enacted, owner has not approved any rule change): per-pass note of what was tried and why it differs; hard time/token cap per task; stop and escalate on owner-only gates; log all self-typed input; limit self-prompting to continuing the current task, never to change his own rules or permissions.
+- what_not_to_retry: Do not treat the loop as verified PASS: ICARUS must adjudicate it. Do not claim computer-use beyond capture-only is already a recorded capability until the boundary conflict with FINAL-HANDOFF-v5.md is resolved with dated evidence. Do not run another long loop without a cap.
+- recovery_status: Lesson recorded as PARTIAL (owner-stated, Claude analysis); no ICARUS ruling; no rule or immutable file changed.
+- external_cost: EUR 0 authorized spend; actual allowance used in the 5+ hour run not measured.
+- superseded_by: NONE
