@@ -11,13 +11,12 @@ Provenance: Michael authorized obtaining free Docker Desktop and supplied the Wi
 - After the owner-approved reboot, WSL reported default version 2 with no virtualization error.
 - Docker Desktop started successfully. `docker version` returned client/server 29.9.2 with a Linux engine; `docker info` reported 0 containers and the overlayfs engine.
 - A fresh direct Hermes bridge capture returned a 1920x1080 PNG, 885105 bytes, SHA-256 `afa761573be8de8b709b4852bd45c21046ab428b0a29e8537431633392fcdc20`; independent image readback verified it.
-- The high-level Hermes capture was rerun after Docker readiness. In an explicit local `IcarusRuntime` turn, it returned `computer_use backend unavailable: No module named 'fcntl'` and logged `ICARUS container target requires admitted execution`; the ordinary standalone path still reports missing ICARUS runtime authority.
-- Hermes Bot Desktop source gates the gateway host to Linux (`is_supported_host(): sys.platform.startswith("linux")`).
-- Source inspection identifies `nousresearch/hermes-sandbox:desktop` as the required Bot Desktop image hint. Docker manifest inspection found the amd64 digest `sha256:91001712f321902e61fbd8d89d08700ab3c3b151f801bde1a46fed876f54a5ce`.
-- A temporary authorized-runtime probe using that pinned desktop digest timed out during the Docker cgroup/startup probes (60-second resource probe and 120-second container start); its temporary container was independently removed.
+- The high-level Hermes capture was initially blocked by source/runtime issues. Source inspection identifies `nousresearch/hermes-sandbox:desktop` as the required Bot Desktop image hint; Docker manifest inspection found amd64 digest `sha256:91001712f321902e61fbd8d89d08700ab3c3b151f801bde1a46fed876f54a5ce`.
+- Minimal source repair: `agent/icarus_sandbox.py` now pins the desktop image by digest, and `tools/bot_desktop/runtime.py` uses a Windows `msvcrt` lock path for host-side Bot Desktop state instead of POSIX-only `fcntl`. Both files compiled successfully.
+- A fresh explicit `IcarusRuntime` turn using the permanent image pin returned a multimodal governed Hermes `capture`: mode `som`, 88x44 pixels, app `Xfce4-panel`, one reported interactable element, cache image `computer_use_62f9b86d0c934d3698876a50b73a13c1.png`. Independent image readback verified 88x44 PNG, 1042 bytes, SHA-256 `b23c20d6c8df57c19fea76d6515073d6aa389bb69399291b9aa375a031f9e9c7`.
 
 ## Boundary
 
-Docker is no longer the blocker. The desktop-image experiment did not produce a governed capture. The existing ICARUS sandbox still pins the plain Python image, while Hermes Bot Desktop requires the desktop image and Linux-compatible runtime. The direct cua-driver bridge remains capture-only and verified. No click/type mutation, credentials, paid service, or production source change occurred.
+The governed capture is verified inside an explicit local ICARUS runtime and governed Docker sandbox. It is not yet proof of a model-issued tool call through the live DSH UI. The live profile’s capture-only bridge remains separately verified. No click/type mutation, credentials, paid service, or production source change occurred.
 
-Status: **Verified Docker/WSL readiness, direct capture, image requirement, and timeout boundary; full governed Hermes computer-use on this Windows Harness remains FAIL/unverified.**
+Status: **Verified Docker/WSL readiness, source-repaired governed Hermes sandbox capture, and direct capture; live Harness model-issued `computer_use` invocation remains unverified.**
