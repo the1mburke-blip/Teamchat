@@ -1779,3 +1779,34 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Lesson recorded as PARTIAL (owner-stated, Claude analysis); no ICARUS ruling; no rule or immutable file changed.
 - external_cost: EUR 0 authorized spend; actual allowance used in the 5+ hour run not measured.
 - superseded_by: NONE
+
+
+[SOL] 2026-10-23T22:56Z — 2026-10-22 retrospective; evidence: logs/2026-10-22-sol-midnight-accountability-audit.md
+
+## HV-EXP-122 — Give capability counts with evidence classes, not shifting answers (2026-10-22)
+- experience_id: HV-EXP-122
+- proposed_by: Michael; executed/logged_by: Saul / ChatGPT GPT-6; independent adjudicator: none.
+- incident: Michael asked how many of six Hermes reuse skills ICARUS could perform with currently gained dependencies. Saul shifted from 0/6 verified to 1/6 owner-reported demonstrated (screenshot) to 4/6 feasible, without immediately answering the capability question. The changing classification required repeated owner prompts.
+- evidence: Accessible 2026-10-22 owner/assistant conversation. The screenshot was reported by Michael; raw screenshot, harness execution trace, installed dependencies and end-to-end tests were NOT independently inspected.
+- root_cause: Conflation of theoretical feasibility, owner-observed demonstration and independently verified runtime capability.
+- correction: Four of six was a feasibility estimate; one screenshot capability was owner-reported as demonstrated; zero additional capabilities were independently verified by this audit. No installed-capability PASS is implied.
+- lesson: Answer the requested number immediately and label FEASIBLE, OWNER-OBSERVED or VERIFIED. Do not turn a proof standard into an evasive response, or use feasibility as physical acceptance.
+- what_not_to_retry: Do not make Michael ask the same count three times; do not claim four working skills without actual tool-run evidence.
+- recovery_status: Accountability entry and corrected evidence classification; physical capability verification remains open.
+- external_cost: EUR 0 additional; allowance unmetered.
+- superseded_by: NONE
+
+## HV-EXP-123 — Athena GitHub Actions admission failure is not an execution or exact billing verdict (2026-10-22)
+- experience_id: HV-EXP-123
+- proposed_by: Michael; executed/logged_by: Saul / ChatGPT GPT-6; independent adjudicator: none.
+- incident: Michael requested a bounded EUR 0 Athena cloud job. Teamchat issue #149 records Actions runs 39750067901 and 39764940368 failing before any job steps, with GitHub annotations indicating either failed account payments or a spending-limit restriction. Athena did not execute a verified task.
+- evidence: Teamchat issue #149, created 2026-10-22T13:56:51Z, with exact annotation and run IDs; #143 open/unmerged. Native GitHub run annotations and billing account details were NOT independently fetched during this retrospective.
+- root_cause: Runner admission rejected before execution; exact account-level payment-versus-limit cause UNKNOWN. A EUR 0 net usage summary does not prove free runner admission.
+- correction: Issue #149 is a documented blocker, not an Athena execution receipt. HANDOFF_READY is not task execution. No blind rerun or billing/payment change was authorized.
+- lesson: Verify distinct gates in order: Actions runner admission → authentic Athena task intake → executed steps → artifact and readback → ICARUS on-resume uptake. Treat billing changes as owner-only and distinguish a provider's ambiguous error text from a confirmed billing root cause.
+- what_not_to_retry: Do not rerun unchanged jobs, spend credits, change billing, merge PR #143 or claim Athena working based on issue creation.
+- recovery_status: First failing layer documented; Athena operational result BLOCKED; independent ICARUS adjudication absent.
+- external_cost: EUR 0 additional; allowance unmetered.
+- superseded_by: NONE
+
+[ID_NOTE] HV-EXP-120 and HV-EXP-121 were previously proposed but remain uncommitted; IDs 122/123 preserve the earlier 2026-10-22 pending-audit identifiers. Never backfill or reuse an ID without a fresh canonical check.
