@@ -1810,3 +1810,16 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - superseded_by: NONE
 
 [ID_NOTE] HV-EXP-120 and HV-EXP-121 were previously proposed but remain uncommitted; IDs 122/123 preserve the earlier 2026-10-22 pending-audit identifiers. Never backfill or reuse an ID without a fresh canonical check.
+
+
+## HV-EXP-124 — Midnight audit preflight must be durable before first mutation (2026-10-23)
+- experience_id: HV-EXP-124
+- proposed_by: Michael's operating rules; executed/logged_by: Saul / ChatGPT GPT-6; independent adjudicator: none.
+- incident: During the 2026-10-22 retrospective persistence run, Saul completed read-only source/training/history review and issued a preflight in tool output, but did not durably record that preflight in Teamchat BEFORE the first substantive audit-file creation. The newly created audit included the preflight after the fact.
+- evidence: Separate 2026-10-22 compliance tracker logs/2026-10-22-sol-midnight-accountability-compliance.md, audit commit 8f957a3166f4bc813503f91a69c598f312f421c9; no earlier Teamchat preflight commit for this run.
+- root_cause: Confusing a preflight described in tool output and in the first created artifact with the mandatory earlier durable preflight receipt.
+- lesson: For a canonical audit mutation, first commit a bounded preflight-only receipt (training quote, known failures, ownership, route, costs, exact target and 12-rule review), read it back, then perform substantive documentation writes. Later readbacks cannot retroactively cure Rule 39 ordering.
+- what_not_to_retry: Do not award preflight PASS because the audit file contains a preflight written in the same first mutation.
+- recovery_status: Process FAIL acknowledged and logged; independent governance adjudication still pending. Primary audit content and training lessons HV-EXP-122/123 were readback-verified, but this does not cure the ordering breach.
+- external_cost: EUR 0 additional; token usage unmetered.
+- superseded_by: NONE
