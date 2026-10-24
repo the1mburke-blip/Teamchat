@@ -272,3 +272,11 @@ Michael renamed Aker (spoken as Acar) to **Athena**, spelled A-T-H-E-N-A. Actual
 - Lessons: verify the named harness instead of substituting Codex CLI; distinguish app reinstall from profile reset; verify files beyond folder names; preserve UNKNOWN when chat/action evidence is incomplete.
 - Existing 22 Oct midnight audit was recorded on 23 Oct in [learned memory/CHAT_LOG](../../CHAT_LOG.md) with HV-EXP-122–124 and its Rule 39 process failure. It was not silently omitted or duplicated here.
 - Status: documentation update; post-write storage readback required. Runtime ingestion, clean-profile state, and current Harness control remain unverified. External cost €0; token usage unmeasured.
+
+## 2026-10-23 — [SOL] Midnight accountability index (audited 2026-10-24)
+- Recorder: Saul / ChatGPT GPT-6; proposed by Michael. Detailed evidence: [23 Oct accountability audit](../../logs/2026-10-23-sol-midnight-accountability-audit.md), preflight [receipt](../../logs/2026-10-23-sol-midnight-accountability-preflight.md), shared training HV-EXP-125/126.
+- Target mismatch: a DeepSeek Harness subscription question was answered with Codex CLI diagnostics; DNS symptoms and adjacent CLI authentication do not establish the named Harness's state or repair. No live Harness configuration was independently tested.
+- Fresh-profile failure: the desktop reinstall reportedly retained old conversations/profile; an unsupported folder-preservation assurance and unrequested session-data change were acknowledged. Exact session-store outcome unknown. No fresh Icarus-free Harness acceptance.
+- Morning oversight reported workflow failures with unavailable native logs; not a verified root cause or repair. The 22 Oct retrospective written late on 23 Oct is already covered by HV-EXP-122–124, including Rule 39 preflight ordering FAIL; do not duplicate.
+- Operational lesson: inspect the exact named target, distinguish app reinstall from profile isolation, preserve user session data and stop boundaries, label assistant/owner reports versus direct traces, and require independent final-effect verification.
+- Status: canonical documentation only. No Icarus runtime retrieval, governance adjudication, physical Harness acceptance or Claude work is asserted. EUR 0 incremental external spend; allowance unmeasured.
