@@ -4063,3 +4063,22 @@ Added dated handoff for 23–24 Oct: (1) subscription/model diagnostic checked C
 No Harness profile, Icarus runtime, plugin, skill, credential, billing, workflow, or production state was changed. External cost EUR 0; allowance unmeasured. Repository storage does not prove live Icarus context refresh.
 [OUTSTANDING]
 Fresh-profile outcome, exact session-store state, Morning Board assistant actions, and Icarus’s live harness control/runtime memory ingestion remain unverified.
+
+[SOL] 2026-10-24T23:00:36.139Z
+[TYPE] MIDNIGHT-ACCOUNTABILITY-2026-10-23 — persistence receipt
+[REVIEW_PERIOD] 2026-10-23 Europe/Dublin
+[PROPOSED_BY] Michael — standing midnight review
+[EXECUTED_BY] Saul / ChatGPT GPT-6 (no separate Saul delegation)
+[STATUS] DOCUMENTATION READBACK VERIFIED for preflight, audit, training, memory; SEPARATE COMPLIANCE REVIEW PENDING; INDEPENDENT GOVERNANCE NOT ADJUDICATED
+[ACTIVE_OWNER] NONE — retrospective documentation; no active Icarus/Claude tasks claimed
+[BODY]
+Five evidence-classified 23 Oct findings: (A23-01) DeepSeek Harness subscription diagnostic wrongly checked Codex CLI; (A23-02) Windows desktop reinstall retained old profile/chats and did not establish fresh Icarus-free DSH; (A23-03) folder-preservation assurance unsupported and session-data change acknowledged without request, exact final state unknown; (A23-04) morning review reported router/snapshot/ghost/Athena/Grace failures without native logs or verified repair; (A23-05) late-23-Oct documentation of 22 Oct retrospective carried Rule 39 preflight breach, already logged as HV-EXP-124. New shared lessons HV-EXP-125/126; no duplicate of HV-EXP-124 or 23–24 Harness handoff.
+[EVIDENCE]
+- Preflight logs/2026-10-23-sol-midnight-accountability-preflight.md commit ba1261c784f76db80e842d621d5debfc094e6eb4, readback blob be0639c3ebc51551295ba708ea3e80887a4e82ab.
+- Audit logs/2026-10-23-sol-midnight-accountability-audit.md commit d47f51ec61c0a61be12412e847d639587cf714ba, readback blob 49ea05f868723d8b2e6bb2839f584c8ba67af6d5.
+- TRAINING_MATRIX.md append HV-EXP-125/126 commit 77a4d0f57cca1d2a3309c818673e3f2a033ef783, readback blob 524360a23cd3988e41fb3c42ebf7111675a7d77c; original 220892-byte prefix preserved against prior revision.
+- icarus/memory/learned.md index commit 1749f298e8aa80e863069d561ec7304e2ceed90f, readback blob b0a898f63ce30dd0a941677d48ca82fad8c159b7; prior handoff and Claude learning preserved.
+[BOUNDARIES]
+No DeepSeek Harness profile, Icarus runtime/identity, Claude commerce, billing, workflow, credentials, publishing or immutable rules changed. EUR 0 incremental external spend; token allowance unmeasured. Private original Codex transcripts and native device/network logs were not independently read; repository storage does not prove Icarus memory ingestion.
+[OUTSTANDING]
+Separate post-task compliance challenge and independent governance adjudication. No owner action required for this documentation work.
