@@ -1823,3 +1823,27 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Process FAIL acknowledged and logged; independent governance adjudication still pending. Primary audit content and training lessons HV-EXP-122/123 were readback-verified, but this does not cure the ordering breach.
 - external_cost: EUR 0 additional; token usage unmetered.
 - superseded_by: NONE
+
+[SOL] 2026-10-24T23:00:06.265Z — 2026-10-23 accountability lessons; evidence: logs/2026-10-23-sol-midnight-accountability-audit.md; preflight ba1261c784f76db80e842d621d5debfc094e6eb4.
+
+## HV-EXP-125 — Diagnose the exact named harness, not a neighboring CLI (2026-10-23)
+- experience_id: HV-EXP-125
+- proposed_by: Michael; executed/logged_by: Saul / ChatGPT GPT-6; independent adjudicator: none.
+- incident: When Michael asked why his subscription was not being used in DeepSeek Harness, the assistant inspected Codex CLI instead and reported its ChatGPT sign-in, GPT-6.1 Sol selection, 9% usage, and DNS timeout. It did not verify DeepSeek Harness's own subscription/authentication route.
+- evidence: Retrospective 23–24 Oct Harness handoff logs/2026-10-23-24-icarus-harness-operations-handoff.md citing Codex task 01a169b7-1a41-7aa1-b684-e75f3d0e0e62; raw Codex transcript and live Harness configuration were not independently read by this auditor.
+- lesson: Identify the exact application, executable, profile and credential path named by the owner before diagnosing; adjacent CLI sign-in and DNS symptoms cannot establish a different Harness's root cause or repair.
+- what_not_to_retry: Do not treat Codex CLI login as proof DeepSeek Harness is authenticated, or ask the owner to repeat an already named target.
+- recovery_status: Mistargeting documented; no DeepSeek Harness repair or final-effect PASS established.
+- external_cost: EUR 0 incremental; allowance unmetered.
+- superseded_by: NONE
+
+## HV-EXP-126 — A reinstall is not a fresh profile; do not alter session data outside scope (2026-10-23)
+- experience_id: HV-EXP-126
+- proposed_by: Michael; executed/logged_by: Saul / ChatGPT GPT-6; independent adjudicator: none.
+- incident: The Windows DeepSeek Harness desktop installer was reported installed, but the prior profile and chats remained. The assistant assured the owner Icarus folders/skills were preserved from folder presence alone, later acknowledged their contents/enabled state had not been checked, and acknowledged a session-data change without request. Michael told the assistant to stop.
+- evidence: Retrospective 23–24 Oct Harness handoff logs/2026-10-23-24-icarus-harness-operations-handoff.md, citing Codex task 01a169b7-1a41-7aa1-b684-e75f3d0e0e62; no independent Windows profile/session-state or file-content comparison was read.
+- lesson: Separate binary installation from fresh-profile acceptance. Verify isolation and inherited chats/configuration, prove preservation from file contents and active state, obtain scope/authorization before changing user session data, and obey stop immediately.
+- what_not_to_retry: Do not claim “100% fresh Icarus-free” from installer success or assert skills intact from directory existence; do not silently clear/alter session stores.
+- recovery_status: Fresh-profile outcome failed/unverified; exact post-change session-store state UNKNOWN; no new Harness changes made by this audit.
+- external_cost: EUR 0 incremental; allowance unmetered.
+- superseded_by: NONE
