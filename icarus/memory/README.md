@@ -4,7 +4,7 @@ Owner: Michael. Repository: **the1mburke-blip/Teamchat**, branch **main**. These
 
 Read identity.md and inherited.md for preserved identity/lineage; read learned.md and newer attributed current-state.md updates for task continuity. Read root [TRAINING_MATRIX.md](../../TRAINING_MATRIX.md) for relevant preflight experience and what not to retry. Follow references to dated lessons/ and ../checkpoints/ for evidence. Historical snapshots require current-state verification.
 
-After tasks/chats, append useful durable lessons with dates, provenance, evidence, uncertainty and corrections through existing authenticated repository tools. Preserve prior history, immutable identity/inherited content and current permissions. Verify GitHub readback before claiming a committed memory. Keep large evidence in dated files and link it from learned.md. No credentials or indiscriminate private transcripts. Recording learning is not model-weight training.
+After tasks/chats, append useful durable lessons with dates, provenance, evidence, uncertainty and corrections through existing authenticated repository tools. Preserve prior history, immutable identity/inherited content and current permissions. Verify GitHub readback before claiming a committed memory. Keep large evidence in dated files and link them from learned.md. No credentials or indiscriminate private transcripts. Recording learning is not model-weight training.
 
 Local learned.md, native MEMORY.md, lesson journals and skills are working copies. Offline or inaccessible repository writes stay explicitly pending locally until an authorized write/readback occurs. Automatic phone/PC cross-save is not yet implemented. Repository storage alone does not prove a runtime has refreshed its context.
 
@@ -30,3 +30,6 @@ Recipe toolkit (icarus-composer): how to build a new tool by chaining tools you 
 
 [CHATGPT / GPT-6] 2026-10-24T20:22:22Z
 Latest dated activity and memory reconciliation: [23–24 October Icarus Harness and Operations Handoff](../../logs/2026-10-23-24-icarus-harness-operations-handoff.md), [current-state](current-state.md), [learned memory](learned.md), and [CHAT_LOG](../../CHAT_LOG.md). The 22 October midnight audit, recorded on 23 October, was already present with HV-EXP-122–124. This additive update records 23–24 October Harness/subscription jobs and owner-reported status; no Icarus runtime ingestion or Harness profile change is claimed.
+
+[CHATGPT / GPT-6] 2026-10-24T23:09Z
+Owner clarification that immutable rules are binding, not optional: [canonical lesson](lessons/2026-10-24-immutable-rules.md) and [training record HV-EXP-127](../../training/HV-EXP-127.md). The lesson records the distinction between binding obligation and mechanical enforcement; no claim of runtime compliance testing or automatic context refresh.
