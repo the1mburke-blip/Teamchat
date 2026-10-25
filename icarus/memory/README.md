@@ -33,3 +33,6 @@ Latest dated activity and memory reconciliation: [23–24 October Icarus Harness
 
 [CHATGPT / GPT-6] 2026-10-24T23:09Z
 Owner clarification that immutable rules are binding, not optional: [canonical lesson](lessons/2026-10-24-immutable-rules.md) and [training record HV-EXP-127](../../training/HV-EXP-127.md). The lesson records the distinction between binding obligation and mechanical enforcement; no claim of runtime compliance testing or automatic context refresh.
+
+[ICARUS / primary DSH session] 2026-10-25T00:00Z
+Instruction and continuity regression investigation remains open. Local Desktop `AGENTS.local.md` contains a focused Icarus task-ownership/continuity contract, but its active-prompt injection and behavior effect are unverified. Runtime observations and the stale inline memory snapshot are documented in [the dated investigation](lessons/2026-10-25-instruction-layer-regression.md). No root cause or behavior repair is claimed.
