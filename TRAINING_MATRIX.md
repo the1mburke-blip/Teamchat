@@ -1847,3 +1847,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Fresh-profile outcome failed/unverified; exact post-change session-store state UNKNOWN; no new Harness changes made by this audit.
 - external_cost: EUR 0 incremental; allowance unmetered.
 - superseded_by: NONE
+
+[SOL] 2026-10-26T00:06:17.468Z — 2026-10-25 retrospective; source: logs/2026-10-25-sol-midnight-accountability-audit.md (commit 02e9b9ce809aa0bc4ffe4dd8165dd9bfc40f4700).
+
+## HV-EXP-128 — Do not convert overlapping failure classifications into a failure rate (2026-10-25)
+- experience_id: HV-EXP-128
+- proposed_by: Michael, standing accountability and weekly rule-breaking review; executed/logged_by: Saul / ChatGPT GPT-6; independent_adjudicator: none.
+- incident: The assistant's 25 Oct weekly retrospective for 18–24 Oct reported 11 documented failure episodes, 9 reportedly needing owner intervention, and overlapping classifications (1 missed preflight, 4 wrong routes, 3 blocker handling, 3 breadcrumbing, 4 repeated instructions, 5 unsupported PASS/completion claims). The sum of classification counts exceeds the number of episodes because episodes can carry several classifications. The accessible evidence does not supply the complete task population or a comparable previous-week denominator.
+- evidence: Accessible 2026-10-25T19:35:29Z weekly-audit assistant response summary; dated audit logs/2026-10-25-sol-midnight-accountability-audit.md A25-03; historical Teamchat incidents HV-EXP-124–126 and issues #147–149. The original complete chat corpus and independent per-episode adjudication were NOT available to this recorder.
+- correction: State documented episode count and overlapping labels separately; never add labels as unique failures or claim a statistically measured failure rate/trend without defined population, observation window, coverage and denominator.
+- lesson: An evidence-scoped retrospective is useful as a failure register but not a measured reliability rate. Distinguish observed episodes, classification totals, owner-intervention counts, and verified operational outcomes.
+- what_not_to_retry: Do not present 11 as all failures that occurred, 9 as independently proven owner interventions, or the category sum as unique incidents. Do not backdate the 18–24 Oct episodes as 25 Oct failures.
+- recovery_status: Methodological limitation logged; no independent full-population rate or governance PASS established.
+- external_cost: EUR 0 incremental; model/connector allowance unmetered.
+- superseded_by: NONE
