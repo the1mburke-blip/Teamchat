@@ -4,7 +4,7 @@ OWNER: Michael
 PREPARED_BY: Saul (ChatGPT)
 CREATED_UTC: 2026-10-26
 STATUS: OPERATING BUDGET RECORDED; ACCOUNT BILLING CAP NOT CONFIGURED
-TARGET_MONTH: November 2026; reuse the policy each following calendar month
+TARGET_MONTH: November 2026 (30 days; exact daily ledger below); recompute for following months
 MONETARY_LIMIT: EUR 0 external spend; no paid runner minutes, subscriptions, trials, or overage authorisations
 
 ## Verified entitlement and October baseline
@@ -19,42 +19,60 @@ MONETARY_LIMIT: EUR 0 external spend; no paid runner minutes, subscriptions, tri
 - October consumption is 175.2% of the 2,000-minute Free entitlement (1,504 above it). Recorded GitHub Actions Linux runner gross amount $21.024, discount amount $21.024, net amount $0. The billing report does **not** establish the reason for the discounts. No overage spend is authorised.
 - GitHub Actions run #40370746118 on 2026-10-26 failed before executing any steps; the October account minute overrun is a plausible explanation, but no runner-level GitHub billing rejection message was retrieved. Do not call that root cause definitively proven.
 
-## Monthly budget (2,000 minutes total)
+## November 2026 — daily GitHub Actions budget
 
-| Workstream/account-wide category | Monthly cap (Linux standard-runner minutes) | Guideline |
-|---|---:|---|
-| Teamchat operation, Prime/Notebook snapshot and HumanVibe operational relay | **1,000** | ~33 min/day; protect core business continuity first |
-| ICARUS Android builds and necessary acceptance tests | **500** | Schedule approved batches; don't run speculative rebuild loops |
-| Other experiments, diagnostics and bounded canaries | **200** | One evidence-backed attempt per defined hypothesis |
-| Protected emergency/recovery reserve | **300** | Hold back until there is an actual priority failure |
-| **TOTAL** | **2,000** | **€0 paid overage** |
+**True budget: 2,000 GitHub-billed runner minutes / 30 days = 66 minutes 40 seconds per day (66.67 min/day).** This is the new month's allowance, not an allocation based on the number of minutes used by different repositories in October.
 
-The normal planned spend of minutes is **1,700**, with **300** protected for recovery; this is a minutes allocation, **not** money. Reassigning minutes between workstreams is allowed only when the account's 2,000-minute ceiling and protected reserve are preserved, and actual usage is reread.
+**Daily ledger implementation:** GitHub measures billed minutes as whole-minute units per job, so allocate **67 minutes/day on Nov 1–20** and **66 minutes/day on Nov 21–30**. That totals exactly **2,000 minutes** by Nov 30. The 67/66 split is a planning convention to represent the monthly average, not a GitHub daily reset. Unused daily allocation remains available later within November; excess daily usage reduces remaining later-day capacity. The **entire account and all repositories share** this limit.
 
-### November operational pacing
+| Day (UTC) | Planned daily minutes | Cumulative month-to-date maximum |
+|---|---:|---:|
+| 2026-11-01 | 67 | 67 |
+| 2026-11-02 | 67 | 134 |
+| 2026-11-03 | 67 | 201 |
+| 2026-11-04 | 67 | 268 |
+| 2026-11-05 | 67 | 335 |
+| 2026-11-06 | 67 | 402 |
+| 2026-11-07 | 67 | 469 |
+| 2026-11-08 | 67 | 536 |
+| 2026-11-09 | 67 | 603 |
+| 2026-11-10 | 67 | 670 |
+| 2026-11-11 | 67 | 737 |
+| 2026-11-12 | 67 | 804 |
+| 2026-11-13 | 67 | 871 |
+| 2026-11-14 | 67 | 938 |
+| 2026-11-15 | 67 | 1,005 |
+| 2026-11-16 | 67 | 1,072 |
+| 2026-11-17 | 67 | 1,139 |
+| 2026-11-18 | 67 | 1,206 |
+| 2026-11-19 | 67 | 1,273 |
+| 2026-11-20 | 67 | 1,340 |
+| 2026-11-21 | 66 | 1,406 |
+| 2026-11-22 | 66 | 1,472 |
+| 2026-11-23 | 66 | 1,538 |
+| 2026-11-24 | 66 | 1,604 |
+| 2026-11-25 | 66 | 1,670 |
+| 2026-11-26 | 66 | 1,736 |
+| 2026-11-27 | 66 | 1,802 |
+| 2026-11-28 | 66 | 1,868 |
+| 2026-11-29 | 66 | 1,934 |
+| 2026-11-30 | 66 | 2,000 |
 
-For November's 30 days, keep **planned/nonemergency** usage at or below these cumulative checkpoints:
+**Usage control:** `remaining_minutes = 2,000 - actual_billed_actions_minutes_in_November`. Compare actual consumption to the current date's cumulative allowance before approving further optional jobs. Use the **billing API** for actuals; usage reporting may be delayed. If a build exhausts its daily envelope, defer other optional work until the running monthly allocation catches up. Prioritise business-critical Prime/Notebook and storefront operations, then essential repair/build activity, then experiments.
 
-| End of period (UTC) | Cumulative normal-use maximum |
-|---|---:|
-| 7 Nov | 400 min |
-| 14 Nov | 800 min |
-| 21 Nov | 1,200 min |
-| 28 Nov | 1,600 min |
-| 30 Nov | 1,700 min |
-
-Daily normal-use average: **56.7 min/day**. The 300-minute reserve is not another budget on top of 2,000; it is inside the total.
+**October 2026 repository usage is historical analysis, not the November budget.** No repository is automatically entitled to repeat its October consumption.
 
 ### Guardrails and decisions
 
-1. **Before each nontrivial workflow run**: check cumulative account-wide GitHub Actions consumption and estimate the new job minutes (each partial job minute rounds up; concurrent jobs count separately). Reuse current data rather than repeatedly dispatching failed runs.
-2. **At 1,000 minutes (50%)**: review pace and the top consuming repositories.
-3. **At 1,400 minutes (70%)**: cut optional tests and speculative builds; prioritise existing production and the Notebook sync.
-4. **At 1,700 minutes (85%)**: freeze new nonessential GitHub-hosted Actions runs; retain 300 emergency minutes. Owner must explicitly authorise reserve use.
-5. **At 2,000 minutes**: stop requesting further private-repository hosted-runner work until reset. Do not add payment details, enable overages, or purchase extra minutes.
-6. **At each monthly reset**: verify the live billing meter and a real successful workflow run before declaring Actions recovered. If reset does not restore execution, investigate a separate blocker.
-7. Protect production: this budget is a planning document. It **does not** disable, pause, reschedule, or rewrite any existing workflow, and it does not constitute a native GitHub billing spending cap.
-8. Keep all existing repositories private. Do not move code to public repositories simply to avoid minute charges.
+1. **Before each nontrivial workflow run**: check cumulative account-wide GitHub Actions consumption and estimate how many billed minutes the job will consume. Linux-hosted runner billing may differ from elapsed end-to-end workflow time; every started billed job minute counts.
+2. **At 1,000 minutes (50%)**: review pace and the highest consuming repositories.
+3. **At 1,400 minutes (70%)**: remove speculative retries, redundant builds, and nonessential tests.
+4. **At 1,800 minutes (90%)**: reserve remaining capacity for essential work only; do not create additional experimental runs.
+5. **At 2,000 minutes (100%)**: no more private-repository GitHub-hosted Actions runs until the monthly reset; no paid overages without new explicit owner authorization.
+6. **At each calendar-month reset**: verify the live meter and a genuinely successful workflow run before claiming execution is recovered. Separate account/billing/platform failures require investigation.
+7. **Protect production**: this is a planning ledger, not a native hard spending cap; no existing workflow, schedule, code, billing setting, or runner configuration is modified by the document.
+8. Do not move private source to a public repository simply to bypass GitHub Actions allowance.
+9. **Daily cap is operational, not platform-enforced**: GitHub provides one monthly allowance, not 2,000 divided into 30 provider-enforced daily buckets. The team must budget against the monthly balance.
 
 ### How to audit
 
@@ -70,6 +88,13 @@ References:
 - Official allowance and reset: https://docs.github.com/en/billing/concepts/product-billing/github-actions
 - Native included-usage alerts / budget controls: https://docs.github.com/en/billing/concepts/budgets-and-alerts
 - October run: https://github.com/the1mburke-blip/Teamchat/actions/runs/40370746118
+
+## Revision — 2026-10-26
+
+- CORRECTION_REQUESTED_BY: Michael — the first allocation by workstream used October consumption patterns; he specifically requires `2,000 / days in November` as the budget basis.
+- CORRECTION_EXECUTOR: Saul (ChatGPT)
+- NOVEMBER_BUDGET: 2,000 minutes / 30 days = 66 minutes 40 seconds/day (daily ledger 20×67 + 10×66 = 2,000)
+- ACCOUNT_BILLING_CAP_CHANGED: NO
 
 ## Execution record
 
