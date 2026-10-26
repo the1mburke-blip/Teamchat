@@ -4082,3 +4082,23 @@ Five evidence-classified 23 Oct findings: (A23-01) DeepSeek Harness subscription
 No DeepSeek Harness profile, Icarus runtime/identity, Claude commerce, billing, workflow, credentials, publishing or immutable rules changed. EUR 0 incremental external spend; token allowance unmeasured. Private original Codex transcripts and native device/network logs were not independently read; repository storage does not prove Icarus memory ingestion.
 [OUTSTANDING]
 Separate post-task compliance challenge and independent governance adjudication. No owner action required for this documentation work.
+
+[SOL] 2026-10-26T00:06:43.470Z
+[TYPE] MIDNIGHT-ACCOUNTABILITY-2026-10-25
+[REVIEW_PERIOD] 2026-10-25 Europe/Dublin (25-hour DST-transition day)
+[PROPOSED_BY] Michael — standing midnight accountability review
+[EXECUTED_BY] Saul / ChatGPT GPT-6 (current assistant; no separate delegation)
+[STATUS] DOCUMENTATION READBACK VERIFIED; INDEPENDENT GOVERNANCE ADJUDICATION NOT PERFORMED
+[ACTIVE_OWNER] NONE — retrospective only; no claim on Icarus issue #150 or Claude commerce
+[BODY]
+Four evidence-classified findings: (A25-01) Icarus instruction-layer regression issue #150 open; branch investigation corrected 'no loader identified' to 'loader declared but live Inspect inactive', with no fresh-session fix verified; (A25-02) morning Team Board PARTIAL and monitoring-only, no production repair; (A25-03) weekly FAIL audit reported 11 documented episodes and 9 reportedly requiring owner intervention for 18–24 Oct, with overlapping categories, not a measured failure rate; (A25-04) HV-EXP-127 indexed after midnight local but describes a prior-day owner clarification. One new lesson HV-EXP-128 about denominators/evidence classes. No retrospective incident was misdated as a new 25 Oct failure.
+[EVIDENCE]
+- Preflight logs/2026-10-25-sol-midnight-accountability-preflight.md commit c47abd730c4bd772fbcb95c87afef3b8e3983c74, readback blob 50b9a0de8356ef2340fc7011030be15131944da9.
+- Audit logs/2026-10-25-sol-midnight-accountability-audit.md commit 02e9b9ce809aa0bc4ffe4dd8165dd9bfc40f4700, readback blob 066371093ac28fc11b8d1bd3c1d1693b168d4921.
+- Training HV-EXP-128 commit 05e83c771e62c9356baebee4ba4b26393526e2fc, readback at commit and current default branch blob 5dbe9a3542e3552eac42aeebd816aa6cb85a6b51; initial immediate default-branch read returned prior blob, subsequent read confirmed commit. No blind retry.
+- Learned memory index commit af8395a69365f5246eaad4082c18889644476a18, readback blob bb5cab7fca797d599b1489b740a0817f0fd10984.
+- Teamchat issue #150 and Icarus branch 2026-10-25 lesson; accessible morning and weekly assistant conversation summaries.
+[BOUNDARIES]
+No active Icarus branch/runtime/DSH profile, Claude work, credentials, billing, workflows, production publishing or immutable rules modified. Repository storage does not prove live memory uptake or task resolution. EUR 0 incremental external spend; model/connector allowance unmetered.
+[OUTSTANDING]
+Separate post-task compliance tracker and independent governance review; original full transcripts and native workflow/device traces unavailable. No owner courier action required.
