@@ -1861,3 +1861,17 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Methodological limitation logged; no independent full-population rate or governance PASS established.
 - external_cost: EUR 0 incremental; model/connector allowance unmetered.
 - superseded_by: NONE
+
+
+[SOL] 2026-10-28T00:01:32.480Z — 2026-10-27 midnight retrospective; evidence: logs/2026-10-27-sol-midnight-accountability-audit.md (A27-01).
+
+## HV-EXP-129 — Scope a monitoring PASS to the review, never to unresolved operational endpoints (2026-10-27)
+- experience_id: HV-EXP-129
+- proposed_by: Michael, standing accountability review; executed/logged_by: Saul / ChatGPT GPT-6; independent_adjudicator: none.
+- incident: The accessible 27 Oct morning Team Board assistant summary used PASS for completion of a read-only review while still reporting unresolved Grace delegation, Icarus governance, Athena admission, and integration/publishing issues. An unqualified PASS risks being interpreted as operational health or completed repair.
+- evidence: Accessible assistant conversation summary at approximately 2026-10-27T08:56 UTC (not the full native transcript); authenticated Teamchat issue #64 (open Grace '[object Object]' defect), #150 (Icarus), #149 (Athena), #148 (AFFiNE) and #94 (historic publishing). Native workflow, worker receipts, Buffer, DSH and private Claude logs were NOT independently read. Do not infer that the assistant asserted a specific repaired physical endpoint.
+- lesson: Always name the endpoint of each status: 'review performed/readback verified' is not 'board operational PASS'. Present unresolved downstream work as PARTIAL/BLOCKED/UNVERIFIED and never upgrade its status because monitoring completed.
+- what_not_to_retry: Do not issue an unqualified board PASS after a read-only inspection or treat a Team Room delegation comment as a worker acceptance. The recurring Grace serialization defect is already covered by issue #64; do not create a duplicate defect lesson or mutate that workflow during a retrospective.
+- recovery_status: Corrected evidence classification documented; operational defects remain open. No workflow or runtime repair claimed; independent governance adjudication absent.
+- external_cost: EUR 0 incremental; GPT-6/connector allowance unmetered.
+- superseded_by: NONE
