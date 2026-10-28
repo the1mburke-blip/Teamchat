@@ -7,8 +7,8 @@ name: Icarus Runtime v0
 on:
   issue_comment:
     types: [created]
-  schedule:
-    - cron: '0 * * * *'   # every hour on the hour (GitHub may start it a few minutes late)
+  # Hourly schedule removed 2026-10-28: Actions minutes are exhausted; the hourly check runs on
+  # Google Apps Script instead (icarus/athena-gas/Athena.gs, trigger athenaHourly).
   workflow_dispatch:
 
 permissions:
