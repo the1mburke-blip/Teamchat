@@ -1,8 +1,7 @@
 name: Teamchat Ghost Persistence Loop
 
 on:
-  schedule:
-    - cron: '17 * * * *'
+  # Schedule removed 2026-10-28 (owner): GitHub Actions minutes are exhausted. Disabled, not deleted.
   workflow_dispatch:
     inputs:
       issue_number:
