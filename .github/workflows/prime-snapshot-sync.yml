@@ -3,8 +3,7 @@ name: Prime Snapshot Sync
 on:
   issues:
     types: [opened, edited, closed, reopened, assigned, unassigned, labeled, unlabeled]
-  issue_comment:
-    types: [created, edited, deleted]
+  # issue_comment trigger removed 2026-10-28 (owner): every comment, including Icarus's replies, started a run. Disabled, not deleted.
   push:
     branches: [main]
     paths:

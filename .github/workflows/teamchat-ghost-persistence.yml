@@ -8,8 +8,7 @@ on:
         description: 'Optional ghost task issue number to force once'
         required: false
         type: string
-  issue_comment:
-    types: [created]
+  # issue_comment trigger removed 2026-10-28 (owner): every comment, including Icarus's replies, started a run. Disabled, not deleted.
 
 permissions:
   contents: read
