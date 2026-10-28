@@ -1,9 +1,9 @@
 name: ICARUS Athena Cloud Execution
 
 on:
+  # Schedule removed 2026-10-28: the restored Recall v3 runtime (icarus-runtime.yml) is the cloud Icarus again.
+  # Athena's GOAL.md loop stays available for manual runs only.
   workflow_dispatch:
-  schedule:
-    - cron: '*/10 * * * *'
 
 concurrency:
   group: icarus-main

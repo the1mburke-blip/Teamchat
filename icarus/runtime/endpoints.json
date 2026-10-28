@@ -1,0 +1,27 @@
+{
+  "_note": "Everywhere Icarus goes, the repo runtime points there. Each hourly run reads this file first. Add an endpoint here when Icarus is given a new place to run. status values: verified (physically tested), unverified (wired, not tested), not-linked.",
+  "endpoints": [
+    {
+      "name": "repo-runtime",
+      "where": "GitHub Actions, the1mburke-blip/Teamchat",
+      "reach": "icarus-runtime.yml: hourly cron, workflow_dispatch, or an owner comment ICARUS_RUN on any issue",
+      "status": "verified",
+      "evidence": "runs 38610589608 (comment) and 38612221851 (dispatch), both VERDICT PASS, 2026-10-14"
+    },
+    {
+      "name": "phone-app",
+      "where": "Android APK built in the1mburke-blip/icarus-android-build (Hermes plane, Icarus pilot)",
+      "reach": "app reads/lists icarus/ via repo token; action=run posts ICARUS_RUN on Teamchat issue #49 and returns the receipt",
+      "status": "unverified",
+      "evidence": "run action committed 2026-10-14, APK build pending, not yet tested on the phone"
+    },
+    {
+      "name": "laptop-harness",
+      "where": "Windows desktop-at0s5vo: ~/Icarus-Harness (AGENTS.md, icarus/memory), ~/.dsh (DeepSeek harness, plugin icarus-tether-patch)",
+      "reach": "Harness (~/.dsh, workspace ~/Icarus-Harness) uses the skill icarus-runtime-link and its existing icarus_teamchat GitHub connection: checks in by writing icarus/endpoints/laptop-harness.md and sends ICARUS_RUN comments on issue #49",
+      "status": "unverified",
+      "evidence": "skill and AGENTS.md line written to the laptop 2026-10-14 and read back; no check-in file in the repo yet"
+    }
+  ],
+  "checkin": "Endpoints report in by writing icarus/endpoints/<name>.md (one line: UTC time, version, what ran). The hourly run flags any endpoint with no check-in in the last 24 hours."
+}

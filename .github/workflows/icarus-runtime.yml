@@ -1,0 +1,77 @@
+name: Icarus Runtime v0
+
+# Wake Icarus off the laptop: the repo OWNER comments `ICARUS_RUN <task>` on any issue (not a PR).
+# Optional lines in the comment: `MODEL: <gemini model id>`, `VERIFY_FILE: <repo path>`, `VERIFY_URL: <https url>`.
+# Cost: EUR 0 (free Actions minutes + Gemini free tier). Bot replies do not match, so no loop.
+
+on:
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '0 * * * *'   # every hour on the hour (GitHub may start it a few minutes late)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: icarus-runtime
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request == null &&
+      github.event.comment.author_association == 'OWNER' &&
+      startsWith(github.event.comment.body, 'ICARUS_RUN'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Teamchat (memory is read from main)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Icarus
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || secrets.CLAUDE }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          COMMENT_ACTOR: ${{ github.event.comment.user.login }}
+        run: |
+          if [ -z "$COMMENT_BODY" ]; then
+            export COMMENT_BODY=$'ICARUS_RUN Hourly repo check (first duty of every hour): read icarus/runtime/endpoints.json and icarus/endpoints/ and report the status of each endpoint and any with no check-in in 24 hours; then list icarus/memory, icarus/proposals and icarus/runs, read icarus/memory/current-state.md, and report what is new since the last receipt and anything that needs the owner.\nVERIFY_FILE: icarus/memory/identity.md\nVERIFY_FILE: icarus/runtime/endpoints.json'
+            export COMMENT_ID="hourly-${{ github.run_id }}"
+            export COMMENT_ACTOR="schedule"
+          fi
+          python3 icarus/runtime/icarus_run.py
+
+      - name: Save receipt (append-only new file)
+        if: always()
+        run: |
+          git config user.name "icarus-runtime"
+          git config user.email "icarus-runtime@users.noreply.github.com"
+          mkdir -p icarus/proposals
+          git add icarus/runs icarus/proposals
+          git diff --cached --quiet || git commit -m "chore(icarus): run receipt ${{ github.event.comment.id || github.run_id }}"
+          git pull --rebase --quiet origin main || true
+          git push origin HEAD:main || echo "receipt push failed"
+
+      - name: Reply with receipt
+        if: always() && github.event_name == 'issue_comment'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            let body = 'ICARUS RUNTIME: no receipt produced (runner failed before output).';
+            try { body = fs.readFileSync('/tmp/icarus-reply.md', 'utf8'); } catch (e) {}
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, body
+            });
