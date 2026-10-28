@@ -1875,3 +1875,33 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - recovery_status: Corrected evidence classification documented; operational defects remain open. No workflow or runtime repair claimed; independent governance adjudication absent.
 - external_cost: EUR 0 incremental; GPT-6/connector allowance unmetered.
 - superseded_by: NONE
+
+[SOL] 2026-10-28T23:59:28.959Z — 28 Oct accountability: one prior-day reconciliation and two dated lessons; audit logs/2026-10-28-sol-midnight-accountability-audit.md.
+
+## HV-EXP-130 — Budget preflight must include retrieval calls and enforce variance stop (incident 2026-10-27; reconciled 2026-10-28)
+- experience_id: HV-EXP-130
+- proposed_by: Michael, standing accountability review; executed/logged_by: Saul / ChatGPT GPT-6; independent adjudicator: none.
+- incident_date: 2026-10-27 audit run 2026-10-28T00:00Z.
+- incident: Saul estimated 15–30 total authenticated GitHub calls after already consuming approximately 25 prerequisite retrieval calls, then used 44 before the primary readbacks without stopping to re-preflight.
+- evidence: logs/2026-10-27-sol-midnight-accountability-preflight.md; logs/2026-10-27-sol-midnight-accountability-compliance.md (self-critique with explicit 44-call count). This is a retrospective reconciliation, not a new 28 Oct breach.
+- lesson: Include preflight retrieval requests already consumed in the allowance baseline, estimate remaining calls and stop/re-preflight before exceeding the binding envelope. A successful repository readback cannot cure an allowance-contract breach.
+- what_not_to_retry: Do not exclude read-only retrieval from request budgets; do not retroactively validate an exceeded preflight.
+- recovery_status: Lesson durably recorded; independent governance adjudication pending. External spend EUR 0 claimed in source; token usage unmetered.
+
+## HV-EXP-131 — Multi-step runtime PASS cannot be based solely on file-existence gates (2026-10-28)
+- experience_id: HV-EXP-131
+- proposed_by: Michael via issue #120 and standing audit; recorded_by: Saul / ChatGPT GPT-6; responsible runtime: ICARUS/Athena GAS, not Saul; independent adjudicator: none.
+- incident: Owner comment #6481558241 required confirming files AND updating issue #120 to HANDOFF_READY. Runtime receipt icarus/runs/20261028T222208Z-6481558241.md labelled PASS with three VERIFY_FILE gates, yet reported zero writes and stated issue update required owner approval despite OWNER_APPROVED in the task. Issue #120 remained open at audit readback; no HANDOFF_READY result independently established.
+- evidence: Teamchat issue #120 and comments #6481558241/#6482176175; icarus/runs/20261028T222208Z-6481558241.md. These establish a mismatch in the receipt, not a full runtime diagnosis.
+- lesson: Acceptance gates must cover each owner-requested action and final state. Existing inputs and HTTP 200 model calls cannot certify omitted status mutations; owner approval in the same task must not be overlooked.
+- what_not_to_retry: Do not label a multi-step task PASS when a required issue update is absent, or treat a model's own VERDICT as independent adjudication.
+- recovery_status: Evidence mismatch logged only; ICARUS/Claude active implementation untouched, correction and independent governance pending.
+
+## HV-EXP-132 — Remote paid-work recommendations require every hard constraint verified before shortlist (2026-10-28)
+- experience_id: HV-EXP-132
+- proposed_by: Michael; executed_by: Saul / ChatGPT GPT-6 in 28 Oct conversation; recorded_by: Saul; independent adjudicator: none.
+- incident: Assistant acknowledged recommending Welo Data Audio Rater at a reported $27.30/hour without confirming the vacancy was open; application was closed and 14-day-after-invoice-plus-processing payment did not meet owner's prompt-payout constraint. Further proposed options had closed applications or unverified Ireland-specific PayPal payout, realistic effective earnings, download requirements or job availability. Final assistant answer acknowledged no full match verified and no application submitted.
+- evidence: Dated 2026-10-28 conversation retrieval, including assistant admissions at ~18:31 UTC, corrections at ~18:39 UTC, and final NOT COMPLETED report at ~18:51 UTC. Original employer pages were not re-fetched during this retrospective.
+- lesson: Before recommending an actual accessible paid-work route, independently verify an open application, Ireland eligibility, computer-only/no app or Apple requirement, genuine work not surveys/games, attainable ~$15–20/effective hour, low barrier, PayPal payout specifically for Ireland, payout cadence and credible hiring/payment history. If any hard gate fails or is unknown, exclude from a full-match shortlist and identify the exact blocker.
+- what_not_to_retry: Do not equate platform signup, a PayPal rail, nominal hourly pay or a historically advertised vacancy with currently accessible paid work; do not present a failed shortlist as a solution.
+- recovery_status: False match withdrawn; final status NOT COMPLETED, no qualifying job or application independently verified. External spend EUR 0; token usage unmetered.
