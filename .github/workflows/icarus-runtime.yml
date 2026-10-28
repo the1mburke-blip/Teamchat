@@ -5,8 +5,8 @@ name: Icarus Runtime v0
 # Cost: EUR 0 (free Actions minutes + Gemini free tier). Bot replies do not match, so no loop.
 
 on:
-  issue_comment:
-    types: [created]
+  # ICARUS_RUN comment trigger removed 2026-10-28: Athena on Google Apps Script answers owner ICARUS_RUN
+  # comments (icarus/athena-gas/Athena.gs, trigger athenaPoll). Keeping both would answer every comment twice.
   # Hourly schedule removed 2026-10-28: Actions minutes are exhausted; the hourly check runs on
   # Google Apps Script instead (icarus/athena-gas/Athena.gs, trigger athenaHourly).
   workflow_dispatch:
