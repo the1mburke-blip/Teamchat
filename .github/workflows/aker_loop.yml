@@ -1,9 +1,9 @@
-name: ICARUS Athena Handoff Check
+name: (retired) Aker handoff check - manual only
 
 on:
+  # Retired 2026-10-28: daily schedule removed (it only wrote HANDOFF_READY and used Actions minutes).
+  # Icarus's cloud runtime now runs on Google Apps Script (icarus/athena-gas/). Files kept, not deleted.
   workflow_dispatch:
-  schedule:
-    - cron: '19 3 * * *'
 
 permissions:
   contents: read

@@ -1,4 +1,4 @@
-name: ICARUS Athena Cloud Execution
+name: (retired) GOAL.md kernel loop - manual only
 
 on:
   # Schedule removed 2026-10-28: the restored Recall v3 runtime (icarus-runtime.yml) is the cloud Icarus again.

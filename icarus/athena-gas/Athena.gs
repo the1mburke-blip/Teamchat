@@ -1,5 +1,7 @@
 /**
  * Athena: Icarus's cloud runtime on Google Apps Script (port of icarus/runtime/icarus_run.py, Recall v3).
+ * "Athena" is the internal (backroom) name only: everything users and agents see says Icarus.
+ * @Athena and [TO] [ATHENA] still work as aliases.
  *
  * Why Apps Script: GitHub Actions minutes are exhausted; Apps Script time triggers cost EUR 0.
  * Triggers (installed by installAthenaTriggers):
@@ -17,7 +19,7 @@
  * Apps Script limits: one execution may run 6 minutes, so cooldowns and budgets are smaller than on Actions.
  */
 
-var ATHENA_VERSION = 'athena-gas-2 (Recall v3 port + team overseer)';
+var ATHENA_VERSION = 'cloud-3 (Recall v3, team overseer)';  // shown as "Icarus runtime cloud-3"
 var GH_API = 'https://api.github.com';
 var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 var OR_BASE = 'https://openrouter.ai/api/v1';
@@ -535,7 +537,7 @@ function tWriteFile_(R, a) {
   if (Utilities.newBlob(content).getBytes().length > toInt_(R.cfg.maxWriteBytes, 100000)) return 'DENIED: content exceeds maxWriteBytes';
   var why = mutateGate_(R, p);
   if (why) return why;
-  var r = putFile_(R, p, content, 'chore(icarus): write_file ' + p + ' (athena run ' + R.cid + ')');
+  var r = putFile_(R, p, content, 'chore(icarus): write_file ' + p + ' (icarus cloud run ' + R.cid + ')');
   R.writes++;
   if (r.code !== 200 && r.code !== 201) return 'WRITE FAILED: HTTP ' + r.code + ' ' + redact_(R, r.text).slice(0, 200);
   var sha = '?'; try { sha = JSON.parse(r.text).commit.sha; } catch (e) { /* ? */ }
@@ -549,7 +551,7 @@ function tDeleteFile_(R, a) {
   if (g.code === 404) return 'NOT FOUND (nothing to delete)';
   var j; try { j = JSON.parse(g.text); } catch (e) { j = null; }
   if (g.code !== 200 || !j || j.type !== 'file') return 'DENIED: not a deletable file (HTTP ' + g.code + ')';
-  var r = gh_(R, 'DELETE', 'contents/' + encPath_(p), { message: 'chore(icarus): delete_file ' + p + ' (athena run ' + R.cid + ')', sha: j.sha, branch: R.branch });
+  var r = gh_(R, 'DELETE', 'contents/' + encPath_(p), { message: 'chore(icarus): delete_file ' + p + ' (icarus cloud run ' + R.cid + ')', sha: j.sha, branch: R.branch });
   R.writes++;
   delete R.cache[p];
   if (r.code !== 200) return 'DELETE FAILED: HTTP ' + r.code + ' ' + redact_(R, r.text).slice(0, 200);
@@ -642,7 +644,7 @@ function tDelegate_(R, a) {
   if (odup) return 'ALREADY DELEGATED: open task ' + odup + ' covers this (no new task created). Pick a different undelegated open item, or choose NOTHING_TO_DO and list the existing task numbers.';
   var src = R.issueN ? 'issue #' + R.issueN : 'a scheduled run';
   var body = ['[TIMESTAMP] ' + Utilities.formatDate(R.now, 'UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'"), '[FROM] [ICARUS]', '[TO] [' + to + ']', '[STATUS] REQUESTED', '[ACTIVE_OWNER] NONE',
-    '[OBJECTIVE] ' + obj, '[SCOPE] Delegated by ICARUS (Athena) from ' + src + ' (run ' + R.cid + '); execute only after canonical preflight',
+    '[OBJECTIVE] ' + obj, '[SCOPE] Delegated by ICARUS (cloud) from ' + src + ' (run ' + R.cid + '); execute only after canonical preflight',
     '[PROTECTED] Credentials, paid services, unrelated production systems', '[COST] €0', '[ALLOWANCE_BUDGET] Preflight required before execution',
     '[EVIDENCE_REQUIRED] ' + ev, '[PROPOSED_BY] ICARUS on owner ping from ' + src + ', comment ' + R.cid].join('\n');
   var title = '[T1] [REQUESTED] ' + obj.slice(0, 120);
@@ -709,7 +711,7 @@ var TOOLS = { read_file: tReadFile_, list_dir: tListDir_, read_issue: tReadIssue
   delete_file: tDeleteFile_, delegate: tDelegate_, comment_issue: tCommentIssue_, close_issue: tCloseIssue_, list_prs: tListPrs_, read_pr: tReadPr_ };
 
 function rulesText_(R) {
-  var base = 'RUNTIME RULES: You run headless on Google Apps Script (Athena). You cannot execute, send, publish or verify anything and you have no internet. Never claim you did. Never claim PASS; adjudication is done by the runtime. Answer concisely. ';
+  var base = 'RUNTIME RULES: You run headless in the cloud on Google Apps Script. You cannot execute, send, publish or verify anything and you have no internet. Never claim you did. Never claim PASS; adjudication is done by the runtime. Answer concisely. ';
   var doc = {
     read_file: 'read_file {path, offset?, length?} (paged: follow the offset hint to read more)', list_dir: 'list_dir {path, offset?} (path "" is the repo root)',
     read_issue: 'read_issue {number, offset?, comments?}', list_issues: 'list_issues {state?, page?}',
@@ -878,14 +880,14 @@ function runAthena_(ev) {
   var wb = 'none';
   if (R.cfg.writeBack && verdict === 'PASS' && les) {
     var pf = 'icarus/proposals/' + stamp + '-' + R.cid + '.md';
-    var pr = putFile_(R, pf, '# Proposed lesson (NOT canonical memory; owner promotes)\n- Source run: comment ' + R.cid + ' by ' + R.actor + ', model ' + used + ' (Athena)\n- Lesson: ' + les + '\n', 'chore(icarus): athena lesson proposal ' + R.cid);
+    var pr = putFile_(R, pf, '# Proposed lesson (NOT canonical memory; owner promotes)\n- Source run: comment ' + R.cid + ' by ' + R.actor + ', model ' + used + ' (Icarus cloud)\n- Lesson: ' + les + '\n', 'chore(icarus): cloud lesson proposal ' + R.cid);
     wb = (pr.code === 200 || pr.code === 201) ? pf : 'proposal write failed: HTTP ' + pr.code;
   }
   var usageTxt = Object.keys(R.usage).sort().map(function (m) { return m + ' ' + R.usage[m] + (R.rpd[m] ? '/' + R.rpd[m] : ''); }).join(', ') || 'none';
   var out = [
     '# Icarus run ' + Utilities.formatDate(R.now, 'UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'"),
     '- Proposed by: ' + who + ' (comment ' + R.cid + ')',
-    '- Trigger: ' + ({ run: 'ICARUS_RUN task', claim: 'completion claim (independent adjudication; claimant cannot self-PASS)', addressed: 'addressed to Icarus/Athena (read-only reply)', hourly: 'hourly check' }[kind] || kind),
+    '- Trigger: ' + ({ run: 'ICARUS_RUN task', claim: 'completion claim (independent adjudication; claimant cannot self-PASS)', addressed: 'addressed to Icarus (read-only reply)', hourly: 'hourly check' }[kind] || kind),
     '- Executed by: Icarus runtime ' + ATHENA_VERSION + ' on Google Apps Script; model: ' + used,
     '- Cost: EUR 0 (free-tier model, free Apps Script quota)',
     '- Memory read: icarus/memory/{identity,inherited,current-state,learned}.md (recent tails) + TRAINING_MATRIX.md tail (read-only); long-term recall by keyword over learned.md, TRAINING_MATRIX.md, lessons/',
@@ -909,7 +911,7 @@ function runAthena_(ev) {
   var text = redact_(R, out.join('\n'));
 
   var receiptPath = 'icarus/runs/' + stamp + '-' + R.cid + '.md';
-  var wr = putFile_(R, receiptPath, text + '\n', 'chore(icarus): athena run receipt ' + R.cid);
+  var wr = putFile_(R, receiptPath, text + '\n', 'chore(icarus): cloud run receipt ' + R.cid);
   var receiptNote = (wr.code === 200 || wr.code === 201) ? receiptPath : 'receipt write failed: HTTP ' + wr.code;
   if (R.issueN) gh_(R, 'POST', 'issues/' + R.issueN + '/comments', { body: text.slice(0, 60000) + '\n\n_Receipt: ' + receiptNote + '_' });
   console.log(text.slice(0, 2000));

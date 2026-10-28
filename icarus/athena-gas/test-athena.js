@@ -190,7 +190,8 @@ test('claims and addresses are read-only even with OWNER_APPROVED in them', () =
     gemini: (n) => n === 1 ? { answer: '', tool: { name: 'write_file', args: { path: 'notes/x.md', content: 'hi' } } } : { answer: 'ok', tool: null } });
   env.ctx.athenaPoll();
   assert(!('notes/x.md' in env.writes), 'write went through from a non-ICARUS_RUN trigger');
-  assert(/- Trigger: addressed to Icarus\/Athena/.test(receiptOf(env)));
+  assert(/- Trigger: addressed to Icarus \(read-only reply\)/.test(receiptOf(env)));
+  assert(!/Athena/.test(receiptOf(env)), 'internal name leaked into a receipt');
   assert(/write_file\(/.test(receiptOf(env)), 'tool attempt not logged');
 });
 
