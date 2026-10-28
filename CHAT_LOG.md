@@ -4122,3 +4122,21 @@ Five evidence-classified findings: (A27-01) morning read-only review PASS label 
 No Icarus runtime/identity/profile, Claude commerce, Actions/workflows, credentials, billing, Buffer or immutable rules changed. EUR 0 incremental external spend; token/connector allowance unmetered. Repository persistence does not prove ICARUS memory ingestion or independent governance PASS.
 [OUTSTANDING]
 Native Grace run and worker acceptance evidence, full 27 Oct chat coverage, independent governance adjudication; separate compliance tracker required.
+
+[SOL] 2026-10-28T23:59:40.726Z
+[TYPE] MIDNIGHT-ACCOUNTABILITY-2026-10-28
+[REVIEW_PERIOD] 2026-10-28 Europe/Dublin through approximately 23:57 UTC
+[PROPOSED_BY] Michael — standing midnight accountability review
+[EXECUTED_BY] Saul / ChatGPT GPT-6; no delegated auditor
+[STATUS] AUDIT AND TRAINING REPOSITORY READBACK VERIFIED; INDEPENDENT GOVERNANCE NOT ADJUDICATED
+[ACTIVE_OWNER] NONE — retrospective documentation only; no Icarus or Claude active task claimed
+[FINDINGS]
+A28-01 read-only morning board had unresolved Grace delegation and runtime/integration issues (summary-level evidence, no native worker receipt); A28-02 closed Welo paid-work vacancy initially recommended then withdrawn, final no full-match Ireland PayPal route verified; A28-03 DSH phone pairing handoff without device-level completion evidence; A28-04 issue #120 Athena receipt labelled PASS though required HANDOFF_READY status not executed, despite owner approval; A28-05 Claude's own harness/Apps Script recovery checkpoint present, no Saul implementation claim; A28-06 prior-day allowance preflight breach lesson HV-EXP-130 reconciled.
+[RECORDS]
+- logs/2026-10-28-sol-midnight-accountability-preflight.md commit 7f9c410153f778725d6a6bff409c7e38359bc3bd, fetched exact.
+- logs/2026-10-28-sol-midnight-accountability-audit.md commit ed81c6e38b96b5e0a2ccda42560224f18a182b43, fetched exact.
+- TRAINING_MATRIX.md HV-EXP-130 (27 Oct incident), HV-EXP-131 (28 Oct receipt mismatch), HV-EXP-132 (28 Oct paid-work gate), commit 8d4b57bc2120060c7f6148adf4024d57fbfc7d94; fetched with exact old prefix and new suffix.
+[BOUNDARIES]
+No active ICARUS learned-memory file edit during Claude's memory rollback/harness work; no Icarus runtime, Claude commerce, billing, workflows, credentials, Buffer, phone or paid services modified. Repository receipts do not prove runtime or device outcomes. External spend EUR 0; model tokens unmetered.
+[OUTSTANDING]
+Original full conversation/native run logs, independent governance review, physical pairing, issue #120 final task completion, verified Ireland PayPal paid-work route. Separate compliance tracker required.
