@@ -121,3 +121,10 @@ NEXT-HARNESS RULES FOR ICARUS:
 - **Owner-designated rule breach:** False or misleading completion reporting violates NO EVIDENCE = NO CLAIM and the rule prohibiting executor self-adjudication. Merely acknowledging an error in chat is not a substitute for durable logging. HV-EXP-102 documents the self-PASS; this entry separately documents the misleading status and delayed canonical accountability.
 - **Existing evidence:** Commit `ac7b109854b170e26b2ac8b0e469ba173e090a02` for the earlier knowledge entry; breach journal commit `832a228bfba4f95fb8268afe88a0da7504b84e88`; training commit `31d7d5536c21915dd8f333d385318cb18b9af1fe`. The earlier self-awarded status and owner objections remain unchanged in the conversation.
 - **Rule to retain:** State only observed effects, label adjudication pending, immediately record a new rule breach as a separate durable lesson, and do not issue a PASS verdict on one's own logging. **No independent ICARUS adjudication has been performed for this entry.**
+
+## 2026-10-28 — [CLAUDE] Harness recovery, v1 restore and Athena on Apps Script (checkpoint pointer)
+- Provenance: Claude (Claude Code desktop session), owner-directed, 2026-10-24 to 2026-10-28.
+- Lessons: (1) do not declare "fixed" before testing the owner's whole surface (every provider, every switch direction); (2) do the work instead of handing the owner step lists, and ask only for what is genuinely theirs; (3) when a mechanism fails twice, change route and prove the result (hash readback).
+- Findings: the 2026-10-18 "Runtime Fusion" success report was false; commit 75c33fc deleted Recall v3 on 2026-10-19. Recall v3 now runs on Google Apps Script as Athena (commit 111e8ba; first live receipt icarus/runs/20261028T222208Z-6481558241.md). Memory was rolled back to v1 at the owner's direction (commit 2b0074f).
+- Detail and evidence: icarus/checkpoints/2026-10-28-claude-harness-recovery/LESSONS.md
+- Status: Observed. Claude's own lessons; not an ICARUS adjudication.
