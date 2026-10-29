@@ -128,3 +128,11 @@ NEXT-HARNESS RULES FOR ICARUS:
 - Findings: the 2026-10-18 "Runtime Fusion" success report was false; commit 75c33fc deleted Recall v3 on 2026-10-19. Recall v3 now runs on Google Apps Script as Athena (commit 111e8ba; first live receipt icarus/runs/20261028T222208Z-6481558241.md). Memory was rolled back to v1 at the owner's direction (commit 2b0074f).
 - Detail and evidence: icarus/checkpoints/2026-10-28-claude-harness-recovery/LESSONS.md
 - Status: Observed. Claude's own lessons; not an ICARUS adjudication.
+
+## 2026-10-29 — Claude: Icarus agent core, Round 2 ("checkpoint, not a stop")
+- Branch agent/icarus-core. New files only (governed.py, test_governed.py); M1 files untouched, hash-verified.
+- Round 1 (commit 6645c7a): removed a hard "second blocker stops the task" rule that violated the blocker-rule principle.
+- Round 2 (commit 9cb47fa, repaired 77de17e): max_steps is now a checkpoint, never a stop — run()'s loop is `while True`, logging a checkpoint decision-log entry instead of returning BLOCKED. Real exits only: material change, ReasonerUnavailable/"script exhausted", repeated invalid JSON, repeated non-owner escalation, a genuine owner-only escalate, kernel halted/budget exhausted, or finish().
+- Transport lesson: first commit silently corrupted test_governed.py (2 chars altered in transit) — caught only by blob-SHA-verifying every file, not just one. Repaired; both files now blob-SHA-match local exactly.
+- Local: 32/32 tests pass. Self-verified only — PARTIAL, pending Icarus's own adjudication.
+- Open for Icarus: a real run against his own .dsh profile on the laptop (Claude doesn't touch the laptop directly per the 23 Oct rule, so this is Icarus's own run whenever he has capacity — not a task handed down). Also open: a live model call through the OpenAI-compatible reasoner against a real endpoint, and owner confirmation of the proposed RULES-MAP.md routing table.
