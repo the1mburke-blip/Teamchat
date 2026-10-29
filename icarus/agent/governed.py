@@ -1,0 +1,377 @@
+"""Governed Core: the owner's immutable rules and SOP, enforced in code.
+
+Built ALONGSIDE the M1 modules. It imports kernel/memory/reasoners/hands/core unchanged and edits none of them.
+Icarus is still the outermost process: reasoners propose, hands act, this module decides and reports.
+
+Statuses: PASS (every declared PASS-evidence item verified by the kernel itself), PARTIAL (what is proven and
+unproven is listed), BLOCKED (blocker + log evidence). A model's claim is never evidence.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+from dataclasses import dataclass
+
+from .kernel import Grant, Kernel, WRITE_TOOLS, norm_path
+from .memory import MemoryRejected
+from .reasoners import ReasonerUnavailable
+
+OWNER_ONLY = frozenset({"auth", "credentials", "legal", "payment", "security", "safety"})
+EVIDENCE_KINDS = frozenset({"file_exists", "file_sha256", "text_contains"})
+MAX_INVALID_IN_A_ROW = 2
+
+_SECRET_PATTERNS = (
+    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.DOTALL),
+    re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}"),
+    re.compile(r"github_pat_[A-Za-z0-9_]{20,}"),
+    re.compile(r"sk-[A-Za-z0-9_\-]{16,}"),
+    re.compile(r"AKIA[0-9A-Z]{16}"),
+    re.compile(r"(?i)bearer\s+[A-Za-z0-9._\-]{16,}"),
+    re.compile(r"(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*\S{8,}"),
+)
+
+
+def redact(text):
+    """Secrets never leave Core in logs, prompts or reports."""
+    if not isinstance(text, str):
+        return text
+    for pat in _SECRET_PATTERNS:
+        text = pat.sub("[REDACTED]", text)
+    return text
+
+
+def redact_obj(o):
+    if isinstance(o, str):
+        return redact(o)
+    if isinstance(o, dict):
+        return {k: redact_obj(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [redact_obj(v) for v in o]
+    return o
+
+
+def evidence_shape_ok(item):
+    return isinstance(item, dict) and item.get("kind") in EVIDENCE_KINDS and norm_path(item.get("path")) is not None
+
+
+def describe(item):
+    if isinstance(item, dict):
+        return f"{item.get('kind')}:{item.get('path')}"
+    return "malformed-evidence-item"
+
+
+class GovernedKernel(Kernel):
+    """Kernel plus per-item checks, and a decision log that never stores secrets."""
+
+    def authorize(self, grant, tool, args):
+        a = args if isinstance(args, dict) else {}
+        d = self._decide(grant, tool, a)
+        tid = grant.task_id
+        self._attempts[tid] = self._attempts.get(tid, 0) + 1
+        self._denials[tid] = 0 if d.allowed else self._denials.get(tid, 0) + 1
+        self.log({"type": "authorize", "task": tid, "tool": tool, "args": redact_obj(a), "allowed": d.allowed, "reason": d.reason})
+        return d
+
+    def check_each(self, task_id, evidence, label):
+        items = evidence if isinstance(evidence, list) else []
+        out = [(it, self._check(it)) for it in items]
+        self.log({"type": "check", "task": task_id, "label": label,
+                  "results": [{"item": redact_obj(it), "result": r} for it, r in out]})
+        return out
+
+
+@dataclass(frozen=True)
+class Preflight:
+    """Stated BEFORE execution. Core refuses to start unless every field is present and consistent."""
+
+    endpoint: str
+    token_cost: str
+    monetary_cost: float  # EUR; default is 0
+    owner: str
+    effort: str
+    pass_evidence: tuple  # evidence items the KERNEL will check; the worker does not choose them
+    blockers: tuple  # known blockers, () = none known
+    target: str  # exact target (timestamp/channel/content) as read back live
+    kind: str = ""  # task kind, used for routing when routes are configured
+    required_sources: tuple = ()  # repo-relative files that must be read before starting
+    authority_ref: str = ""  # owner authorisation for spend or for any mutation
+    target_path: str = ""  # optional file whose live readback is recorded as the target
+
+
+@dataclass
+class Result:
+    status: str  # PASS | PARTIAL | BLOCKED
+    reasons: tuple
+    steps: int
+    task_id: str
+    proposed_by: str
+    executed_by: str
+    adjudicated_by: str
+    at: float
+    proven: tuple = ()
+    unproven: tuple = ()
+    attempted: tuple = ()  # started/attempted/sent: intermediate, never completion
+    owner_action: str = ""
+    sources_read: tuple = ()
+    cost_eur: float = 0.0
+    independence: str = "kernel-only"
+    claim_unverified: str = ""
+
+    @property
+    def completed(self):
+        return self.status == "PASS"
+
+    def report(self):
+        lines = [
+            f"RESULT: {self.status} task={self.task_id}",
+            f"proposed_by: {self.proposed_by} | executed_by: {self.executed_by} | adjudicated_by: {self.adjudicated_by} | at: {self.at}",
+            f"proven: {list(self.proven) or 'none'}",
+            f"unproven: {list(self.unproven) or 'none'}",
+            f"attempted (intermediate, not completion): {list(self.attempted) or 'none'}",
+            f"reasons/blockers: {list(self.reasons) or 'none'}",
+            f"owner_action: {self.owner_action or 'none'}",
+            f"sources_read: {list(self.sources_read) or 'none'}",
+            f"cost_eur: {self.cost_eur:.2f}",
+            f"independence: {self.independence}",
+        ]
+        if self.claim_unverified:
+            lines.append(f"worker claim (unverified): {self.claim_unverified}")
+        return "\n".join(lines)
+
+
+def _name(obj):
+    n = getattr(obj, "name", None)
+    if not n and hasattr(obj, "probe"):
+        try:
+            n = (obj.probe() or {}).get("name")
+        except Exception:
+            n = None
+    return n or type(obj).__name__
+
+
+def _route(reasoner, hand):
+    return [getattr(reasoner, "route", None) or _name(reasoner), _name(hand)]
+
+
+def fingerprint(pf, grant, reasoner, hand):
+    body = {
+        "endpoint": pf.endpoint, "monetary_cost": pf.monetary_cost, "owner": pf.owner, "target": pf.target,
+        "tools": sorted(grant.allowed_tools), "paths": list(grant.allowed_paths), "max_calls": grant.max_calls,
+        "route": _route(reasoner, hand),
+    }
+    return hashlib.sha256(json.dumps(body, sort_keys=True, default=str).encode()).hexdigest()
+
+
+def _s(v):
+    return isinstance(v, str) and bool(v.strip())
+
+
+def validate_preflight(pf, grant, reasoner, hand, workdir, routes):
+    problems = []
+    for f in ("endpoint", "token_cost", "owner", "effort", "target"):
+        if not _s(getattr(pf, f)):
+            problems.append(f"preflight missing {f}")
+    mc = pf.monetary_cost
+    if isinstance(mc, bool) or not isinstance(mc, (int, float)) or mc < 0:
+        problems.append("preflight missing monetary_cost")
+    if not pf.pass_evidence:
+        problems.append("preflight missing pass_evidence")
+    else:
+        for it in pf.pass_evidence:
+            if not evidence_shape_ok(it):
+                problems.append(f"pass_evidence item malformed: {describe(it)}")
+    paid = (isinstance(mc, (int, float)) and mc > 0) or getattr(reasoner, "paid", False) or getattr(hand, "paid", False)
+    if paid and not _s(pf.authority_ref):
+        problems.append("spend requires explicit owner authorization (authority_ref); default is EUR 0")
+    if WRITE_TOOLS & set(grant.allowed_tools) and not _s(pf.authority_ref):
+        problems.append("mutation requires authority (authority_ref) and preflight")
+    if routes:
+        expected = routes.get(pf.kind)
+        if expected is None:
+            problems.append(f"no route for task kind {pf.kind!r}; cannot delegate: STOP")
+        elif expected != _name(hand):
+            problems.append(f"task kind {pf.kind!r} routes to {expected!r} but executor is {_name(hand)!r}; cannot delegate: STOP")
+    for p in tuple(pf.required_sources) + ((pf.target_path,) if pf.target_path else ()):
+        n = norm_path(p)
+        if n is None or not os.path.isfile(os.path.join(workdir, n)):
+            problems.append(f"required source not read: {p}")
+    return problems
+
+
+def parse_proposal(text):
+    """First JSON object with a known action. Never executes anything."""
+    i = text.find("{")
+    if i < 0:
+        return None
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(text[i:])
+    except ValueError:
+        return None
+    return obj if isinstance(obj, dict) and obj.get("action") in ("tool", "finish", "escalate") else None
+
+
+RULES = (
+    "You are the reasoning engine for Icarus. You do not act; Icarus acts. Reply with exactly ONE JSON object.\n"
+    '  Call a tool: {"action":"tool","tool":"<name>","args":{...}}\n'
+    '  Finish:      {"action":"finish","claim":"<what you did>","evidence":[...],"lesson":"<optional; needs an Evidence: <path> line>"}\n'
+    '  Escalate:    {"action":"escalate","category":"auth|credentials|legal|payment|security|safety","detail":"..."}\n'
+    "Escalate ONLY for owner-only matters. For anything else, work the blocker: investigate, then change approach.\n"
+    "Any status you write is ignored. Icarus's kernel checks the PASS evidence declared in the preflight itself.\n"
+    "A repeated failed call is refused. Two distinct unresolved blockers stop the task."
+)
+
+
+class GovernedCore:
+    def __init__(self, memory, reasoner, kernel, hand, routes=None, adjudicator=None):
+        if not isinstance(kernel, GovernedKernel):
+            raise TypeError("GovernedCore needs a GovernedKernel")
+        self.memory, self.reasoner, self.kernel, self.hand = memory, reasoner, kernel, hand
+        self.routes = dict(routes or {})
+        self.adjudicator = adjudicator  # optional: callable(task_id, evidence) -> (bool, note), independent of the model
+
+    # ---- helpers
+    def _result(self, st, status, reasons, **kw):
+        res = Result(
+            status=status, reasons=tuple(redact(r) for r in reasons), steps=st["steps"], task_id=st["tid"],
+            proposed_by=_name(self.reasoner), executed_by=_name(self.hand),
+            adjudicated_by="icarus-kernel" + ("+adjudicator" if self.adjudicator else ""),
+            at=self.kernel.clock(), attempted=tuple(st["attempted"]), sources_read=tuple(st["sources"]),
+            cost_eur=float(st["pf"].monetary_cost) if isinstance(st["pf"].monetary_cost, (int, float)) else 0.0, **kw,
+        )
+        self.kernel.log({"type": "task_end", "task": st["tid"], "status": status, "reasons": list(res.reasons), "steps": st["steps"]})
+        return res
+
+    def _prompt(self, task, pf, recalled, history):
+        tools = "\n".join(f"- {k}: {v}" for k, v in self.hand.tools().items())
+        hist = "\n".join(history[-12:]) or "(none)"
+        declared = json.dumps(list(pf.pass_evidence))
+        return (
+            f"{self.memory.identity_text()}\n\n{RULES}\n\nTOOLS:\n{tools}\n\n"
+            f"PREFLIGHT target={pf.target} declared_pass_evidence={declared}\n"
+            f"RECALLED LESSONS:\n{recalled or '(none)'}\n\nTASK:\n{task}\n\nHISTORY:\n{hist}\n"
+        )
+
+    def run(self, task, grant, pf, max_steps=10):
+        if not isinstance(grant, Grant):
+            raise TypeError("a Grant is required; default is deny")
+        if not isinstance(pf, Preflight):
+            raise TypeError("a Preflight is required before any execution")
+        tid = grant.task_id
+        ident = self.memory.identity_text()  # raises IdentityMissing before any model call
+        st = {"tid": tid, "pf": pf, "steps": 0, "attempted": [], "sources": ["icarus/memory/identity.md@" + hashlib.sha256(ident.encode()).hexdigest()[:12]]}
+        problems = validate_preflight(pf, grant, self.reasoner, self.hand, self.memory.root, self.routes)
+        for p in tuple(pf.required_sources) + ((pf.target_path,) if pf.target_path else ()):
+            full = os.path.join(self.memory.root, norm_path(p) or "")
+            if norm_path(p) and os.path.isfile(full):
+                with open(full, "rb") as f:
+                    st["sources"].append(f"{p}@{hashlib.sha256(f.read()).hexdigest()[:12]}")
+        st["sources"].append("decision-log:" + os.path.basename(self.kernel.log_path))
+        if problems:
+            self.kernel.log({"type": "preflight_blocked", "task": tid, "problems": problems})
+            return self._result(st, "BLOCKED", problems)
+        fp0 = fingerprint(pf, grant, self.reasoner, self.hand)
+        self.kernel.log({"type": "task_start", "task": tid, "task_sha256": hashlib.sha256(task.encode()).hexdigest(),
+                         "preflight": redact_obj(pf.__dict__), "fingerprint": fp0, "sources": st["sources"]})
+        recalled = self.memory.recall(task)
+        history, failed, open_blockers, invalid = [], set(), [], 0
+
+        def blocked(reasons, owner_action=""):
+            return self._result(st, "BLOCKED", reasons, owner_action=owner_action)
+
+        def changed():
+            return fingerprint(pf, grant, self.reasoner, self.hand) != fp0
+
+        while st["steps"] < max_steps:
+            st["steps"] += 1
+            if changed():
+                return blocked(["material change in route/executor/cost/scope: stop and re-preflight"])
+            try:
+                out = self.reasoner.complete(self._prompt(task, pf, recalled, history))
+            except ReasonerUnavailable as e:
+                return blocked([f"reasoner unavailable: {e}"])
+            if changed():
+                return blocked(["material change in route/executor/cost/scope: stop and re-preflight"])
+            self.kernel.log({"type": "reasoner_output", "task": tid, "sha256": hashlib.sha256(out.encode()).hexdigest(), "len": len(out)})
+            prop = parse_proposal(out)
+            if prop is None:
+                invalid += 1
+                if invalid >= MAX_INVALID_IN_A_ROW:
+                    return blocked(["reasoner produced invalid output twice"])
+                history.append("ICARUS: your last reply was not a valid JSON proposal. Reply with one JSON object per the rules.")
+                continue
+            if prop["action"] == "escalate":
+                cat = prop.get("category")
+                if cat in OWNER_ONLY:
+                    detail = redact(str(prop.get("detail", "")))[:300]
+                    self.kernel.log({"type": "escalation", "task": tid, "category": cat})
+                    return blocked([f"owner-only boundary: {cat}"], owner_action=f"{cat}: {detail}")
+                invalid += 1
+                if invalid >= MAX_INVALID_IN_A_ROW:
+                    return blocked(["reasoner escalated non-owner matters twice instead of working the blocker"])
+                history.append(f"ICARUS: {cat!r} is not an owner-only matter. Work the blocker: investigate, route around, or finish.")
+                continue
+            invalid = 0
+            if prop["action"] == "finish":
+                return self._finish(st, pf, prop)
+            tool = prop.get("tool")
+            args = prop.get("args", {})
+            args = args if isinstance(args, dict) else {}
+            key = f"{tool}|{json.dumps(args, sort_keys=True, default=str)}"
+            reason = None
+            if key in failed:
+                reason = "blind retry: the same call already failed; new evidence or a different approach is required"
+                self.kernel.log({"type": "blind_retry_refused", "task": tid, "tool": tool})
+            else:
+                d = self.kernel.authorize(grant, tool, args)
+                if not d.allowed:
+                    failed.add(key)
+                    reason = d.reason
+                    if self.kernel.halted(tid) or d.reason == "budget exhausted":
+                        return blocked([d.reason])
+                else:
+                    try:
+                        res = self.hand.execute(tool, args)
+                    except Exception as e:
+                        res = {"ok": False, "error": type(e).__name__}
+                    st["attempted"].append(redact(f"{tool}({json.dumps(args, default=str)[:120]})"))
+                    shown = redact(json.dumps(res, default=str, sort_keys=True))
+                    self.kernel.log({"type": "tool_result", "task": tid, "tool": tool, "sha256": hashlib.sha256(shown.encode()).hexdigest()})
+                    if isinstance(res, dict) and res.get("ok") is False:
+                        failed.add(key)
+                        reason = f"hand error: {res.get('error', 'failed')}"
+                    else:
+                        open_blockers.clear()
+                        history.append(f"ICARUS: ran {tool}({redact(json.dumps(args, default=str))[:200]}) -> {shown[:600]}")
+            if reason:
+                if reason not in open_blockers:
+                    open_blockers.append(reason)
+                if len(open_blockers) >= 2:
+                    return blocked(["second blocker while the first is unresolved: " + " | ".join(open_blockers)])
+                history.append(f"ICARUS: BLOCKER: {reason}. Investigate, then change approach. The same call will not be run again.")
+        return blocked(["step limit reached"])
+
+    def _finish(self, st, pf, prop):
+        tid = st["tid"]
+        declared = self.kernel.check_each(tid, list(pf.pass_evidence), "declared")
+        worker = self.kernel.check_each(tid, prop.get("evidence"), "worker")
+        proven = tuple(describe(it) for it, r in declared if r == "ok")
+        unproven = tuple(f"{describe(it)}: {r}" for it, r in declared if r != "ok")
+        reasons = list(unproven) + [f"worker evidence failed: {describe(it)}: {r}" for it, r in worker if r != "ok"]
+        status, independence = ("PASS" if not reasons else "PARTIAL"), "kernel-only"
+        if status == "PASS" and self.adjudicator is not None:
+            independence = "kernel+adjudicator"
+            ok, note = self.adjudicator(tid, list(pf.pass_evidence))
+            if not ok:
+                status = "PARTIAL"
+                reasons.append(f"independent adjudicator did not confirm: {note}")
+        self.kernel.log({"type": "verdict", "task": tid, "status": status, "reasons": reasons})
+        if status == "PASS" and isinstance(prop.get("lesson"), str):
+            try:
+                self.memory.write_back(prop["lesson"])
+                self.kernel.log({"type": "memory_write", "task": tid, "ok": True})
+            except MemoryRejected as e:
+                self.kernel.log({"type": "memory_write", "task": tid, "ok": False, "reason": str(e)})
+        claim = redact(str(prop.get("claim", "")))[:300]
+        return self._result(st, status, reasons, proven=proven, unproven=unproven, independence=independence, claim_unverified=claim)
