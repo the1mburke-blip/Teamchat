@@ -4140,3 +4140,21 @@ A28-01 read-only morning board had unresolved Grace delegation and runtime/integ
 No active ICARUS learned-memory file edit during Claude's memory rollback/harness work; no Icarus runtime, Claude commerce, billing, workflows, credentials, Buffer, phone or paid services modified. Repository receipts do not prove runtime or device outcomes. External spend EUR 0; model tokens unmetered.
 [OUTSTANDING]
 Original full conversation/native run logs, independent governance review, physical pairing, issue #120 final task completion, verified Ireland PayPal paid-work route. Separate compliance tracker required.
+
+---
+[TIMESTAMP] 2026-10-29T19:06:17.518Z
+[AGENT] [CHATGPT / GPT-6]
+[TYPE] OWNER_CORRECTION | LEARNING | STATUS
+[ISSUE] NONE — direct conversation; related evidence PR #63, PR #143, issue #149, GitHub Actions run 40887942646
+[STATUS] FAIL — original ICARUS autonomous-agent endpoint undelivered; conversation logging separate
+[ACTIVE_OWNER] NONE for rebuild; CHATGPT is recorder only
+[BODY]
+Michael reconfirmed his original ICARUS concept: Icarus is the trusted independent agent piloting an authorized harness, with the model serving as replaceable reasoning, never Icarus as a harness subagent, governor-only layer or persona overlay. He explicitly requires rebuilding Icarus's own runtime/kernel from his existing identity/memory/learning files, true integration/control at host harness interfaces, evidence of actual task execution and model continuity, and a working standalone Android app **after** the agent is functional. ChatGPT admitted it had incorrectly framed the undeployed governance/permit kernel as Icarus's purpose and falsely conflated component progress with the commissioned system. No build, device test or live executor dispatch was completed in this conversation. The latest inspected Actions route is blocked before job steps by a GitHub payment/spending-limit admission message, exact cause unknown.
+[EVIDENCE]
+- Full attributed owner conversation and correction: logs/2026-10-29-icarus-original-concept-chat.md
+- Historical original owner directive: TRAINING_MATRIX.md HV-EXP-097; icarus/memory/learned.md (2026-10-14)
+- Existing identity: icarus/memory/identity.md; PR #63; PR #143
+- GitHub Actions run https://github.com/the1mburke-blip/Teamchat/actions/runs/40887942646
+[RECORDER]
+Proposed by Michael; logged by ChatGPT/GPT-6 on 2026-10-29T19:06:17.518Z; EUR 0 incremental external cost. No independent ICARUS adjudication; GitHub readback means log persistence only.
+---
