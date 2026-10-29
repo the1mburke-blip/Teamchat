@@ -1,0 +1,33 @@
+name: Icarus core: live reasoner check (manual, Task #4)
+
+# One-off, workflow_dispatch-only verification that OpenAICompatReasoner
+# (icarus/agent/reasoners.py, branch agent/icarus-core) can complete a real
+# HTTP round trip against a free-tier OpenRouter model using the existing
+# OPENROUTER_API_KEY repo secret. No automatic trigger; does not touch any
+# other icarus-* workflow or its concurrency group.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icarus-core-reasoner-livecheck
+  cancel-in-progress: false
+
+jobs:
+  live-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout agent/icarus-core
+        uses: actions/checkout@v6
+        with:
+          ref: agent/icarus-core
+          fetch-depth: 1
+
+      - name: Run live reasoner check
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python3 tests/agent/live_reasoner_check.py
