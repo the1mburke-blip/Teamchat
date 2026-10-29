@@ -285,8 +285,12 @@ class GovernedCore:
         def changed():
             return fingerprint(pf, grant, self.reasoner, self.hand) != fp0
 
-        while st["steps"] < max_steps:
+        while True:
             st["steps"] += 1
+            # max_steps is a checkpoint interval, not a stop: a count is not an owner-only boundary, so
+            # reaching it never ends the task on its own. It only logs progress and keeps going.
+            if max_steps and st["steps"] % max_steps == 0:
+                self.kernel.log({"type": "checkpoint", "task": tid, "steps": st["steps"], "open_blockers": list(open_blockers)})
             if changed():
                 return blocked(["material change in route/executor/cost/scope: stop and re-preflight"])
             try:
@@ -353,11 +357,6 @@ class GovernedCore:
                     f"ICARUS: BLOCKER: {reason}. Not a reason to stop: find a way around, over, or through it. "
                     "The same call will not be run again."
                 )
-        reasons = ["step limit reached"]
-        if open_blockers:
-            reasons.append("unresolved blockers at the step limit (evidence, not a count-based stop): " + " | ".join(open_blockers))
-        return blocked(reasons)
-
     def _finish(self, st, pf, prop):
         tid = st["tid"]
         declared = self.kernel.check_each(tid, list(pf.pass_evidence), "declared")
