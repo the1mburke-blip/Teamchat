@@ -1,4 +1,4 @@
-name: Icarus core: live reasoner check (manual, Task #4)
+name: "Icarus core: live reasoner check (manual, Task #4)"
 
 # One-off, workflow_dispatch-only verification that OpenAICompatReasoner
 # (icarus/agent/reasoners.py, branch agent/icarus-core) can complete a real
