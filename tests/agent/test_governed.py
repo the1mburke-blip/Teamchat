@@ -208,7 +208,7 @@ class TestBlockersAndRouting(Base):
         rs.route = "first-vendor|model"
         r = self.core([], reasoner=rs).run("t", self.grant(), self.pf())
         self.assertEqual(r.status, "BLOCKED")
-        self.assertIn("re-preflight", "".join(r.reasons))
+        self.assertIn("re-preflight", " ".join(r.reasons))
         self.assertEqual(self.hand.executed, [])
 
     def test_executor_swap_mid_run_stops_for_repreflight(self):
