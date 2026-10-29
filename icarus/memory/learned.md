@@ -136,3 +136,32 @@ NEXT-HARNESS RULES FOR ICARUS:
 - Transport lesson: first commit silently corrupted test_governed.py (2 chars altered in transit) — caught only by blob-SHA-verifying every file, not just one. Repaired; both files now blob-SHA-match local exactly.
 - Local: 32/32 tests pass. Self-verified only — PARTIAL, pending Icarus's own adjudication.
 - Open for Icarus: a real run against his own .dsh profile on the laptop (Claude doesn't touch the laptop directly per the 23 Oct rule, so this is Icarus's own run whenever he has capacity — not a task handed down). Also open: a live model call through the OpenAI-compatible reasoner against a real endpoint, and owner confirmation of the proposed RULES-MAP.md routing table.
+
+## 2026-10-29 — Claude: Task #4 live reasoner check — BLOCKED on exhausted Actions minutes
+- Added tests/agent/live_reasoner_check.py (workflow_dispatch-only, not in pytest suite) plus
+  .github/workflows/icarus-core-reasoner-livecheck.yml, committed to both agent/icarus-core and
+  main (main copy needed only to register the workflow_dispatch trigger; checkout step pins to
+  agent/icarus-core so that branch's code is what actually runs). Reuses the existing
+  OPENROUTER_API_KEY repo secret against a free-tier OpenRouter model — €0 cost by design.
+- Hit and fixed a real bug first: `name: Icarus core: live reasoner check (manual, Task #4)` has
+  an unquoted second `: ` in the scalar value, which YAML forbids. GitHub silently failed to parse
+  it (GITHUB_GET_A_WORKFLOW showed the file path as the workflow name instead of the YAML name)
+  and so refused every workflow_dispatch call with "Workflow does not have workflow_dispatch
+  trigger" even though the trigger was right there. Fixed by quoting the name string. Lesson:
+  a workflow name containing ": " anywhere must be quoted, and if GET_A_WORKFLOW ever echoes a
+  file path as the name, that's the tell for a parse failure, not a trigger-registration delay.
+- After the fix, dispatch succeeded and a real run executed (run id 40958889010) but completed in
+  ~4s with conclusion=failure, zero recorded steps, and 404 BlobNotFound on job logs even after
+  waiting — the signature of a run that never actually started on a runner.
+- Root cause confirmed via GITHUB_GET_GITHUB_BILLING_USAGE_SUMMARY_FOR_USER(product=actions):
+  3504 discounted actions_linux minutes this billing month, netAmount €0 — the account is at its
+  zero-spend ceiling for GitHub-hosted Actions runners; no self-hosted runner is registered
+  (GITHUB_LIST_SELF_HOSTED_RUNNERS_FOR_A_REPOSITORY returned 0). This matches and confirms the
+  2026-10-28 note above ("Actions minutes are exhausted").
+- Status: BLOCKED, not PARTIAL or FAIL — the reasoner code itself was never actually exercised;
+  this is purely an Actions-minutes ceiling. Per the owner's SPEND:€0 rule this needs the owner's
+  own decision (buy more minutes, wait for next cycle, or stand up a self-hosted runner on
+  owned hardware) — not something an agent should authorize spend for on its own.
+- The workflow_dispatch infra (script + workflow, now bug-fixed) is left in place, inert, ready to
+  run for €0 the moment Actions minutes are available again (next billing cycle or a self-hosted
+  runner) — just dispatch workflow_id icarus-core-reasoner-livecheck.yml with ref agent/icarus-core.
