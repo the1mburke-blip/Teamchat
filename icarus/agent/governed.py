@@ -219,7 +219,9 @@ RULES = (
     '  Escalate:    {"action":"escalate","category":"auth|credentials|legal|payment|security|safety","detail":"..."}\n'
     "Escalate ONLY for owner-only matters. For anything else, work the blocker: investigate, then change approach.\n"
     "Any status you write is ignored. Icarus's kernel checks the PASS evidence declared in the preflight itself.\n"
-    "A repeated failed call is refused. Two distinct unresolved blockers stop the task."
+    "A repeated failed call is refused: find a different approach, never the same call again.\n"
+    "A blocker is a data point, not a reason to stop. If a problem exists, a solution exists: go around it, over it,\n"
+    "or through it. A blocker that does not genuinely need the owner is on the way, not the end."
 )
 
 
@@ -347,10 +349,14 @@ class GovernedCore:
             if reason:
                 if reason not in open_blockers:
                     open_blockers.append(reason)
-                if len(open_blockers) >= 2:
-                    return blocked(["second blocker while the first is unresolved: " + " | ".join(open_blockers)])
-                history.append(f"ICARUS: BLOCKER: {reason}. Investigate, then change approach. The same call will not be run again.")
-        return blocked(["step limit reached"])
+                history.append(
+                    f"ICARUS: BLOCKER: {reason}. Not a reason to stop: find a way around, over, or through it. "
+                    "The same call will not be run again."
+                )
+        reasons = ["step limit reached"]
+        if open_blockers:
+            reasons.append("unresolved blockers at the step limit (evidence, not a count-based stop): " + " | ".join(open_blockers))
+        return blocked(reasons)
 
     def _finish(self, st, pf, prop):
         tid = st["tid"]

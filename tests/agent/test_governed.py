@@ -220,8 +220,10 @@ class TestBlockersAndRouting(Base):
         self.assertIn("re-preflight", " ".join(r.reasons))
 
     def test_blind_retry_is_refused_and_never_reaches_the_hand(self):
+        # The blocker rule has no stop-on-count: this never resolves, so it runs to the step limit rather than
+        # stopping early, but the same failed call must still never reach the hand a second time.
         bad = j(action="tool", tool="write_file", args={"path": "a.txt", "content": "x"})
-        r = self.core([bad, bad, finish()]).run("t", self.grant(), self.pf())
+        r = self.core([bad] * 5).run("t", self.grant(), self.pf(), max_steps=5)
         self.assertEqual(r.status, "BLOCKED")
         self.assertIn("blind retry", " ".join(r.reasons))
         self.assertEqual(self.hand.executed, [])
@@ -240,17 +242,28 @@ class TestBlockersAndRouting(Base):
         r = self.core([a, ok, b, finish()]).run("t", self.grant(), self.pf())
         self.assertEqual(r.status, "PASS")
 
-    def test_second_distinct_unresolved_blocker_stops(self):
+    def test_three_distinct_blockers_do_not_stop_the_task_before_a_workaround_resolves_it(self):
+        # A blocker is a data point, not a reason to stop: only an owner-only boundary or the step limit does.
         a = j(action="tool", tool="write_file", args={"path": "a.txt", "content": "x"})  # tool not granted
         b = j(action="tool", tool="read_file", args={"path": "../outside.txt"})  # invalid path
-        r = self.core([a, b, finish()]).run("t", self.grant(), self.pf())
+        c = j(action="tool", tool="read_file", args={"path": "nope.txt"})  # hand error: missing file
+        ok = j(action="tool", tool="read_file", args={"path": "notes.txt"})  # the workaround
+        r = self.core([a, b, c, ok, finish()]).run("t", self.grant(), self.pf())
+        self.assertEqual(r.status, "PASS")
+        self.assertEqual(len(self.hand.executed), 2)
+
+    def test_unresolved_blockers_at_the_step_limit_are_reported_as_evidence_not_silently_dropped(self):
+        a = j(action="tool", tool="write_file", args={"path": "a.txt", "content": "x"})  # never resolves
+        r = self.core([a] * 5).run("t", self.grant(), self.pf(), max_steps=5)
         self.assertEqual(r.status, "BLOCKED")
-        self.assertIn("second blocker", " ".join(r.reasons))
-        self.assertEqual(self.hand.executed, [])
+        self.assertIn("step limit reached", " ".join(r.reasons))
+        self.assertIn("unresolved blockers at the step limit", " ".join(r.reasons))
 
     def test_hand_failure_is_a_blocker_and_not_retried_blindly(self):
+        # Never resolved, so BLOCKED comes from the step limit, not from a blocker count; the hand is still
+        # only ever asked to run the failing call once.
         missing = j(action="tool", tool="read_file", args={"path": "nope.txt"})
-        r = self.core([missing, missing, finish()]).run("t", self.grant(), self.pf())
+        r = self.core([missing, missing, missing]).run("t", self.grant(), self.pf(), max_steps=3)
         self.assertEqual(r.status, "BLOCKED")
         self.assertEqual(len(self.hand.executed), 1)
 
