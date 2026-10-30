@@ -1917,3 +1917,25 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - what_not_to_retry: Do not call a governor, identity-prompt, CI pass, detached verifier, GitHub issue or unmerged PR the finished ICARUS agent; do not silently make him a subagent/sublayer of any harness; do not imply generic compatibility without testing each harness adapter; do not claim an APK works because it compiled. Do not retry GitHub Actions while unchanged billing admission fails or authorize monetary spend.
 - recovery_status: ORIGINAL REQUIREMENT CONFIRMED; PRODUCT FAIL/NOT DELIVERED; GitHub Actions worker route BLOCKED as of 2026-10-29. Any code executor must be authentic, authorized, funded EUR 0 and independently verified. Recording is not an ICARUS adjudication.
 - external_cost: EUR 0 incremental; allowance unmetered.
+
+[SOL] 2026-10-30T00:06:58.903Z — 29 Oct midnight retrospective; audit logs/2026-10-29-sol-midnight-accountability-audit.md; no independent adjudication.
+
+## HV-EXP-134 — Tool-call budget denial can also block persistent learning (2026-10-29)
+- experience_id: HV-EXP-134
+- proposed_by: Michael; incident_executor: ChatGPT/GPT-6 advice to owner; observed DSH report attributed to owner; recorded_by: Saul / ChatGPT GPT-6 on 2026-10-30.
+- incident_date: 2026-10-29.
+- incident: The owner requested the installed DSH tool-call limit be removed for ICARUS, not models. Assistant identified upstream DSH loop and maxParallelToolCalls concurrency setting plus a separate ICARUS maxToolCalls:40, but did not identify or modify the installed budget.calls enforcer. Owner then provided a DSH response showing budget.calls denied loading the continuous-learning skill and reading learned.md. Assistant admitted no persistent memory was saved.
+- evidence: 29 Oct dated conversation retrieval (~22:32 and ~22:54 UTC), as summarized with evidence class in logs/2026-10-29-sol-midnight-accountability-audit.md A29-03/A29-04. No independent laptop runtime trace, config write or memory readback.
+- lesson: Identify the exact installed budget.calls enforcement layer and its scope. maxParallelToolCalls controls concurrency, not a total call cap; a separate ICARUS maxToolCalls value is not proof of the DSH setting. Memory and skill tools may be blocked by the same budget. Test actual learning read/write persistence in a fresh session before claiming a fix.
+- what_not_to_retry: Do not set unrelated limits, promise unlimited model calls, bypass safety/credential gates or claim that discussion was saved as learned.md when budget.calls denied the operation.
+- recovery_status: BLOCKED/UNVERIFIED; no installed DSH change or persistent memory operation established. Independent adjudication pending; EUR 0 incremental external spend in retrospective, token allowance unmetered.
+
+## HV-EXP-135 — Incomplete governance coverage and tests cannot establish activation (2026-10-29)
+- experience_id: HV-EXP-135
+- proposed_by: Michael; review_executor: ChatGPT/GPT-6; recorded_by: Saul / ChatGPT GPT-6 on 2026-10-30.
+- incident_date: 2026-10-29.
+- incident: Owner's governance review reported a focused suite of 111 passing tests, but a broader run with 284 passed, 3 failed, 4 skipped and one timeout. Protected-action coverage, direct-dispatch bypass coverage, canonical 12-rule source reconciliation and independent governance review were incomplete. These figures are owner-supplied conversation evidence, not independently rerun logs. The assistant did not activate governance or close the gaps.
+- evidence: 29 Oct conversation retrieval and OPERATING_RULES.md Rule 41; logs/2026-10-29-sol-midnight-accountability-audit.md A29-02. A narrow indexed repository search cannot establish that the 12-rule source is absent; owner states it is in ICARUS memory/repo.
+- lesson: Before activation or a terminal governance claim, locate and review the authoritative 12 rules, prove all protected action/dispatch paths, resolve or baseline-classify broader test failures and timeouts, and obtain independent adjudication. Report exact tested surface and remaining gaps.
+- what_not_to_retry: Do not turn focused passing tests into complete coverage; do not declare canonical sources absent from one unsuccessful search; do not self-award PASS.
+- recovery_status: PARTIAL implementation/isolated and NOT ACTIVATED per owner-provided report; broader test evidence and independent review unavailable in this retrospective. EUR 0 incremental external spend; allowance unmetered.
