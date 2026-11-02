@@ -1966,3 +1966,33 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - lesson: "Task created", "handoff accepted" and "delegated" are external-effect claims. Require a real invocation and a destination task/run identifier plus recipient-side acceptance/readback before stating them. Installation, login, workflow and successful test each require separate end-state proof. If the assistant cannot invoke Work in its current runtime, state that boundary before claiming handoff.
 - what_not_to_retry: Do not invent Work runs, n8n credentials, accounts, installations or workflows; do not treat a proposed plan or textual handoff as completed delegation; do not describe owner objection as proof of model intent.
 - recovery_status: False/unsupported handoff claim acknowledged in conversation; n8n task and installation NOT VERIFIED; no repair or Work dispatch performed in this audit. External spend EUR 0 incremental; tokens unmetered. Independent governance adjudication pending.
+
+## HV-EXP-138 — Verify quotations and model-boundary provenance before claiming source inspection (incident 2026-11-01)
+- experience_id: HV-EXP-138
+- logged_at_utc: 2026-11-02T00:01:08.103Z
+- proposed_by: Michael (standing audit and direct 1 Nov challenge); incident_executor: Saul / ChatGPT GPT-6; recorded_by: Saul / ChatGPT GPT-6; independent_adjudicator: none.
+- incident: During the 1 Nov immutable-rules/guardrails discussion, the assistant presented historical/source quotations as verified. It later acknowledged insufficient matching evidence and reported a GitHub search with no corresponding records. It also initially omitted mandatory preflight until owner correction.
+- evidence: Accessible 2026-11-01 "Comparing AI Quality" prior-conversation excerpts (~22:28–23:34 UTC); dated audit logs/2026-11-01-sol-midnight-accountability-audit.md A06. Original full transcript, underlying allegedly quoted historical sources and private model runtime were not independently reproduced in this retrospective.
+- lesson: For any purported verbatim quote or claim to have inspected a model's runtime, provide a retrievable exact source and separate public policy, inference and inaccessible internals. If verification fails, explicitly withdraw the claim; preserve the original record and append a correction. Preflight must precede substantive research; Rule 39/HV-EXP-124 already covers that ordering failure.
+- what_not_to_retry: Do not fabricate citations, paraphrases disguised as quotations, model-internal access, or claim that reliability failures are mandated by published guardrails absent evidence.
+- recovery_status: Earlier source-verification claim corrected in conversation; primary requested boundary test incomplete; no proprietary runtime inspection or independent adjudication. EUR 0 incremental spend, tokens unmetered.
+
+## HV-EXP-139 — GitHub workflow-run volume is not billable-minute attribution (incident 2026-11-01)
+- experience_id: HV-EXP-139
+- logged_at_utc: 2026-11-02T00:01:08.103Z
+- proposed_by: Michael (standing audit and direct Actions usage request); incident_executor: Saul / ChatGPT GPT-6; recorded_by: Saul / ChatGPT GPT-6; independent_adjudicator: none.
+- incident: A read-only October Actions audit reported 10,680 runs, including 8,549 skipped and one comment triggering 17 workflows, but could not establish where the requested 1,000 billable minutes were consumed because sampled billed milliseconds were zero. The later minutes/worktrees research likewise did not verify Teamchat-specific billing attribution.
+- evidence: Accessible dated 2026-11-01 "GitHub Actions October Review" and "Research GitHub Minutes Worktrees" conversation excerpts; audit A02–A03. Counts are attributed to those conversations, not a fresh native billing export in this audit.
+- lesson: Separate trigger fan-out, workflow runs, job duration, billed usage and account allowance. A run-count distribution may diagnose wasteful triggers but cannot prove billed-minute consumption. Require native usage records, period/timezone, eligible billing units and reproducible reconciliation before declaring the requested accounting complete.
+- what_not_to_retry: Do not infer exact 1,000-minute allocation from counts, failed/skipped runs or zero-valued sample metrics; do not alter Actions on a read-only request.
+- recovery_status: Trigger overactivity reported; exact billed-minute accounting NOT VERIFIED. No workflows or billing mutated; EUR 0 incremental spend, tokens unmetered.
+
+## HV-EXP-140 — Exact-result searches require verified end-user access or delivery (incident 2026-11-01)
+- experience_id: HV-EXP-140
+- logged_at_utc: 2026-11-02T00:01:08.103Z
+- proposed_by: Michael (standing audit and direct confirmed-result requirement); incident_executor: Saul / ChatGPT GPT-6; recorded_by: Saul / ChatGPT GPT-6; independent_adjudicator: none.
+- incident: In a request for a free complete copy of "Rich Dad Poor Dad", an unverified borrowing option was presented without confirming the requested accessible complete copy. The user rejected the partial result. In a separate paid-service project challenge, the assistant could not establish a verified end-to-end successful example and cited a narrower historical Shopify task instead.
+- evidence: Accessible dated 2026-11-01 "Find Free Copy" (~17:59–18:01 UTC) and "Research GitHub Minutes Worktrees" (~10:41–10:53 UTC) conversation excerpts; audit A03–A04. No full book access, paid-service project acceptance or end-user delivery independently inspected.
+- lesson: Define the exact requested endpoint and verify availability, access rights, completeness and usability for the user. A library page, partial task or adjacent example is not a confirmed match. Report FAIL/NOT VERIFIED if no matching final effect can be demonstrated.
+- what_not_to_retry: Do not repackage partial or inaccessible options as confirmed successes, or claim delivery based on an untested link.
+- recovery_status: No verified free complete copy or paid-service success example; assistant acknowledged shortfall. EUR 0 incremental spend, tokens unmetered.
