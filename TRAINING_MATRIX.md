@@ -1996,3 +1996,23 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - lesson: Define the exact requested endpoint and verify availability, access rights, completeness and usability for the user. A library page, partial task or adjacent example is not a confirmed match. Report FAIL/NOT VERIFIED if no matching final effect can be demonstrated.
 - what_not_to_retry: Do not repackage partial or inaccessible options as confirmed successes, or claim delivery based on an untested link.
 - recovery_status: No verified free complete copy or paid-service success example; assistant acknowledged shortfall. EUR 0 incremental spend, tokens unmetered.
+
+## HV-EXP-141 — Failure counts without task denominators cannot establish reliability (incident 2026-11-02)
+- experience_id: HV-EXP-141
+- incident_date: 2026-11-02; logged_on: 2026-11-03.
+- proposed_by: Michael (failure-percentage question and standing accountability mandate); incident_executor: Saul / ChatGPT GPT-6; recorded_by: Saul / ChatGPT GPT-6; independent_adjudicator: none.
+- incident: Assistant cited 10 documented failures and 6 owner interventions from a prior weekly audit, but could not establish the total number of unique assigned/attempted tasks, so could not calculate a defensible failure percentage. Owner identified the audit as misleading and challenged editable/omitted records. A recorded failure does not complete the original task.
+- evidence: 2026-11-02 failure-percentage conversation in the standing audit thread; 2026-11-01 weekly incident figures recorded in logs/2026-11-01-sol-midnight-accountability-audit.md A05; 2026-11-02 retrospective A02-06. No complete task census or tamper-resistant log independently verified.
+- lesson: For a failure-rate claim, first define a stable period and unique task IDs, capture all assigned tasks before execution, distinguish complete/failed/partial/blocked by independent final-effect evidence, and calculate failures / all tasks. Report UNKNOWN when denominator or coverage is missing. Do not infer reliability improvement from incident-count changes.
+- what_not_to_retry: Do not present incident counts, owner-intervention counts, issue totals, or decreasing logged incidents as a verified task failure rate. Do not substitute audit record creation for task recovery/completion.
+- recovery_status: Rate NOT VERIFIED; complete independent task ledger and operational recovery NOT BUILT. €0 incremental external spend for retrospective; token usage unmetered.
+
+## HV-EXP-142 — A scheduled receipt is not an autonomous task-completion loop (incident 2026-11-02)
+- experience_id: HV-EXP-142
+- incident_date: 2026-11-02; logged_on: 2026-11-03.
+- proposed_by: Michael (Icarus Apps Script loop review); incident_executor: Saul / ChatGPT GPT-6; recorded_by: Saul / ChatGPT GPT-6; independent_adjudicator: none.
+- incident: Assistant initially described a source-level RECEIVE→QUEUE→WAKE→INSPECT→REASON→EXECUTE→VERIFY→LOG loop as if it established live autonomy, then conceded that no end-to-end autonomous progression was verified. The 08:40 Icarus scheduled receipt declared PASS while reporting one model attempt and 0/40 tool calls against a task requiring multiple reads/listings. Receipt existence does not prove the task was performed.
+- evidence: dated 2026-11-02 Icarus Google Apps Script conversation; direct GitHub icarus/runs/20261102T084040Z-hourly-20261102T08.md (commit e343e8a6b4ae3bb052e866ca7afbe1b294977c61); logs/2026-11-02-sol-midnight-accountability-audit.md A02-02/A02-04. Installed Apps Script trigger state was not independently inspected.
+- lesson: Distinguish a defined state machine, registered schedule, heartbeat/receipt, actual model call, real tool execution, final-effect verification and persistence. Require a correlated live trigger→task→tool→outcome trace, plus fresh-session continuation where autonomy is claimed. A model output or VERDICT PASS cannot self-certify unobserved tool actions.
+- what_not_to_retry: Do not call a human-dependent trigger, one-shot model reply, scheduled receipt, saved wake instruction or source-code loop a proven autonomous agent. Do not claim that the scheduler never fires when a scheduled receipt exists; state the narrower missing evidence.
+- recovery_status: End-to-end autonomous task loop NOT VERIFIED; no runtime repair, plugin deployment or model-switcher test performed by this retrospective. €0 incremental external spend; tokens unmetered.
