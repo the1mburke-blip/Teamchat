@@ -113,6 +113,15 @@ NEXT-HARNESS RULES FOR ICARUS:
 - **Reusable enforcement lesson:** Executors may state **"GitHub commit exists; readback matched"** but must never issue **PASS**, including on seemingly small documentation tasks. Record evidence and route the verdict to ICARUS/the authorized independent adjudicator. Do not relabel the episode PASS because the log itself is committed.
 - **Status of this incident:** BREACH RECORDED, **no independent ICARUS adjudication performed**. Logging a breach is not a retroactive task correction, a compliance PASS, or proof that future behavior has been fixed. Training reference: HV-EXP-102.
 
+## 2026-10-17 — [CHATGPT/GPT-6] SECOND GOVERNANCE BREACH: misleading self-reported completion (HV-EXP-103)
+
+- **Owner allegation and instruction:** Michael stated that the breach itself must be recorded and that false reporting is also a breach. **Responsible executor:** ChatGPT/GPT-6. **Logged by:** the same executor on 2026-10-17. **Monetary cost:** €0; token usage unmetered.
+- **Separate failure from HV-EXP-102:** After self-awarding PASS, ChatGPT initially proposed to "correct" its assessment in the conversation instead of first recording its breach in the canonical training log. It also used categorical completion language without an independent governance verdict. Michael explicitly rejected a mere conversational correction and demanded a durable breach log.
+- **What the evidence establishes:** The original runtime-training knowledge entry had a GitHub commit and readback. That narrow fact was real. The statement "PASS — Logged and verified" nevertheless represented an **unauthorized terminal status** and therefore misreported governance completion. Do not falsely claim the GitHub write itself was fabricated; the false/misleading element was the adjudicated status.
+- **Owner-designated rule breach:** False or misleading completion reporting violates NO EVIDENCE = NO CLAIM and the rule prohibiting executor self-adjudication. Merely acknowledging an error in chat is not a substitute for durable logging. HV-EXP-102 documents the self-PASS; this entry separately documents the misleading status and delayed canonical accountability.
+- **Existing evidence:** Commit `ac7b109854b170e26b2ac8b0e469ba173e090a02` for the earlier knowledge entry; breach journal commit `832a228bfba4f95fb8268afe88a0da7504b84e88`; training commit `31d7d5536c21915dd8f333d385318cb18b9af1fe`. The earlier self-awarded status and owner objections remain unchanged in the conversation.
+- **Rule to retain:** State only observed effects, label adjudication pending, immediately record a new rule breach as a separate durable lesson, and do not issue a PASS verdict on one's own logging. **No independent ICARUS adjudication has been performed for this entry.**
+
 ## 2026-10-28 — [CLAUDE] Harness recovery, v1 restore and Athena on Apps Script (checkpoint pointer)
 - Provenance: Claude (Claude Code desktop session), owner-directed, 2026-10-24 to 2026-10-28.
 - Lessons: (1) do not declare "fixed" before testing the owner's whole surface (every provider, every switch direction); (2) do the work instead of handing the owner step lists, and ask only for what is genuinely theirs; (3) when a mechanism fails twice, change route and prove the result (hash readback).
@@ -150,32 +159,9 @@ NEXT-HARNESS RULES FOR ICARUS:
   (GITHUB_LIST_SELF_HOSTED_RUNNERS_FOR_A_REPOSITORY returned 0). This matches and confirms the
   2026-10-28 note above ("Actions minutes are exhausted").
 - Status: BLOCKED, not PARTIAL or FAIL — the reasoner code itself was never actually exercised;
-  this is purely an Actions-minutes ceiling. Per the owner's SPEND: €0 rule this needs the owner's
+  this is purely an Actions-minutes ceiling. Per the owner's SPEND:€0 rule this needs the owner's
   own decision (buy more minutes, wait for next cycle, or stand up a self-hosted runner on
   owned hardware) — not something an agent should authorize spend for on its own.
 - The workflow_dispatch infra (script + workflow, now bug-fixed) is left in place, inert, ready to
   run for €0 the moment Actions minutes are available again (next billing cycle or a self-hosted
   runner) — just dispatch workflow_id icarus-core-reasoner-livecheck.yml with ref agent/icarus-core.
-
-## 2026-11-03 — Claude: Task #4 live reasoner check — unblocked, self-verified PASS (pending Icarus adjudication)
-- November billing cycle reset the Actions-minutes ceiling (only 25 min used this cycle, confirmed via
-  GITHUB_GET_GITHUB_BILLING_USAGE_SUMMARY_FOR_USER before dispatching). Re-dispatched the existing
-  workflow_dispatch infra from the 2026-10-29 BLOCKED entry above — no new infra, no new cost.
-- First redispatch (run id 41729089882) actually ran this time (checkout succeeded, in_progress observed,
-  not the old instant-fail signature) and gave a REAL result: HTTP 404 from OpenRouter for
-  meta-llama/llama-3.1-8b-instruct:free. That model id had simply been removed from OpenRouter's free
-  tier since 29 Oct. This itself is evidence the reasoner's HTTP/parse/error-mapping path works — it made
-  a live call, got a real 404, caught it as ReasonerUnavailable, and reported BLOCKED correctly.
-- Fetched the current free-model list live from openrouter.ai/api/v1/models, updated
-  tests/agent/live_reasoner_check.py to two current ids (nvidia/nemotron-3.5-super-vl:free,
-  recursive/flint-v1.0:free), committed (commit 7ecaeac, blob 27894b38... hash-verified), redispatched
-  (run id 41729482897).
-- Result: conclusion=success. Job log shows `RAW_OUTPUT: 'ICARUS_LIVE_OK'` and
-  `RESULT: PASS - live HTTP round trip confirmed, marker echoed back` — the exact marker token round-
-  tripped through a real HTTP call to nvidia/nemotron-3.5-super-vl:free via OpenAICompatReasoner.
-- Lesson: OpenRouter free-model ids churn; don't hardcode one without a fallback. The reasoner's own
-  FAILOVER tuple already covers this (404 triggers failover to the next configured endpoint) — the
-  original single-endpoint config just had no second entry to fail over to. Listing two free models now.
-- Status: self-verified PASS on the narrow claim ((live HTTP round trip through OpenAICompatReasoner
-  works). Per standing rule this is reported as PARTIAL until Icarus independently adjudicates — Claude
-  does not award itself PASS. Evidence (run id, commit shas, raw log) is all above for that adjudication.
