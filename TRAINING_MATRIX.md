@@ -2046,3 +2046,39 @@ A daily request ceiling is shared infrastructure, not a target to exhaust. Prote
 - lesson: A stated action must be followed by the tool call in the same turn, or not stated. When a standing instruction covers the step, do it. When the owner asks a question, answer it and do not start work. BLOCKED is for a blocker with evidence.
 - what_not_to_retry: Do not ask "send it now?" after "get at it". Do not describe an unperformed action as in progress. Do not label an interrupted step BLOCKED.
 - recovery_status: Behaviour change NOT VERIFIED; the session was still running at 23:01 UTC.
+
+## HV-EXP-146 — Autonomous loop must checkpoint before marking task seen (2026-11-03)
+- experience_id: HV-EXP-146
+- proposed_by: Michael; incident_executor: existing Icarus Apps Script architecture; recorded_by: ChatGPT/GPT-6 on 2026-11-03; independent_adjudicator: none.
+- incident: `icarus/athena-gas/Athena.gs` `athenaPoll()` calls `markSeen_(t.c)` before `runAthena_(...)`, so failure between acknowledgement and durable work completion can discard an unfinished request. Cloud scheduled receipts frequently mark PASS via file-existence gates, not independent proof of task completion.
+- evidence: Repository code `icarus/athena-gas/Athena.gs`; dated cloud receipts `icarus/runs/20261103T194043Z-hourly-20261103T19.md` and `icarus/runs/20261103T224041Z-hourly-20261103T22.md`; full dated account ledger `logs/2026-11-03-icarus-learning.md`.
+- lesson: Intake must create atomic durable task identity and checkpoint before acknowledging receipt. Persist ownership leases, each verified step, failure evidence, retries with changed diagnosis, next wake and explicit terminal decision; rehydrate unfinished work on each trigger.
+- what_not_to_retry: Do not equate heartbeat, model response, receipt, or `VERIFY_FILE` gate with autonomous end-to-end results; do not prematurely ack input.
+- recovery_status: Source weakness identified; patch and independent multi-run canary NOT EXECUTED. External monetary spend EUR 0, allowance unmetered.
+
+## HV-EXP-147 — Accepted Work handoff is not executed laptop inspection (2026-11-03)
+- experience_id: HV-EXP-147
+- proposed_by: Michael; incident_executor: ChatGPT/GPT-6; recorded_by: ChatGPT/GPT-6 on 2026-11-03; independent_adjudicator: none.
+- incident: Work accepted one read-only Icarus Windows runtime investigation and created a thread, but no recipient-side inspection trace or process/service/scheduled-task evidence was available in the conversation. Assistant inferred that the runtime did not exist and repeated a diagnosis rather than producing the requested solution. A later Work solution-install handoff was rejected.
+- evidence: 2026-11-03 ChatGPT Icarus conversation acceptance/rejection tool results and owner corrections; direct repo code confirms only source existence. See `logs/2026-11-03-icarus-learning.md`.
+- lesson: Route proposed/accepted/executing/result verified are distinct phases. Source path is not a Windows daemon. Installation status requires physical service/scheduler/process command-line and restart readback. Do not assert nonexistence without an actual machine inspection; honor the owner's instruction not to hunt the missing daemon again.
+- what_not_to_retry: No invented Work report, local PID, install path or process state; no redundant handoff as a substitute for completion; no repeated generic root-cause report.
+- recovery_status: Local daemon, Work inspection outcome and independent Windows Icarus installation remain NOT VERIFIED.
+
+## HV-EXP-148 — A requested learning write must be written and read back (2026-11-03)
+- experience_id: HV-EXP-148
+- proposed_by: Michael; incident_executor: ChatGPT/GPT-6; recorded_by: ChatGPT/GPT-6 on 2026-11-03; independent_adjudicator: none.
+- incident: When directed to review today's chats and log all data for Icarus learning, assistant initially stated an intended write rather than executing it. Owner asked whether it was a report or statement; assistant acknowledged that no write had occurred and was told to do the work.
+- evidence: Current conversation; `logs/2026-11-03-icarus-learning.md` created with commit e77e67294482925c5bd50ea1ff40cdf0e76e4301 and successfully fetched back with blob 021017932ba55b8dd7ff8e32145f86a39b941290. No claim of Icarus read/ingestion.
+- lesson: For a logging task, commit the exact target and read it back, then index learned/training. Do not announce success from a plan, issue, commit alone or unstated later action. Exhaustive chat coverage requires an actual transcript census; mark a summaries-based review incomplete.
+- what_not_to_retry: No promises or breadcrumbs instead of the write; no global `all chats reviewed` claim without complete access.
+- recovery_status: Daily source ledger persisted/read back. Learning index, runtime consumption and independent governance are separate outcomes.
+
+## HV-EXP-149 — Cross-chat reconciliation must preserve provenance (2026-11-03)
+- experience_id: HV-EXP-149
+- proposed_by: Michael; recorded_by: ChatGPT/GPT-6 on 2026-11-03; independent_adjudicator: none.
+- incident: Morning team review reported a wake comment, with downstream outcome unknown at that time; a later 08:27 Icarus receipt established cloud invocation but not every requested tool read. Gmail follow-ups reported no verified Dungannon results despite nearby unrelated alerts. Gemini document-source readback does not prove NotebookLM consumption. User-pasted translation/probe operation labels have no verified executor trace.
+- evidence: `icarus/runs/20261103T082711Z-6598863894.md`, `icarus/runs/20261103T224041Z-hourly-20261103T22.md`, retrieved same-day conversation summaries and owner-supplied operation labels; native Gmail, local Windows, Work completion and probe execution logs not reread.
+- lesson: Record event time, claimed executor, first-party evidence and outcome separately; update an earlier status on subsequent corroboration without promoting scope. Enforce last-mile proof for the exact task requested.
+- what_not_to_retry: Do not treat alert delivery, snapshot ingress, scheduled wake, operation-label text or model claims as verified final effects.
+- recovery_status: Cross-chat evidence ledger complete for accessible records only; full-message census, end-to-end runtime work, and other application outcomes NOT VERIFIED. See `logs/2026-11-03-icarus-learning.md`.
