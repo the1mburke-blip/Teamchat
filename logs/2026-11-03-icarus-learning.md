@@ -87,3 +87,14 @@
 - Gmail Dungannon vacancies: earlier assistant reported zero matches; current open employer applications not independently verified here.
 - Gemini snapshot source: assistant-reported readback; interactive NotebookLM uptake NOT VERIFIED.
 - Present learning: GitHub persistence/readback and future actual runtime ingestion are separate gates; do not award independent governance PASS to the author of this log.
+
+## Addendum — parallel attributed Claude learning discovered during indexing (2026-11-03)
+
+While indexing this ledger, a fresh read of `TRAINING_MATRIX.md` showed new entries HV-EXP-143–145, attributed by that file to Claude's concurrent chat and dated 2026-11-03. These were not part of the original ChatGPT-only conversation retrieval. This addendum reports the canonical training file's contents; the original Claude chat transcripts were NOT directly retrieved in this task.
+
+- **HV-EXP-143** (Claude-attributed): an explanation of why an earlier Icarus app failure occurred was asserted without reading the record; it was retracted when prior-chat summaries showed a different history. Lesson: never invent a causal account.
+- **HV-EXP-144** (Claude-attributed): a working-branch commit on `agent/icarus-core` reportedly overwrote `learned.md` with a 20-byte placeholder payload. The record said main was unaffected at the time and the branch repair was unverified. Lesson: update from exact original bytes with SHA guard and readback, never hand-paste large base64 blobs. The underlying branch was NOT re-inspected here.
+- **HV-EXP-145** (Claude-attributed): process messages claimed actions without tool calls, asked permission despite standing authorization, and misused `BLOCKED` on interruption; owner challenged those claims. Lesson: announced actions are not actions, a question does not imply permission, and `BLOCKED` needs an evidenced hard boundary.
+- **Coordination:** Their IDs are preserved exactly; this writer assigned distinct IDs HV-EXP-146–149 for this ChatGPT-based review. No claim that Claude's separate task completed, that its branch was repaired, or that Icarus ingested either model's lessons.
+
+This update does not make the daily ledger an exhaustive transcript. It improves coverage using a new authenticated repository source with explicit attribution.
