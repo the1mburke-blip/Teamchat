@@ -8,6 +8,12 @@ reasoner's HTTP/parse/error-mapping path actually works end to end.
 Run only via the "Icarus core: live reasoner check" GitHub Actions workflow
 (workflow_dispatch), never automatically and never from a chat session with
 exposed credentials.
+
+Model ids are not stable on OpenRouter's free tier; 2026-10-29's attempt used
+meta-llama/llama-3.1-8b-instruct:free, which had been removed by 2026-11-03
+(confirmed via live HTTP 404 from the reasoner itself, and via the current
+openrouter.ai/api/v1/models listing). Two current free models are listed
+below in order; OpenAICompatReasoner already fails over on HTTP 404.
 """
 from __future__ import annotations
 
@@ -28,9 +34,14 @@ def main() -> int:
     endpoints = [
         {
             "base_url": "https://openrouter.ai/api/v1",
-            "model": "meta-llama/llama-3.1-8b-instruct:free",
+            "model": "nvidia/nemotron-3.5-super-vl:free",
             "api_key_env": "OPENROUTER_API_KEY",
-        }
+        },
+        {
+            "base_url": "https://openrouter.ai/api/v1",
+            "model": "recursive/flint-v1.0:free",
+            "api_key_env": "OPENROUTER_API_KEY",
+        },
     ]
     reasoner = OpenAICompatReasoner(endpoints, timeout=60)
     prompt = f"Reply with exactly this token and nothing else: {MARKER}"
