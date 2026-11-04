@@ -1,6 +1,6 @@
-# Pilot interface contract (v0.5.2, 4 Nov 2026)
+# Pilot interface contract (v0.6, 4 Nov 2026)
 
-Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrected three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. v0.5 records what GovernedCore.step() and modelslot.py implement (checkpoint 4). v0.5.1 closes a gap found in review (a kernel-only PASS could still write verified learning) and adds the pilot command layer (section 9) to the plan. v0.5.2 grounds the hook transport in DSH's published interfaces, read on 4 Nov 2026 (section 0 and section 4). Written from repo evidence only. Nothing here has been run against the real laptop DSH.
+Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrected three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. v0.5 records what GovernedCore.step() and modelslot.py implement (checkpoint 4). v0.5.1 closes a gap found in review (a kernel-only PASS could still write verified learning) and adds the pilot command layer (section 9) to the plan. v0.5.2 grounds the hook transport in DSH's published interfaces, read on 4 Nov 2026 (section 0 and section 4). v0.6 records what hookcore.py implements (item B1) and adds the `code` field to hook replies. Written from repo evidence only. Nothing here has been run against the real laptop DSH.
 
 Every claim carries a tag:
 - [REPO] read in a repo file (path and blob SHA in section 0).
@@ -337,7 +337,7 @@ Not implemented, and not claimed:
 - Real token streaming. Streaming is a replay of a finished, authorized turn.
 - Any evidence that DSH accepts a localhost base URL or consumes these responses. That is checkpoint 10.
 - The hook transport (checkpoint 5) and the supervisor (checkpoint 6). Until the hook exists, the tests stand in for it by calling `Session.authorize_execution`.
-- Path mapping for the real kernel: GovernedKernel accepts repo-relative paths only and refuses absolute and drive paths. A harness that sends absolute paths will be denied until an adapter maps them. This is a known blocker for live use.
+- Path mapping for the real kernel. Done at item B1 (section 4.2).
 
 ## 4. Hook channel: wire format
 
@@ -371,7 +371,8 @@ Response:
 ```json
 {
   "decision": "allow",
-  "reason": "matches AUTHORIZED call, args inside path scope",
+  "code": "OK",
+  "reason": "matches the proposal exactly and passed policy",
   "ledger_seq": 6,
   "escalation": null
 }
@@ -382,6 +383,7 @@ Owner-only decisions (credentials, legal, payment, security, safety) answer `den
 ```json
 {
   "decision": "deny",
+  "code": "OWNER_ONLY",
   "reason": "owner-only boundary: credentials",
   "ledger_seq": 9,
   "escalation": {"category": "credentials", "owner_action": "OWNER ASSISTANCE REQUIRED - sign in to the provider", "evidence": "tool requested a credential field"}
@@ -407,6 +409,18 @@ Argument binding:
 An unknown tool is deny. Escalation to the owner happens only for the owner-only categories, and it never leaves the session waiting. [DECISION]
 
 If the forwarder or hook is missing or disabled, Icarus reports `GAP: hook channel not attached` and claims no governance over calls the channel never saw.
+
+### 4.2 What hookcore.py implements (item B1)
+
+Implemented and unit tested against the real GovernedKernel and a signed Session:
+- `PathMapper`: turns the absolute and Windows paths DSH sends into the repo-relative POSIX form the kernel accepts, or refuses. Lexical only. Refused: parent traversal, drive-relative paths, alternate data streams, UNC paths, Windows device names, segments ending in a dot or space, `~`, `%` and `$`, anything outside the kernel's workdir, and the workdir root itself.
+- `DSH_TOOLS`: every tool in DSH's catalog with an effect class. Not in the table means denied. By default only the read, write, editor and meta classes are allowed; exec, code, agent, runtime, net, context, future and history are denied. The table is written out in `COVERAGE.md`, generated from the same data, and a test fails if the two differ.
+- `MappedKernelAdapter`: the one policy point the Session consults at proposal time and again at execution time. In order: classify (unknown = deny), detect owner-only matters, class permission, require a path for read, write and editor tools, map every path value, protect the kernel's protected paths for every write-class tool whatever it is called, then ask the real kernel (counted and logged at proposal time, read-only at execution time).
+- `HookCore.decide`: validates the request, finds the session, calls `Session.authorize_execution`, and returns the reply shape `{decision, code, reason, ledger_seq, escalation}`. An unknown session, a malformed request, a session that is not live ready, an unwritable ledger, a broken kernel and any unexpected error are all denials. A deterministic policy refusal burns the call. An owner-only refusal also returns an escalation record and logs it, and never waits for the owner.
+
+Why the adapter exists: the real kernel reads only the arguments named `path`, `src` and `dst`, and its protected-path rule names only `write_file` and `delete_file`. DSH's tools use `file_path`, `workdir` and `cwd`, and are called `write` and `edit`. Without the adapter those arguments would not have been checked at all and those writes would have bypassed the protected paths.
+
+Not built: the transport (item B2), real-symlink and junction resolution (the mapper is lexical), the DSH-side forwarder, and any run against the installed DSH.
 
 ## 5. Supervisor: wire format
 

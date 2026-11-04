@@ -1202,6 +1202,43 @@ class TestKernelPhaseAndEvents(Base):
         self.assertEqual(s.calls, {})
 
 
+class TestBurnAndWorkdir(Base):
+    def setUp(self):
+        super().setUp()
+        self.s = self.open()
+        self.r = self.s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")
+
+    def test_only_an_authorized_call_can_be_burned(self):
+        cid = self.r["call_id"]
+        self.assertTrue(self.s.burn_call(cid, "KERNEL_DENIED", "policy"))
+        self.assertEqual(self.s.calls[cid]["state"], "BURNED")
+        self.assertFalse(self.s.burn_call(cid, "KERNEL_DENIED", "again"))
+        self.assertFalse(self.s.burn_call("call_unknown", "X", "y"))
+        r2 = self.s.propose("read_file", {"path": "C:/work/docs/b"}, "agent-1")
+        self.s.authorize_execution(r2["call_id"], "read_file", {"path": "C:/work/docs/b"}, "harness")
+        self.assertFalse(self.s.burn_call(r2["call_id"], "X", "y"))
+        self.assertEqual(self.s.calls[r2["call_id"]]["state"], "EXECUTED")
+
+    def test_a_burned_call_can_never_run_and_the_burn_is_logged(self):
+        cid = self.r["call_id"]
+        self.s.burn_call(cid, "KERNEL_DENIED", "policy")
+        self.assertEqual(self.s.authorize_execution(cid, "read_file", {"path": "C:/work/docs/a"}, "harness")["code"], "CALL_BURNED")
+        e = [x for x in S.Ledger.read(self.s.ledger.path) if x["kind"] == "call_burned"][0]
+        self.assertEqual((e["call_id"], e["code"], e["decision"]), (cid, "KERNEL_DENIED", "deny"))
+
+    def test_burning_is_restrictive_first_so_a_failed_write_still_burns(self):
+        cid = self.r["call_id"]
+        self.s.ledger.path = self.tmp
+        with self.assertRaises(S.LedgerError):
+            self.s.burn_call(cid, "KERNEL_DENIED", "policy")
+        self.assertEqual(self.s.calls[cid]["state"], "BURNED")
+
+    def test_workdir_is_a_scoped_path_like_the_others(self):
+        self.assertEqual(self.s.propose("read_file", {"path": "C:/work/docs/a", "workdir": "C:/elsewhere"}, "agent-1")["code"], "PATH_OUT_OF_SCOPE")
+        self.assertEqual(self.s.propose("read_file", {"path": "C:/work/docs/a", "workdir": "C:/work/src"}, "agent-1")["decision"], "allow")
+        self.assertIn("workdir", S.PATH_KEYS)
+
+
 class TestWholeStory(Base):
     def test_owner_sets_boundaries_icarus_delegates_agent_works_gates_hold(self):
         s = self.open(plan=True)

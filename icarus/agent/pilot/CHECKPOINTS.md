@@ -27,7 +27,8 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 4 | 2026-11-04 | pending | pending | see the checkpoint 4 section below; commit e07b3859 | none |
 | plan | 2026-11-04 | ChatGPT (via owner) | REVISE THE PLAN: replace item 9, strengthen item 10, prerequisite fix | see the revised plan below | none |
 | 4 fix | 2026-11-04 | pending | pending | kernel-only PASS no longer writes learning; commit 73a1858d | none |
-| DSH docs | 2026-11-04 | ChatGPT (via owner) | PARTIAL; no redesign, keep B1 to B10 | docs read by ChatGPT and again by me; commit in the report | none |
+| DSH docs | 2026-11-04 | ChatGPT (via owner); owner | PARTIAL, no redesign; owner: "review passed" | commit 572921b1 | none |
+| B1 | 2026-11-04 | pending | pending | see the B1 section below; commit in the report | none |
 
 Review of the original 10-point plan (2026-11-04, ChatGPT): APPROVE WITH REQUIRED CHANGES. Accepted and reflected in the plan: contract grounded in DSH evidence; model slot proven to pass through Core; unknown tools default to deny; supervisor verifies lifecycle and process ownership; checkpoint 10 is real harness acceptance; shared authority across all three surfaces; explicit recorded review decisions.
 
@@ -136,7 +137,7 @@ Items 1 to 4 are done. B1 to B10 replace old items 5 to 10. Every item carries t
 | Real DSH launch command and arguments | Unknown | B3 fixture, B10 live |
 | Windows process-tree termination | Unproven | B4 marks it, B10 proves it |
 | Detection of execution outside the hook | Partial (file effects only) | B5, B10 |
-| Real kernel refuses absolute and drive paths | Open blocker | B1 |
+| Real kernel refuses absolute and drive paths | Closed for mappable paths at B1 (PathMapper). Still open: the workdir root itself cannot be named, and symlinks and junctions are not detected | B1 done; B5 for effects |
 | Resume after a crash | Not built | B8 |
 | Owner signing tool and key custody for decisions | Not built; custody cannot be proven by code | Before live use |
 | Provider-independent model selection by Icarus | Not built | B9 |
@@ -150,3 +151,24 @@ Result: the three findings hold, with refinements that change the design of B2 a
 3. "Icarus unavailable": an unanswered approval is denied, but only on the approval path. Our own forwarder fails closed on a timeout or an unreachable Icarus, and the guard denies anything not approved. A DSH started without the forwarder has only its own policy. B3 must verify the configuration before claiming control, and B10 must test the forwarder being absent.
 4. The review says the checkpoint 4 internal-PASS issue is unresolved. That predates commit 73a1858d, which fixed it in step(); legacy run() still learns from a kernel-only PASS and is listed in the register as an owner decision.
 5. Scope growth to confirm: the DSH-side plugin is JavaScript, so B2 now includes writing and mock-testing it here. It cannot be run against a real DSH from this chat.
+
+## B1 (path mapping and hook decision core): implemented 4 Nov 2026, awaiting review
+
+Built: icarus/agent/pilot/hookcore.py (PathMapper, DSH_TOOLS, HookPolicy, MappedKernelAdapter, HookCore), icarus/agent/pilot/COVERAGE.md (the coverage table, generated and checked by a test), Session.burn_call, `workdir` added to the session's path keys, tests/agent/test_hookcore.py, contract v0.6. governed.py and every M1 file are unchanged.
+
+Done-when check against the plan:
+- Real harness paths map to what the kernel accepts: yes, or are refused. Tested with Windows and POSIX spellings, relative paths, and a list of refusals.
+- Default-deny decision function: yes. It is deterministic and never executes anything. It does write to the ledger and burns a refused call, so "pure" here means no execution and no side effect beyond the ledger and the burn.
+- Unknown tools denied, unavailable decisions denied: yes (unknown tool, unknown session, not live ready, unwritable ledger, broken kernel, any exception).
+- Owner-only escalation: yes, returns a record in the contract's shape and logs it; categories are only credentials, security, legal, payment and safety. Only credentials and security are detected from a call today; legal, payment and safety need a rule if the owner wants one.
+- Coverage table: COVERAGE.md lists every tool in DSH's catalog and the routes that do not reach the decision.
+
+Found while building:
+1. The real kernel reads only `path`, `src` and `dst`. DSH's tools use `file_path`, `workdir` and `cwd`, so those paths would have gone unchecked. The adapter hands the kernel every path value.
+2. The kernel's protected-path rule names only `write_file` and `delete_file`. DSH's `write` and `edit` would have bypassed it. Protection is now by class.
+3. The session's own path scoping did not cover `workdir`, which bash and pwsh use. Added.
+4. `glob` and `grep` fall back to DSH's own workspace when no path is given, which can be outside the session. Read, write and editor tools now must name a path.
+5. The workdir root cannot be named (the kernel refuses `.`), so a shell tool allowed by the owner cannot run at the root.
+6. Two weak tests were caught by deliberate breakage (the UNC check and the check of every path value) and fixed.
+
+Not built: the hook transport (B2), symlink and junction detection, rules that detect legal, payment and safety matters.

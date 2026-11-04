@@ -43,7 +43,7 @@ ROLES = ("owner", "adjudicator", "verifier")
 ISSUER_ROLES = ("owner", "adjudicator")
 DECISIONS = ("resume", "rework", "stop")
 EXEC_KINDS = ("proposal", "execution_authorized", "tool_result", "milestone_reached")
-PATH_KEYS = {"path", "file", "filepath", "file_path", "dir", "directory", "cwd", "target", "dest",
+PATH_KEYS = {"path", "file", "filepath", "file_path", "dir", "directory", "cwd", "workdir", "target", "dest",
              "destination", "source", "src"}
 STATES = ("ACTIVE", "PAUSED_FOR_REVIEW", "CLOSED_COMPLETE", "CLOSED_STOPPED")  # deliberately no PASS
 GENESIS = "0" * 64
@@ -477,6 +477,17 @@ class Session:
         if kind in EXEC_KINDS or kind in ("session_opened", "decision_accepted", "gate_opened", "session_closed"):
             raise AuthorityError("BAD_EVENT", f"{kind} is written only by the session itself")
         return self._log(surface, kind, **fields)
+
+    def burn_call(self, call_id, code, reason):
+        """Retire a call that was proposed but must never run (a deterministic policy refusal at the hook).
+        Only an AUTHORIZED call can be burned. Restrictive: the state changes first, then the entry is written."""
+        with self._lock:
+            call = self.calls.get(call_id)
+            if call is None or call["state"] != "AUTHORIZED":
+                return False
+            call["state"] = "BURNED"
+            self._log("hook", "call_burned", call_id=call_id, decision="deny", code=code, reason=str(reason)[:200])
+            return True
 
     def _deny(self, surface, kind, code, reason, **fields):
         e = self._log(surface, kind, decision="deny", code=code, reason=reason, **fields)
