@@ -26,7 +26,8 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 3 (rev) | 2026-11-04 | owner (Michael) relaying ChatGPT's verification | Accepted for progression | commit 4bf42185 on agent/icarus-core | none |
 | 4 | 2026-11-04 | pending | pending | see the checkpoint 4 section below; commit e07b3859 | none |
 | plan | 2026-11-04 | ChatGPT (via owner) | REVISE THE PLAN: replace item 9, strengthen item 10, prerequisite fix | see the revised plan below | none |
-| 4 fix | 2026-11-04 | pending | pending | kernel-only PASS no longer writes learning; commit in the report | none |
+| 4 fix | 2026-11-04 | pending | pending | kernel-only PASS no longer writes learning; commit 73a1858d | none |
+| DSH docs | 2026-11-04 | ChatGPT (via owner) | PARTIAL; no redesign, keep B1 to B10 | docs read by ChatGPT and again by me; commit in the report | none |
 
 Review of the original 10-point plan (2026-11-04, ChatGPT): APPROVE WITH REQUIRED CHANGES. Accepted and reflected in the plan: contract grounded in DSH evidence; model slot proven to pass through Core; unknown tools default to deny; supervisor verifies lifecycle and process ownership; checkpoint 10 is real harness acceptance; shared authority across all three surfaces; explicit recorded review decisions.
 
@@ -101,16 +102,16 @@ Items 1 to 4 are done. B1 to B10 replace old items 5 to 10. Every item carries t
 
 | # | Item | Done when |
 |---|---|---|
-| B1 | Path mapping and hook decision core | Real harness paths map to what the kernel accepts; a pure decision function is default-deny; unknown tools denied; owner-only escalation |
-| B2 | Hook transport | Loopback /hook with a bearer token in the contract format; real-socket tests; every refusal happens before a decision |
-| B3 | Supervisor launch and ownership | Argument list, allowed environment, fixed directory, process group; pid, start time, executable and argument hash recorded; attaching is observe-only |
+| B1 | Path mapping and hook decision core | Real harness paths map to what the kernel accepts; a pure decision function is default-deny; unknown tools denied; unavailable decisions deny; owner-only escalation. A written coverage table lists every tool route DSH has (native, Code Mode, MCP) and whether it reaches the decision, and anything that does not is listed as a gap |
+| B2 | Hook transport | Loopback /hook with a bearer token in the contract format; real-socket tests; every refusal happens before a decision. Also the DSH-side forwarder plugin (a `tools/pre-execute` listener that fails closed, a synchronous guard over an approved set, and a `hook_attached` report), written and tested here against a mock of DSH's context. Loading it in the real DSH is B10 |
+| B3 | Supervisor launch and ownership | Argument list, allowed environment, fixed directory, process group; pid, start time, executable and argument hash recorded; attaching is observe-only. Icarus reads back the model route and the forwarder configuration and claims control of a launched DSH only after the route points at the slot and `hook_attached` has arrived; otherwise it reports an uncovered boundary |
 | B4 | Supervisor stop and evidence | Grace period, timeout, crash handling, whole-tree kill with proof it is gone, capped output in the ledger; Windows behaviour marked unproven |
 | B5 | File snapshot check | Before/after hashes of scoped paths; UNEXPLAINED_CHANGE for changes no approved call explains; what it cannot see is stated |
 | B6 | Fixture integration | Slot, hook and supervisor on one session against a stand-in harness. A component-integration fixture, not proof of pilot control |
 | B7 | Mandatory adjudicator | Live mode refuses to start without an independent adjudicator; nothing is reported as PASS or learned without it |
 | B8 | Resume after a crash | Replay the verified ledger to restore nonces, burned calls, gates, budgets and milestone; refuse a broken chain |
 | B9 | Icarus pilot command layer (replaces close-out) | A fixture shows Icarus accepting an owner objective, creating the task, selecting a model through a provider-independent interface, creating the session and launching or configuring DSH, directing it through the slot and hook, then verifying independently and deciding to continue, stop or work a blocker. It also shows DSH cannot silently switch away and keep executing effects; anything that cannot be enforced is reported as a gap. The live-DSH acceptance script and instructions are written here |
-| B10 | Live Icarus pilot acceptance inside DSH (strengthened) | Icarus starts first, selects a model, starts or commands the real DSH process, initiates a task, directs an authorized tool action and verifies its result; then the failure boundaries are tested on purpose: denied action, Icarus unavailable, alternative execution route, process termination. Only observed behaviour counts; DSH's own report is not verification. BLOCKED from this chat: it needs a session inside the laptop harness, and only Icarus awards PASS |
+| B10 | Live Icarus pilot acceptance inside DSH (strengthened) | Icarus starts first, selects a model, starts or commands the real DSH process, initiates a task, directs an authorized tool action and verifies its result; then the failure boundaries are tested on purpose: a denied action; Icarus stopped; the forwarder removed or disabled; alternative execution routes (another provider, Code Mode, shell, MCP); process termination. None may silently produce an unauthorized effect, and any exception is reported as an uncovered boundary. Only observed behaviour counts; DSH's own report is not verification. BLOCKED from this chat: it needs a session inside the laptop harness, and only Icarus awards PASS |
 
 ## Review of the revised plan (ChatGPT, 4 Nov 2026): REVISE THE PLAN, and how each point was handled
 
@@ -128,8 +129,10 @@ Items 1 to 4 are done. B1 to B10 replace old items 5 to 10. Every item carries t
 | Core mode (slot answering in core mode, run() through the Session) | Not built; a core-mode session is refused with CORE_MODE_NOT_IMPLEMENTED | Only if a demonstrated DSH requirement needs it |
 | Real token streaming | Not built; streaming replays a finished turn | Only if DSH needs real streaming (B10 will show) |
 | Legacy run() learns from a kernel-only PASS | Unchanged on purpose; step() no longer does | Open owner decision |
-| DSH accepts a localhost base URL, request shape, tool-call loop, version | Unverified | B10 |
-| Hook transport (DSH approval mechanism or a thin forwarder) and what DSH does when it is unreachable | Unverified; may fail open | B2 for the endpoint, B10 for DSH behaviour |
+| DSH accepts a plain http loopback base URL, streaming or not, tool calls through a custom provider, and the installed version | A custom provider with a base URL and `api: openai-completions` is documented; http loopback, streaming and tool calls are not stated | B10 |
+| Hook transport and what DSH does when Icarus is unreachable | Grounded in the docs: a forwarder plugin (pre-execute listener plus guard) is the route; DSH's approval seam alone is not enough. An unanswered approval is denied, but that says nothing about a DSH that runs without the forwarder | B2 builds it, B10 tests it |
+| Whether a pre-execute listener may await a network call, whether DSH's callId is the id the slot returned, whether the guard sees the proposed arguments, and whether Icarus could answer through the ACP bridge | Unverified | B10 |
+| DSH-side forwarder plugin (JavaScript, runs inside DSH) | Not written; new scope in B2 | B2 |
 | Real DSH launch command and arguments | Unknown | B3 fixture, B10 live |
 | Windows process-tree termination | Unproven | B4 marks it, B10 proves it |
 | Detection of execution outside the hook | Partial (file effects only) | B5, B10 |
@@ -137,3 +140,13 @@ Items 1 to 4 are done. B1 to B10 replace old items 5 to 10. Every item carries t
 | Resume after a crash | Not built | B8 |
 | Owner signing tool and key custody for decisions | Not built; custody cannot be proven by code | Before live use |
 | Provider-independent model selection by Icarus | Not built | B9 |
+
+## DSH interface verification (ChatGPT, 4 Nov 2026), checked against the same sources by me
+
+Result: the three findings hold, with refinements that change the design of B2 and the tests of B3 and B10. No checkpoint redesign. Details are in CONTRACT.md sections 0, 4 and 6.
+
+1. A localhost model endpoint is supported by DSH's custom-provider configuration. Not stated: plain http loopback, streaming, and tool calls through a custom provider. Untested against the installed DSH.
+2. External approval is not as simple as the summary suggests. `approval/request` is a same-process event, fires only when a pre-execute decision is `ask`, and carries no tool arguments. It cannot carry the exact-argument binding, and an allowed call never reaches it. The usable route is a forwarder plugin using a `tools/pre-execute` listener (sees the arguments) plus a synchronous guard (final, cannot be reversed). That plugin is new work and is now part of B2.
+3. "Icarus unavailable": an unanswered approval is denied, but only on the approval path. Our own forwarder fails closed on a timeout or an unreachable Icarus, and the guard denies anything not approved. A DSH started without the forwarder has only its own policy. B3 must verify the configuration before claiming control, and B10 must test the forwarder being absent.
+4. The review says the checkpoint 4 internal-PASS issue is unresolved. That predates commit 73a1858d, which fixed it in step(); legacy run() still learns from a kernel-only PASS and is listed in the register as an owner decision.
+5. Scope growth to confirm: the DSH-side plugin is JavaScript, so B2 now includes writing and mock-testing it here. It cannot be run against a real DSH from this chat.

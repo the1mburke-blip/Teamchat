@@ -1,6 +1,6 @@
-# Pilot interface contract (v0.5.1, 4 Nov 2026)
+# Pilot interface contract (v0.5.2, 4 Nov 2026)
 
-Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrected three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. v0.5 records what GovernedCore.step() and modelslot.py implement (checkpoint 4). v0.5.1 closes a gap found in review (a kernel-only PASS could still write verified learning) and adds the pilot command layer (section 9) to the plan. Written from repo evidence only. Nothing here has been run against the real laptop DSH.
+Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrected three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. v0.5 records what GovernedCore.step() and modelslot.py implement (checkpoint 4). v0.5.1 closes a gap found in review (a kernel-only PASS could still write verified learning) and adds the pilot command layer (section 9) to the plan. v0.5.2 grounds the hook transport in DSH's published interfaces, read on 4 Nov 2026 (section 0 and section 4). Written from repo evidence only. Nothing here has been run against the real laptop DSH.
 
 Every claim carries a tag:
 - [REPO] read in a repo file (path and blob SHA in section 0).
@@ -18,6 +18,15 @@ Every claim carries a tag:
 | (core) icarus/agent/governed.py | 7669b8a8 | GovernedCore.run() owns the whole loop. Reasoner output is a JSON proposal (parse_proposal). kernel.authorize() decides. Then run() itself calls hand.execute() and logs the result. Every max_steps it logs a `checkpoint` entry and keeps going. |
 | (core) icarus/agent/hands.py | 2df4925a | Hand contract: tools(), execute(), probe(), stop(). LocalFilesHand.execute() runs read_file, list_dir, write_file. |
 | (core) icarus/agent/pilot/fieldguide.json | d0e1d34e | Seed hints, all UNVERIFIED by its own note. |
+
+External sources read on 4 Nov 2026 (deepseek-ai/deepseek-harness, master at the time; read by ChatGPT and again by me; none of them is the installed laptop version):
+
+| Source | What it establishes, and what it does not |
+|---|---|
+| docs/user/guide/providers.md | A custom provider takes a provider id, a base URL, an API protocol (`api: openai-completions` in settings.yaml), a credential (`apiKeyEnv` or the credentials file) and at least one model. Model discovery calls the OpenAI-compatible `GET /models`. The examples use https URLs. It does not say that a plain http loopback URL is accepted, whether streaming is required, or that tool calls work through a custom provider. |
+| docs/subsystems/approval.md | Outcomes are `allowed-once`, `rejected`, `cancelled`, `unavailable`. Callers fail closed on anything but `allowed-once`, and a missing, throwing or non-conforming answerer becomes `unavailable`. `approval/request` is a same-process waterfall event. The request carries agent, toolName, callId, reason and signal, and deliberately no arguments. The `never` policy rejects without asking anyone. |
+| packages/core/tools/README.md | The pipeline is `tools/pre-execute` (allow, deny or ask; cannot rewrite arguments), then guards (`ctx.tools.guard`: synchronous, returns a reason or nothing, later listeners cannot reverse it), then `tools/execute`, `tools/post-execute` and `tools/result`. An `ask` goes to `ctx.approval` if it is mounted and otherwise denies. Code Mode sub-calls run through the same pipeline. MCP tools register through the same registry. `ctx.tools.restrict` is visibility and the docs say it is not an authority boundary. |
+| (repo, main) icarus/checkpoints/2026-10-13-tether-and-learning/staged-tether/index.js, blob cc5399f1 | The existing Tether plugin registers `ctx.on('approval/request', ...)`, sends a notification with callId, toolName and reason, and returns `await next()`. It delegates the decision. It is not an authorization mechanism. |
 
 Not read, because it lives on the laptop: the installed DSH source, `.dsh/profiles/desktop/cordis.patch.yml`, the `icarus-gate` plugin and its `policy.json`. Anything depending on those is [PROVISIONAL].
 
@@ -332,7 +341,16 @@ Not implemented, and not claimed:
 
 ## 4. Hook channel: wire format
 
-Transport is [PROVISIONAL]. Two candidates: (a) DSH's own approval mechanism answered over localhost; (b) a thin forwarder plugin in the DSH profile that only relays requests and returns Icarus's decision. Which one DSH 0.2.x supports has not been read. The `icarus-gate` plugin (allow/deny/ask policy, decisions log) is known only from session notes. The payloads below are the contract the forwarder or adapter must meet. [DECISION]
+Transport, grounded on 4 Nov 2026 in DSH's published docs (section 0). The installed laptop DSH is still unverified, so the details below stay [PROVISIONAL] until the live test.
+
+DSH's approval seam alone is not enough. `approval/request` is a same-process event that fires only when a `tools/pre-execute` decision is `ask`. Its request carries the agent, tool name, callId and reason but deliberately no arguments, and it is answered by a plugin inside the DSH process, not by an outside program. So it cannot enforce the exact-argument binding below, and a call that DSH's own policy allows never reaches it.
+
+The route this contract uses is a thin forwarder plugin in the DSH profile. The existing Tether plugin shows the shape (it registers with `ctx.on(...)` and talks to an outside process), but its approval handler only notifies and calls `next()`, so it is not an authorizer. The forwarder:
+1. registers a `tools/pre-execute` listener. For every call it sends the tool name, the exact arguments, the callId and the agent to Icarus's `/hook`, and returns `allow` or `deny`, never `ask`. A timeout, a transport error, a malformed answer or an unreachable Icarus is `deny`;
+2. registers a global `ctx.tools.guard`. A guard is synchronous and its denial cannot be reversed, so it never waits on the network: it denies any execution whose callId and canonical-argument hash were not approved by step 1, from an approved set that step 1 fills;
+3. reports `hook_attached` to Icarus once both are registered, so Icarus can tell a missing forwarder from a working one.
+
+What the docs do not settle, and the live test must: whether a pre-execute listener may await a network call and for how long; whether DSH's callId is the id the model slot returned; whether the arguments the guard sees equal the proposal's; and whether Icarus could instead answer through DSH's ACP bridge (the docs say the bridge supplies machine decisions for its own agents; whether an outside client may answer is not stated). The payloads below are the contract the forwarder must meet. [DECISION]
 
 Request, `POST /hook` on 127.0.0.1 with the session bearer token:
 
@@ -424,6 +442,7 @@ Captured output goes to capped files. The ledger stores the path, size and hash.
 - Detection of execution outside the hook channel is [PROVISIONAL] and stays so until an independent observation mechanism is demonstrated. Matching hook decisions against harness-reported executions only catches a harness that reports honestly.
 - The one independent mechanism planned: snapshot the hash tree of each scoped path before and after a supervised run. Any change with no matching approved EXECUTED call is logged `UNEXPLAINED_CHANGE`. It covers file effects only. It does not cover network calls, shell side effects outside the scoped paths, or anything outside the snapshot. [PROVISIONAL until demonstrated]
 - The patch report confirms DSH's own integrity checks do not intercept shell commands or external editors [REPO], so gaps outside the hook channel are expected.
+- From DSH's published docs: calls that go through the tool registry (native tools, Code Mode sub-calls, MCP tools that plugins register) pass `tools/pre-execute` and the guards, so the forwarder covers them if it is loaded. It does not cover anything that bypasses the registry (a plugin acting directly), effects a permitted tool has that its arguments do not show (a shell command string says little about what it will do), or a DSH started without the forwarder, where only DSH's own policy applies. Each of those is reported as an uncovered boundary, not as control.
 
 ## 7. Reporting
 
