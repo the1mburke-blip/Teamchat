@@ -447,6 +447,32 @@ class TestWire(SlotBase):
         self.assertTrue(text.startswith("RESULT: PASS"))
         self.assertEqual(self.entries("slot_final")[0]["independence"], "kernel+adjudicator")
 
+    LESSON = "Lesson: reading the notes works.\nEvidence: notes.txt"
+
+    def learned(self):
+        path = os.path.join(self.work, "icarus/memory/learned.md")
+        return TS.read_text(path) if os.path.exists(path) else ""
+
+    def finish_flow(self):
+        self.reasoner.outputs = [tool_out("read_file", path="notes.txt"), finish_out(lesson=self.LESSON)]
+        self.start()
+        _, p = self.chat()
+        cid = p["choices"][0]["message"]["tool_calls"][0]["id"]
+        self.hook(cid)
+        return self.chat(self.body(extra=self.tool_result(cid)))
+
+    def test_a_kernel_only_pass_through_the_slot_is_not_learned(self):
+        status, final = self.finish_flow()
+        self.assertTrue(final["choices"][0]["message"]["content"].startswith("RESULT: PARTIAL"))
+        self.assertEqual(self.learned(), "")
+
+    def test_a_lesson_is_learned_through_the_slot_only_after_independent_adjudication(self):
+        core = GovernedCore(self.mem, self.reasoner, self.kernel, self.hand, adjudicator=lambda tid, ev: (True, "confirmed"))
+        self.runtime = MS.SlotRuntime(core)
+        status, final = self.finish_flow()
+        self.assertTrue(final["choices"][0]["message"]["content"].startswith("RESULT: PASS"))
+        self.assertIn("reading the notes works", self.learned())
+
     def test_after_the_final_answer_the_same_answer_is_replayed_without_the_model(self):
         status, p, tc = self.one_turn()
         self.hook(tc["id"])

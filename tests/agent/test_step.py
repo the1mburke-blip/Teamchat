@@ -274,6 +274,52 @@ class TestStepEnds(Base):
         core = self.core([finish()], adjudicator=lambda tid, ev: (True, "ok"))
         self.assertEqual(core.step(self.begin(core)).result.independence, "kernel+adjudicator")
 
+    LESSON = "Lesson: notes exist.\nEvidence: notes.txt"
+
+    def learned(self):
+        path = os.path.join(self.root, "icarus/memory/learned.md")
+        if not os.path.exists(path):
+            return ""
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+
+    def test_a_kernel_only_pass_does_not_become_verified_learning(self):
+        core = self.core([finish(evidence=[GOOD_SHA], lesson=self.LESSON)])
+        out = core.step(self.begin(core))
+        self.assertEqual((out.result.status, out.result.independence), ("PASS", "kernel-only"))
+        self.assertEqual(self.learned(), "")
+        w = [e for e in self.kernel_log() if e["type"] == "memory_write"]
+        self.assertEqual(len(w), 1)
+        self.assertFalse(w[0]["ok"])
+        self.assertIn("not independently adjudicated", w[0]["reason"])
+
+    def test_a_pass_confirmed_by_an_independent_adjudicator_is_learned(self):
+        core = self.core([finish(evidence=[GOOD_SHA], lesson=self.LESSON)], adjudicator=lambda tid, ev: (True, "confirmed"))
+        out = core.step(self.begin(core))
+        self.assertEqual((out.result.status, out.result.independence), ("PASS", "kernel+adjudicator"))
+        self.assertIn("notes exist", self.learned())
+        self.assertTrue([e for e in self.kernel_log() if e["type"] == "memory_write"][0]["ok"])
+
+    def test_an_adjudicator_that_refuses_means_no_pass_and_no_learning(self):
+        core = self.core([finish(evidence=[GOOD_SHA], lesson=self.LESSON)], adjudicator=lambda tid, ev: (False, "no"))
+        out = core.step(self.begin(core))
+        self.assertEqual(out.result.status, "PARTIAL")
+        self.assertEqual(self.learned(), "")
+        self.assertEqual([e for e in self.kernel_log() if e["type"] == "memory_write"], [])
+
+    def test_a_partial_finish_never_learns(self):
+        core = self.core([finish(evidence=[GOOD_SHA], lesson=self.LESSON)], adjudicator=lambda tid, ev: (True, "ok"))
+        st = core.begin("t", self.grant(), self.pf(pass_evidence=(BAD_SHA,)))
+        self.assertEqual(core.step(st).result.status, "PARTIAL")
+        self.assertEqual(self.learned(), "")
+
+    def test_legacy_run_behaviour_is_unchanged_it_still_learns_from_a_kernel_only_pass(self):
+        """Characterisation only. run() is deliberately untouched; this is flagged to the owner as an open decision."""
+        core = GovernedCore(self.mem, ScriptedReasoner([finish(evidence=[GOOD_SHA], lesson=self.LESSON)]), self.kernel, LocalFilesHand(self.root))
+        res = core.run("t", self.grant(), self.pf())
+        self.assertEqual((res.status, res.independence), ("PASS", "kernel-only"))
+        self.assertIn("notes exist", self.learned())
+
     def test_after_the_end_the_task_stays_ended_and_the_model_is_not_asked(self):
         core = self.core([finish(), finish()])
         st = self.begin(core)

@@ -546,7 +546,7 @@ class GovernedCore:
                 continue
             state.invalid = 0
             if prop["action"] == "finish":
-                res = self._finish(st, pf, prop)
+                res = self._finish(st, pf, prop, learn_needs_adjudication=True)
                 state.done, state.outcome = True, res
                 return StepOutcome("finish", result=res)
             tool = prop.get("tool")
@@ -579,7 +579,7 @@ class GovernedCore:
                 "The same call will not be run again."
             )
 
-    def _finish(self, st, pf, prop):
+    def _finish(self, st, pf, prop, learn_needs_adjudication=False):
         tid = st["tid"]
         declared = self.kernel.check_each(tid, list(pf.pass_evidence), "declared")
         worker = self.kernel.check_each(tid, prop.get("evidence"), "worker")
@@ -594,7 +594,10 @@ class GovernedCore:
                 status = "PARTIAL"
                 reasons.append(f"independent adjudicator did not confirm: {note}")
         self.kernel.log({"type": "verdict", "task": tid, "status": status, "reasons": reasons})
-        if status == "PASS" and isinstance(prop.get("lesson"), str):
+        if status == "PASS" and isinstance(prop.get("lesson"), str) and learn_needs_adjudication and independence != "kernel+adjudicator":
+            # harness mode: a kernel-only PASS is not independent, so it must not become verified learning
+            self.kernel.log({"type": "memory_write", "task": tid, "ok": False, "reason": "kernel-only PASS is not independently adjudicated; lesson not written"})
+        elif status == "PASS" and isinstance(prop.get("lesson"), str):
             try:
                 self.memory.write_back(prop["lesson"])
                 self.kernel.log({"type": "memory_write", "task": tid, "ok": True})

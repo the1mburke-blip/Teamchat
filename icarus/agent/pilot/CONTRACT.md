@@ -1,6 +1,6 @@
-# Pilot interface contract (v0.5, 4 Nov 2026)
+# Pilot interface contract (v0.5.1, 4 Nov 2026)
 
-Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrected three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. v0.5 records what GovernedCore.step() and modelslot.py implement (checkpoint 4). Written from repo evidence only. Nothing here has been run against the real laptop DSH.
+Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrected three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. v0.5 records what GovernedCore.step() and modelslot.py implement (checkpoint 4). v0.5.1 closes a gap found in review (a kernel-only PASS could still write verified learning) and adds the pilot command layer (section 9) to the plan. Written from repo evidence only. Nothing here has been run against the real laptop DSH.
 
 Every claim carries a tag:
 - [REPO] read in a repo file (path and blob SHA in section 0).
@@ -321,7 +321,7 @@ How it holds to the contract:
 - A tool call is returned only if the tool is in the request's `tools` AND the session's active grant AND the Session authorizes the exact call. Otherwise it is logged (`proposal_filtered` or a denial), fed back as a blocker, and never returned.
 - A repeated request while a call is unanswered replays the same response without a model call. A call that can no longer run (burned at the hook, or from an earlier milestone) is dropped as a failure.
 - A tool result is recorded only for a call the hook authorized, tagged `harness_reported`. A result for a call that was never authorized is logged (`ungoverned_result_reported`), not trusted, and told to the model as a failure. History the harness resends is not recorded twice.
-- The final answer is never reported as PASS unless an independent adjudicator confirmed it; a kernel-only PASS is reported as PARTIAL with that reason.
+- The final answer is never reported as PASS unless an independent adjudicator confirmed it; a kernel-only PASS is reported as PARTIAL with that reason. A lesson in a finish proposal is written to memory only after independent adjudication: `step()` logs a kernel-only PASS as `memory_write ok=false` and writes nothing. (The legacy `run()` still learns from a kernel-only PASS; it is untouched on purpose and listed as an open owner decision in CHECKPOINTS.md.)
 
 Not implemented, and not claimed:
 - Core mode (the slot returns tool calls only for harness-mode sessions; a core-mode session is refused with `CORE_MODE_NOT_IMPLEMENTED`).
@@ -445,3 +445,18 @@ Captured output goes to capped files. The ledger stores the path, size and hash.
 10. No vetted Ed25519 verifier is available where Core runs, or the owner cannot keep a signing key away from the executor.
 
 Any of these changes this contract. The contract does not change the evidence.
+
+## 9. Pilot command layer (plan items B9 and B10)
+
+The components above make a model endpoint, a hook, a supervisor and a ledger. They do not by themselves make Icarus the pilot: nothing yet lets Icarus start a task, choose a model and command DSH to carry it out. B9 builds that, and B10 proves it live.
+
+B9, the smallest controller that makes Icarus the active operator of DSH. Done when a fixture shows Icarus:
+1. accepting an authorized owner objective and creating a task;
+2. selecting the reasoning model through a provider-independent interface;
+3. creating the authorized session and launching or configuring DSH;
+4. directing execution through the existing model slot and hook;
+5. verifying the outcome independently and deciding whether to continue, stop or work a blocker.
+
+The fixture must also show that DSH cannot silently switch away from Icarus's controlled route and keep executing effects. What this design can enforce: every effectful call needs a hook approval for a call_id Icarus minted, so a call proposed by any model Icarus did not control carries no minted id and is denied (`UNPROPOSED_CALL`). What it cannot enforce: any tool DSH can run without asking the hook. Those paths are reported as gaps and are only partly detected (the file snapshot check). If the fixture cannot enforce something, it is reported as a gap, not as pilot control.
+
+B10, live acceptance inside DSH. Start Icarus first. Have Icarus select a model, start or command the real DSH process, initiate a task, direct an authorized tool action and verify its result. Then test the failure boundaries on purpose: a denied action, Icarus unavailable (what DSH does when the slot or hook cannot be reached is unknown and may fail open), an alternative execution route, and process termination. Only observed behaviour counts. DSH's own report is not verification.

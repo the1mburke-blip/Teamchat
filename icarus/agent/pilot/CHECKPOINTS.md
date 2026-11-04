@@ -12,12 +12,7 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 2 | Contract | CONTRACT.md grounded in repo evidence, unverified parts marked PROVISIONAL; this log |
 | 3 | Shared authority | session.py: task identity, executor identity, scoped grants, one hash-chained ledger, call state machine with tool-name and exact-argument binding (a mismatch burns the call_id), execution mode, checkpoint plans with mandatory milestone gates (PAUSED_FOR_REVIEW), and signed reviewer decisions (registry, ledger-bound, single-use nonce, SELF_APPROVAL denied, BLOCKED if no vetted Ed25519 verifier). With tests |
 | 4 | Model slot | GovernedCore.step() single-step entry point (run() unchanged, 32 governed tests still pass); NullHand for harness mode; OpenAI-compatible endpoint with the wire formats in CONTRACT.md section 3; tests prove no path reaches a reasoner without Core and that tool calls outside the grant are filtered |
-| 5 | Hook channel | Default-deny, call_id plus tool-name plus exact-argument matching, owner-only escalation, with tests |
-| 6 | Supervisor | Lifecycle control: ownership, termination, crash handling, with tests. Snapshot-diff UNEXPLAINED_CHANGE detection, marked provisional |
-| 7 | Fixture integration | Slot + hook + supervisor on one session against a stand-in harness. Fixture only, not acceptance evidence |
-| 8 | Adjudicator and recovery | require_adjudicator for live mode; session resume from the verified ledger (replay the chain; restore nonces, burned calls, gates and budgets; fail closed on a broken chain); full suite run |
-| 9 | Repository close-out | Commit and blob-verify every file; live-DSH acceptance script in the repo. Reported PARTIAL |
-| 10 | Live harness acceptance | From inside the laptop DSH session: model control, approval, denial, process supervision, evidence persistence. BLOCKED if the real harness is not reachable |
+| 5 to 10 | Replaced | Superseded on 4 Nov 2026 by items B1 to B10 in the Remaining plan section below |
 
 ## Decisions
 
@@ -29,7 +24,9 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 2 (v0.3) | 2026-11-04 | owner (Michael), in the checkpoint 3 instruction | Accepted | commit 966ef2f5 on agent/icarus-core | none |
 | 3 | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (commit ecc211ea) | see the HOLD section below | none |
 | 3 (rev) | 2026-11-04 | owner (Michael) relaying ChatGPT's verification | Accepted for progression | commit 4bf42185 on agent/icarus-core | none |
-| 4 | 2026-11-04 | pending | pending | see the checkpoint 4 section below; commit in the report | none |
+| 4 | 2026-11-04 | pending | pending | see the checkpoint 4 section below; commit e07b3859 | none |
+| plan | 2026-11-04 | ChatGPT (via owner) | REVISE THE PLAN: replace item 9, strengthen item 10, prerequisite fix | see the revised plan below | none |
+| 4 fix | 2026-11-04 | pending | pending | kernel-only PASS no longer writes learning; commit in the report | none |
 
 Review of the original 10-point plan (2026-11-04, ChatGPT): APPROVE WITH REQUIRED CHANGES. Accepted and reflected in the plan: contract grounded in DSH evidence; model slot proven to pass through Core; unknown tools default to deny; supervisor verifies lifecycle and process ownership; checkpoint 10 is real harness acceptance; shared authority across all three surfaces; explicit recorded review decisions.
 
@@ -93,3 +90,50 @@ Things found while building, not in the accepted contract:
 5. GovernedKernel refuses absolute and drive paths, so real harness paths will be denied until an adapter maps them. Open blocker for live use.
 
 Not built: core mode, real token streaming, the hook transport, the supervisor, any live DSH evidence (checkpoint 10). Status PARTIAL.
+
+## Checkpoint 4 follow-up: a kernel-only PASS could still write verified learning (fixed)
+
+ChatGPT's review of the checkpoint 4 commit found that GovernedCore.step() finished through the same `_finish` as run(), so a kernel-only PASS wrote a lesson to memory even though the slot reported it as PARTIAL. Confirmed in the code (governed.py, the memory_write branch of `_finish`). Fixed with a flag, `learn_needs_adjudication`, that only step() sets: a kernel-only PASS now logs `memory_write ok=false` and writes nothing; a PASS confirmed by an independent adjudicator writes as before; a PARTIAL never writes. run() is byte-for-byte unchanged and still learns from a kernel-only PASS. That is legacy behaviour I did not change; it is an open owner decision (see the register). Tests: 5 new step tests, 2 new slot tests; three deliberate breakages of the new rule were all caught.
+
+## Remaining plan (revised 4 Nov 2026 after the second ChatGPT review)
+
+Items 1 to 4 are done. B1 to B10 replace old items 5 to 10. Every item carries the same completion requirement: commit, test, read back each file by blob SHA, run the full suite from a clean GitHub checkout, and log it here. Repository verification is not saved for the end.
+
+| # | Item | Done when |
+|---|---|---|
+| B1 | Path mapping and hook decision core | Real harness paths map to what the kernel accepts; a pure decision function is default-deny; unknown tools denied; owner-only escalation |
+| B2 | Hook transport | Loopback /hook with a bearer token in the contract format; real-socket tests; every refusal happens before a decision |
+| B3 | Supervisor launch and ownership | Argument list, allowed environment, fixed directory, process group; pid, start time, executable and argument hash recorded; attaching is observe-only |
+| B4 | Supervisor stop and evidence | Grace period, timeout, crash handling, whole-tree kill with proof it is gone, capped output in the ledger; Windows behaviour marked unproven |
+| B5 | File snapshot check | Before/after hashes of scoped paths; UNEXPLAINED_CHANGE for changes no approved call explains; what it cannot see is stated |
+| B6 | Fixture integration | Slot, hook and supervisor on one session against a stand-in harness. A component-integration fixture, not proof of pilot control |
+| B7 | Mandatory adjudicator | Live mode refuses to start without an independent adjudicator; nothing is reported as PASS or learned without it |
+| B8 | Resume after a crash | Replay the verified ledger to restore nonces, burned calls, gates, budgets and milestone; refuse a broken chain |
+| B9 | Icarus pilot command layer (replaces close-out) | A fixture shows Icarus accepting an owner objective, creating the task, selecting a model through a provider-independent interface, creating the session and launching or configuring DSH, directing it through the slot and hook, then verifying independently and deciding to continue, stop or work a blocker. It also shows DSH cannot silently switch away and keep executing effects; anything that cannot be enforced is reported as a gap. The live-DSH acceptance script and instructions are written here |
+| B10 | Live Icarus pilot acceptance inside DSH (strengthened) | Icarus starts first, selects a model, starts or commands the real DSH process, initiates a task, directs an authorized tool action and verifies its result; then the failure boundaries are tested on purpose: denied action, Icarus unavailable, alternative execution route, process termination. Only observed behaviour counts; DSH's own report is not verification. BLOCKED from this chat: it needs a session inside the laptop harness, and only Icarus awards PASS |
+
+## Review of the revised plan (ChatGPT, 4 Nov 2026): REVISE THE PLAN, and how each point was handled
+
+1. Items 1 to 8 stay as written. Item 6 is labelled a component-integration fixture, not proof of pilot control. Done.
+2. Item 9 replaced by the Icarus pilot command layer. Agreed: the earlier plan could produce a model endpoint, a hook, a supervisor and a ledger and still leave Icarus unable to start a task and command DSH. Done (B9, contract section 9).
+3. Item 10 strengthened to a whole-task live test with the failure boundaries. Agreed (B10). One addition from me: what DSH does when the slot or hook is unreachable is unknown and may fail open, so "Icarus unavailable" is a test that could fail, and the result goes in the register.
+4. Repository close-out moves into every item. Agreed; it is now part of each item's completion requirement.
+5. The kernel-only PASS learning write must be fixed before item 1. Agreed and done (section above).
+6. Core mode and token streaming do not get their own items, and must not disappear. Agreed; they are in the register below.
+
+## Unresolved-capabilities register
+
+| Capability or question | Status | Where it lands |
+|---|---|---|
+| Core mode (slot answering in core mode, run() through the Session) | Not built; a core-mode session is refused with CORE_MODE_NOT_IMPLEMENTED | Only if a demonstrated DSH requirement needs it |
+| Real token streaming | Not built; streaming replays a finished turn | Only if DSH needs real streaming (B10 will show) |
+| Legacy run() learns from a kernel-only PASS | Unchanged on purpose; step() no longer does | Open owner decision |
+| DSH accepts a localhost base URL, request shape, tool-call loop, version | Unverified | B10 |
+| Hook transport (DSH approval mechanism or a thin forwarder) and what DSH does when it is unreachable | Unverified; may fail open | B2 for the endpoint, B10 for DSH behaviour |
+| Real DSH launch command and arguments | Unknown | B3 fixture, B10 live |
+| Windows process-tree termination | Unproven | B4 marks it, B10 proves it |
+| Detection of execution outside the hook | Partial (file effects only) | B5, B10 |
+| Real kernel refuses absolute and drive paths | Open blocker | B1 |
+| Resume after a crash | Not built | B8 |
+| Owner signing tool and key custody for decisions | Not built; custody cannot be proven by code | Before live use |
+| Provider-independent model selection by Icarus | Not built | B9 |
