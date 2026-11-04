@@ -1,6 +1,6 @@
-# Pilot interface contract (v0.2, 4 Nov 2026)
+# Pilot interface contract (v0.3, 4 Nov 2026)
 
-Status: PARTIAL. Revised after the ChatGPT review of v0 (checkpoint 2 HOLD, 4 Nov). Written from repo evidence only. Nothing here has been run against the real laptop DSH.
+Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). Written from repo evidence only. Nothing here has been run against the real laptop DSH.
 
 Every claim carries a tag:
 - [REPO] read in a repo file (path and blob SHA in section 0).
@@ -37,6 +37,7 @@ Rule: every session fixes ONE execution mode, and every call has exactly one exe
 - Mixed mode (some tools by Core, some by the harness) is out of scope for v0.
 - Call state machine, recorded in the ledger per call_id: PROPOSED -> AUTHORIZED (kernel check at proposal time) -> EXECUTED(by=core or harness; the hook re-checks the real arguments first) -> RESULT_RECORDED.
 - A second EXECUTED for the same call_id is denied and logged `DUPLICATE_EXECUTION`.
+- The proposal fixes the tool name and the exact arguments for that call_id. The hook lets the harness run that and nothing else (section 4).
 - In harness mode, a hook request for a call_id the slot did not mint is denied and logged `UNPROPOSED_CALL`. The harness can only run what Icarus proposed.
 - In harness mode the tool result comes back in the next slot request as a `tool` message. It is recorded with `source: harness_reported`. That is not independent evidence (section 6).
 
@@ -44,13 +45,14 @@ Rule: every session fixes ONE execution mode, and every call has exactly one exe
 
 The model slot, hook channel and supervisor are three surfaces of one controller. Each takes the same session record and writes the same ledger. [DECISION]
 
-Session record (illustrative values):
+Session record (illustrative values; `0000000000000000000000000000000000000000000000000000000000000000` stands for a 64-character hash):
 
 ```json
 {
   "session_id": "s-20261104-001",
   "task_id": "T-0001",
   "issued_by": "owner",
+  "executor_id": "claude-build-01",
   "execution": "harness",
   "grants": {
     "tools": ["read_file", "write_file"],
@@ -59,7 +61,27 @@ Session record (illustrative values):
     "expires_at": "2026-11-04T23:59:00Z",
     "spend_eur": 0
   },
-  "review_gates": [{"id": "g1", "after_calls": 10}],
+  "checkpoint_plan": {
+    "plan_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "approved_by": "owner-michael",
+    "milestones": [
+      {
+        "id": "m1",
+        "goal": "contract committed and read back",
+        "grants": {"tools": ["read_file", "write_file"], "path_scopes": ["C:/Users/the1m/Icarus-Harness/work/docs"]},
+        "evidence_required": ["commit_sha", "blob_verify"]
+      },
+      {
+        "id": "m2",
+        "goal": "session module with tests",
+        "grants": {"tools": ["read_file", "write_file"], "path_scopes": ["C:/Users/the1m/Icarus-Harness/work/src"]},
+        "evidence_required": ["commit_sha", "blob_verify", "test_run"]
+      }
+    ]
+  },
+  "reviewers": [
+    {"id": "owner-michael", "role": "owner", "public_key_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+  ],
   "ledger": "icarus/runs/s-20261104-001.ledger.jsonl"
 }
 ```
@@ -89,29 +111,71 @@ Rules:
 - S3. One append-only, hash-chained ledger per session. If it cannot be written, every surface fails closed.
 - S4. No surface writes PASS. Only the independent adjudicator's output can mark PASS.
 - S5. Spend is EUR 0 unless the owner's grant says otherwise.
-- S6. Review gates (below).
+- S6. Review gates exist if and only if the session carries an approved checkpoint plan (2.1). They are not an optional setting.
+- S7. `executor_id` names the agent doing the work. No approval counts if it comes from the executor (2.3).
 
-### Review gates
+### 2.1 Checkpoint plans and mandatory gates
 
 Two different things are called 'checkpoint' in this project. They are kept apart.
 
-1. The runtime step-count checkpoint in governed.py. The owner decided on 29 Oct that a step count must never end a task, because a count is not an owner-only boundary. That behaviour stays as it is.
-2. Owner review gates: an opt-in list in the session grant, set by the owner, empty by default. When a gate fires the session goes PAUSED_FOR_REVIEW. [DECISION, pending owner confirmation]
+1. The runtime step-count checkpoint in governed.py. The owner decided on 29 Oct that a step count must never end a task, because a count is not an owner-only boundary. That stays non-stopping. A count never creates or removes a gate.
+2. Review gates. They come only from a checkpoint plan, and they are mandatory when a plan exists. [DECISION, review-aligned; owner confirmation requested]
 
-While paused:
-- the slot answers 409 and runs no model turn;
-- the hook denies with reason PAUSED;
-- the supervisor starts nothing new and does not kill a running child unless the grant says so.
+Rules for plans:
+- A task that has an approved checkpoint plan must run with it. The plan sits in the session record, pinned by `plan_sha256`, with `approved_by` naming a registered owner reviewer. Session creation fails closed if the plan is malformed, if a milestone has no `evidence_required`, or if the hash does not match.
+- A plan cannot be dropped, edited or relaxed inside a session. Changing it means a new session approved by the owner.
+- A session with no plan has no gates. That is the only way gates are absent, and the ledger records `no_plan` at session start so the absence is explicit.
+- Each milestone carries its own grants (a subset of the session grants) and the evidence kinds it must show. Only the active milestone's grants apply. A call outside them is denied `OUT_OF_MILESTONE`. Work for the next milestone cannot start until this milestone's gate is resolved, so an executor cannot avoid a gate by never declaring a milestone.
+- Gates mark milestones and evidence. Tool-call counts (`max_calls`) stay a budget, never a gate.
 
-Resume or stop comes only from a `resume` record from the owner or Icarus, never from the harness or the executing agent:
+Declaring a milestone:
 
 ```json
-{"gate_id": "g1", "decided_by": "owner", "decision": "resume"}
+{"milestone_id": "m1", "evidence": [{"kind": "commit_sha", "ref": "ffbad88c"}, {"kind": "blob_verify", "ref": "8f52df2f"}]}
 ```
 
-Limits: v0 authenticates a resume with the owner token on the control path. That does not protect against another process under the same OS account that can read the token. No tamper-proofing is claimed. [PROVISIONAL]
+Core checks mechanically that every required evidence kind is present. If not: `MILESTONE_INCOMPLETE`, no gate opens, work continues inside the same milestone. This checks that evidence is present, not that it is true. Truth is for the reviewer and the adjudicator.
 
-The build checkpoints in CHECKPOINTS.md are NOT this mechanism. They are the working procedure of the agent building this. Until session.py (checkpoint 3) lands, nothing in code enforces them.
+On a complete declaration the session goes PAUSED_FOR_REVIEW and the ledger head hash at that moment is captured. While paused:
+- the slot answers 409 and runs no model turn;
+- the hook denies with reason PAUSED;
+- the supervisor starts nothing new and kills nothing unless the grant says so.
+
+Only a signed review decision (2.3) moves the session on. The last milestone's decision closes the plan. It is not PASS.
+
+The build checkpoints in CHECKPOINTS.md are the working procedure of the agent building this. Until session.py (checkpoint 3) lands, nothing in code enforces them.
+
+### 2.2 Why 'resume' is not a field the executor can fill in
+
+See 2.3. The record below is a request for a decision, not a decision by itself.
+
+### 2.3 Approval authority
+
+- `reviewer_id` and any `decided_by` style field are lookup keys. They are never authority. A worker that writes `owner` into a record gets nothing. [DECISION]
+- Authority is a valid signature over the decision, verifiable with the public key of a registered reviewer in the session's `reviewers` list. The registry is part of the owner-approved session record. The executor cannot edit it.
+- The signed payload is: session_id, gate_id, milestone_id, ledger_head_hash, decision, nonce, expires_at. Binding to the ledger head means the decision approves the exact evidence state that was reviewed and cannot be replayed on another session or a later state. Each nonce is single-use.
+- Separation of duties: the signer must be a registered reviewer whose role allows the decision, must not equal `executor_id`, and must not appear in this session's ledger as an acting surface. Otherwise `SELF_APPROVAL`, and the gate stays closed.
+- Algorithm: asymmetric signatures (Ed25519), verified in Core against public keys only. Core never holds a private reviewer key. A shared token or HMAC is not acceptable, because anything that can verify could forge. If no vetted Ed25519 verifier is available where Core runs, the gate stays closed and the session is BLOCKED. There is no weaker fallback. [DECISION]
+- Key custody: Core can verify a signature and registry membership. It cannot prove the private key was kept away from the executor. The owner's key must live somewhere the executor cannot read. That is an operational requirement code cannot prove. [PROVISIONAL]
+- Opinions from reviewing agents (for example ChatGPT's reviews) are inputs. The owner, or Icarus acting as adjudicator, signs. A reviewing agent with no registered key cannot approve.
+
+Review decision (illustrative values; `signature` is a placeholder):
+
+```json
+{
+  "session_id": "s-20261104-001",
+  "gate_id": "g-m1",
+  "milestone_id": "m1",
+  "ledger_head_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "decision": "resume",
+  "nonce": "n-0001",
+  "expires_at": "2026-11-04T19:00:00Z",
+  "reviewer_id": "owner-michael",
+  "signature": "base64-ed25519-signature-goes-here"
+}
+```
+
+`decision` is `resume` (next milestone), `rework` (stay in this milestone) or `stop` (end the session).
 
 ## 3. Model slot: wire format
 
@@ -254,13 +318,21 @@ Owner-only decisions (credentials, legal, payment, security, safety) answer `den
 }
 ```
 
-Decision order, all failures are `deny`:
-1. session valid and not paused;
-2. `call_id` matches a call the slot minted and that is AUTHORIZED (harness mode), otherwise `UNPROPOSED_CALL`;
-3. call not already EXECUTED, otherwise `DUPLICATE_EXECUTION`;
-4. tool is in the grant;
-5. real args inside the path scopes;
-6. kernel check.
+Decision order, every failure is `deny` and is logged:
+1. session valid, not paused, and a milestone is active;
+2. `call_id` matches a call the slot minted (harness mode), otherwise `UNPROPOSED_CALL`;
+3. call state is AUTHORIZED: not already EXECUTED (`DUPLICATE_EXECUTION`) and not burned (`CALL_BURNED`);
+4. tool name equals the proposed tool name, otherwise `TOOL_MISMATCH`;
+5. exact arguments equal the proposed arguments (below), otherwise `ARGS_MISMATCH`;
+6. tool is in the active milestone's grants (`OUT_OF_MILESTONE`) and the real arguments are inside its path scopes;
+7. kernel check.
+
+Argument binding:
+- At proposal time Core records the `tool` and the canonical arguments: the parsed JSON object, keys sorted, no insignificant whitespace, UTF-8. The SHA-256 of those bytes is `args_sha256` and goes in the ledger. The canonical bytes go to a capped side file named by call_id so a mismatch can be diffed.
+- At hook time Core canonicalises the received `args` the same way and compares hashes. It never trusts a hash sent by the harness. Equality is exact: no fuzzy matching, no filled-in defaults, no path normalisation.
+- A mismatch denies the request and burns the call_id. Later hook requests with that call_id are denied even with the correct arguments. This stops probing. Core must propose again to get a new call_id.
+- If DSH rewrites arguments before it calls the hook (adds defaults, normalises paths), every call will mismatch. That is not loosened here. It shows up at checkpoint 10 as a falsifier, and the fix is an adapter that submits the original arguments.
+- The tool result record (3.5) carries the call_id and the `args_sha256` it answers.
 
 An unknown tool is deny. Escalation to the owner happens only for the owner-only categories, and it never leaves the session waiting. [DECISION]
 
@@ -316,5 +388,8 @@ Captured output goes to capped files. The ledger stores the path, size and hash.
 6. DSH runs tool calls with no hook decision beyond the known shell and editor paths.
 7. The snapshot diff misses a change it should catch, or flags changes it should not.
 8. The installed DSH differs from 0.2.0-rc.2 / Cordis 4.0.4 (a 23 Oct reinstall is reported in session notes).
+
+9. DSH rewrites arguments before the hook sees them, so exact matching rejects legitimate calls.
+10. No vetted Ed25519 verifier is available where Core runs, or the owner cannot keep a signing key away from the executor.
 
 Any of these changes this contract. The contract does not change the evidence.
