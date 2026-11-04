@@ -15,7 +15,7 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 5 | Hook channel | Default-deny, call_id plus tool-name plus exact-argument matching, owner-only escalation, with tests |
 | 6 | Supervisor | Lifecycle control: ownership, termination, crash handling, with tests. Snapshot-diff UNEXPLAINED_CHANGE detection, marked provisional |
 | 7 | Fixture integration | Slot + hook + supervisor on one session against a stand-in harness. Fixture only, not acceptance evidence |
-| 8 | Adjudicator | require_adjudicator for live mode; full suite run |
+| 8 | Adjudicator and recovery | require_adjudicator for live mode; session resume from the verified ledger (replay the chain; restore nonces, burned calls, gates and budgets; fail closed on a broken chain); full suite run |
 | 9 | Repository close-out | Commit and blob-verify every file; live-DSH acceptance script in the repo. Reported PARTIAL |
 | 10 | Live harness acceptance | From inside the laptop DSH session: model control, approval, denial, process supervision, evidence persistence. BLOCKED if the real harness is not reachable |
 
@@ -27,7 +27,8 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 2 | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (v0 commit b9b67d02) | see findings below | none |
 | 2 (v0.2) | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (commit d9dff2e1) | see second findings section below | none |
 | 2 (v0.3) | 2026-11-04 | owner (Michael), in the checkpoint 3 instruction | Accepted | commit 966ef2f5 on agent/icarus-core | none |
-| 3 | 2026-11-04 | pending | pending | implemented, see the checkpoint 3 section below; commit in the report | none |
+| 3 | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (commit ecc211ea) | see the HOLD section below | none |
+| 3 (rev) | 2026-11-04 | pending | pending | revision commit: see git log for the commit after ecc211ea | none |
 
 Review of the original 10-point plan (2026-11-04, ChatGPT): APPROVE WITH REQUIRED CHANGES. Accepted and reflected in the plan: contract grounded in DSH evidence; model slot proven to pass through Core; unknown tools default to deny; supervisor verifies lifecycle and process ownership; checkpoint 10 is real harness acceptance; shared authority across all three surfaces; explicit recorded review decisions.
 
@@ -67,3 +68,12 @@ Things found and decided while building (not in the accepted contract):
 4. State changes happen after the ledger write, so a ledger failure leaves no call behind.
 
 Not built: wiring to GovernedKernel/GovernedCore (checkpoints 4 and 5), ledger resume, the owner's signing tool, any live harness evidence. Status PARTIAL.
+
+## Checkpoint 3 HOLD (commit ecc211ea): findings and how each was handled
+
+1. State changed before the ledger write. Agreed, and confirmed at the cited lines: authorize_execution marked a call EXECUTED and record_result marked it RESULT_RECORDED before writing the entry. Fixed with an explicit ordering rule (contract S8): anything that grants is persisted first; anything that restricts changes state first. The same rule turned up two more cases, both fixed: a decision's nonce was consumed before the decision was logged (now after), and a gate was opened by logging first and pausing second (now pauses first, so a failed write leaves the session paused and blocked, never active). A ledger that fails a write is now marked broken for good, because the file tail is unknown.
+2. Argument side files bypassed failure handling. Agreed. A failure saving them is now a controlled denial (SIDE_FILE_FAILED) with nothing authorized; the file is synced, and removed if the ledger write then fails.
+3. Kernel enforcement was optional. Agreed. Session.open now refuses to start without a kernel (KERNEL_REQUIRED) unless the caller passes allow_unenforced_kernel, which is recorded in the ledger and makes the session never live_ready. A kernel that raises or answers badly is a denial (KERNEL_ERROR). The kernel's name and reason are written to the ledger for every call. The tests also run the real GovernedKernel through an adapter. Caveat: GovernedKernel counts each authorize call against its own budget and the session asks it twice per call, so its budget must allow for that.
+4. Crash resume of the ledger and nonces: agreed, not done here, scheduled as checkpoint 8 (plan row updated). Until then a crash ends the session.
+
+Evidence for the revision: 143 tests in test_session; 40 deliberate breakages of session.py were all caught by the tests, plus one targeted at gate ordering.

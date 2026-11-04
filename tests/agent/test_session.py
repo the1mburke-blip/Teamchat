@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 
 from icarus.agent.pilot import session as S
@@ -45,6 +46,17 @@ class Clock:
 
     def iso(self, **kw):
         return (self.t + timedelta(**kw)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+class NamedKernel:
+    """A stand-in kernel for tests that are not about the kernel. It records what it was asked."""
+
+    def __init__(self, name="test-kernel", ok=True, why="granted"):
+        self.name, self.ok, self.why, self.asked = name, ok, why, []
+
+    def __call__(self, tool, args):
+        self.asked.append((tool, dict(args) if isinstance(args, dict) else args))
+        return self.ok, self.why
 
 
 class StubVerifier:
@@ -203,6 +215,7 @@ class Base(unittest.TestCase):
         self.rogue = Key("rogue", "owner")
         self.tmp = tempfile.mkdtemp()
         self.n = 0
+        self.stub_kernel = NamedKernel()
         self.charter = self.make_charter()
 
     # ---- builders
@@ -252,12 +265,14 @@ class Base(unittest.TestCase):
         rec.update(over)
         return rec
 
-    def open(self, rec=None, signer=None, charter=None, plan=False, kernel_check=None, verifier=None):
+    def open(self, rec=None, signer=None, charter=None, plan=False, kernel_check=None, verifier=None, no_kernel=False, allow_unenforced=False):
         rec = rec or self.record(plan=plan)
         signer = signer or self.icarus
         sig = signer.sign(rec)
         path = os.path.join(self.tmp, rec["session_id"] + ".ledger.jsonl")
-        return S.Session.open(rec, sig, charter or self.charter, path, verifier or self.verifier, self.clock, kernel_check)
+        kernel = None if no_kernel else (kernel_check or self.stub_kernel)
+        return S.Session.open(rec, sig, charter or self.charter, path, verifier or self.verifier, self.clock, kernel,
+                              allow_unenforced_kernel=allow_unenforced)
 
     def code(self, fn, *a, **kw):
         with self.assertRaises(S.AuthorityError) as cm:
@@ -354,7 +369,7 @@ class TestIssuance(Base):
         rec = self.record()
         sig = self.icarus.sign(rec)
         rec["grants"]["max_calls"] = 99
-        self.assertEqual(self.code(S.Session.open, rec, sig, self.charter, os.path.join(self.tmp, "x.jsonl"), self.verifier, self.clock), "BAD_SIGNATURE")
+        self.assertEqual(self.code(S.Session.open, rec, sig, self.charter, os.path.join(self.tmp, "x.jsonl"), self.verifier, self.clock, self.stub_kernel), "BAD_SIGNATURE")
 
     def test_issued_by_must_match_the_signer_role(self):
         self.assertEqual(self.code(self.open, self.record(issued_by="owner")), "ISSUER_MISMATCH")
@@ -432,7 +447,7 @@ class TestIssuance(Base):
         blocker = os.path.join(self.tmp, "afile")
         open(blocker, "w").close()
         with self.assertRaises(S.LedgerError):
-            S.Session.open(rec, self.icarus.sign(rec), self.charter, os.path.join(blocker, "x", "l.jsonl"), self.verifier, self.clock)
+            S.Session.open(rec, self.icarus.sign(rec), self.charter, os.path.join(blocker, "x", "l.jsonl"), self.verifier, self.clock, self.stub_kernel)
 
 
 class TestSelfWork(Base):
@@ -665,14 +680,6 @@ class TestCalls(Base):
         self.clock.advance(days=2)
         self.assertEqual(self.prop()["code"], "SESSION_EXPIRED")
         self.assertEqual(self.s.authorize_execution(r["call_id"], "read_file", {"path": "C:/work/docs/a.txt"}, "harness")["code"], "SESSION_EXPIRED")
-
-    def test_ledger_failure_fails_closed_and_leaves_no_call_behind(self):
-        from unittest import mock
-        before = (self.s.calls_authorized, len(self.s.calls))
-        with mock.patch("icarus.agent.pilot.session.os.fsync", side_effect=OSError("disk gone")):
-            with self.assertRaises(S.LedgerError):
-                self.prop()
-        self.assertEqual((self.s.calls_authorized, len(self.s.calls)), before)
 
     def test_ledger_chain_survives_a_mixed_run_and_never_says_pass(self):
         r = self.prop()
@@ -923,6 +930,238 @@ class TestDecisions(Base):
         v.available = True
         s.apply_decision(d)
         self.assertEqual(s.state, "ACTIVE")
+
+
+def fail_on(kind):
+    """Make the ledger refuse one kind of entry, as a disk error would."""
+    real = S.Ledger.append
+
+    def fake(self, surface, k, *a, **kw):
+        if k == kind:
+            raise S.LedgerError("LEDGER_UNWRITABLE", "injected failure")
+        return real(self, surface, k, *a, **kw)
+
+    return mock.patch.object(S.Ledger, "append", fake)
+
+
+class TestFailureOrdering(Base):
+    """A failed ledger write must never leave something authorized or completed."""
+
+    def setUp(self):
+        super().setUp()
+        self.s = self.open()
+        self.path = self.s.ledger.path
+
+    def break_ledger(self):
+        self.s.ledger.path = self.tmp  # a directory: every append fails with an OS error
+
+    def prop(self):
+        return self.s.propose("read_file", {"path": "C:/work/docs/a.txt"}, "agent-1")
+
+    A = {"path": "C:/work/docs/a.txt"}
+
+    def test_failed_write_while_authorizing_leaves_the_call_authorized_not_executed(self):
+        r = self.prop()
+        self.break_ledger()
+        with self.assertRaises(S.LedgerError):
+            self.s.authorize_execution(r["call_id"], "read_file", self.A, "harness")
+        call = self.s.calls[r["call_id"]]
+        self.assertEqual((call["state"], call["by"]), ("AUTHORIZED", None))
+
+    def test_a_ledger_that_failed_once_stays_broken_even_if_the_disk_recovers(self):
+        r = self.prop()
+        self.break_ledger()
+        with self.assertRaises(S.LedgerError):
+            self.s.authorize_execution(r["call_id"], "read_file", self.A, "harness")
+        self.s.ledger.path = self.path
+        self.assertEqual(self.code(self.s.authorize_execution, r["call_id"], "read_file", self.A, "harness"), "LEDGER_BROKEN")
+        self.assertEqual(self.code(self.prop), "LEDGER_BROKEN")
+        self.assertEqual(self.s.calls[r["call_id"]]["state"], "AUTHORIZED")
+        self.assertFalse(self.s.live_ready)
+
+    def test_injected_failure_on_the_authorization_entry_leaves_no_executed_call(self):
+        r = self.prop()
+        with fail_on("execution_authorized"):
+            with self.assertRaises(S.LedgerError):
+                self.s.authorize_execution(r["call_id"], "read_file", self.A, "harness")
+        self.assertEqual(self.s.calls[r["call_id"]]["state"], "AUTHORIZED")
+        self.assertEqual(self.s.authorize_execution(r["call_id"], "read_file", self.A, "harness")["decision"], "allow")
+
+    def test_failed_write_while_recording_a_result_leaves_the_call_executed_only(self):
+        r = self.prop()
+        self.s.authorize_execution(r["call_id"], "read_file", self.A, "harness")
+        self.break_ledger()
+        with self.assertRaises(S.LedgerError):
+            self.s.record_result(r["call_id"], "output")
+        call = self.s.calls[r["call_id"]]
+        self.assertEqual((call["state"], call["result"]), ("EXECUTED", None))
+
+    def test_failed_write_on_a_proposal_leaves_no_call_and_no_side_file(self):
+        self.break_ledger()
+        with self.assertRaises(S.LedgerError):
+            self.prop()
+        self.assertEqual((self.s.calls_authorized, len(self.s.calls)), (0, 0))
+        side = self.tmp + ".calls"
+        self.assertEqual(os.listdir(side) if os.path.isdir(side) else [], [])
+
+    def test_side_file_failure_is_a_controlled_denial_and_nothing_is_authorized(self):
+        open(self.path + ".calls", "w").close()  # a plain file where the directory should be
+        r = self.prop()
+        self.assertEqual((r["decision"], r["code"]), ("deny", "SIDE_FILE_FAILED"))
+        self.assertEqual((self.s.calls_authorized, len(self.s.calls)), (0, 0))
+        last = S.Ledger.read(self.path)[-1]
+        self.assertEqual((last["kind"], last["code"]), ("proposal_denied", "SIDE_FILE_FAILED"))
+        self.assertFalse(self.s.ledger.broken)
+        os.remove(self.path + ".calls")
+        self.assertEqual(self.prop()["decision"], "allow")
+
+    def test_burning_is_restrictive_first_so_a_failed_write_still_burns(self):
+        r = self.prop()
+        self.break_ledger()
+        with self.assertRaises(S.LedgerError):
+            self.s.authorize_execution(r["call_id"], "read_file", {"path": "C:/work/docs/other.txt"}, "harness")
+        self.assertEqual(self.s.calls[r["call_id"]]["state"], "BURNED")
+
+    def test_failed_write_while_opening_a_gate_leaves_the_session_paused_never_active(self):
+        s = self.open(plan=True)
+        with fail_on("gate_opened"):
+            with self.assertRaises(S.LedgerError):
+                self.reach(s)
+        self.assertEqual(s.state, "PAUSED_FOR_REVIEW")
+        self.assertIsNone(s.gate)
+        self.assertIsNotNone(s.blocked_reason)
+        self.assertEqual(s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")["code"], "PAUSED")
+        self.assertEqual(self.code(s.apply_decision, {"x": 1}), "NOT_PAUSED")
+        self.assertEqual(s.state, "PAUSED_FOR_REVIEW")
+
+    def test_failed_write_on_the_declaration_itself_changes_nothing(self):
+        s = self.open(plan=True)
+        with fail_on("milestone_reached"):
+            with self.assertRaises(S.LedgerError):
+                self.reach(s)
+        self.assertEqual((s.state, s.gate), ("ACTIVE", None))
+
+    def test_failed_write_on_an_accepted_decision_keeps_the_gate_closed_and_the_nonce_unused(self):
+        s = self.open(plan=True)
+        self.reach(s)
+        d = self.decision(s, self.owner, nonce="once")
+        with fail_on("decision_accepted"):
+            with self.assertRaises(S.LedgerError):
+                s.apply_decision(d)
+        self.assertEqual(s.state, "PAUSED_FOR_REVIEW")
+        self.assertNotIn("once", s._nonces)
+        s.apply_decision(d)
+        self.assertEqual((s.state, s.active_milestone()["id"]), ("ACTIVE", "m2"))
+
+    def test_nothing_in_these_failures_ever_wrote_a_pass(self):
+        r = self.prop()
+        self.break_ledger()
+        with self.assertRaises(S.LedgerError):
+            self.s.authorize_execution(r["call_id"], "read_file", self.A, "harness")
+        self.assertNotIn("PASS", read_text(self.path))
+
+
+class TestKernelRequired(Base):
+    def kinds(self, s, kind):
+        return [e for e in S.Ledger.read(s.ledger.path) if e["kind"] == kind]
+
+    def test_a_session_cannot_start_without_a_kernel(self):
+        self.assertEqual(self.code(self.open, None, None, None, False, None, None, True), "KERNEL_REQUIRED")
+
+    def test_the_kernel_must_be_callable(self):
+        self.assertEqual(self.code(self.open, None, None, None, False, "kernel"), "KERNEL_REQUIRED")
+
+    def test_opening_without_a_kernel_must_be_asked_for_and_is_never_live_ready(self):
+        s = self.open(no_kernel=True, allow_unenforced=True)
+        self.assertFalse(s.kernel_enforced)
+        self.assertFalse(s.live_ready)
+        e = self.kinds(s, "session_opened")[0]
+        self.assertEqual((e["kernel_enforced"], e["kernel_name"]), (False, None))
+        r = s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")
+        self.assertEqual(self.kinds(s, "proposal")[0]["kernel"], None)
+        self.assertEqual(r["decision"], "allow")
+
+    def test_with_a_kernel_the_session_is_live_ready_and_names_it(self):
+        s = self.open()
+        self.assertTrue(s.live_ready)
+        e = self.kinds(s, "session_opened")[0]
+        self.assertEqual((e["kernel_enforced"], e["kernel_name"]), (True, "test-kernel"))
+
+    def test_signature_checks_still_come_before_kernel_acceptance(self):
+        rec = self.record()
+        self.assertEqual(self.code(self.open, rec, self.rogue), "BAD_SIGNATURE")
+
+    def test_the_kernel_is_asked_at_proposal_and_again_at_execution_with_the_same_arguments(self):
+        k = NamedKernel()
+        s = self.open(kernel_check=k)
+        r = s.propose("read_file", {"path": "C:/work/docs/a.txt"}, "agent-1")
+        s.authorize_execution(r["call_id"], "read_file", {"path": "C:/work/docs/a.txt"}, "harness")
+        self.assertEqual(k.asked, [("read_file", {"path": "C:/work/docs/a.txt"})] * 2)
+
+    def test_the_kernel_decision_is_written_to_the_ledger(self):
+        s = self.open(kernel_check=NamedKernel(why="because"))
+        r = s.propose("read_file", {"path": "C:/work/docs/a.txt"}, "agent-1")
+        s.authorize_execution(r["call_id"], "read_file", {"path": "C:/work/docs/a.txt"}, "harness")
+        for kind in ("proposal", "execution_authorized"):
+            e = self.kinds(s, kind)[0]
+            self.assertEqual((e["kernel"], e["kernel_reason"]), ("test-kernel", "because"))
+
+    def test_a_kernel_denial_denies_and_is_logged_with_its_reason(self):
+        s = self.open(kernel_check=NamedKernel(ok=False, why="nope"))
+        r = s.propose("read_file", {"path": "C:/work/docs/a.txt"}, "agent-1")
+        self.assertEqual((r["decision"], r["code"]), ("deny", "KERNEL_DENIED"))
+        e = S.Ledger.read(s.ledger.path)[-1]
+        self.assertEqual((e["code"], e["reason"], e["kernel"]), ("KERNEL_DENIED", "nope", "test-kernel"))
+
+    def test_a_kernel_that_raises_is_a_denial_not_an_allow_and_not_a_crash(self):
+        def boom(tool, args):
+            raise RuntimeError("kernel is down")
+        s = self.open(kernel_check=boom)
+        self.assertEqual(s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")["code"], "KERNEL_ERROR")
+        self.assertEqual(s.calls_authorized, 0)
+
+    def test_a_kernel_that_raises_at_execution_leaves_the_call_unexecuted(self):
+        state = {"down": False}
+
+        def flaky(tool, args):
+            if state["down"]:
+                raise RuntimeError("down")
+            return True, "granted"
+        s = self.open(kernel_check=flaky)
+        r = s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")
+        state["down"] = True
+        self.assertEqual(s.authorize_execution(r["call_id"], "read_file", {"path": "C:/work/docs/a"}, "harness")["code"], "KERNEL_ERROR")
+        self.assertEqual(s.calls[r["call_id"]]["state"], "AUTHORIZED")
+
+    def test_a_kernel_with_a_malformed_answer_is_a_denial(self):
+        for bad in (None, "yes", (1, "x"), ("yes", "x"), (), (True,), 5):
+            s = self.open(kernel_check=lambda tool, args, bad=bad: bad)
+            self.assertEqual(s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")["code"], "KERNEL_ERROR", repr(bad))
+
+    def test_the_real_governed_kernel_decides_through_an_adapter(self):
+        from icarus.agent.governed import GovernedKernel
+        from icarus.agent.kernel import Grant
+
+        class RealKernel:
+            name = "GovernedKernel"
+
+            def __init__(self, tmp):
+                self.kernel = GovernedKernel(os.path.join(tmp, "kernel.log"), tmp)
+                self.grant = Grant(task_id="T-real", allowed_tools=frozenset({"read_file", "write_file"}), max_calls=1000)
+
+            def __call__(self, tool, args):
+                d = self.kernel.authorize(self.grant, tool, args)
+                return d.allowed, d.reason
+
+        real = RealKernel(self.tmp)
+        s = self.open(kernel_check=real)
+        ok = s.propose("read_file", {"path": "a.txt"}, "agent-1")
+        self.assertEqual(ok["decision"], "allow")
+        self.assertEqual(self.kinds(s, "proposal")[0]["kernel_reason"], "granted")
+        no = s.propose("read_file", {"path": "notes/.env"}, "agent-1")
+        self.assertEqual((no["decision"], no["code"]), ("deny", "KERNEL_DENIED"))
+        self.assertEqual(S.Ledger.read(s.ledger.path)[-1]["reason"], "credential path")
+        self.assertTrue(real.kernel.verify_log())
 
 
 class TestWholeStory(Base):

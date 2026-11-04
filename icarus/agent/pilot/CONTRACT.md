@@ -1,6 +1,6 @@
-# Pilot interface contract (v0.4, 4 Nov 2026)
+# Pilot interface contract (v0.4.1, 4 Nov 2026)
 
-Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. Written from repo evidence only. Nothing here has been run against the real laptop DSH.
+Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrects three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. Written from repo evidence only. Nothing here has been run against the real laptop DSH.
 
 Every claim carries a tag:
 - [REPO] read in a repo file (path and blob SHA in section 0).
@@ -115,6 +115,9 @@ Rules:
 - S5. Spend is EUR 0 unless the owner's grant says otherwise.
 - S6. Review gates exist if and only if the session carries an approved checkpoint plan (2.1). They are not an optional setting.
 - S7. `executor_id` names the agent doing the work. No approval counts if it comes from the executor (2.3).
+- S8. Ordering. A transition that grants something (authorize, record a result, accept a decision) is persisted to the ledger BEFORE state changes, so a failed write can never leave an authorized or completed call. A transition that restricts (burn a call, pause for review, close) changes state first, so a failed write can only make the session stricter. A ledger that fails a write is broken for good (`LEDGER_BROKEN`), because the tail of the file is then unknown.
+- S9. Kernel. Every call needs a kernel decision at proposal and again at execution, recorded in the ledger with the kernel's name and reason. `Session.open` refuses to start without a kernel (`KERNEL_REQUIRED`) unless the caller explicitly allows an unenforced session, and such a session is never `live_ready`. A kernel that raises, or answers with anything other than (boolean, reason), is a denial (`KERNEL_ERROR`).
+- S10. The canonical arguments of each proposal are saved before the proposal is authorized. If they cannot be saved, the proposal is denied (`SIDE_FILE_FAILED`) and nothing is authorized. If the ledger write then fails, the saved file is removed.
 
 ### 2.0 Charter, delegation and self-work (owner directive, checkpoint 3)
 
@@ -197,8 +200,8 @@ Review decision (illustrative values; `signature` is a placeholder):
 Implemented and unit tested: the ledger (hash-chained, append-only, fails closed); the charter loader with a pinned owner key; session issuance with signature, issuer-role, self-grant, attenuation, registry and plan checks; the call state machine with exact tool and argument binding, burning, duplicate and wrong-executor denial, path scoping and the EUR 0 default; per-milestone grants with `OUT_OF_MILESTONE`; milestone declaration with evidence-kind presence; mandatory PAUSED_FOR_REVIEW; and signed decisions (registry, ledger-head binding, single-use nonce, expiry, self-approval and independence rules).
 
 Not implemented yet, and not claimed:
-- Wiring to GovernedKernel or GovernedCore. Only a `kernel_check` callable hook exists; the model slot, `GovernedCore.step()`, the hook transport and the supervisor are checkpoints 4 to 6.
-- Resuming a session from a ledger on disk. A ledger is new per session. Nonces are per process.
+- Production wiring of the kernel. A kernel is required (`kernel_check`, any callable returning (boolean, reason)), and the tests plug the real GovernedKernel in through a small adapter. Note GovernedKernel counts every authorize call against its own budget and the session asks it twice per call (proposal and execution), so its budget must allow for that. The model slot, `GovernedCore.step()`, the hook transport and the supervisor are checkpoints 4 to 6.
+- Resuming a session from a ledger on disk. A ledger is new per session, nonces and burned calls are per process, and a crash ends the session. This must be solved before live acceptance and is scheduled for checkpoint 8: replay the verified chain to restore nonces, burned calls, gates and budgets, and fail closed on a broken chain.
 - Path scoping covers arguments under the known path keys only. A tool that carries paths in other argument names, or a shell-like tool, must not be granted.
 - Ed25519 verification needs the `cryptography` package where Core runs. Without it every signed operation is BLOCKED (`BLOCKED_NO_VERIFIER`). There is no weaker fallback.
 - Key custody and the signing tool for the owner. Core only verifies.

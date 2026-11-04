@@ -18,7 +18,14 @@ Self-contained on purpose: standard library only, plus an optional Ed25519 verif
 It imports nothing from the M1 modules (kernel, core, memory, hands, reasoners, governed).
 If no vetted Ed25519 verifier is available, anything that needs a signature fails closed (BLOCKED_NO_VERIFIER).
 
-Known limits (CP3): a ledger is new per session (no resume from disk); nonces are per process; path scoping
+Ordering rule: a transition that grants something (authorize, record, resume) is persisted to the ledger BEFORE
+state changes, so a failed write can never leave an authorized or completed call. A transition that restricts
+(burn a call, pause for review, close) changes state first, so a failed write can only make the session stricter.
+A ledger that fails a write is marked broken and refuses every later write (LEDGER_BROKEN). A kernel decision is
+required for every call: Session.open refuses to start without one unless the caller says so explicitly, and a
+session started that way is never live_ready.
+
+Known limits (CP3): a ledger is new per session (no resume from disk; scheduled for checkpoint 8); nonces are per process; path scoping
 only covers arguments under the known path keys, so shell-like tools must not be granted; key custody is an
 operational matter this module cannot prove.
 """
@@ -206,6 +213,7 @@ class Ledger:
         self._clock = clock
         self.seq = 0
         self.head = GENESIS
+        self.broken = False
         self._lock = threading.Lock()
         try:
             os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -217,6 +225,8 @@ class Ledger:
 
     def append(self, surface, kind, session_id, task_id, **fields):
         with self._lock:
+            if self.broken:
+                raise LedgerError("LEDGER_BROKEN", "an earlier write failed; the tail of the file is unknown, so nothing more is written")
             entry = {"seq": self.seq + 1, "ts": _iso(self._clock()), "session_id": session_id, "task_id": task_id,
                      "surface": surface, "kind": kind}
             entry.update(fields)
@@ -228,6 +238,7 @@ class Ledger:
                     f.flush()
                     os.fsync(f.fileno())
             except OSError as e:
+                self.broken = True
                 raise LedgerError("LEDGER_UNWRITABLE", str(e))
             self.seq += 1
             self.head = entry["hash"]
@@ -318,8 +329,14 @@ class Session:
         raise TypeError("use Session.open(...)")
 
     @classmethod
-    def open(cls, record, signature, charter, ledger_path, verifier, clock=_utc_now, kernel_check=None):
+    def open(cls, record, signature, charter, ledger_path, verifier, clock=_utc_now, kernel_check=None,
+             allow_unenforced_kernel=False):
         _need_verifier(verifier)
+        if kernel_check is not None and not callable(kernel_check):
+            raise AuthorityError("KERNEL_REQUIRED", "kernel_check must be callable")
+        if kernel_check is None and not allow_unenforced_kernel:
+            raise AuthorityError("KERNEL_REQUIRED", "a kernel decision is required for every call; pass the kernel, or "
+                                 "allow_unenforced_kernel=True for a session that is never live_ready")
         if not isinstance(record, dict):
             raise AuthorityError("BAD_SESSION", "not an object")
         for k in ("session_id", "task_id", "issued_by", "signer_id", "executor_id", "execution", "grants"):
@@ -411,6 +428,8 @@ class Session:
         self.verifier = verifier
         self.clock = clock
         self.kernel_check = kernel_check
+        self.kernel_enforced = kernel_check is not None
+        self.kernel_name = (getattr(kernel_check, "name", None) or getattr(kernel_check, "__name__", None) or "unnamed") if kernel_check is not None else None
         self.state = "ACTIVE"
         self.milestone_index = 0
         self.gate = None
@@ -426,6 +445,7 @@ class Session:
         self.ledger.append("session", "session_opened", self.session_id, self.task_id, issued_by=issued_by,
                            signer_id=self.signer_id, executor_id=executor, execution=self.execution,
                            independent_verification_required=independent,
+                           kernel_enforced=self.kernel_enforced, kernel_name=self.kernel_name,
                            record_sha256=sha256_hex(canonical(record)))
         if plan is None:
             self.ledger.append("session", "no_plan", self.session_id, self.task_id)
@@ -495,6 +515,24 @@ class Session:
             return "OUT_OF_MILESTONE", f"{tool} is not granted in milestone {self.active_milestone()['id']}"
         return "TOOL_NOT_GRANTED", f"{tool} is not in the grant"
 
+    @property
+    def live_ready(self):
+        """True only when a kernel decides every call, signatures can be verified and the ledger is writable."""
+        return bool(self.kernel_enforced and getattr(self.verifier, "available", False) and not self.ledger.broken)
+
+    def _kernel_decision(self, tool, args):
+        """(ok, code, reason). A kernel that raises or answers badly is a denial, never an allow."""
+        if self.kernel_check is None:
+            return True, "OK", "kernel not enforced (session opened with allow_unenforced_kernel)"
+        try:
+            out = self.kernel_check(tool, args)
+            ok, why = out
+        except Exception as e:
+            return False, "KERNEL_ERROR", f"kernel raised {type(e).__name__}"
+        if not isinstance(ok, bool):
+            return False, "KERNEL_ERROR", "kernel answered with a non-boolean decision"
+        return (True, "OK", str(why)[:200]) if ok else (False, "KERNEL_DENIED", str(why)[:200])
+
     # ------------------------------------------------------------ calls
     def propose(self, tool, args, actor, cost_eur=0):
         """Slot-time check. Mints the call_id and fixes tool + exact arguments for it."""
@@ -513,21 +551,37 @@ class Session:
                 return self._deny("slot", "proposal_denied", "MAX_CALLS", "call budget used", actor=actor, tool=tool)
             if self.spent_eur + cost_eur > self.grants.get("spend_eur", DEFAULT_SPEND_EUR):
                 return self._deny("slot", "proposal_denied", "SPEND_EXCEEDED", "spend would exceed the grant", actor=actor, tool=tool)
-            if self.kernel_check is not None:
-                ok, why = self.kernel_check(tool, args)
-                if not ok:
-                    return self._deny("slot", "proposal_denied", "KERNEL_DENIED", str(why), actor=actor, tool=tool)
+            ok, kcode, kwhy = self._kernel_decision(tool, args)
+            if not ok:
+                return self._deny("slot", "proposal_denied", kcode, kwhy, actor=actor, tool=tool, kernel=self.kernel_name)
             canon = canonical(args)
             call_id = f"call_{self.session_id}_{self.ledger.seq + 1:04d}"
             sha = sha256_hex(canon)
             side = None
             if len(canon) <= SIDE_FILE_CAP:
-                side = self.ledger.path + ".calls"
-                os.makedirs(side, exist_ok=True)
-                with open(os.path.join(side, call_id + ".json"), "wb") as f:
-                    f.write(canon)
-            e = self._log("slot", "proposal", call_id=call_id, decision="allow", reason="in grant, scope and budget", actor=actor,
-                          tool=tool, args_sha256=sha, args_bytes=len(canon), args_saved=side is not None, call_state="AUTHORIZED")
+                side_dir = self.ledger.path + ".calls"
+                side_path = os.path.join(side_dir, call_id + ".json")
+                try:
+                    os.makedirs(side_dir, exist_ok=True)
+                    with open(side_path, "wb") as f:
+                        f.write(canon)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    side = side_path
+                except OSError as e:
+                    return self._deny("slot", "proposal_denied", "SIDE_FILE_FAILED",
+                                      f"could not save the call arguments ({type(e).__name__}); nothing authorized", actor=actor, tool=tool)
+            try:
+                e = self._log("slot", "proposal", call_id=call_id, decision="allow", reason="in grant, scope and budget", actor=actor,
+                              tool=tool, args_sha256=sha, args_bytes=len(canon), args_saved=side is not None, call_state="AUTHORIZED",
+                              kernel=self.kernel_name, kernel_reason=kwhy)
+            except Exception:
+                if side:
+                    try:
+                        os.remove(side)
+                    except OSError:
+                        pass
+                raise
             self.calls_authorized += 1
             self.spent_eur += cost_eur
             self.calls[call_id] = {"tool": tool, "args_sha256": sha, "state": "AUTHORIZED", "by": None,
@@ -567,13 +621,12 @@ class Session:
             prob = self._tool_problem(tool) or self._args_problem(tool, args)
             if prob:
                 return self._deny("hook", "execution_denied", prob[0], prob[1], call_id=call_id, actor=actor)
-            if self.kernel_check is not None:
-                ok, why = self.kernel_check(tool, args)
-                if not ok:
-                    return self._deny("hook", "execution_denied", "KERNEL_DENIED", str(why), call_id=call_id, actor=actor)
-            call["state"], call["by"] = "EXECUTED", by
+            ok, kcode, kwhy = self._kernel_decision(tool, args)
+            if not ok:
+                return self._deny("hook", "execution_denied", kcode, kwhy, call_id=call_id, actor=actor, kernel=self.kernel_name)
             e = self._log("hook", "execution_authorized", call_id=call_id, decision="allow", reason="matches the proposal exactly", actor=actor,
-                          tool=tool, args_sha256=got, executed_by=by, call_state="EXECUTED")
+                          tool=tool, args_sha256=got, executed_by=by, call_state="EXECUTED", kernel=self.kernel_name, kernel_reason=kwhy)
+            call["state"], call["by"] = "EXECUTED", by  # persisted first: a failed write leaves the call AUTHORIZED, never EXECUTED
             return {"decision": "allow", "code": "OK", "call_id": call_id, "ledger_seq": e["seq"]}
 
     def record_result(self, call_id, content, source=None, actor=None):
@@ -589,9 +642,10 @@ class Session:
                 return {"decision": "deny", "code": "UNMATCHED_RESULT", "ledger_seq": e["seq"]}
             if call["state"] != "EXECUTED":
                 return self._deny("slot", "tool_result_denied", "RESULT_NOT_EXPECTED", f"call state is {call['state']}", call_id=call_id, actor=actor)
-            call["state"], call["result"] = "RESULT_RECORDED", sha256_hex(data)
+            sha = sha256_hex(data)
             e = self._log("slot", "tool_result", call_id=call_id, decision="allow", reason="recorded", actor=actor,
-                          content_sha256=call["result"], args_sha256=call["args_sha256"], source=src, call_state="RESULT_RECORDED")
+                          content_sha256=sha, args_sha256=call["args_sha256"], source=src, call_state="RESULT_RECORDED")
+            call["state"], call["result"] = "RESULT_RECORDED", sha  # persisted first
             return {"decision": "allow", "code": "OK", "ledger_seq": e["seq"]}
 
     # ------------------------------------------------------------ milestones and gates
@@ -615,9 +669,14 @@ class Session:
             self._log("session", "milestone_reached", milestone_id=milestone_id, decision="allow", reason="required evidence kinds present",
                       evidence=evidence, actor=actor)
             gate_id = f"g-{milestone_id}"
-            opened = self._log("session", "gate_opened", milestone_id=milestone_id, gate_id=gate_id)
+            # restrictive transition: pause first. If the next write fails the session stays paused with no gate to
+            # decide on (blocked), which is stricter, never more permissive.
             self.state = "PAUSED_FOR_REVIEW"
+            self.gate = None
+            self.blocked_reason = "gate could not be opened because the ledger write failed"
+            opened = self._log("session", "gate_opened", milestone_id=milestone_id, gate_id=gate_id)
             self.gate = {"gate_id": gate_id, "milestone_id": milestone_id, "ledger_head_hash": opened["hash"]}
+            self.blocked_reason = None
             return {"decision": "allow", "code": "GATE_OPEN", "gate_id": gate_id, "milestone_id": milestone_id,
                     "ledger_head_hash": opened["hash"], "state": self.state}
 
@@ -663,9 +722,9 @@ class Session:
                 reject("INDEPENDENCE_REQUIRED", "work done by the adjudicator needs an owner or independent verifier")
             if not self.verifier.verify(reviewer["public_key"], canonical(_unsigned(d)), d["signature"]):
                 reject("BAD_SIGNATURE", "signature does not verify against the registered key")
-            self._nonces.add(d["nonce"])
             self._log("session", "decision_accepted", decision="allow", reason=d["decision"], reviewer_id=reviewer["id"],
                       reviewer_role=reviewer["role"], gate_id=d["gate_id"], milestone_id=d["milestone_id"], nonce=d["nonce"])
+            self._nonces.add(d["nonce"])  # persisted first: a failed write leaves the gate closed and the nonce unused
             self.gate = None
             if d["decision"] == "stop":
                 self.state = "CLOSED_STOPPED"
