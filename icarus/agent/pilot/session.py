@@ -471,6 +471,13 @@ class Session:
             self._actors.add(fields["actor"])
         return self.ledger.append(surface, kind, self.session_id, self.task_id, **fields)
 
+    def log_event(self, surface, kind, **fields):
+        """Record an event that changes no authority (a request received, a response sent, a filtered proposal).
+        It never marks anyone as an actor and never writes a decision."""
+        if kind in EXEC_KINDS or kind in ("session_opened", "decision_accepted", "gate_opened", "session_closed"):
+            raise AuthorityError("BAD_EVENT", f"{kind} is written only by the session itself")
+        return self._log(surface, kind, **fields)
+
     def _deny(self, surface, kind, code, reason, **fields):
         e = self._log(surface, kind, decision="deny", code=code, reason=reason, **fields)
         return {"decision": "deny", "code": code, "reason": reason, "ledger_seq": e["seq"]}
@@ -520,12 +527,17 @@ class Session:
         """True only when a kernel decides every call, signatures can be verified and the ledger is writable."""
         return bool(self.kernel_enforced and getattr(self.verifier, "available", False) and not self.ledger.broken)
 
-    def _kernel_decision(self, tool, args):
-        """(ok, code, reason). A kernel that raises or answers badly is a denial, never an allow."""
+    def _kernel_decision(self, tool, args, phase="proposal"):
+        """(ok, code, reason). A kernel that raises or answers badly is a denial, never an allow.
+        A kernel that sets accepts_phase = True is told whether this is the proposal-time or execution-time check,
+        so it can count and log the first and only re-read the second."""
         if self.kernel_check is None:
             return True, "OK", "kernel not enforced (session opened with allow_unenforced_kernel)"
         try:
-            out = self.kernel_check(tool, args)
+            if getattr(self.kernel_check, "accepts_phase", False):
+                out = self.kernel_check(tool, args, phase=phase)
+            else:
+                out = self.kernel_check(tool, args)
             ok, why = out
         except Exception as e:
             return False, "KERNEL_ERROR", f"kernel raised {type(e).__name__}"
@@ -551,7 +563,7 @@ class Session:
                 return self._deny("slot", "proposal_denied", "MAX_CALLS", "call budget used", actor=actor, tool=tool)
             if self.spent_eur + cost_eur > self.grants.get("spend_eur", DEFAULT_SPEND_EUR):
                 return self._deny("slot", "proposal_denied", "SPEND_EXCEEDED", "spend would exceed the grant", actor=actor, tool=tool)
-            ok, kcode, kwhy = self._kernel_decision(tool, args)
+            ok, kcode, kwhy = self._kernel_decision(tool, args, "proposal")
             if not ok:
                 return self._deny("slot", "proposal_denied", kcode, kwhy, actor=actor, tool=tool, kernel=self.kernel_name)
             canon = canonical(args)
@@ -621,7 +633,7 @@ class Session:
             prob = self._tool_problem(tool) or self._args_problem(tool, args)
             if prob:
                 return self._deny("hook", "execution_denied", prob[0], prob[1], call_id=call_id, actor=actor)
-            ok, kcode, kwhy = self._kernel_decision(tool, args)
+            ok, kcode, kwhy = self._kernel_decision(tool, args, "execution")
             if not ok:
                 return self._deny("hook", "execution_denied", kcode, kwhy, call_id=call_id, actor=actor, kernel=self.kernel_name)
             e = self._log("hook", "execution_authorized", call_id=call_id, decision="allow", reason="matches the proposal exactly", actor=actor,

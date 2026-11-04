@@ -1164,6 +1164,44 @@ class TestKernelRequired(Base):
         self.assertTrue(real.kernel.verify_log())
 
 
+class TestKernelPhaseAndEvents(Base):
+    def test_a_phase_aware_kernel_is_told_which_check_this_is(self):
+        phases = []
+
+        class PhaseKernel:
+            name = "phase-kernel"
+            accepts_phase = True
+
+            def __call__(self, tool, args, phase="proposal"):
+                phases.append(phase)
+                return True, "granted"
+        s = self.open(kernel_check=PhaseKernel())
+        r = s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")
+        s.authorize_execution(r["call_id"], "read_file", {"path": "C:/work/docs/a"}, "harness")
+        self.assertEqual(phases, ["proposal", "execution"])
+
+    def test_a_plain_two_argument_kernel_still_works(self):
+        k = NamedKernel()
+        s = self.open(kernel_check=k)
+        r = s.propose("read_file", {"path": "C:/work/docs/a"}, "agent-1")
+        self.assertEqual(r["decision"], "allow")
+
+    def test_log_event_records_without_granting_or_naming_an_actor(self):
+        s = self.open()
+        e = s.log_event("slot", "slot_request", request_sha256="x" * 64)
+        self.assertEqual((e["kind"], e["surface"]), ("slot_request", "slot"))
+        self.assertEqual(s.actors, set())
+        self.assertTrue(S.Ledger.verify(s.ledger.path)[0])
+
+    def test_log_event_cannot_forge_the_sessions_own_entries(self):
+        s = self.open()
+        for kind in ("proposal", "execution_authorized", "tool_result", "milestone_reached", "session_opened",
+                     "decision_accepted", "gate_opened", "session_closed"):
+            self.assertEqual(self.code(s.log_event, "slot", kind), "BAD_EVENT", kind)
+        self.assertEqual(s.actors, set())
+        self.assertEqual(s.calls, {})
+
+
 class TestWholeStory(Base):
     def test_owner_sets_boundaries_icarus_delegates_agent_works_gates_hold(self):
         s = self.open(plan=True)

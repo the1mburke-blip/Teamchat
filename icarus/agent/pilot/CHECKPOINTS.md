@@ -28,7 +28,8 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 2 (v0.2) | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (commit d9dff2e1) | see second findings section below | none |
 | 2 (v0.3) | 2026-11-04 | owner (Michael), in the checkpoint 3 instruction | Accepted | commit 966ef2f5 on agent/icarus-core | none |
 | 3 | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (commit ecc211ea) | see the HOLD section below | none |
-| 3 (rev) | 2026-11-04 | pending | pending | revision commit: see git log for the commit after ecc211ea | none |
+| 3 (rev) | 2026-11-04 | owner (Michael) relaying ChatGPT's verification | Accepted for progression | commit 4bf42185 on agent/icarus-core | none |
+| 4 | 2026-11-04 | pending | pending | see the checkpoint 4 section below; commit in the report | none |
 
 Review of the original 10-point plan (2026-11-04, ChatGPT): APPROVE WITH REQUIRED CHANGES. Accepted and reflected in the plan: contract grounded in DSH evidence; model slot proven to pass through Core; unknown tools default to deny; supervisor verifies lifecycle and process ownership; checkpoint 10 is real harness acceptance; shared authority across all three surfaces; explicit recorded review decisions.
 
@@ -77,3 +78,18 @@ Not built: wiring to GovernedKernel/GovernedCore (checkpoints 4 and 5), ledger r
 4. Crash resume of the ledger and nonces: agreed, not done here, scheduled as checkpoint 8 (plan row updated). Until then a crash ends the session.
 
 Evidence for the revision: 143 tests in test_session; 40 deliberate breakages of session.py were all caught by the tests, plus one targeted at gate ordering.
+
+## Checkpoint 4 (model slot): implemented 4 Nov 2026, awaiting review
+
+Built: GovernedCore.begin()/step() with StepState/StepOutcome, NullHand and HarnessModeViolation, GovernedKernel.decide() (read-only), icarus/agent/pilot/modelslot.py, Session.log_event and phase-aware kernel calls, plus tests/agent/test_step.py and test_modelslot.py and CONTRACT.md v0.5. run() is byte-for-byte unchanged; no M1 file was edited.
+
+Procedure followed: preflight stated first (read and write to agent/icarus-core only, EUR 0, no live harness); history and training reviewed before building. Lessons applied: HV-EXP-142 (a receipt or an existence check is not proof, so the slot never reports PASS without an independent adjudicator), HV-EXP-146 (acknowledge only after the intake is durable, so the request is logged before the model is asked), HV-EXP-144 (no hand-assembled payloads, so files are committed from a script and read back by blob SHA), HV-EXP-145 (no announcing without acting).
+
+Things found while building, not in the accepted contract:
+1. Asking Core's kernel and then the Session's kernel adapter would count each call against the kernel's budget twice and, at the last allowed call, wrongly deny it. step() therefore takes an authorizer, and the adapter is phase-aware.
+2. run() swallows any Exception from a hand, so a NullHand that raised an ordinary exception would have been recorded as a failed call and the run would have gone on. HarnessModeViolation is a BaseException.
+3. Replaying an unanswered tool call forever would deadlock a session after a gate or after the hook burned the call. Stale calls are now dropped and told to the model as failures.
+4. A tool result for a call the hook never authorized is not fatal. It is logged as `ungoverned_result_reported`, not trusted, and fed back as a failure.
+5. GovernedKernel refuses absolute and drive paths, so real harness paths will be denied until an adapter maps them. Open blocker for live use.
+
+Not built: core mode, real token streaming, the hook transport, the supervisor, any live DSH evidence (checkpoint 10). Status PARTIAL.

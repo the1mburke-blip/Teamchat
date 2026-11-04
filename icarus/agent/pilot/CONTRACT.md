@@ -1,6 +1,6 @@
-# Pilot interface contract (v0.4.1, 4 Nov 2026)
+# Pilot interface contract (v0.5, 4 Nov 2026)
 
-Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrects three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. Written from repo evidence only. Nothing here has been run against the real laptop DSH.
+Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. v0.4.1 corrected three defects found in the checkpoint 3 review: write ordering, side-file failures, and the optional kernel. v0.5 records what GovernedCore.step() and modelslot.py implement (checkpoint 4). Written from repo evidence only. Nothing here has been run against the real laptop DSH.
 
 Every claim carries a tag:
 - [REPO] read in a repo file (path and blob SHA in section 0).
@@ -33,7 +33,10 @@ Rule: every session fixes ONE execution mode, and every call has exactly one exe
 | harness | the harness | the harness's own tools | OpenAI tool_calls minted by Core | NullHand that raises if called |
 
 - core mode: the harness is used as a model consumer or as a hand adapter. run() is unchanged.
-- harness mode needs a single-step entry point, because run() cannot hand a proposal back without executing it. Checkpoint 4 adds `GovernedCore.step()`: same prompt, parse_proposal, kernel.authorize and blind-retry rules as run(), but it never calls a hand. run() behaviour is unchanged and the existing 32 governed tests must still pass.
+- harness mode needs a single-step entry point, because run() cannot hand a proposal back without executing it. Implemented at checkpoint 4 as `GovernedCore.begin()` and `GovernedCore.step()`, with `StepState` and `StepOutcome`. `begin()` does what run() does before its loop (identity, preflight, sources, recall, task_start). `step()` applies run()'s rules to one harness turn: parse_proposal, owner-only escalation, blind-retry refusal, denials as blockers, hard stops, the material-change check and the kernel-judged finish. It returns an authorized proposal for the harness to execute, a finish, or a blocker, and it never calls a hand. run() is byte-for-byte unchanged and its 32 tests still pass.
+- Who authorizes inside step(): by default Core's kernel, exactly as in run(). The slot passes an `authorizer` so the Session decides (its grants, scopes, milestone and kernel adapter), which means the kernel is consulted and counted once per call instead of twice.
+- `NullHand` is the hand for harness mode. Core refuses `begin()` and `step()` with any hand that is not a NullHand. `NullHand.execute` raises `HarnessModeViolation`, a BaseException on purpose, because run() would swallow an ordinary Exception from a hand and record it as a failed call.
+- A blocker that is not a real stop (reasoner unavailable, invalid output twice, non-owner escalation twice) is returned without ending the task, so the harness can try again. Preflight failure, owner-only escalation, a material change, a hard stop and a finish end it.
 - Mixed mode (some tools by Core, some by the harness) is out of scope for v0.
 - Call state machine, recorded in the ledger per call_id: PROPOSED -> AUTHORIZED (kernel check at proposal time) -> EXECUTED(by=core or harness; the hook re-checks the real arguments first) -> RESULT_RECORDED.
 - A second EXECUTED for the same call_id is denied and logged `DUPLICATE_EXECUTION`.
@@ -306,6 +309,26 @@ The slot matches `tool_call_id` to a ledger call_id and records `tool_result` wi
 ```
 
 The slot never fabricates a completion to avoid an error.
+
+### 3.7 What modelslot.py implements (checkpoint 4)
+
+Implemented and unit tested, including over a real loopback socket: `SlotRuntime` (registration, per-session bearer token stored only as a hash, `handle_chat`, `models`), `SlotServer` (loopback only, JSON and SSE, body cap, content-type and method checks), `GovernedKernelAdapter` (phase-aware: proposal time counts and logs through `authorize`, execution time re-reads through the new read-only `GovernedKernel.decide`), and `Session.log_event` for non-authority entries.
+
+How it holds to the contract:
+- Every model call is `GovernedCore.step()`. The module imports no reasoner, never calls `complete`, and names a reasoner nowhere. The tests prove it three ways: by reading the module's syntax tree, by checking that the objects the slot holds do not include the reasoner, and by a reasoner that fails if anything other than `GovernedCore.step` calls it. Every refusal path (token, shape, size, method, paused, closed, not live ready) is shown to make zero model calls.
+- Registration refuses a session that is not `live_ready`, one whose kernel is not this Core's kernel, a core-mode session, a task mismatch, a duplicate, an inactive session and a blocked preflight. Every request re-checks `live_ready`, so a verifier or ledger that fails later is refused at the next request.
+- The request is written to the ledger before the model is asked (`slot_request`). An open gate answers 409 with no model call.
+- A tool call is returned only if the tool is in the request's `tools` AND the session's active grant AND the Session authorizes the exact call. Otherwise it is logged (`proposal_filtered` or a denial), fed back as a blocker, and never returned.
+- A repeated request while a call is unanswered replays the same response without a model call. A call that can no longer run (burned at the hook, or from an earlier milestone) is dropped as a failure.
+- A tool result is recorded only for a call the hook authorized, tagged `harness_reported`. A result for a call that was never authorized is logged (`ungoverned_result_reported`), not trusted, and told to the model as a failure. History the harness resends is not recorded twice.
+- The final answer is never reported as PASS unless an independent adjudicator confirmed it; a kernel-only PASS is reported as PARTIAL with that reason.
+
+Not implemented, and not claimed:
+- Core mode (the slot returns tool calls only for harness-mode sessions; a core-mode session is refused with `CORE_MODE_NOT_IMPLEMENTED`).
+- Real token streaming. Streaming is a replay of a finished, authorized turn.
+- Any evidence that DSH accepts a localhost base URL or consumes these responses. That is checkpoint 10.
+- The hook transport (checkpoint 5) and the supervisor (checkpoint 6). Until the hook exists, the tests stand in for it by calling `Session.authorize_execution`.
+- Path mapping for the real kernel: GovernedKernel accepts repo-relative paths only and refuses absolute and drive paths. A harness that sends absolute paths will be denied until an adapter maps them. This is a known blocker for live use.
 
 ## 4. Hook channel: wire format
 
