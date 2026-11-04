@@ -26,7 +26,8 @@ Reviews so far were performed by ChatGPT and relayed by the owner. They are not 
 | 1 | 2026-11-04 | ChatGPT (via owner) | Accepted | commit ffbad88c on agent/icarus-core; PILOT.md blob 8f52df2f | none |
 | 2 | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (v0 commit b9b67d02) | see findings below | none |
 | 2 (v0.2) | 2026-11-04 | ChatGPT (via owner) | HOLD, three corrections (commit d9dff2e1) | see second findings section below | none |
-| 2 (v0.3) | 2026-11-04 | pending | pending | v0.3 commit: see git log for the commit that touches CONTRACT.md after d9dff2e1 | none |
+| 2 (v0.3) | 2026-11-04 | owner (Michael), in the checkpoint 3 instruction | Accepted | commit 966ef2f5 on agent/icarus-core | none |
+| 3 | 2026-11-04 | pending | pending | implemented, see the checkpoint 3 section below; commit in the report | none |
 
 Review of the original 10-point plan (2026-11-04, ChatGPT): APPROVE WITH REQUIRED CHANGES. Accepted and reflected in the plan: contract grounded in DSH evidence; model slot proven to pass through Core; unknown tools default to deny; supervisor verifies lifecycle and process ownership; checkpoint 10 is real harness acceptance; shared authority across all three surfaces; explicit recorded review decisions.
 
@@ -47,3 +48,22 @@ Review of the original 10-point plan (2026-11-04, ChatGPT): APPROVE WITH REQUIRE
 3. A worker must not resume its own paused session by writing decided_by owner. Agreed. Section 2.3: identity fields are lookup keys only; authority is an Ed25519 signature from a registered reviewer, bound to the session, gate, milestone and ledger head hash, with a single-use nonce; the executor cannot approve (SELF_APPROVAL); no weaker fallback; key custody is an operational requirement that code cannot prove.
 
 Reviewer's answer adopted: step-count logging stays non-stopping, and gates are not default-off when an approved plan exists. Owner confirmation of the review-gate design is still requested.
+
+## Checkpoint 3 (shared authority): implemented 4 Nov 2026, awaiting review
+
+Built: icarus/agent/pilot/session.py and tests/agent/test_session.py, plus CONTRACT.md v0.4 and this log. No M1 file and no governed.py change. Spend default EUR 0 is enforced and tested.
+
+Owner directive for this checkpoint and where it is enforced:
+- The user sets Icarus's objectives and boundaries: the owner-signed Charter, with the owner key pinned.
+- Icarus creates and delegates tasks within that authority, without owner approval for routine work: he signs sessions for executing agents, bounded by the charter.
+- Agents cannot grant themselves permissions or approve their own work: SELF_GRANT, REGISTRY_FORGED, SELF_APPROVAL, and signatures instead of names.
+- Icarus can review delegated work; his own work needs independent verification: independent_verification_required, owner or verifier only.
+- Mandatory gates stay enforced for any session with a plan.
+
+Things found and decided while building (not in the accepted contract):
+1. Reviewer registry entries must carry the public key, not only a fingerprint, because a fingerprint cannot verify a signature. Contract v0.4 says so.
+2. The charter and delegation model did not exist in v0.3. It is now section 2.0 of the contract, taken from the owner's checkpoint 3 directive.
+3. Milestone grants inherit call budget, spend and expiry from the session; only tools and path scopes are narrowed. A first draft required them per milestone and failed at session open.
+4. State changes happen after the ledger write, so a ledger failure leaves no call behind.
+
+Not built: wiring to GovernedKernel/GovernedCore (checkpoints 4 and 5), ledger resume, the owner's signing tool, any live harness evidence. Status PARTIAL.

@@ -1,6 +1,6 @@
-# Pilot interface contract (v0.3, 4 Nov 2026)
+# Pilot interface contract (v0.4, 4 Nov 2026)
 
-Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). Written from repo evidence only. Nothing here has been run against the real laptop DSH.
+Status: PARTIAL. Revised after the ChatGPT reviews of v0 and v0.2 (checkpoint 2 HOLD, twice, 4 Nov). v0.3 was accepted for checkpoint 2. v0.4 adds the charter and delegation model from the owner directive for checkpoint 3 and records what session.py implements. Written from repo evidence only. Nothing here has been run against the real laptop DSH.
 
 Every claim carries a tag:
 - [REPO] read in a repo file (path and blob SHA in section 0).
@@ -45,15 +45,17 @@ Rule: every session fixes ONE execution mode, and every call has exactly one exe
 
 The model slot, hook channel and supervisor are three surfaces of one controller. Each takes the same session record and writes the same ledger. [DECISION]
 
-Session record (illustrative values; `0000000000000000000000000000000000000000000000000000000000000000` stands for a 64-character hash):
+Session record (illustrative values; hashes are shown as 64 zeros):
 
 ```json
 {
   "session_id": "s-20261104-001",
   "task_id": "T-0001",
   "issued_by": "owner",
+  "signer_id": "owner-michael",
   "executor_id": "claude-build-01",
   "execution": "harness",
+  "cwd": "C:/Users/the1m/Icarus-Harness/work",
   "grants": {
     "tools": ["read_file", "write_file"],
     "path_scopes": ["C:/Users/the1m/Icarus-Harness/work"],
@@ -80,7 +82,7 @@ Session record (illustrative values; `000000000000000000000000000000000000000000
     ]
   },
   "reviewers": [
-    {"id": "owner-michael", "role": "owner", "public_key_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    {"id": "owner-michael", "role": "owner", "public_key": "base64-of-the-32-byte-ed25519-public-key", "public_key_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
   ],
   "ledger": "icarus/runs/s-20261104-001.ledger.jsonl"
 }
@@ -113,6 +115,19 @@ Rules:
 - S5. Spend is EUR 0 unless the owner's grant says otherwise.
 - S6. Review gates exist if and only if the session carries an approved checkpoint plan (2.1). They are not an optional setting.
 - S7. `executor_id` names the agent doing the work. No approval counts if it comes from the executor (2.3).
+
+### 2.0 Charter, delegation and self-work (owner directive, checkpoint 3)
+
+The owner's authority reaches the surfaces only through signatures, never through names in a record. [DECISION]
+
+- The owner signs a Charter: Icarus's objectives; boundaries (tools, path scopes, call budget, expiry, spend, owner-only categories); an optional self-work ceiling; and the registry of principals with their public keys. The trust anchor, the fingerprint of the owner's key, is pinned by whoever starts Core. A charter signed by any other key is refused (`UNTRUSTED_CHARTER`).
+- Roles: `owner`, `adjudicator` (Icarus) and `verifier` (an independent reviewer). Owner and adjudicator can issue sessions. All three can sign review decisions.
+- Icarus discovers, creates, prioritises and delegates tasks himself and issues sessions to executing agents without owner approval for routine work, but only inside the charter. A session can never exceed its issuer's ceiling (tools, path scopes, call budget, expiry, spend); a violation is `ATTENUATION_VIOLATION`. Spend defaults to EUR 0 and can never exceed the charter.
+- An agent cannot grant itself anything. A session signed by its own executor is refused (`SELF_GRANT`). The reviewer registry in a session must match charter principals exactly (`REGISTRY_FORGED`).
+- Icarus's own work: he works either in a session the owner issues to him, or in a `charter` session inside the owner-set `self_work` ceiling, signed by his own key. Either way the session is marked `independent_verification_required`: only an owner or a verifier can approve it. Another adjudicator cannot (`INDEPENDENCE_REQUIRED`), and Icarus cannot approve it (`SELF_APPROVAL`).
+- Icarus can review work delegated to others, because issuing a session does not make him an actor in it.
+- A plan needs at least one reviewer who can approve the work, or the session is refused (`NO_ELIGIBLE_REVIEWER`).
+- Mandatory gates (2.1) apply to every session that carries a plan, whoever issued it.
 
 ### 2.1 Checkpoint plans and mandatory gates
 
@@ -152,7 +167,7 @@ See 2.3. The record below is a request for a decision, not a decision by itself.
 ### 2.3 Approval authority
 
 - `reviewer_id` and any `decided_by` style field are lookup keys. They are never authority. A worker that writes `owner` into a record gets nothing. [DECISION]
-- Authority is a valid signature over the decision, verifiable with the public key of a registered reviewer in the session's `reviewers` list. The registry is part of the owner-approved session record. The executor cannot edit it.
+- Authority is a valid signature over the decision, verifiable with the public key of a registered reviewer in the session's `reviewers` list. The registry is part of the owner-approved session record. The executor cannot edit it. Registry entries carry the public key itself, because a fingerprint alone cannot verify a signature. The fingerprint is checked against the key, and every entry must match a charter principal exactly.
 - The signed payload is: session_id, gate_id, milestone_id, ledger_head_hash, decision, nonce, expires_at. Binding to the ledger head means the decision approves the exact evidence state that was reviewed and cannot be replayed on another session or a later state. Each nonce is single-use.
 - Separation of duties: the signer must be a registered reviewer whose role allows the decision, must not equal `executor_id`, and must not appear in this session's ledger as an acting surface. Otherwise `SELF_APPROVAL`, and the gate stays closed.
 - Algorithm: asymmetric signatures (Ed25519), verified in Core against public keys only. Core never holds a private reviewer key. A shared token or HMAC is not acceptable, because anything that can verify could forge. If no vetted Ed25519 verifier is available where Core runs, the gate stays closed and the session is BLOCKED. There is no weaker fallback. [DECISION]
@@ -176,6 +191,17 @@ Review decision (illustrative values; `signature` is a placeholder):
 ```
 
 `decision` is `resume` (next milestone), `rework` (stay in this milestone) or `stop` (end the session).
+
+### 2.4 What session.py implements (checkpoint 3)
+
+Implemented and unit tested: the ledger (hash-chained, append-only, fails closed); the charter loader with a pinned owner key; session issuance with signature, issuer-role, self-grant, attenuation, registry and plan checks; the call state machine with exact tool and argument binding, burning, duplicate and wrong-executor denial, path scoping and the EUR 0 default; per-milestone grants with `OUT_OF_MILESTONE`; milestone declaration with evidence-kind presence; mandatory PAUSED_FOR_REVIEW; and signed decisions (registry, ledger-head binding, single-use nonce, expiry, self-approval and independence rules).
+
+Not implemented yet, and not claimed:
+- Wiring to GovernedKernel or GovernedCore. Only a `kernel_check` callable hook exists; the model slot, `GovernedCore.step()`, the hook transport and the supervisor are checkpoints 4 to 6.
+- Resuming a session from a ledger on disk. A ledger is new per session. Nonces are per process.
+- Path scoping covers arguments under the known path keys only. A tool that carries paths in other argument names, or a shell-like tool, must not be granted.
+- Ed25519 verification needs the `cryptography` package where Core runs. Without it every signed operation is BLOCKED (`BLOCKED_NO_VERIFIER`). There is no weaker fallback.
+- Key custody and the signing tool for the owner. Core only verifies.
 
 ## 3. Model slot: wire format
 
