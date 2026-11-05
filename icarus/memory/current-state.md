@@ -54,3 +54,12 @@ Michael's owner-requested failure and allowance snapshot procedure have been wri
 - **Owner's target:** Icarus independently discovers, executes, verifies, checkpoints and resumes work as the primary agent with swappable reasoning models and real tool authority, not merely governance prompts or heartbeat receipts. Accept only a process-level, tool-level, cross-restart result independently checked; do not self-certify from file-existence gates.
 - **Other today:** Morning Gemini source refresh reported/read back but consumer NotebookLM uptake unverified; earlier Gmail search reported zero verified Dungannon job-alert matches, with live employer applications not rechecked in this ledger; owner supplied probe/authorization progress strings without an executor trace.
 - **Boundary:** Do not report any of these tasks operationally resolved merely because this memory entry was written. Next autonomous ingestion/model continuity test not executed.
+
+## 2026-11-05 — Owner–ChatGPT contract: Icarus memory index
+
+- **Owner:** Michael. **Recorder:** ChatGPT GPT-6. This is a repository memory index, not evidence of model-weight memory or live harness ingestion.
+- **Required exact source:** [verbatim owner–ChatGPT contract exchange](../../logs/2026-11-05-owner-chatgpt-contract-verbatim.md).
+- **Duplicated verbatim in:** [learned.md](learned.md) and root [TRAINING_MATRIX.md, HV-EXP-151](../../TRAINING_MATRIX.md).
+- **Operational requirement:** disclose the actual blocker, relevant evidence, and legitimate recovery routes; pursue the task to its verified effect; never misreport incomplete work as complete.
+- **Production boundary:** The current isolated Icarus–Hermes pilot, its test sweep, and learning writeback do not authorize production activation. Any proposal to lift an earlier prohibition is not itself owner authorization.
+- **Verification boundary:** All linked files were read back from GitHub. Whether a particular fresh Icarus runtime session has loaded and followed the contract remains untested; no claim of live uptake.
