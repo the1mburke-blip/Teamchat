@@ -1,0 +1,84 @@
+name: Icarus Harness Gate
+
+# Builds the Docker test harness and runs the full test suite through
+# harness_runner.py. Any non-zero exit from the runner fails the gate.
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: harness-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Build harness image
+        id: build
+        run: |
+          set -o pipefail
+          docker build -t teamchat-harness:test . 2>&1 | tee build.log
+
+      - name: Run harness
+        id: harness
+        run: |
+          set -o pipefail
+          python3 harness_runner.py 2>&1 | tee harness.log
+
+      - name: Write RUN_LOG.jsonl
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          from datetime import datetime, timezone
+
+          def read(name):
+              p = pathlib.Path(name)
+              return p.read_text(errors="replace") if p.exists() else ""
+
+          harness_log = read("harness.log")
+          m = re.search(r"HARNESS (PASS|FAIL): exit code (-?\d+)", harness_log)
+          summary = re.findall(r"=+ (.*(?:passed|failed|error).*) =+", harness_log)
+          record = {
+              "timestamp": datetime.now(timezone.utc).isoformat(),
+              "workflow": os.environ.get("GITHUB_WORKFLOW"),
+              "run_id": os.environ.get("GITHUB_RUN_ID"),
+              "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+              "event": os.environ.get("GITHUB_EVENT_NAME"),
+              "ref": os.environ.get("GITHUB_REF"),
+              "sha": os.environ.get("GITHUB_SHA"),
+              "build_outcome": os.environ.get("BUILD_OUTCOME"),
+              "harness_outcome": os.environ.get("HARNESS_OUTCOME"),
+              "harness_status": m.group(1) if m else None,
+              "harness_exit_code": int(m.group(2)) if m else None,
+              "pytest_summary": summary[-1] if summary else None,
+              "build_log_tail": read("build.log").splitlines()[-40:],
+              "harness_log_tail": harness_log.splitlines()[-80:],
+          }
+          with open("RUN_LOG.jsonl", "a", encoding="utf-8") as f:
+              f.write(json.dumps(record) + "\n")
+          print(json.dumps({k: record[k] for k in ("build_outcome", "harness_outcome", "harness_exit_code", "pytest_summary")}))
+          PY
+
+      - name: Upload RUN_LOG.jsonl
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: harness-run-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: RUN_LOG.jsonl
+          if-no-files-found: error
+          retention-days: 30
