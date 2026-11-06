@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.bak
+work/
+outputs/
+logs/
+.icarus_lease.lock
+auto_refresh.py
+Dockerfile
+.dockerignore
