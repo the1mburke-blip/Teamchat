@@ -281,7 +281,7 @@ def main():
                          "execution": execution})
         return 1
     try:
-        if packet.get("requires_tools") or packet.get("requires_state_mutation"):
+        if packet.get("execution_receipt") or packet.get("requires_tools") or packet.get("requires_state_mutation"):
             if not packet.get("execution_receipt"):
                 raise EvidenceFailure("EXECUTION_RECEIPT_REQUIRED")
             with open(packet["execution_receipt"], "rb") as stream:

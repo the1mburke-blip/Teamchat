@@ -70,6 +70,30 @@ exit_code=1
 This negative fixture supplied one model call, zero tool events, a claimed
 verdict and claimed verified readback. No PASS text was emitted on stdout.
 
-Publication and Docker checks remain pending. No independent governance
+PR #157 was opened at source commit
+`2c3787c87b6c49aabfda736a6498d0850220355f`. CI run
+https://github.com/the1mburke-blip/Teamchat/actions/runs/42233535339
+built the Docker image, ran 174 tests successfully in 12.17s and completed
+the completion-integrity job successfully. Job 127945180414 recorded:
+
+```json
+{"container_preflight": "VERIFIED", "uid": 1000, "capabilities": 0, "no_new_privileges": true, "application_read_only": true, "default_route": false}
+```
+
+An additional review found that a supplied execution receipt was ignored if
+both optional requirement flags were omitted. The ordinary packet already
+contains a command. Correction: always validate a supplied receipt, infer a
+tool requirement from the assigned command when the flag is absent, and test
+that zero-tool receipts cannot pass even when a real command creates a valid
+physical artifact. These changes require a new CI run; earlier CI does not
+attest their bytes.
+
+Live branch-protection read returned HTTP403, `Resource not accessible by
+integration`. This is an administration-read permission boundary, not proof
+that merge is unavailable. The PR reports mergeable=true and state=blocked
+while checks/repository conditions are evaluated. No protection is changed
+or bypassed.
+
+Final publication/checks remain pending. No independent governance
 adjudication, Apps Script deployment, live provider canary or runtime uptake
 is claimed. A repository merge alone cannot establish the deployed loop.

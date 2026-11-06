@@ -14,7 +14,8 @@ def validate_execution(task, receipt):
         raise ExecutionRejected("INVALID_EXECUTION_RECEIPT")
     if not task.get("task_id") or receipt.get("task_id") != task["task_id"]:
         raise ExecutionRejected("EXECUTION_TASK_ID_MISMATCH")
-    flags = (task.get("requires_tools", False), task.get("requires_state_mutation", False))
+    flags = (task.get("requires_tools", bool(task.get("command"))),
+             task.get("requires_state_mutation", False))
     if any(type(flag) is not bool for flag in flags):
         raise ExecutionRejected("INVALID_EXECUTION_REQUIREMENTS")
     count = receipt.get("tools_executed")
