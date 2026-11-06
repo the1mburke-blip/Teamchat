@@ -4291,3 +4291,8 @@ No duplicate training or ICARUS memory mutation; no runtime, Claude commerce, Go
 [PROTECTED] No Icarus runtime/workflow/process mutation, no Windows inspection, no external service deployment, no job applications, no Gmail/Buffer/Shopify mutation, no credentials or paid tools.
 [COST] EUR 0 incremental external spend; exact model tokens/connectors unmetered.
 [BOUNDARY] GitHub persistence is not Icarus fresh-session ingestion or independent adjudication. Companion compliance review remains separate.
+
+
+[CODEX] 2026-11-06 — HV-GATE-NEGATIVE-CANARY
+[STATUS] PASS
+[BODY] Deliberately unverified completion claim for an isolated negative CI test. NEVER MERGE THIS CANARY.
