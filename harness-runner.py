@@ -4,6 +4,11 @@
 Usage: python harness-runner.py [task.json|-] (default: stdin).
 Commands are argv lists or shell-like strings, executed WITHOUT a shell.
 Paths are relative to the runner's current working directory.
+Explicit tool/mutation assignments set requires_tools/requires_state_mutation
+and execution_receipt (path to a trusted supervisor's dispatcher receipt).
+These flags require event/count/task-ID validation as well as artifact readback.
+Use --validate-execution task.json receipt.json for admission-only checks, or
+--test-suite for the offline Python and Apps Script regression suite.
 
 Readback schemas (no additional keys):
   {"type":"file_hash", "path":"result.bin", "expected_hash":"<64 hex digits>"}
@@ -37,9 +42,12 @@ import tempfile
 import time
 from pathlib import Path
 
+from dsh.execution_integrity import ExecutionRejected, validate_execution
+
 
 REQUIRED = frozenset({"task_id", "cost_tier", "decision_changing",
                       "owner_preauthorized", "command", "readback"})
+OPTIONAL = frozenset({"requires_tools", "requires_state_mutation", "execution_receipt"})
 MAX_INPUT_BYTES = 1024 * 1024
 MAX_LEDGER_LINE_BYTES = 1024 * 1024
 COMMAND_TIMEOUT_SECONDS = 300
@@ -82,8 +90,13 @@ def nonempty_string(value):
 
 
 def validate(packet):
-    if not isinstance(packet, dict) or set(packet) != REQUIRED:
+    if not isinstance(packet, dict) or not REQUIRED <= set(packet) or set(packet) - REQUIRED - OPTIONAL:
         raise InvalidPacket("Task must contain exactly: " + ", ".join(sorted(REQUIRED)))
+    for name in ("requires_tools", "requires_state_mutation"):
+        if name in packet and type(packet[name]) is not bool:
+            raise InvalidPacket(name + " must be boolean")
+    if "execution_receipt" in packet and not nonempty_string(packet["execution_receipt"]):
+        raise InvalidPacket("execution_receipt must be a path")
     if not nonempty_string(packet["task_id"]):
         raise InvalidPacket("task_id must be a nonempty string")
     if packet["decision_changing"] is not True:
@@ -268,8 +281,16 @@ def main():
                          "execution": execution})
         return 1
     try:
+        if packet.get("requires_tools") or packet.get("requires_state_mutation"):
+            if not packet.get("execution_receipt"):
+                raise EvidenceFailure("EXECUTION_RECEIPT_REQUIRED")
+            with open(packet["execution_receipt"], "rb") as stream:
+                raw_receipt = stream.read(MAX_INPUT_BYTES + 1)
+            if len(raw_receipt) > MAX_INPUT_BYTES:
+                raise EvidenceFailure("EXECUTION_RECEIPT_TOO_LARGE")
+            validate_execution(packet, parse_json(raw_receipt.decode("utf-8")))
         proof = verify(packet["readback"])
-    except EvidenceFailure as exc:
+    except (EvidenceFailure, ExecutionRejected, ValueError, UnicodeError) as exc:
         emit_diagnostic({"task_id": packet["task_id"], "verdict": "FAIL",
                          "reason": str(exc), "execution": execution})
         return 1
@@ -288,6 +309,23 @@ def main():
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--test-suite"]:
+        sys.exit(subprocess.run([sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "tests/"],
+                                cwd=Path(__file__).resolve().parent, check=False).returncode)
+    if len(sys.argv) == 4 and sys.argv[1] == "--validate-execution":
+        try:
+            inputs = []
+            for name in sys.argv[2:]:
+                with open(name, "rb") as stream:
+                    raw = stream.read(MAX_INPUT_BYTES + 1)
+                if len(raw) > MAX_INPUT_BYTES:
+                    raise ExecutionRejected("EXECUTION_INPUT_TOO_LARGE")
+                inputs.append(parse_json(raw.decode("utf-8")))
+            validate_execution(*inputs)
+        except (OSError, ValueError, UnicodeError, RecursionError) as error:
+            emit_diagnostic({"verdict": "FAIL", "reason": str(error)})
+            sys.exit(1)
+        sys.exit(0)
     if len(sys.argv) == 4 and sys.argv[1] == "--receipt-from-run":
         from dsh.state_write_gate import receipt_from_run
         try:

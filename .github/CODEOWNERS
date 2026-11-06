@@ -3,5 +3,7 @@
 /harness-runner.py @the1mburke-blip
 /harness_runner.py @the1mburke-blip
 /dsh/state_write_gate.py @the1mburke-blip
+/dsh/execution_integrity.py @the1mburke-blip
 /Dockerfile @the1mburke-blip
+/docker/verify-and-test.py @the1mburke-blip
 /tests/test_state_write_gate.py @the1mburke-blip

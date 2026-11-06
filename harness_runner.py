@@ -9,13 +9,16 @@ import subprocess
 import sys
 
 IMAGE = "teamchat-harness:test"
-COMMAND = ["docker", "run", "--rm", IMAGE, "python", "-m", "pytest", "tests/"]
+COMMAND = ["docker", "run", "--rm", "--network", "none", "--read-only",
+           "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
+           "--tmpfs", "/tmp:rw,nosuid,nodev", IMAGE,
+           "python", "docker/verify-and-test.py"]
 
 
 def main() -> int:
     if shutil.which("docker") is None:
-        print("ERROR: 'docker' not found on PATH.", file=sys.stderr)
-        return 127
+        print("BLOCKED: 'docker' not found on PATH (exit code 3).", file=sys.stderr)
+        return 3
 
     print("Running:", " ".join(COMMAND), flush=True)
     try:
@@ -23,7 +26,7 @@ def main() -> int:
         result = subprocess.run(COMMAND, check=False)
     except OSError as exc:
         print(f"ERROR: failed to start docker: {exc}", file=sys.stderr)
-        return 126
+        return 3
 
     status = "PASS" if result.returncode == 0 else "FAIL"
     print(f"\nHARNESS {status}: exit code {result.returncode}", flush=True)
