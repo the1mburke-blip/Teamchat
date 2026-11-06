@@ -26,7 +26,8 @@ WORKFLOW_PATH = ".github/workflows/icarus-harness-gate.yml"
 RECEIPTS = ".icarus/receipts/"
 LIMIT = 4 * 1024 * 1024
 TRUSTED_FILES = (WORKFLOW_PATH, "harness-runner.py", "harness_runner.py",
-                 "Dockerfile", "dsh/state_write_gate.py")
+                 "Dockerfile", "dsh/state_write_gate.py", "dsh/execution_integrity.py",
+                 "docker/verify-and-test.py")
 CLAIM = re.compile(r"\[STATUS\]\s*(?:PASS|COMPLETED|DONE)\b|\bCOMPLETED\b|"
                    r"[\"']?(?:status|state|verdict)[\"']?\s*[:=]\s*[\"']?(?:PASS|DONE)\b", re.I)
 SHA = re.compile(r"[0-9a-f]{64}")

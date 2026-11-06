@@ -91,6 +91,20 @@ def test_missing_executable_escalates(packet, tmp_path):
     assert result.stderr.startswith("OWNER ASSISTANCE REQUIRED — ")
 
 
+@pytest.mark.parametrize("explicit", [True, False])
+def test_zero_tool_receipt_rejected_even_with_valid_physical_artifact(packet, tmp_path, explicit):
+    trace = tmp_path / "trace.json"
+    trace.write_text(json.dumps({"task_id": packet["task_id"], "tools_executed": 0,
+                                 "tool_events": [], "model_calls": 1,
+                                 "verdict": "PASS", "readback_status": "VERIFIED"}))
+    packet["execution_receipt"] = str(trace)
+    if explicit:
+        packet["requires_tools"] = True
+    result = invoke(packet, tmp_path, 1)
+    assert json.loads(result.stderr)["reason"] == "ZERO_TOOL_EXECUTION_REJECTED"
+    assert (tmp_path / "proof.txt").exists(), "real command/artifact do not excuse an empty agent trace"
+
+
 @pytest.mark.parametrize("rows,expected", [
     ([{"id": "row-1", "result": "proof"}], 0),
     ([{"id": "other", "result": "proof"}], 1),

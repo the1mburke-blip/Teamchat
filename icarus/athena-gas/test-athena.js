@@ -21,6 +21,10 @@ function makeEnv(scenario) {
   const res = (code, obj) => ({ getResponseCode: () => code, getContentText: () => typeof obj === 'string' ? obj : JSON.stringify(obj) });
   function contents(rel, method, body) {
     const full = path.join(REPO_DIR, rel);
+    if (scenario.contents) {
+      const override = scenario.contents(rel, method, body);
+      if (override) return res(override.code, override.body || {});
+    }
     if (method === 'put') { writes[rel] = Buffer.from(body.content, 'base64').toString('utf8'); return res(201, { commit: { sha: 'abc1234' } }); }
     if (writes[rel] !== undefined) return res(200, { type: 'file', sha: 's', content: Buffer.from(writes[rel]).toString('base64') });
     if (!fs.existsSync(full)) return res(404, { message: 'Not Found' });
@@ -52,7 +56,7 @@ function makeEnv(scenario) {
     return res(404, 'no stub for ' + rest);
   } };
   const ctx = {
-    console, JSON, Math, Date, Array, Object, String, Number, RegExp, Error,
+    console: { log() {}, error: console.error }, JSON, Math, Date, Array, Object, String, Number, RegExp, Error,
     encodeURIComponent, decodeURIComponent, parseInt, isNaN,
     UrlFetchApp,
     Utilities: { base64Decode: (s) => [...Buffer.from(s, 'base64')], base64Encode: (s) => Buffer.from(s, 'utf8').toString('base64'),
@@ -125,11 +129,13 @@ test('write_file without OWNER_APPROVED is denied; runtime paths always denied',
 
 test('quota 429 fails over to the next approved model', () => {
   const env = makeEnv({ comments: ownerComment('ICARUS_RUN hi\nloop: off\nVERIFY_FILE: STATUS.md'),
-    gemini: (n) => n <= 2 ? { code: 429, text: 'RESOURCE_EXHAUSTED per minute' } : { answer: 'hello', tool: null } });
+    gemini: (n) => n === 1 ? { code: 429, text: 'RESOURCE_EXHAUSTED per minute' }
+      : n === 2 ? { tool: { name: 'read_file', args: { path: 'STATUS.md' } } } : { answer: 'hello', tool: null } });
   env.ctx.athenaPoll();
   const t = env.writes[Object.keys(env.writes).find((k) => k.startsWith('icarus/runs/'))];
   assert(/HTTP 429/.test(t) && /- VERDICT: PASS/.test(t), t.split('\n').filter((l) => /attempts|VERDICT|Error/.test(l)).join('\n'));
-  assert(new Set(env.geminiCalls.map((c) => c.url)).size >= 2, 'did not switch model');
+  assert(new Set(env.geminiCalls.map((c) => c.url)).size === 2, 'did not switch model');
+  assert(env.geminiCalls.slice(1).every((c) => c.url.includes('gemini-3.1-flash-lite')), 'revisited exhausted primary');
 });
 
 test('hourly check writes a receipt and posts no reply', () => {
@@ -154,7 +160,8 @@ const SHA = 'c66c0e6a1b2c3d4e5f60718293a4b5c6d7e8f901';
 
 test('completion claim with checkable evidence is adjudicated PASS by gates (file + commit)', () => {
   const env = makeEnv({ comments: agentComment('[SOL] 2026-10-28T23:00Z\nSTATUS: PASS\nACTION: wrote the status file\nEVIDENCE: STATUS.md updated in commit ' + SHA + '\nHANDOFF_TO: OWNER'),
-    commits: [SHA], gemini: () => ({ answer: 'STATUS.md exists; commit found', tool: null }) });
+    commits: [SHA], gemini: (n) => n === 1 ? { tool: { name: 'read_file', args: { path: 'STATUS.md' } } }
+      : { answer: 'STATUS.md exists; commit found', tool: null } });
   env.ctx.athenaPoll();
   const t = receiptOf(env);
   assert(/- Trigger: completion claim/.test(t), 'trigger line missing');
@@ -216,6 +223,127 @@ test('non-team accounts are ignored even when they address Icarus', () => {
   const env = makeEnv({ comments: agentComment('@Icarus hello', 'NONE'), gemini: () => ({ answer: 'x', tool: null }) });
   env.ctx.athenaPoll();
   assert.strictEqual(Object.keys(env.writes).length, 0);
+});
+
+test('zero-tool hourly narrative cannot earn PASS or acknowledge a task', () => {
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'),
+    gemini: () => ({ answer: 'PASS, I read it', tools_executed: 99, tool: null }) });
+  env.ctx.athenaPoll();
+  assert(receiptOf(env).includes('VERDICT: FAIL - ZERO_TOOL_EXECUTION_REJECTED'));
+  assert(receiptOf(env).includes('tools_executed: 0'));
+  assert(!env.props.ATHENA_DONE_IDS);
+  assert.strictEqual(JSON.parse(env.props.ATHENA_TASK_CHECKPOINT).state, 'PENDING');
+});
+
+test('denied tools cannot earn PASS', () => {
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'),
+    gemini: (n) => n === 1 ? { tool: { name: 'imaginary', args: {} } } : { answer: 'PASS', tool: null } });
+  env.ctx.athenaPoll();
+  assert(receiptOf(env).includes('ZERO_TOOL_EXECUTION_REJECTED'));
+  assert(!env.props.ATHENA_DONE_IDS);
+});
+
+test('failed task remains retryable on next wake; successful readback then acknowledges', () => {
+  let allow = false;
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'),
+    gemini: () => allow ? { tool: { name: 'read_file', args: { path: 'STATUS.md' } } } : { code: 503, text: 'capacity' } });
+  env.ctx.athenaPoll();
+  assert(!env.props.ATHENA_DONE_IDS);
+  allow = true;
+  // One successful call followed by a final answer.
+  let turn = 0;
+  const original = env.ctx.pool_;
+  env.ctx.pool_ = (...args) => ++turn === 1 ? original(...args) : { ans: { answer: 'read', tool: null }, used: 'test', err: '', hard: false };
+  env.ctx.athenaPoll();
+  assert(JSON.parse(env.props.ATHENA_DONE_IDS).includes('5001'));
+  assert.strictEqual(JSON.parse(env.props.ATHENA_TASK_CHECKPOINT).state, 'COMPLETED');
+});
+
+test('crash leaves the cursor unchanged and lock released', () => {
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md'), gemini: () => ({}) });
+  let released = false;
+  env.ctx.LockService.getScriptLock = () => ({ tryLock: () => true, releaseLock: () => { released = true; } });
+  env.ctx.runAthena_ = () => { throw new Error('simulated timeout'); };
+  assert.throws(() => env.ctx.athenaPoll(), /simulated timeout/);
+  assert(released);
+  assert(!env.props.ATHENA_DONE_IDS);
+  assert.strictEqual(JSON.parse(env.props.ATHENA_TASK_CHECKPOINT).state, 'PENDING');
+});
+
+test('receipt write failure or readback mismatch prevents acknowledgment', () => {
+  for (const mode of ['write', 'read']) {
+    const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'),
+      contents: (rel, method) => rel.startsWith('icarus/runs/') &&
+        (mode === 'write' && method === 'put' || mode === 'read' && method === 'get') ? { code: 503 } : null,
+      gemini: (n) => n === 1 ? { tool: { name: 'read_file', args: { path: 'STATUS.md' } } } : { answer: 'read', tool: null } });
+    env.ctx.athenaPoll();
+    assert(!env.props.ATHENA_DONE_IDS, mode);
+  }
+});
+
+test('completed checkpoint recovers a crash before ack without executing again', () => {
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'),
+    gemini: (n) => n === 1 ? { tool: { name: 'read_file', args: { path: 'STATUS.md' } } } : { answer: 'read', tool: null } });
+  const mark = env.ctx.markSeen_;
+  env.ctx.markSeen_ = () => { throw new Error('crash before ack'); };
+  assert.throws(() => env.ctx.athenaPoll(), /crash before ack/);
+  const before = env.geminiCalls.length;
+  env.ctx.markSeen_ = mark;
+  env.ctx.athenaPoll();
+  assert.strictEqual(env.geminiCalls.length, before);
+  assert(JSON.parse(env.props.ATHENA_DONE_IDS).includes('5001'));
+});
+
+test('hourly read subset fails even with valid existence gates', () => {
+  const env = makeEnv({ comments: [], gemini: (n) => n === 1 ? { tool: { name: 'read_file', args: { path: 'icarus/runtime/endpoints.json' } } } : { answer: 'all directories checked', tool: null } });
+  env.ctx.athenaHourly();
+  assert(receiptOf(env).includes('REQUIRED_TOOL_EXECUTION_MISSING'));
+});
+
+test('hourly exact required tool trace can pass', () => {
+  const required = [['read_file', 'icarus/runtime/endpoints.json'], ['list_dir', 'icarus/memory'],
+    ['list_dir', 'icarus/proposals'], ['list_dir', 'icarus/runs'], ['read_file', 'icarus/memory/current-state.md']];
+  const env = makeEnv({ comments: [], gemini: (n) => n <= required.length
+    ? { tool: { name: required[n - 1][0], args: { path: required[n - 1][1] } } } : { answer: 'checked', tool: null } });
+  env.ctx.athenaHourly();
+  assert(receiptOf(env).includes('VERDICT: PASS'), receiptOf(env).slice(-1200));
+});
+
+test('429/503 use exactly two authorized routes once, preserve prompt, then BLOCKED', () => {
+  for (const code of [429, 503]) {
+    const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'), gemini: () => ({ code, text: 'capacity' }) });
+    env.ctx.athenaPoll();
+    assert.strictEqual(env.geminiCalls.length, 2);
+    assert.strictEqual(new Set(env.geminiCalls.map((c) => c.url)).size, 2);
+    assert.deepStrictEqual(env.geminiCalls[0].body, env.geminiCalls[1].body);
+    assert(receiptOf(env).includes('BLOCKED:'));
+    assert(!env.props.ATHENA_DONE_IDS);
+  }
+});
+
+test('authentication errors stop after primary and never use fallback', () => {
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off'), gemini: () => ({ code: 401, text: 'unauthorized' }) });
+  env.ctx.athenaPoll();
+  assert.strictEqual(env.geminiCalls.length, 1);
+  assert(!env.props.ATHENA_DONE_IDS);
+});
+
+test('unapproved or paid route configuration is rejected before any model request', () => {
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'),
+    contents: (rel) => rel === 'icarus/runtime/approved-routes.json' ? { code: 200, body: { type: 'file', content: Buffer.from(JSON.stringify({ routes: [
+      { provider: 'openrouter', model: 'paid/model', approved: true, costPolicy: 'verified-zero-cost' }
+    ] })).toString('base64') } } : null,
+    gemini: () => { throw new Error('unapproved endpoint used'); } });
+  env.ctx.athenaPoll();
+  assert.strictEqual(env.geminiCalls.length, 0);
+  assert(!env.props.ATHENA_DONE_IDS);
+});
+
+test('runtime budget exhaustion prevents fallback request', () => {
+  const env = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nTEST_CAP_CALLS: 1'), gemini: () => ({ code: 503, text: 'capacity' }) });
+  env.ctx.athenaPoll();
+  assert.strictEqual(env.geminiCalls.length, 1);
+  assert(receiptOf(env).includes('call budget exhausted'));
 });
 
 console.log(failures ? failures + ' FAILED' : 'all passed');

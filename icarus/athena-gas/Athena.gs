@@ -23,8 +23,6 @@ var ATHENA_VERSION = 'cloud-3 (Recall v3, team overseer)';  // shown as "Icarus 
 var GH_API = 'https://api.github.com';
 var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 var OR_BASE = 'https://openrouter.ai/api/v1';
-var COOLDOWN_S = 20;            // one cooldown retry on 429/503 per model (Actions used 90s)
-var MAX_ROUNDS = 1;             // no pool break: an Apps Script run cannot outlast 6 minutes
 var FAILOVER_CODES = [0, 404, 408, 429, 500, 502, 503, 504];
 var HOURLY_TASK = 'ICARUS_RUN Hourly repo check (first duty of every hour): read icarus/runtime/endpoints.json and report the status of each endpoint and any with no check-in in 24 hours; then list icarus/memory, icarus/proposals and icarus/runs, read icarus/memory/current-state.md, and report what is new since the last receipt and anything that needs the owner.\nVERIFY_FILE: icarus/memory/identity.md\nVERIFY_FILE: icarus/runtime/endpoints.json';
 var HARD_DENY = ['.git/', '.github/', 'icarus/runtime/', 'icarus/athena-gas/'];
@@ -58,8 +56,23 @@ function athenaPoll() {
   try {
     var t = nextTrigger_();
     if (!t) return;
-    markSeen_(t.c);  // mark before running: a crash must not re-run the same task every 5 minutes
-    runAthena_({ body: t.c.body, id: String(t.c.id), actor: t.c.user.login, issue: issueNumberOf_(t.c), branch: 'main', kind: t.kind });
+    var props = PropertiesService.getScriptProperties();
+    var checkpoint = JSON.parse(props.getProperty('ATHENA_TASK_CHECKPOINT') || '{}');
+    // Recover a crash between durable completion and cursor acknowledgment.
+    if (checkpoint.id === String(t.c.id) && checkpoint.state === 'COMPLETED') {
+      var checkRun = newRun_({ id: String(t.c.id), branch: 'main' });
+      var prior = ghGet_(checkRun, checkpoint.receipt);
+      if (prior.code === 200 && prior.text && prior.text.indexOf('- VERDICT: PASS - ') >= 0) {
+        markSeen_(t.c);
+        return;
+      }
+    }
+    props.setProperty('ATHENA_TASK_CHECKPOINT', JSON.stringify({ id: String(t.c.id), state: 'PENDING' }));
+    var result = runAthena_({ body: t.c.body, id: String(t.c.id), actor: t.c.user.login, issue: issueNumberOf_(t.c), branch: 'main', kind: t.kind });
+    if (result.completed === true && result.receiptVerified === true) {
+      props.setProperty('ATHENA_TASK_CHECKPOINT', JSON.stringify({ id: String(t.c.id), state: 'COMPLETED', receipt: result.receipt }));
+      markSeen_(t.c);
+    }
   } finally { lock.releaseLock(); }
 }
 
@@ -191,7 +204,7 @@ function newRun_(ev) {
     branch: ev.branch || 'main', raw: ev.body || '', cid: ev.id, actor: ev.actor, issueN: ev.issue || 0,
     now: new Date(), start: Date.now(), log: [], provider: {}, rpd: {}, usage: {}, skipped: [], recalled: [],
     blockerRecalls: 0, calls: 0, writes: 0, approved: false, delegated: [], delegKeys: {}, loopOn: false,
-    cache: {}, cfg: null
+    cache: {}, cfg: null, toolEvents: [], effects: [], unavailableModels: {}
   };
 }
 
@@ -371,55 +384,48 @@ function parseJson_(s) {
 }
 
 function pool_(R, system, user, cands, testCap, inject) {
-  var err = '';
-  for (var rnd = 1; rnd <= MAX_ROUNDS; rnd++) {
-    var list = cands.slice(0, testCap || 12);
-    for (var ci = 0; ci < list.length; ci++) {
-      var n = list[ci], isOr = R.provider[n] === 'openrouter', body;
-      if (isOr) body = { model: n, temperature: 0.2, max_tokens: 1500, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
-      else if (n.indexOf('gemma') === 0) body = { contents: [{ role: 'user', parts: [{ text: system + '\n\nTASK:\n' + user }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1500 } };
-      else body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: user }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1500, responseMimeType: 'application/json' } };
-      var lim = R.rpd[n];
-      if (lim && (R.usage[n] || 0) >= Math.floor(lim * 0.95)) { R.log.push(n + ': own usage ' + (R.usage[n] || 0) + '/' + lim + ' per day (>=95%) -> skip'); continue; }
-      var code = 0, txt = '';
-      for (var tryno = 1; tryno <= 2; tryno++) {
-        var why = overBudget_(R, 0);
-        if (why) return { ans: null, used: 'none', err: 'HARD STOP: ' + why, hard: true };
-        R.calls++;
-        if (rnd <= inject) { code = 503; txt = 'injected test failure (no API call; TEST_EXHAUST_ROUNDS)'; }
-        else {
-          var url = isOr ? OR_BASE + '/chat/completions' : GEMINI_BASE + '/models/' + n + ':generateContent';
-          var r = http_(R, 'POST', url, body); code = r.code; txt = r.text;
-          R.usage[n] = (R.usage[n] || 0) + 1;
-        }
-        R.log.push(n + '#' + tryno + ': HTTP ' + code + (code === 200 ? '' : ' (' + redact_(R, txt).slice(0, 90) + ')'));
-        if (code === 429 && /per ?day|daily|free-models-per-day/i.test(txt)) { R.log.push(n + ': daily quota exhausted -> skip'); break; }
-        if ((code === 429 || code === 503) && tryno === 1) {
-          var w2 = overBudget_(R, COOLDOWN_S);
-          if (w2) return { ans: null, used: 'none', err: 'HARD STOP: ' + w2, hard: true };
-          Utilities.sleep(COOLDOWN_S * 1000);
-          continue;
-        }
-        break;
-      }
-      if (code === 200) {
-        try {
-          var part;
-          if (isOr) {
-            part = JSON.parse(txt).choices[0].message.content || '';
-            if (!part.trim()) throw new Error('empty OpenRouter content');
-          } else {
-            part = JSON.parse(txt).candidates[0].content.parts.filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
-          }
-          var ans = parseJson_(part) || { answer: part, unverified_claims: [], needs_owner: false, owner_reason: '' };
-          return { ans: ans, used: n, err: '', hard: false };
-        } catch (ex) { err = 'parse error on ' + n + ': ' + ex; }
-      } else if (FAILOVER_CODES.indexOf(code) < 0 && !isOr) {
-        return { ans: null, used: 'none', err: n + ': HTTP ' + code + ' ' + redact_(R, txt).slice(0, 200), hard: true };
-      }
+  // Order is the authorized route file's order. At most two distinct routes,
+  // once each; never sleep/retry the exhausted primary or discover paid models.
+  var list = cands.slice(0, Math.min(2, testCap || 2)).filter(function (n) {
+    if (!R.provider[n] || R.unavailableModels[n]) return false;
+    var lim = R.rpd[n];
+    if (lim && (R.usage[n] || 0) >= Math.floor(lim * 0.95)) {
+      R.log.push(n + ': daily quota exhausted -> skip'); return false;
     }
+    return true;
+  });
+  var err = 'no eligible authorized EUR0 route';
+  for (var ci = 0; ci < list.length; ci++) {
+    var n = list[ci], isOr = R.provider[n] === 'openrouter', body;
+    if (isOr) body = { model: n, temperature: 0.2, max_tokens: 1500, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
+    else if (n.indexOf('gemma') === 0) body = { contents: [{ role: 'user', parts: [{ text: system + '\n\nTASK:\n' + user }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1500 } };
+    else body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: user }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1500, responseMimeType: 'application/json' } };
+    var why = overBudget_(R, 0);
+    if (why) return { ans: null, used: 'none', err: 'HARD STOP: ' + why, hard: true };
+    R.calls++;
+    var r = inject ? { code: 503, text: 'injected test failure (no API call)' }
+      : http_(R, 'POST', isOr ? OR_BASE + '/chat/completions' : GEMINI_BASE + '/models/' + n + ':generateContent', body);
+    if (!inject) R.usage[n] = (R.usage[n] || 0) + 1;
+    // Save immediately: a timed-out execution must not lose quota accounting.
+    saveUsage_(R);
+    R.log.push(n + '#1: HTTP ' + r.code);
+    if (r.code === 200) {
+      try {
+        var data = JSON.parse(r.text);
+        var part = isOr ? data.choices[0].message.content
+          : data.candidates[0].content.parts.filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+        if (typeof part !== 'string' || !part.trim()) throw new Error('empty model content');
+        return { ans: parseJson_(part) || { answer: part, unverified_claims: [], needs_owner: false, owner_reason: '' }, used: n, err: '', hard: false };
+      } catch (ex) { err = 'invalid response on ' + n; }
+    } else {
+      err = n + ': HTTP ' + r.code;
+      // Auth/permission/invalid requests are hard boundaries, including OR.
+      if (FAILOVER_CODES.indexOf(r.code) < 0) break;
+    }
+    R.unavailableModels[n] = true;
+    if (ci + 1 < list.length) R.log.push('FALLBACK: ' + n + ' -> ' + list[ci + 1] + ' (single controlled attempt)');
   }
-  return { ans: null, used: 'none', err: err || ('pool exhausted: ' + R.log.join('; ')), hard: false };
+  return { ans: null, used: 'none', err: 'BLOCKED: ' + err + '; authorized fallback exhausted', hard: true };
 }
 
 /* ---------- gates (deterministic verdict) ---------- */
@@ -540,6 +546,7 @@ function tWriteFile_(R, a) {
   var r = putFile_(R, p, content, 'chore(icarus): write_file ' + p + ' (icarus cloud run ' + R.cid + ')');
   R.writes++;
   if (r.code !== 200 && r.code !== 201) return 'WRITE FAILED: HTTP ' + r.code + ' ' + redact_(R, r.text).slice(0, 200);
+  R.effects.push({ name: 'write_file', path: p, content: content });
   var sha = '?'; try { sha = JSON.parse(r.text).commit.sha; } catch (e) { /* ? */ }
   return redact_(R, (r.code === 201 ? 'CREATED ' : 'UPDATED ') + p + ' on ' + R.branch + '; commit ' + sha + '. NOT VERIFIED until you read_file it back.');
 }
@@ -555,6 +562,7 @@ function tDeleteFile_(R, a) {
   R.writes++;
   delete R.cache[p];
   if (r.code !== 200) return 'DELETE FAILED: HTTP ' + r.code + ' ' + redact_(R, r.text).slice(0, 200);
+  R.effects.push({ name: 'delete_file', path: p });
   return 'DELETED ' + p + ' on ' + R.branch + '. NOT VERIFIED until read_file/list_dir confirms it is gone.';
 }
 
@@ -740,9 +748,7 @@ function runStep_(R, system, step, context, cands, testCap, inject, toolLog, all
     if (!(t && typeof t === 'object' && t.name)) return res;
     if (toolLog.length >= R.cfg.maxToolCalls) { res.ans.tool = null; res.ans.answer = res.ans.answer || '(tool budget exhausted before an answer)'; return res; }
     var name = String(t.name), args = t.args && typeof t.args === 'object' ? t.args : {}, out;
-    if (R.cfg.tools.indexOf(name) < 0 || !TOOLS[name]) out = 'DENIED: tool is not on the allowlist';
-    else if (allowed && allowed.indexOf(name) < 0) out = 'DENIED: tool is not allowed in this step (DISCOVER is read-only, DECIDE has no tools, ACT may write or delegate)';
-    else out = TOOLS[name](R, args);
+    out = executeTool_(R, name, args, allowed);
     toolLog.push(name + '(' + JSON.stringify(args).slice(0, 70) + ')');
     scratch += '\n### ' + name + ' ' + JSON.stringify(args).slice(0, 120) + '\n' + out + '\n';
     if (R.blockerRecalls < 2 && /DENIED|HARD STOP|failed|error|not found|\b40[134]\b|\b429\b/i.test(String(out).slice(0, 400))) {
@@ -752,6 +758,46 @@ function runStep_(R, system, step, context, cands, testCap, inject, toolLog, all
     }
   }
   return res;
+}
+
+/** Events originate in the dispatcher, never in the model's narrative/counters. */
+function executeTool_(R, name, args, allowed) {
+  var executed = R.cfg.tools.indexOf(name) >= 0 && !!TOOLS[name] && (!allowed || allowed.indexOf(name) >= 0);
+  var out;
+  try { out = executed ? String(TOOLS[name](R, args)) : 'DENIED: tool is not allowed in this step'; }
+  catch (ex) { out = 'TOOL FAILED: ' + String(ex && ex.message || ex); }
+  // Read payloads may themselves discuss failures. Inspect transport/status
+  // prefixes, never arbitrary words in a returned document or issue body.
+  var failed = /^(?:DENIED:|NOT FOUND$|GitHub read failed:|HTTP (?!200\b|201\b|204\b)\d+|parse error:|TOOL FAILED:|WRITE FAILED:|DELETE FAILED:|DELEGATE FAILED:|COMMENT FAILED:|COMMENT posted but readback failed:)/i.test(out);
+  if (['delegate', 'comment_issue', 'close_issue'].indexOf(name) >= 0)
+    failed = failed || /readback (?:FAILED|state=\?)|PATCH HTTP (?!200\b)\d+/.test(out);
+  var success = executed && !failed;
+  R.toolEvents.push({ name: name, args: args, executed: executed, success: success });
+  return out;
+}
+
+function executionIntegrity_(R, kind) {
+  var events = R.toolEvents, count = events.filter(function (e) { return e.executed; }).length;
+  if (!count) return 'ZERO_TOOL_EXECUTION_REJECTED';
+  if (events.some(function (e) { return !e.executed || !e.success; })) return 'TOOL_EXECUTION_FAILED';
+  // Every required scheduled read must appear in the actual tool trace.
+  if (kind === 'hourly') {
+    var required = [['read_file', 'icarus/runtime/endpoints.json'], ['list_dir', 'icarus/memory'],
+      ['list_dir', 'icarus/proposals'], ['list_dir', 'icarus/runs'], ['read_file', 'icarus/memory/current-state.md']];
+    for (var i = 0; i < required.length; i++) {
+      var req = required[i];
+      if (!events.some(function (e) { return e.success && e.name === req[0] && norm_(e.args.path) === req[1]; }))
+        return 'REQUIRED_TOOL_EXECUTION_MISSING: ' + req.join(' ');
+    }
+  }
+  for (var j = 0; j < R.effects.length; j++) {
+    var effect = R.effects[j];
+    delete R.cache[effect.path];
+    var rb = ghGet_(R, effect.path);
+    if (effect.name === 'write_file' ? rb.code !== 200 || rb.text !== effect.content : rb.code !== 404)
+      return 'MUTATION_READBACK_FAILED: ' + effect.path;
+  }
+  return '';
 }
 
 /* ---------- one run ---------- */
@@ -829,7 +875,7 @@ function runAthena_(ev) {
         gpaths.filter(function (p) { return p && p !== 'STATUS.md'; }).slice(0, 2).forEach(function (p) { reads.push(['read_file', tReadFile_, { path: p }]); });
         if (/notebook|snapshot|gemini/i.test(task)) reads.push(['read_file', tReadFile_, { path: 'GEMINI_PRIME.ipynb' }]);
         var disc = reads.map(function (x) {
-          var r; try { r = String(x[1](R, x[2])); } catch (ex) { r = 'read failed: ' + ex; }
+          var r = executeTool_(R, x[0], x[2], LOOP_READ);
           toolLog.push('auto:' + x[0] + '(' + JSON.stringify(x[2]).slice(0, 60) + ')');
           return '### ' + x[0] + ' ' + JSON.stringify(x[2]) + '\n' + r.slice(0, 3500);
         });
@@ -870,10 +916,12 @@ function runAthena_(ev) {
 
   var toolsTxt = (R.cfg.tools.join(', ') || 'none') + ' (' + toolLog.length + '/' + R.cfg.maxToolCalls + ' calls used' + (toolLog.length ? ': ' + toolLog.join('; ') : '') + ')';
   var gateResults = gates.map(function (g) { return gate_(R, g); });
-  var passed = gateResults.length > 0 && gateResults.every(function (x) { return x[0]; }) && answer !== null;
+  var integrityError = executionIntegrity_(R, kind);
+  var passed = gateResults.length > 0 && gateResults.every(function (x) { return x[0]; }) && answer !== null && !err && !integrityError;
   var reason = !gates.length ? (kind === 'claim' ? 'the claim names no checkable evidence (repo file path or commit hash); a PASS claim without checkable evidence is FAIL'
     : 'no evidence gate supplied (add VERIFY_FILE:/VERIFY_URL:/VERIFY_PR_MERGED:/VERIFY_CONTAINS: lines); output is UNVERIFIED')
-    : answer === null ? 'no model output' : passed ? 'all gates passed' : 'a gate failed';
+    : answer === null ? 'no model output' : !gateResults.every(function (x) { return x[0]; }) ? 'a gate failed'
+    : err || integrityError || (passed ? 'all gates passed' : 'execution incomplete');
   var verdict = passed ? 'PASS' : 'FAIL';
   var ans = answer || {};
   var les = redact_(R, String(ans.lesson || '')).replace(/\n/g, ' ').trim().slice(0, 300);
@@ -897,6 +945,8 @@ function runAthena_(ev) {
   else if (planSteps.length) out.push('- Plan: ' + planSteps.length + ' steps: ' + planSteps.join(' | '));
   out.push('- Lesson write-back: ' + wb, '- Usage today (Icarus calls, incl. this run): ' + usageTxt, '- Model attempts: ' + (R.log.join('; ') || 'none'),
     '- Enforcement: API calls ' + R.calls + '/' + R.cfg.maxApiCallsPerRun + '; runtime ' + Math.round((Date.now() - R.start) / 1000) + 's/' + R.cfg.maxRuntimeSeconds + 's; runs today ' + daily + '/' + R.cfg.dailyRunCap + '; tools: ' + toolsTxt + '; writes ' + R.writes + '/' + R.cfg.maxWrites + '; delegations ' + R.delegated.length + '/' + R.cfg.maxDelegations);
+  out.push('- tools_executed: ' + R.toolEvents.filter(function (e) { return e.executed; }).length,
+    '- Execution integrity: ' + (integrityError || 'tool trace and mutation readbacks verified'));
   if (testNotes.length) out.push('- TEST HOOKS ACTIVE (owner-set): ' + testNotes.join(', '));
   if (R.delegated.length) out.push('- Delegations (status REQUESTED, not executed): ' + R.delegated.join('; '));
   out.push('- VERDICT: ' + verdict + ' - ' + reason, '', '## Task', task || '(empty)', '', '## Gates');
@@ -912,8 +962,10 @@ function runAthena_(ev) {
 
   var receiptPath = 'icarus/runs/' + stamp + '-' + R.cid + '.md';
   var wr = putFile_(R, receiptPath, text + '\n', 'chore(icarus): cloud run receipt ' + R.cid);
-  var receiptNote = (wr.code === 200 || wr.code === 201) ? receiptPath : 'receipt write failed: HTTP ' + wr.code;
+  delete R.cache[receiptPath];
+  var receiptVerified = (wr.code === 200 || wr.code === 201) && ghGet_(R, receiptPath).text === text + '\n';
+  var receiptNote = receiptVerified ? receiptPath : 'receipt persistence/readback failed: HTTP ' + wr.code;
   if (R.issueN) gh_(R, 'POST', 'issues/' + R.issueN + '/comments', { body: text.slice(0, 60000) + '\n\n_Receipt: ' + receiptNote + '_' });
   console.log(text.slice(0, 2000));
-  return { verdict: verdict, receipt: receiptNote };
+  return { verdict: verdict, receipt: receiptNote, receiptVerified: receiptVerified, completed: passed && receiptVerified };
 }

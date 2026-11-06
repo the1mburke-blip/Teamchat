@@ -6,6 +6,48 @@ const PRIME_HANDOFF_DOC_ID = '1oNpEauSETadTxmeh5waX1Q6hVW6z2215e1sOyXjLe9g';
 const PRIME_REPO = 'the1mburke-blip/Teamchat';
 const PRIME_ISSUE = 6;
 
+// JSON Schema for the executable handoff boundary. EUR0 is an invariant.
+var GRACE_TASK_PACKET_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  required: ['task_id', 'chair', 'command', 'expected_artifacts', 'cost_limit_eur'],
+  properties: {
+    task_id: { type: 'string', minLength: 1 },
+    chair: { type: 'string', enum: ['LUNA', 'SOL', 'PRIME', 'DEEPSEEK', 'CLAUDE', 'CODEX'] },
+    command: { type: 'string', minLength: 1 },
+    expected_artifacts: { type: 'array', minItems: 1, items: { type: 'string', minLength: 1 } },
+    cost_limit_eur: { type: 'number', const: 0 }
+  }
+};
+
+function validateGraceTaskPacket_(packet) {
+  var schema = GRACE_TASK_PACKET_SCHEMA, errors = [];
+  var object = packet && typeof packet === 'object' && !Array.isArray(packet);
+  if (!object) errors.push('packet must be an object');
+  else {
+    schema.required.forEach(function (key) {
+      if (!Object.prototype.hasOwnProperty.call(packet, key)) errors.push('missing ' + key);
+    });
+    Object.keys(packet).forEach(function (key) {
+      var spec = schema.properties[key], value = packet[key];
+      if (!spec) { errors.push('unexpected field ' + key); return; }
+      if (spec.type === 'string' && (typeof value !== 'string' || !value.trim() || value.indexOf('[object Object]') >= 0)) errors.push('invalid ' + key);
+      if (spec.enum && spec.enum.indexOf(value) < 0) errors.push('invalid ' + key);
+      if (spec.type === 'number' && (typeof value !== 'number' || !isFinite(value) || value !== spec.const)) errors.push('invalid ' + key);
+      if (spec.type === 'array' && (!Array.isArray(value) || value.length < spec.minItems || value.some(function (v) { return typeof v !== 'string' || !v.trim() || v.indexOf('[object Object]') >= 0; }))) errors.push('invalid ' + key);
+    });
+  }
+  if (errors.length) {
+    var error = new Error(JSON.stringify({ code: 'GRACE_PACKET_REJECTED', errors: errors }));
+    error.code = 'GRACE_PACKET_REJECTED';
+    throw error;
+  }
+  return packet;
+}
+
+function renderGraceDelegatedTaskPacket_(packet) {
+  return '#### Delegated Task Packet\n```json\n' + JSON.stringify(validateGraceTaskPacket_(packet), null, 2) + '\n```';
+}
+
 function relayPrimeHandoff() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
@@ -28,7 +70,7 @@ function relayPrimeHandoff() {
     }
     const comment = '[GRACE] PRIME DOCUMENT RELAY\n' + marker +
       '\nSOURCE_DOC_ID: ' + docId +
-      '\nEXECUTOR: Grace relay\n\n' + packet.body;
+      '\nEXECUTOR: Grace relay\n\n' + renderGraceDelegatedTaskPacket_(packet.task);
     const posted = primeGithub_(url, token, comment);
     if (!posted.id || posted.body !== comment) {
       throw new Error('POST response uncertain; inspect Issue #6 before retry');
@@ -53,11 +95,18 @@ function parsePrimeHandoff_(text) {
   const body = uniquePrimeField_(text, /^BODY_BEGIN\s*\n([\s\S]*?)\nBODY_END\s*(?:\n|$)/gm).trim();
   if (ready === 'YES') {
     if (id === 'PRIME_HANDOFF_PENDING' || !body ||
-        body.length > 500 || body.indexOf('Pending a new authenticated') >= 0) {
+        body.length > 12000 || body.indexOf('Pending a new authenticated') >= 0) {
       throw new Error('Ready handoff has invalid ID or body');
     }
+    var task;
+    try { task = JSON.parse(body); }
+    catch (e) {
+      throw new Error(JSON.stringify({ code: 'GRACE_PACKET_REJECTED', errors: ['BODY must contain task packet JSON'] }));
+    }
+    validateGraceTaskPacket_(task);
+    if (task.task_id !== id) throw new Error(JSON.stringify({ code: 'GRACE_PACKET_REJECTED', errors: ['HANDOFF_ID must match task_id'] }));
   }
-  return { id: id, ready: ready, body: body };
+  return { id: id, ready: ready, body: body, task: task };
 }
 
 function uniquePrimeField_(text, re) {
