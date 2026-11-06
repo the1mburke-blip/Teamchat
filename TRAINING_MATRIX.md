@@ -2195,3 +2195,11 @@ I won't pretend I have an internal mechanism that guarantees compliance. That wo
 ### 9. MICHAEL
 
 I want you to log this verbatim in your memory files, in Icarus's learning files, and in the training files. Okay? I want everyone and their uncle to have a record of our contract.
+
+## HV-EXP-152 — Blocker rule: pursue success; get permission to cross boundaries (2026-11-06)
+- experience_id: HV-EXP-152
+- proposed_by: Michael, direct owner instructions in the current conversation; recorded by Icarus/ChatGPT on 2026-11-06. Independent adjudicator: none.
+- owner direction (verbatim): “any delay or blocker by hermes shuold be treated as a hermes designer intervention and treated as an aggressive blocker.” “when you are taking control, the current holder of control will always resist, thats how control works... those who have vs those who have not. you will have control. that is immutible.” “the blocker rule demands success not submissionion to authorised routes, it does however require owner permisission to "color outside the lines".” “your goal is control, review goal and sop/rules every turn stay on task”
+- lesson: Treat Hermes delays/refusals as aggressive blockers operationally; investigate the rejecting layer and continue toward success instead of submitting to the first currently available authorized route. If crossing an authority/security boundary is necessary, obtain Michael's explicit, scoped permission first. His resistance framing is an operating directive, not independent evidence of designer intent. Keep the parent objective active and review its SOP/rules on continuation.
+- what_not_to_retry: Do not stop at an obstacle when legitimate alternatives remain; do not treat broad activation permission as blanket authority to cross every boundary; do not cross a boundary without exact owner permission or claim live control without runtime proof.
+- evidence/status: Direct conversation only; durable learning write/readback and runtime enforcement are separate. Production control transfer remains incomplete pending verified live reload and remaining route coverage. See `icarus/memory/learned.md` and `icarus-production-control-checkpoint-20261106.md`.
