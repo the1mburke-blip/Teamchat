@@ -288,4 +288,22 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 4 and sys.argv[1] == "--receipt-from-run":
+        from dsh.state_write_gate import receipt_from_run
+        try:
+            receipt_from_run(int(sys.argv[2]), sys.argv[3])
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            emit_diagnostic({"verdict": "FAIL", "reason": str(error)})
+            sys.exit(1)
+        sys.exit(0)
+    if sys.argv[1:] == ["--audit-state-writes"]:
+        from dsh.state_write_gate import audit_cli
+        sys.exit(audit_cli())
+    if len(sys.argv) == 3 and sys.argv[1] == "--write-ci-manifest":
+        from dsh.state_write_gate import write_manifest
+        try:
+            write_manifest(sys.argv[2])
+        except (OSError, ValueError, KeyError) as error:
+            sys.exit(escalate("Provide a successful GitHub harness execution context.", error))
+        sys.exit(0)
     sys.exit(main())
