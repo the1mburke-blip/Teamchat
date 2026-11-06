@@ -1,0 +1,7 @@
+# Worker credentials must not be able to act as this owner or change these rules.
+/.github/ @the1mburke-blip
+/harness-runner.py @the1mburke-blip
+/harness_runner.py @the1mburke-blip
+/dsh/state_write_gate.py @the1mburke-blip
+/Dockerfile @the1mburke-blip
+/tests/test_state_write_gate.py @the1mburke-blip
