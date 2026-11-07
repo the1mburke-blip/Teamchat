@@ -63,3 +63,10 @@ Michael's owner-requested failure and allowance snapshot procedure have been wri
 - **Operational requirement:** disclose the actual blocker, relevant evidence, and legitimate recovery routes; pursue the task to its verified effect; never misreport incomplete work as complete.
 - **Production boundary:** The current isolated Icarus–Hermes pilot, its test sweep, and learning writeback do not authorize production activation. Any proposal to lift an earlier prohibition is not itself owner authorization.
 - **Verification boundary:** All linked files were read back from GitHub. Whether a particular fresh Icarus runtime session has loaded and followed the contract remains untested; no claim of live uptake.
+
+## 2026-11-07 — ICARUS Docker daemon baseline and ingress handoff
+
+- **Proposed by:** Michael. **Recorded by:** Codex Work, 2026-11-07T19:24:59.313Z. [Daily evidence](../../logs/2026-11-07-icarus-docker-daemon.md) and [learned record](learned.md).
+- [PR #159](https://github.com/the1mburke-blip/Teamchat/pull/159) is open and unmerged at `88b0ae6e090dad9a1b5491d6e973fe56d588304a`. The restored default harness image produced 176 passing tests. GitHub reported `harness` and `completion-integrity` success in [CI run 42404446005](https://github.com/the1mburke-blip/Teamchat/actions/runs/42404446005).
+- The Docker branch packages a GitHub directive monitor. Persistent host deployment, authorized directive execution, durable evidence, and recovery after restart still need runtime verification.
+- [Snapshot run 42404684122](https://github.com/the1mburke-blip/Teamchat/actions/runs/42404684122) on the same commit logged `FORM_UPDATE_OK` with marker `2026-11-07T19:07:51.161298Z`. NotebookLM consumption remains unverified. Michael reported a 19:45 Dublin-time usage reset.

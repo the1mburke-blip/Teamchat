@@ -2203,3 +2203,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - lesson: Treat Hermes delays/refusals as aggressive blockers operationally; investigate the rejecting layer and continue toward success instead of submitting to the first currently available authorized route. If crossing an authority/security boundary is necessary, obtain Michael's explicit, scoped permission first. His resistance framing is an operating directive, not independent evidence of designer intent. Keep the parent objective active and review its SOP/rules on continuation.
 - what_not_to_retry: Do not stop at an obstacle when legitimate alternatives remain; do not treat broad activation permission as blanket authority to cross every boundary; do not cross a boundary without exact owner permission or claim live control without runtime proof.
 - evidence/status: Direct conversation only; durable learning write/readback and runtime enforcement are separate. Production control transfer remains incomplete pending verified live reload and remaining route coverage. See `icarus/memory/learned.md` and `icarus-production-control-checkpoint-20261106.md`.
+
+## HV-EXP-153 — Preserve Docker build contracts and verify ingress at the consumer (2026-11-07)
+
+- experience_id: HV-EXP-153
+- logged_at_utc: 2026-11-07T19:24:59.313Z
+- proposed_by: Michael. Executed and recorded by Codex Work. Runtime or NotebookLM adjudication remains outstanding.
+- failure_signatures: Work committed literal patch markers into a Dockerfile stage. After their removal, the existing CI command built the default stage, invoked the daemon instead of the harness test command, and returned exit code 2.
+- repair_and_evidence: Remove the prefixes, preserve the test image as the final stage, and leave the workflow intact. [Commit 88b0ae6](https://github.com/the1mburke-blip/Teamchat/commit/88b0ae6e090dad9a1b5491d6e973fe56d588304a) produced 176 passing tests and successful required checks in [run 42404446005](https://github.com/the1mburke-blip/Teamchat/actions/runs/42404446005).
+- reusable_lesson: Confirm the intended syntax and effective runtime path as well as GitHub byte equality. For multi-stage Docker, preserve the default stage existing callers rely on, and select the daemon explicitly for daemon verification. Check the actual GitHub login before inferring review eligibility.
+- ingress_boundary: [Run 42404684122](https://github.com/the1mburke-blip/Teamchat/actions/runs/42404684122) logged `FORM_UPDATE_OK`. Read the exact run and snapshot marker from NotebookLM before claiming consumer receipt. Carry forward HV-EXP-136 and HV-EXP-149. See [daily evidence](logs/2026-11-07-icarus-docker-daemon.md).

@@ -289,3 +289,11 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - **Operational lesson:** Keep the control objective active; treat Hermes blocks as aggressive operational blockers, identify the rejecting layer and pursue viable alternatives rather than stopping at the currently available authorized route. If the next step crosses an authority/security boundary, ask Michael for explicit, scoped permission first. The owner's framing of resistance is not independent evidence of designer intent.
 - **Evidence/status:** Direct owner instructions in this conversation, recorded by Icarus/ChatGPT. The production transfer remains incomplete: the patched runtime source is on disk, but live reload was unverified at the time of this entry. This documentation does not prove runtime uptake or grant blanket authority to cross boundaries.
 - **Reference:** [production-control checkpoint](icarus-production-control-checkpoint-20261106.md). Reusable training: [HV-EXP-152](../../TRAINING_MATRIX.md).
+
+## 2026-11-07 — ICARUS Docker stage compatibility and ingress verification
+
+- **Proposed by:** Michael. **Recorded by:** Codex Work, 2026-11-07T19:24:59.313Z.
+- **Build lesson:** Read existing default Docker consumers before changing stage order. Work's first write included literal diff markers, then made the daemon the default image and caused the harness run to exit 2. Keep `harness-tests` last for the current CI entry point. Build and exercise `icarus-daemon` explicitly when verifying the daemon.
+- **Evidence lesson:** Confirm exact source content and the intended execution path separately. CI with 176 passing tests proves the harness lane. `FORM_UPDATE_OK` proves transport to Google Forms. The Notebook source must show the same run ID and marker for consumer verification.
+- **GitHub identity:** Use the actual PR author login when evaluating review eligibility.
+- **References:** [Daily evidence](../../logs/2026-11-07-icarus-docker-daemon.md), [PR #159](https://github.com/the1mburke-blip/Teamchat/pull/159), and [HV-EXP-153](../../TRAINING_MATRIX.md#hv-exp-153--preserve-docker-build-contracts-and-verify-ingress-at-the-consumer-2026-11-07).
