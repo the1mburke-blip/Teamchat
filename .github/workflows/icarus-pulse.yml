@@ -1,0 +1,27 @@
+name: ICARUS Pulse
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  pulse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Write heartbeat
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          heartbeat = {"status": "PULSE_OK", "actor": "GITHUB_ACTIONS_RUNNER"}
+          Path("icarus_status.json").write_text(json.dumps(heartbeat) + "\n", encoding="utf-8")
+          PY
