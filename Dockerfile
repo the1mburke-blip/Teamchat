@@ -30,14 +30,14 @@ USER app
 #   docker run --rm --env-file .env teamchat python -m dsh.runner sample.py "..."
 CMD ["python", "-m", "pytest"]
 
-+# Default image for the ICARUS issue monitor.
-+FROM python:3.11-slim AS icarus-daemon
-+
-+ENV PYTHONDONTWRITEBYTECODE=1 \
-+    PYTHONUNBUFFERED=1
-+
-+WORKDIR /app
-+COPY proxy_monitor.py harness-runner.py ./
-+COPY dsh/ ./dsh/
-+USER 1000:1000
-+ENTRYPOINT ["python3", "proxy_monitor.py"]
+# Default image for the ICARUS issue monitor.
+FROM python:3.11-slim AS icarus-daemon
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+COPY proxy_monitor.py harness-runner.py ./
+COPY dsh/ ./dsh/
+USER 1000:1000
+ENTRYPOINT ["python3", "proxy_monitor.py"]
