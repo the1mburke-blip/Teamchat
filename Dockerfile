@@ -1,7 +1,19 @@
+# Image for the ICARUS issue monitor.
+FROM python:3.11-slim AS icarus-daemon
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+COPY proxy_monitor.py harness-runner.py ./
+COPY dsh/ ./dsh/
+USER 1000:1000
+ENTRYPOINT ["python3", "proxy_monitor.py"]
+
 # Teamchat / Cordis kernel test & runner image.
 # Code is stdlib-only plus pytest (requirements-dev.txt); git is needed by
 # dsh.runner / dsh.completion for lease and publish operations.
-FROM python:3.12-slim
+FROM python:3.12-slim AS harness-tests
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
