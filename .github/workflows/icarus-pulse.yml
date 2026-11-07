@@ -25,3 +25,9 @@ jobs:
           heartbeat = {"status": "PULSE_OK", "actor": "GITHUB_ACTIONS_RUNNER"}
           Path("icarus_status.json").write_text(json.dumps(heartbeat) + "\n", encoding="utf-8")
           PY
+      - name: Upload heartbeat artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-heartbeat
+          path: icarus_status.json
+          retention-days: 1
