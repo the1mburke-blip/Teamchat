@@ -1,4 +1,4 @@
-package com.icarus.shell
+package com.aistudio.icarus.appsscript
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,23 +12,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                IcarusShellRoute()
-            }
-        }
+        setContent { MaterialTheme { IcarusRoute() } }
     }
 }
 
 @Composable
-fun IcarusShellRoute(viewModel: IcarusViewModel = viewModel()) {
+fun IcarusRoute(viewModel: IcarusViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     IcarusShellScreen(
         state = state,
         onProblemChanged = viewModel::onProblemChanged,
-        onVoiceToggle = viewModel::onVoiceToggle,
+        onRecoveryTokenChanged = viewModel::onRecoveryTokenChanged,
+        onActivateRecovery = viewModel::activateRecovery,
         onSubmit = viewModel::submit,
-        onCancel = viewModel::cancel,
-        onNewTask = viewModel::newTask
+        onReset = viewModel::resetUi,
+        onForgetRecovery = viewModel::forgetRecovery
     )
 }
