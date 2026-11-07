@@ -1,0 +1,225 @@
+name: ICARUS Hermes Cut 2 - single-file tool dispatch gate
+
+on:
+  push:
+    branches:
+      - experiment/icarus-hermes-surgery-20261008
+    paths:
+      - .github/workflows/icarus-hermes-tool-gate-cut2.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icarus-hermes-tool-gate-cut2
+  cancel-in-progress: false
+
+jobs:
+  tool-gate:
+    name: Local Qwen one-file tool dispatch gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    env:
+      PINNED_DONOR: 99a45ecc17cc51c0488ec3b8ccf7eaf483f7203d
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_CONTEXT_LENGTH: "2048"
+      DO_NOT_TRACK: "1"
+    steps:
+      - name: "Pinned sparse donor: one editable source only"
+        uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: 99a45ecc17cc51c0488ec3b8ccf7eaf483f7203d
+          path: donor-source
+          sparse-checkout: |
+            agent/tool_executor.py
+            LICENSE
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: "Prepare isolated scratch source with pinned baseline"
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C "$GITHUB_WORKSPACE/donor-source" rev-parse HEAD)" = "$PINNED_DONOR"
+          test -s "$GITHUB_WORKSPACE/donor-source/agent/tool_executor.py"
+          test -s "$GITHUB_WORKSPACE/donor-source/LICENSE"
+          mkdir -p /tmp/icarus-cut2/agent "$GITHUB_WORKSPACE/cut2-result"
+          cp "$GITHUB_WORKSPACE/donor-source/agent/tool_executor.py" /tmp/icarus-cut2/agent/tool_executor.py
+          cp "$GITHUB_WORKSPACE/donor-source/LICENSE" "$GITHUB_WORKSPACE/cut2-result/LICENSE"
+          printf 'MODEL=ollama:qwen2.5-coder:1.5b\nBASE_COMMIT=%s\nONLY_EDITABLE_SOURCE=agent/tool_executor.py\n' "$PINNED_DONOR" > "$GITHUB_WORKSPACE/cut2-result/metadata.txt"
+          cd /tmp/icarus-cut2
+          git init -q
+          git config user.name icarus-cut2
+          git config user.email actions@users.noreply.github.com
+          git add agent/tool_executor.py
+          git commit -qm 'preserved pinned donor baseline'
+          test "$(git ls-files | wc -l)" -eq 1
+
+      - name: "Prepare free local Qwen model"
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh
+          sh /tmp/ollama-install.sh
+          nohup ollama serve >"$GITHUB_WORKSPACE/cut2-result/ollama.log" 2>&1 &
+          for i in $(seq 1 45); do
+            curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1 && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull qwen2.5-coder:1.5b
+
+      - name: "Real Qwen single-snippet code generation and strict AST check"
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/cut2-generate.py <<'PY'
+          import ast, json, os, textwrap
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          path=Path("/tmp/icarus-cut2/agent/tool_executor.py")
+          out=Path(os.environ["GITHUB_WORKSPACE"])/"cut2-result"
+          original=path.read_text(encoding="utf-8")
+          tree=ast.parse(original)
+          fns=[n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name=="_dispatch_authorized_once"]
+          assert len(fns)==1, "PINNED_DISPATCH_BOUNDARY_MISSING"
+          marker='\n    if ref.name == "memory":\n'
+          assert original.count(marker)==1, "DISPATCH_INSERTION_ANCHOR_MISSING"
+          prompt=(
+             "Python coding task. Return JSON ONLY: one key 'guard', with a Python source string. "
+             "The guard is exactly these FOUR statements (properly indent nested raises): "
+             "controller = getattr(agent, '_icarus_controller', None) ; "
+             "authorize = getattr(controller, 'authorize_tool_call', None) ; "
+             "if not callable(authorize): raise PermissionError('ICARUS tool permit required') ; "
+             "if authorize(ref.name, ref.args, ref.task_id, ref.call_id) is not True: "
+             "raise PermissionError('ICARUS tool denied'). "
+             "Use line breaks and four-space indentation under each if. "
+             "No imports, no other statements, no comments, no other files, no permission fallback."
+          )
+          payload={"model":"qwen2.5-coder:1.5b","prompt":prompt,"stream":False,"format":"json","options":{"temperature":0,"num_ctx":2048,"num_predict":230}}
+          request=Request("http://127.0.0.1:11434/api/generate",method="POST",headers={"Content-Type":"application/json"},data=json.dumps(payload).encode())
+          with urlopen(request,timeout=280) as response:
+              raw=json.loads(response.read().decode())["response"]
+          (out/"model-response.json").write_text(raw,encoding="utf-8")
+          guard=json.loads(raw)["guard"]
+          assert isinstance(guard,str) and 100<len(guard)<700, "GENERATED_GUARD_LENGTH_OUT_OF_SCOPE"
+          code=ast.parse(textwrap.dedent(guard))
+          assert len(code.body)==4, "EXPECTED_EXACTLY_FOUR_STATEMENTS"
+          a,b,c,d=code.body
+          def name(node,value):
+              return isinstance(node,ast.Name) and node.id==value
+          def attr(node,base,value):
+              return isinstance(node,ast.Attribute) and name(node.value,base) and node.attr==value
+          def call_getattr(node,base,key):
+              return isinstance(node,ast.Call) and name(node.func,"getattr") and len(node.args)==3 and name(node.args[0],base) and isinstance(node.args[1],ast.Constant) and node.args[1].value==key and isinstance(node.args[2],ast.Constant) and node.args[2].value is None and not node.keywords
+          assert isinstance(a,ast.Assign) and len(a.targets)==1 and name(a.targets[0],"controller") and call_getattr(a.value,"agent","_icarus_controller"),"CONTROLLER_SOURCE_UNTRUSTED"
+          assert isinstance(b,ast.Assign) and len(b.targets)==1 and name(b.targets[0],"authorize") and call_getattr(b.value,"controller","authorize_tool_call"),"AUTHORIZER_SOURCE_UNTRUSTED"
+          def is_raise(node,msg):
+              return isinstance(node,ast.Raise) and isinstance(node.exc,ast.Call) and name(node.exc.func,"PermissionError") and len(node.exc.args)==1 and isinstance(node.exc.args[0],ast.Constant) and node.exc.args[0].value==msg and not node.exc.keywords
+          assert isinstance(c,ast.If) and not c.orelse and len(c.body)==1 and is_raise(c.body[0],"ICARUS tool permit required"),"MISSING_METHOD_MUST_DENY"
+          assert isinstance(c.test,ast.UnaryOp) and isinstance(c.test.op,ast.Not) and isinstance(c.test.operand,ast.Call) and name(c.test.operand.func,"callable") and len(c.test.operand.args)==1 and name(c.test.operand.args[0],"authorize"),"AUTHORIZER_NOT_CALLABLE_MUST_DENY"
+          assert isinstance(d,ast.If) and not d.orelse and len(d.body)==1 and is_raise(d.body[0],"ICARUS tool denied"),"FALSE_DECISION_MUST_DENY"
+          cond=d.test
+          assert isinstance(cond,ast.Compare) and len(cond.ops)==1 and isinstance(cond.ops[0],ast.IsNot) and len(cond.comparators)==1 and isinstance(cond.comparators[0],ast.Constant) and cond.comparators[0].value is True,"AUTH_DECISION_MUST_BE_EXACT_TRUE"
+          invoke=cond.left
+          assert isinstance(invoke,ast.Call) and name(invoke.func,"authorize") and not invoke.keywords and len(invoke.args)==4 and all(attr(arg,"ref",key) for arg,key in zip(invoke.args,["name","args","task_id","call_id"])),"AUTHORIZED_ARGS_MUST_BE_FINAL_DISPATCH_REFS"
+          new_guard="\n".join("    "+line for line in textwrap.dedent(guard).strip().splitlines())
+          updated=original.replace(marker,"\n"+new_guard+"\n"+marker,1)
+          parsed=ast.parse(updated)
+          fn=next(n for n in ast.walk(parsed) if isinstance(n,ast.FunctionDef) and n.name=="_dispatch_authorized_once")
+          segment=ast.get_source_segment(updated,fn)
+          assert segment.index("ICARUS tool permit required") < segment.index("prepare_current_terminal(ref)") < segment.index("execute(ref.args)"),"CHECK_MUST_PRECEDE_REAL_DISPATCH"
+          path.write_text(updated,encoding="utf-8")
+          (out/"metadata.txt").open("a").write("MODEL_GENERATED_GUARD=YES\nMODEL_OUTPUT_AST_CHECK=PASS\n")
+          print("Local Qwen generated the validated ICARUS tool gateway guard; one pinned donor file edited.")
+          PY
+          set +e
+          timeout 330 python /tmp/cut2-generate.py >"$GITHUB_WORKSPACE/cut2-result/worker.log" 2>&1
+          status=$?
+          set -e
+          echo "MODEL_WORKER_EXIT=$status" >>"$GITHUB_WORKSPACE/cut2-result/metadata.txt"
+          if test "$status" -ne 0; then cat "$GITHUB_WORKSPACE/cut2-result/worker.log"; exit "$status"; fi
+
+      - name: "Mechanical safety verification against real Python function"
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/icarus-cut2
+          OUT="$GITHUB_WORKSPACE/cut2-result"
+          git diff --name-only > "$OUT/modified-files.txt"
+          git status --short > "$OUT/status.txt"
+          git diff --no-ext-diff -- agent/tool_executor.py > "$OUT/tool-gate.patch"
+          cp agent/tool_executor.py "$OUT/tool_executor.py"
+          sha256sum agent/tool_executor.py > "$OUT/source-sha256.txt"
+          test "$(cat "$OUT/modified-files.txt")" = "agent/tool_executor.py"
+          test ! -s <(git ls-files --others --exclude-standard)
+          python -m py_compile agent/tool_executor.py
+          python - <<'PY' | tee "$OUT/behavior-tests.log"
+          import ast, types, sys
+          from pathlib import Path
+          from types import SimpleNamespace as NS
+          source=Path("agent/tool_executor.py").read_text()
+          tree=ast.parse(source)
+          fn=next(n for n in ast.walk(tree) if isinstance(n,ast.FunctionDef) and n.name=="_dispatch_authorized_once")
+          s=ast.get_source_segment(source,fn)
+          assert "_icarus_controller" in s
+          assert s.index("ICARUS tool permit required") < s.index("prepare_current_terminal(ref)")
+          pkg=types.ModuleType("agent");pkg.__path__=[]
+          dep=types.ModuleType("agent.terminal_approval_batch")
+          dep.prepare_current_terminal=lambda ref:None
+          sys.modules["agent"]=pkg;sys.modules["agent.terminal_approval_batch"]=dep
+          g={"Any":object,"_ManagedToolResult":object,"_ToolCallRef":object,"_ConcurrentToolAuthorizationGate":object}
+          g.update({
+            "_pre_tool_block":lambda agent,ref:(None,ref.args),
+            "_context_pruned_argument_paths":lambda name,args:[],
+            "_begin_tool_execution":lambda agent,ref,index:None,
+            "_run_with_activity_heartbeat":lambda agent,name,call:call(),
+          })
+          exec(compile(ast.Module(body=[fn],type_ignores=[]),"<real-donor-tool-boundary>","exec"),g)
+          function=g["_dispatch_authorized_once"]
+          def test(label,controller,allowed):
+              events=[]
+              class Agent:pass
+              a=Agent()
+              if controller is not None:a._icarus_controller=controller
+              a._tool_guardrails=NS(before_call=lambda name,args:NS(allows_execution=True))
+              state=NS(args=None,blocked=False)
+              args={"payload":"unaltered"}
+              ref=NS(name="example_tool",args=args,task_id="T1",call_id="C1")
+              def execute(final_args):
+                  events.append(final_args)
+                  return {"done":True}
+              failed=False
+              try:
+                  result=function(a,state,ref,execute=execute,scope_block=None,display_index=None,begin_execution=None,authorization_gate=None)
+              except PermissionError:
+                  failed=True
+              if allowed:
+                  assert not failed and len(events)==1 and events[0] is args and result=={"done":True},label
+              else:
+                  assert failed and not events,label
+              print(label+": PASS")
+          test("NO_CONTROLLER_DENIED",None,False)
+          test("MISSING_METHOD_DENIED",NS(),False)
+          test("NONCALLABLE_METHOD_DENIED",NS(authorize_tool_call=True),False)
+          test("FALSE_DECISION_DENIED",NS(authorize_tool_call=lambda *v:False),False)
+          test("TRUTHY_NONBOOL_DENIED",NS(authorize_tool_call=lambda *v:1),False)
+          def yes(name,args,task_id,call_id):
+              assert (name,task_id,call_id)==("example_tool","T1","C1")
+              assert args=={"payload":"unaltered"}
+              return True
+          test("EXPLICIT_AUTHORIZED_DISPATCH_ONCE",NS(authorize_tool_call=yes),True)
+          print("ONE_FILE_TOOL_GATE_TESTS=6_PASS; WHOLE_RUNTIME=UNVERIFIED")
+          PY
+          echo "ONE_FILE_GATE=MECHANICAL_PASS_NOT_FULL_GOVERNANCE" >> "$OUT/metadata.txt"
+
+      - name: "Preserve source patch, logs and MIT notice as result"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-Hermes-tool-gate-cut2
+          path: cut2-result/
+          retention-days: 7
+          if-no-files-found: warn
