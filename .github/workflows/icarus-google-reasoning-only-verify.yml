@@ -1,0 +1,42 @@
+name: Icarus Google reasoning-only candidate verify
+
+on:
+  push:
+    branches:
+      - repo-worker/icarus-google-reasoning-only-55
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify reasoning-only candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="drafts/icarus/2026-10-06-standalone-reasoning"
+          for f in Code Runtime Provider; do
+            cp "$ROOT/candidate/$f.gs" "/tmp/$f.js"
+            node --check "/tmp/$f.js"
+          done
+          bash -n "$ROOT/phone/termux_google_reasoning_deploy.sh"
+          grep -F "scheduleTaskAdvance_();" "$ROOT/candidate/Code.gs"
+          grep -F "route=GEMINI_DIRECT_REASONING_ONLY" "$ROOT/candidate/Runtime.gs"
+          grep -F "const mode = 'GEMINI_DIRECT'" "$ROOT/candidate/Provider.gs"
+          if grep -F "executeComposioTask_(" "$ROOT/candidate/Runtime.gs"; then
+            echo "Composio call is present in reasoning-only Runtime" >&2
+            exit 1
+          fi
+          if grep -F "COMPOSIO_" "$ROOT/candidate/Runtime.gs"; then
+            echo "Composio marker is present in reasoning-only Runtime" >&2
+            exit 1
+          fi
+          grep -F "const eligible = ['QUEUED','INSPECTING'];" "$ROOT/candidate/Runtime.gs"
+          grep -F "updateTaskFields_(taskId,{evidence_ref:reasoning.evidence});" "$ROOT/candidate/Runtime.gs"
+          grep -F "return taskForClient_(taskId);" "$ROOT/candidate/Runtime.gs"
+          echo "REASONING_ONLY_CANDIDATE_STATIC_PASS"
