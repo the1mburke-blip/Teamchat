@@ -1,175 +1,124 @@
 name: Prime Snapshot Sync
 
 on:
-  issues:
-    types: [opened, edited, closed, reopened, assigned, unassigned, labeled, unlabeled]
-  # issue_comment trigger removed 2026-10-28 (owner): every comment, including Icarus's replies, started a run. Disabled, not deleted.
-  push:
-    branches: [main]
-    paths:
-      - 'README.md'
-      - 'STATUS.md'
-      - 'OPERATING_RULES.md'
-      - 'HANDOFF_PROTOCOL.md'
-      - 'CONTENT_PIPELINE.md'
-      - 'CHAT_LOG.md'
-      - 'TRAINING_MATRIX.md'
-      - 'BUFFER_QUEUE_STATE.md'
-      - 'BLOG_QUEUE_STATE.md'
-      - 'scripts/update_prime_snapshot.py'
-  # Schedule removed 2026-10-28 (owner): GitHub Actions minutes are exhausted. Disabled, not deleted.
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: read
-  pull-requests: read
+  contents: read
 
 concurrency:
-  group: prime-snapshot-sync
-  cancel-in-progress: true
+  group: heartbeat-audit-ingress-once
+  cancel-in-progress: false
 
 jobs:
   sync:
-    if: ${{ vars.PRIME_SNAPSHOT_ENABLED == 'true' }}
+    if: ${{ github.ref == 'refs/heads/audit/heartbeat-ingress-once' && github.run_attempt == 1 }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 3
     steps:
-      - name: Authorize event
-        id: gate
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          python - <<'PY'
-          import json, os
-          name = os.environ["EVENT_NAME"]
-          event = json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8"))
-          allowed = True
-          if name == "issue_comment":
-              allowed = str(event.get("comment", {}).get("author_association", "")).upper() in {"OWNER","MEMBER","COLLABORATOR"}
-          elif name == "issues":
-              allowed = str(event.get("issue", {}).get("author_association", "")).upper() in {"OWNER","MEMBER","COLLABORATOR"}
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
-              f.write(f"allowed={'true' if allowed else 'false'}\n")
-          print("AUTHORIZED_EVENT" if allowed else "IGNORED_UNAUTHORIZED_EVENT")
-          PY
-
-      - name: Checkout canonical Teamchat
-        if: steps.gate.outputs.allowed == 'true'
+      - name: Checkout audit packet
         uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - name: Refresh Buffer queue state
-        id: buffer_refresh
-        if: steps.gate.outputs.allowed == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
-        env:
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-        run: |
-          if [ -z "$BUFFER_API_KEY" ]; then
-            echo "BUFFER_API_KEY_MISSING — retaining last verified queue state"
-            echo "refreshed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          python scripts/update_buffer_queue.py
-          echo "refreshed=true" >> "$GITHUB_OUTPUT"
-
-      - name: Persist refreshed Buffer queue state
-        if: steps.buffer_refresh.outputs.refreshed == 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ github.token }}
-          script: |
-            const fs = require('fs');
-            const { owner, repo } = context.repo;
-            const path = 'BUFFER_QUEUE_STATE.md';
-            const content = fs.readFileSync(path, 'utf8');
-            const current = await github.rest.repos.getContent({ owner, repo, path, ref: 'main' });
-            const existing = Buffer.from(current.data.content || '', 'base64').toString('utf8');
-            if (existing === content) {
-              core.notice('Buffer queue state unchanged; no commit needed.');
-              return;
-            }
-            await github.rest.repos.createOrUpdateFileContents({
-              owner, repo, path,
-              message: 'Refresh Buffer queue state',
-              content: Buffer.from(content, 'utf8').toString('base64'),
-              sha: current.data.sha,
-              branch: 'main'
-            });
-
-      - name: Build compact Prime snapshot
-        if: steps.gate.outputs.allowed == 'true'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python scripts/update_prime_snapshot.py
-
-      - name: Update fixed Google Form response
-        if: steps.gate.outputs.allowed == 'true'
+      - name: Append heartbeat audit to the Prime Snapshot Form
         env:
           PRIME_SNAPSHOT_EDIT_URL: ${{ secrets.PRIME_SNAPSHOT_EDIT_URL }}
         run: |
-          python - <<'PY'
-          import html
-          import json
+          python3 - <<'PY'
+          import datetime as dt
+          import hashlib
           import os
+          import re
+          import urllib.error
           import urllib.parse
           import urllib.request
           from html.parser import HTMLParser
+          from pathlib import Path
 
-          class FormParser(HTMLParser):
+          class FreshForm(HTMLParser):
               def __init__(self):
                   super().__init__()
                   self.action = None
                   self.hidden = {}
+
               def handle_starttag(self, tag, attrs):
                   attrs = dict(attrs)
-                  if tag == "form" and attrs.get("action") and self.action is None:
-                      self.action = attrs["action"]
-                  if tag == "input" and attrs.get("type") == "hidden" and attrs.get("name"):
-                      self.hidden[attrs["name"]] = attrs.get("value", "")
+                  if tag == "form" and self.action is None:
+                      self.action = attrs.get("action")
+                  if tag == "input" and attrs.get("type") == "hidden":
+                      name = attrs.get("name")
+                      if name in {"fvv", "fbzx", "pageHistory", "partialResponse"}:
+                          self.hidden[name] = attrs.get("value", "")
 
-          edit_url = os.environ["PRIME_SNAPSHOT_EDIT_URL"]
-          if not edit_url.startswith("https://docs.google.com/forms/"):
-              raise SystemExit("Invalid PRIME_SNAPSHOT_EDIT_URL")
+          def form_path(url, suffix):
+              parts = urllib.parse.urlsplit(url)
+              if parts.scheme != "https" or parts.netloc != "docs.google.com":
+                  raise SystemExit("Unexpected Google Form host")
+              match = re.fullmatch(r"(/forms/(?:u/\d+/)?d/(?:e/)?[A-Za-z0-9_-]+)/(?:viewform|formResponse)/?", parts.path)
+              if not match:
+                  raise SystemExit("Unexpected Google Form path")
+              return f"https://docs.google.com{match[1]}/{suffix}"
 
-          req = urllib.request.Request(edit_url, headers={"User-Agent":"HumanVibe-Prime-Snapshot/1.0"})
-          with urllib.request.urlopen(req, timeout=30) as resp:
-              page = resp.read().decode("utf-8", errors="replace")
+          path = Path("logs/2026-11-08-heartbeat-audit.md")
+          audit_bytes = path.read_bytes()
+          blob = b"blob " + str(len(audit_bytes)).encode() + b"\0" + audit_bytes
+          if hashlib.sha1(blob).hexdigest() != "85f431a48d4f0ec303e3b6eb628f6d1f7b055249":
+              raise SystemExit("Audit blob mismatch")
 
-          parser = FormParser()
-          parser.feed(page)
-          if not parser.action:
-              raise SystemExit("Google Form edit page did not expose a form action")
-
-          payload = json.load(open("prime_snapshot_payload.json", encoding="utf-8"))
-          data = dict(parser.hidden)
-          data.update({
-              "entry.1699301106": payload["run_id"],
-              "entry.807518215": payload["marker"],
-              "entry.465536805": payload["sequence"],
-              "entry.1756592575": payload["total"],
-              "entry.414143502": payload["snapshot"],
-          })
-
-          encoded = urllib.parse.urlencode(data).encode("utf-8")
-          post = urllib.request.Request(
-              parser.action,
-              data=encoded,
-              headers={
-                  "Content-Type":"application/x-www-form-urlencoded",
-                  "User-Agent":"HumanVibe-Prime-Snapshot/1.0",
-              },
-              method="POST",
+          run_id = os.environ["GITHUB_RUN_ID"]
+          marker = "SNAPSHOT_GENERATED_UTC: " + dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+          digest = hashlib.sha256(audit_bytes).hexdigest()
+          payload = (
+              "# HumanVibe Prime Snapshot — LIVE\n"
+              f"{marker}\n"
+              "SOURCE_REPOSITORY: the1mburke-blip/Teamchat\n"
+              "TRIGGER: workflow_dispatch\n"
+              f"RUN_ID: {run_id}\n"
+              "AUDIT_PR: 167\n"
+              "AUDIT_SOURCE_COMMIT: ed86028a28af35ca2cd2b2eecf1dd3aa3aa161c8\n"
+              "AUDIT_COMMIT: 969a11ebb834a2c33da5e874f5f508d675c957ad\n"
+              f"AUDIT_SHA256: {digest}\n\n"
+              + audit_bytes.decode("utf-8")
           )
-          with urllib.request.urlopen(post, timeout=60) as resp:
-              body = resp.read().decode("utf-8", errors="replace")
-              status = resp.status
 
-          if status != 200:
-              raise SystemExit(f"Google Form update failed HTTP {status}")
-          if "Your response has been recorded" not in body and "Edit your response" not in body:
-              print("FORM_UPDATE_HTTP_200 confirmation-text-not-detected")
-          print(f"FORM_UPDATE_OK marker={payload['marker']} chars={len(payload['snapshot'])}")
+          try:
+              view = form_path(os.environ["PRIME_SNAPSHOT_EDIT_URL"], "viewform")
+              with urllib.request.urlopen(view, timeout=25) as response:
+                  view_url = response.geturl()
+                  parser = FreshForm()
+                  parser.feed(response.read().decode("utf-8"))
+              if not parser.action:
+                  raise SystemExit("Fresh Form did not expose a submit action")
+
+              action = urllib.parse.urljoin(view_url, parser.action)
+              target = form_path(view_url, "formResponse")
+              if form_path(action, "formResponse") != target:
+                  raise SystemExit("Fresh Form submit action points to a different Form")
+              form_values = {
+                  **parser.hidden,
+                  "entry.1699301106": run_id,
+                  "entry.807518215": marker,
+                  "entry.465536805": "1",
+                  "entry.1756592575": "1",
+                  "entry.414143502": payload,
+              }
+              request = urllib.request.Request(
+                  target,
+                  data=urllib.parse.urlencode(form_values).encode(),
+                  method="POST",
+              )
+              with urllib.request.urlopen(request, timeout=40) as response:
+                  body = response.read().decode("utf-8", errors="replace")
+                  status = response.status
+          except urllib.error.HTTPError as error:
+              raise SystemExit(f"Google Forms returned HTTP {error.code}") from None
+          except (urllib.error.URLError, TimeoutError):
+              raise SystemExit("Google Forms transport failed. Inspect the sheet before any retry.") from None
+
+          if status != 200 or not any(
+              text in body for text in ("Your response has been recorded", "Edit your response", "Submit another response")
+          ):
+              raise SystemExit(f"Form append confirmation missing (HTTP {status}). Inspect the sheet before any retry.")
+          print(f"HEARTBEAT_AUDIT_FORM_APPEND_OK run_id={run_id} http={status} audit_sha256={digest}")
           PY
