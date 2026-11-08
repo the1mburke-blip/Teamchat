@@ -4,6 +4,7 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
@@ -77,18 +78,39 @@ class DutyRunnerTests(unittest.TestCase):
         link = '<https://api.github.com/next>; rel="next"' if page * size < len(rows) else ""
         return rows[(page - 1) * size:page * size], link
 
-    def run_pulse(self, expected_exit=0):
+    def run_pulse(self, expected_exit=0, *, at=None):
         stdout, stderr = io.StringIO(), io.StringIO()
-        with redirect_stdout(stdout), redirect_stderr(stderr):
+        with (
+            patch.object(runner.datetime, "datetime") as clock,
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
+            clock.now.return_value = at or datetime(2026, 11, 8, 14, 7, tzinfo=timezone.utc)
             self.assertEqual(runner.main(), expected_exit)
         record = json.loads(self.ledger.read_text().splitlines()[-1])
         self.assertEqual(json.loads(self.status.read_text())[-1], record)
         self.assertEqual(json.loads((stderr if expected_exit else stdout).getvalue()), record)
         return record
 
+    def test_scheduled_pulse_skips_off_hours_and_day_31_with_evidence(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        del os.environ["GITHUB_TOKEN"]
+        for timestamp in (
+            datetime(2026, 12, 30, 15, 7, tzinfo=timezone.utc),
+            datetime(2026, 12, 31, 14, 7, tzinfo=timezone.utc),
+        ):
+            with self.subTest(timestamp=timestamp):
+                record = self.run_pulse(at=timestamp)
+                self.assertEqual(record["monitoring_result"], "SKIPPED")
+                self.assertEqual(record["loop_state"], "SKIPPED_CADENCE")
+                self.assertEqual(record["intake_state"], "SKIPPED")
+                self.assertEqual(record["open_issues_inspected"], 0)
+                self.assertEqual(record["timestamp_utc"], timestamp.isoformat())
+                self.assertEqual(self.requests, [])
+
     def test_issue_six_still_dispatches_its_original_packet(self):
         self.comments[6] = [comment(10, task("LEGACY"))]
-        record = self.run_pulse()
+        record = self.run_pulse(at=datetime(2026, 12, 31, 15, 7, tzinfo=timezone.utc))
         self.assertEqual(record["new_tasks_dispatched"], 1)
         self.assertEqual(record["dispatch_receipts"][0]["source_comment_id"], 10)
         self.assertEqual(self.posts, [
