@@ -33,6 +33,34 @@ jobs:
         run: |
           python3 scripts/icarus_duty_runner.py
 
+      - name: Check ICARUS Pulse inference partition
+        id: pulse_quota
+        if: github.event_name == 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 icarus/runtime/icarus_run.py --pulse-reserve
+
+      - name: Persist ICARUS Pulse inference reservation
+        id: pulse_reservation
+        if: steps.pulse_quota.outputs.day != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-pulse-quota-${{ steps.pulse_quota.outputs.day }}
+          path: ${{ runner.temp }}/icarus-pulse-reservation.json
+          if-no-files-found: error
+          retention-days: 31
+
+      - name: Execute ICARUS Pulse reasoning
+        if: steps.pulse_reservation.outputs.artifact-id != ''
+        timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          COMMENT_ID: pulse-${{ github.run_id }}
+          COMMENT_ACTOR: schedule
+          PULSE_RESERVATION_ID: ${{ steps.pulse_reservation.outputs.artifact-id }}
+        run: python3 icarus/runtime/icarus_run.py --pulse-infer
+
       - name: Persist Execution Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -41,4 +69,5 @@ jobs:
           path: |
             icarus_status.json
             RUN_LOG.jsonl
+            icarus/runs/*-pulse-${{ github.run_id }}.md
           retention-days: 30
