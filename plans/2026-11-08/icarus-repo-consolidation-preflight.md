@@ -73,3 +73,24 @@ Material verification-route update under R10: `docker image inspect teamchat-har
 12. **R12 LEARNING MUST BE LOGGED** — HV-EXP-155 is durable and read back; log final outcomes separately.
 
 [UPDATED_LOCAL_ROUTE] Run `python -m pytest` on the bounded affected suites (or full suite if available); do not claim the Docker-backed `harness` job locally passed. The PR gate remains mandatory.
+
+
+## Re-preflight after pytest temp-root failure (2026-11-08T22:10Z)
+
+The direct Python test attempt and exact aggregate result were durably logged/read back as HV-EXP-156 before retry. It exited 1 with 42 failed, 28 passed, 46 errors and 19 passed subtests. The captured stack shows repeated WinError 5 during TemporaryDirectory cleanup under the sandbox's AppData Temp path; because the tool truncated output, other test causes are unknown. No test was repeated. Next materially different route: use a workspace-local writable temp directory by setting both `TMP` and `TEMP`, run the affected suite once, capture full output to a workspace log, and classify the first remaining failures. Do not claim a code regression or PASS from the first run. Docker harness stays BLOCKED until a PR runner builds/runs its image.
+
+### R1–R12 re-review for the revised local test route
+1. **R1 PRIOR ART FIRST** — the test command and Windows temp constraints are now included in prior art; no neighboring route substitution.
+2. **R2 PREFLIGHT FIRST** — log/training failure receipt HV-EXP-156 has been read back; this re-preflight is read back before retry.
+3. **R3 CORRECT ROUTING** — local pytest with workspace temp is a diagnostic route; Actions remains authoritative for the container harness and PR integrity gate.
+4. **R4 HISTORY/TRAINING FIRST** — apply HV-EXP-124 and HV-EXP-153–156; the new temp failure is explicitly surfaced.
+5. **R5 NO EVIDENCE = NO CLAIM** — first suite result is environment-tainted; classify only full exact output after the changed temp route.
+6. **R6 €0 / SPEND DISCIPLINE** — set environment variables only for the process; no daemon, paid service, installation, or provider call.
+7. **R7 ALLOWANCE DISCIPLINE** — stay within remaining tool budgets; token use is unmetered.
+8. **R8 NO BLIND RETRIES** — only retry after changing the temp root and retaining full output.
+9. **R9 WORK THE BLOCKER** — finish diagnosis by isolating temp-path errors from true source failures; CI will test Linux packaging.
+10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — this addendum records the route change; re-preflight again if the new evidence changes target or environment.
+11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — require command exit/status and subsequent CI result separately.
+12. **R12 LEARNING MUST BE LOGGED** — HV-EXP-156 is recorded; append additional verified causes before any further retry.
+
+[UPDATED_LOCAL_TEST] Use one affected-suite run with `TMP` and `TEMP` pointed to a writable directory under this repository, preserving full output to an allowed workspace file. Do not rerun the Docker harness or the prior command unchanged.
