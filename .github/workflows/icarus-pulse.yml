@@ -13,6 +13,7 @@ jobs:
   icarus-pulse:
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       contents: read
       issues: write
 
@@ -31,6 +32,13 @@ jobs:
           ICARUS_ISSUE_NUMBER: "6"
         run: |
           python3 scripts/icarus_duty_runner.py
+
+      - name: Dispatch Prime Snapshot Sync
+        if: ${{ always() && hashFiles('RUN_LOG.jsonl') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run prime-snapshot-sync.yml --ref main
 
       - name: Persist Execution Evidence
         if: always()
