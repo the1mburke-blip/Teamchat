@@ -37,3 +37,18 @@
 10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — stop and replace this receipt if route, scope, cost, owner, capability, or target changes.
 11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — the local tests and two remote required checks need independent readback; opening a PR is not merge/completion.
 12. **R12 LEARNING MUST BE LOGGED** — record verified outcome/failures and read back; create separate post-task compliance tracker before governance closure.
+
+
+## Audit addendum — gate path condition checked (2026-11-08T21:54Z)
+
+Direct read of `dsh/state_write_gate.py` confirms `protected(path)` returns false for `.github/`, `docs/`, `tests/`, and for code files that are not named state/status/ledger/goal files; the trusted-file list is consulted only inside `verify_receipt()`, which runs when the PR changes protected state. The planned package/runtime/snapshot/harness source, tests and workflow changes do not add or alter protected state artifacts. Therefore the current completion-integrity route can accept this refactor without a receipt, while still checking ordinary source changes. I will add the relocated harness implementation to `TRUSTED_FILES`, keep compatibility entry points until all consumers move, and verify the no-protected-state condition in the final diff. This corrects the initially considered gate concern; no scope or cost change.
+
+## Expanded source consumer evidence
+
+- Runtime has direct workflow consumers in `icarus-pulse.yml`, `icarus-runtime.yml`, and `teamchat-router.yml`; pulse calls the separate duty runner. Runtime tests import the old module, and enforcement contains old deny-path names. Runtime configuration JSON can stay at its current data location unless path audit demonstrates a need to move it.
+- Snapshot has one workflow invocation and one direct test import; its repository root calculation depends on `__file__` depth.
+- The two root harness scripts are both trusted by `dsh/state_write_gate.py`, copied or run by Docker/CI, and imported/executed by tests. Keep thin root shims, preserve their CLI contracts, move implementations into package modules, add the implementation path to the trusted list, and update the workflow/test entry points.
+- Athena GAS is retained because `test-athena.js` loads it, the deploy workflow targets it, and `icarus-runtime.yml` documents the mutually exclusive runtime route. No legacy/dead removal is justified from current evidence.
+- Ghost/experimental workflows operate on separate draft paths; they are not direct consumers of files being moved. No deletion is authorized by this audit.
+
+[UPDATED_ROUTE] Continue the authorized code-only refactor as scoped; no protected governance/runtime state files will be edited. If testing requires a config/state mutation or tests trigger provider access, stop and re-preflight.
