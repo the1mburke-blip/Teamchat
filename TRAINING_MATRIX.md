@@ -2263,3 +2263,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not repeat the same hidden process start unchanged or treat the active context as a live daemon. Do not install Docker or change service/configuration.
 - recovery_status: Local Docker harness remains BLOCKED. Direct affected Python suite passes (86 passed, 23 subtests); remote CI still must run Docker.
 - external_cost: EUR 0; no provider spend.
+
+
+[CODEX] ## HV-EXP-159 — Stop after Docker Desktop CLI termination and missing engine pipe (2026-11-08)
+- experience_id: HV-EXP-159; date_utc: 2026-11-08.
+- incident: One `docker desktop start` attempt exited 1 with `Docker Desktop terminated unexpectedly`. The planned single `docker info` readback still failed because `npipe:////./pipe/dockerDesktopLinuxEngine` did not exist.
+- evidence: exact CLI output and engine endpoint failure returned in this turn; prior `Start-Process` start and missing process were logged separately in HV-EXP-158. No config or service changes were attempted.
+- lesson: When both the existing app launch and its product CLI fail to start the engine, stop retries and report the required local harness as blocked. Do not claim direct pytest is equivalent to the Docker image harness.
+- what_not_to_retry: Do not rerun either startup route unchanged, alter Docker/WSL configuration, install components, or open the PR before the owner's explicit local harness condition is met.
+- recovery_status: Local Docker harness NOT PASSED/BLOCKED. Direct affected Python suite passed (86 tests, 23 subtests), but this does not satisfy the Docker harness requirement. Continue code work; PR creation remains gated on local Docker harness pass.
+- external_cost: EUR 0; no provider spend.
