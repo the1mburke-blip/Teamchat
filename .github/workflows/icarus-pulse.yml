@@ -34,7 +34,8 @@ jobs:
           python3 scripts/icarus_duty_runner.py
 
       - name: Dispatch Prime Snapshot Sync
-        if: ${{ always() && hashFiles('RUN_LOG.jsonl') != '' }}
+        if: ${{ success() && hashFiles('RUN_LOG.jsonl') != '' }}
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
