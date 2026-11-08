@@ -2224,3 +2224,12 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not describe branch/worktree creation as read-only; do not claim a later preflight cures the earlier ordering failure.
 - recovery_status: Initial run PROCESS FAIL; no source change or remote mutation before failure logging. A fresh run may proceed only after this failure record is read back and a separate complete preflight receipt is committed/read back before substantive work. Commit-attempt failures: no author configured; explicit Codex identity attempts hit MSYS permission errors before commit creation. No custom hooks path was found. A GitHub connector base64-decode attempt failed before write because `TextDecoder` is unavailable; UTF-8 retrieval then succeeded. Do not repeat failed routes or bypass hooks. Independent compliance adjudication remains pending.
 - allowance: Three premature local commit attempts and inspections, plus one connector code attempt that failed before write; no external monetary spend; model token/allowance telemetry unavailable.
+
+[CODEX] ## HV-EXP-155 — Check Docker engine availability before local image harness (2026-11-08)
+- experience_id: HV-EXP-155; date_utc: 2026-11-08.
+- incident: The requested local `python harness_runner.py` check requires the existing `teamchat-harness:test` Docker image. Read-only `docker image inspect teamchat-harness:test` failed because the Docker Desktop Linux engine pipe `npipe:////./pipe/dockerDesktopLinuxEngine` was absent; exit code 1. Docker CLI was present, but daemon/image status was not available.
+- evidence: command output: `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; ... The system cannot find the file specified.` No daemon was started, no image was built, and no source was changed by this check.
+- lesson: Before invoking a Docker-backed local harness, verify the daemon and exact image. If the engine is unavailable, report the blocker and use a materially different direct test route; do not claim the Docker harness passed.
+- what_not_to_retry: Do not rerun the same Docker command unchanged or start/install Docker as an inferred side effect. Run direct local Python tests, then rely on the PR workflow only for a fresh build/run receipt.
+- recovery_status: Docker harness BLOCKED locally; direct suite and PR Actions remain to be run/read back.
+- external_cost: EUR 0; no provider spend; runtime allowance not measurable.
