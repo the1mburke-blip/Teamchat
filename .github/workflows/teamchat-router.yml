@@ -251,7 +251,7 @@ jobs:
               "loop: off\n"
               "USER_MESSAGE_JSON: " + json.dumps(match.group(2), ensure_ascii=True)
           )
-          subprocess.run([sys.executable, "icarus/runtime/icarus_run.py"],
+          subprocess.run([sys.executable, "-m", "icarus.core.runtime"],
                          env=env, check=True, timeout=540)
           PY
 

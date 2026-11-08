@@ -34,7 +34,7 @@ jobs:
         id: harness
         run: |
           set -o pipefail
-          python3 harness_runner.py 2>&1 | tee harness.log
+          python3 -m icarus.harness.container 2>&1 | tee harness.log
 
       - name: Produce physical state readback manifest
         if: success()
@@ -42,7 +42,7 @@ jobs:
           ICARUS_HARNESS_OUTCOME: ${{ steps.harness.outcome }}
           ICARUS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           ICARUS_TASK_ID: PR-${{ github.event.pull_request.number || github.sha }}
-        run: python3 harness-runner.py --write-ci-manifest COMPLETION_MANIFEST.json
+        run: python3 -m icarus.harness.runner --write-ci-manifest COMPLETION_MANIFEST.json
 
       - name: Write RUN_LOG.jsonl
         if: always()
@@ -103,4 +103,4 @@ jobs:
           ICARUS_AUDIT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           ICARUS_AUDIT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: python3 harness-runner.py --audit-state-writes
+        run: python3 -m icarus.harness.runner --audit-state-writes

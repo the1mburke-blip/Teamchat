@@ -106,7 +106,7 @@ jobs:
           PULSE_RUN_ID: ${{ inputs.pulse_run_id }}
           PULSE_EVENT: ${{ inputs.pulse_event }}
           PULSE_SHA: ${{ inputs.pulse_sha }}
-        run: python scripts/update_prime_snapshot.py
+        run: python -m icarus.core.snapshot
 
       - name: Append new Google Form response
         if: steps.gate.outputs.allowed == 'true'
