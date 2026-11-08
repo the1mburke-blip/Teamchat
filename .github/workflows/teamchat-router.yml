@@ -280,28 +280,14 @@ jobs:
               return;
             }
             const text = raw.replace(/^(# Icarus run [^\n]+\n)/, '$1- Trigger: addressed to Icarus (read-only reply)\n');
-            let receiptVerified = false, error = '';
-            try {
-              await github.rest.repos.createOrUpdateFileContents({
-                owner, repo, path, branch: 'main',
-                message: 'chore(icarus): persist web reply to comment ' + sourceId,
-                content: Buffer.from(text + '\n').toString('base64')
-              });
-              const readback = await github.rest.repos.getContent({ owner, repo, path, ref: 'main' });
-              receiptVerified = readback.data.type === 'file' &&
-                Buffer.from(readback.data.content.replace(/\s/g, ''), 'base64').toString('utf8') === text + '\n';
-            } catch (e) {
-              error = 'HTTP ' + (e.status || 'unknown') + ': ' + String(e.message || e).slice(0, 160);
-            }
-            const suffix = receiptVerified
-              ? '_Receipt: ' + path + '_'
-              : '_Receipt: receipt persistence/readback failed: ' + (error || 'readback mismatch') + '_';
-            const body = text + '\n\n' + suffix;
+            // GitHub main is PR-protected: trying contents PUT here returns HTTP 409.
+            // The bot-authored Issue #6 comment is the durable conversation receipt.
+            // The caller independently GETs both source and reply comment IDs.
+            const body = text + '\n\n_Receipt: authenticated GitHub issue comment; verify via API readback_';
             const posted = await github.rest.issues.createComment({ owner, repo, issue_number: 6, body });
             const echo = await github.rest.issues.getComment({ owner, repo, comment_id: posted.data.id });
             if (echo.data.body !== body) {
               core.setFailed('ICARUS_REPLY_BLOCKED: GitHub comment readback mismatch');
               return;
             }
-            core.info('Icarus reply source=' + sourceId + ' comment=' + posted.data.id + ' receipt_verified=' + receiptVerified);
-            if (!receiptVerified) core.setFailed('ICARUS_RECEIPT_BLOCKED: ' + (error || 'GitHub file readback mismatch'));
+            core.info('Icarus reply source=' + sourceId + ' comment=' + posted.data.id + ' issue_readback=VERIFIED');
