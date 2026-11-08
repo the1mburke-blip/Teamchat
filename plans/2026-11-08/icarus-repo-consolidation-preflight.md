@@ -115,3 +115,24 @@ HV-EXP-157 records the affected-suite result before repair: 86 passed, 2 failed.
 12. **R12 LEARNING MUST BE LOGGED** — HV-EXP-157 captured the regression; record any further failure before retry.
 
 [UPDATED_REPAIR] Add `icarus/core` to `dsh.cordis.kernel.HARD_DENY`; run only the two targeted deny-path tests once, then the affected suite once. Preserve output. CI remains the Docker verification surface.
+
+
+## Owner-authorized local Docker harness route (2026-11-08T22:13Z)
+
+Michael explicitly directed: “Ensure the updated trusted-file list passes the harness locally before opening the PR against `main`.” This supersedes the earlier local-route limit that avoided starting Docker. Start the already installed Docker Desktop engine solely to run the requested local harness. No install, config/credential edit, external provider call, or paid service is authorized. If Docker startup prompts for policy approval, licensing/payment, or configuration change, stop and report it. First attempt should use the existing local image; build from the repository Dockerfile only if needed and if it has no monetary spend. €0 remains binding.
+
+### R1–R12 re-review for the owner-directed service start
+1. **R1 PRIOR ART FIRST** — use the repository's existing Docker harness and Dockerfile.
+2. **R2 PREFLIGHT FIRST** — this owner instruction and replacement preflight are recorded/read back before starting Docker.
+3. **R3 CORRECT ROUTING** — local engine executes the requested harness; GitHub Actions remains independent post-PR evidence.
+4. **R4 HISTORY/TRAINING FIRST** — apply HV-EXP-124 and HV-EXP-153–157; Docker was previously absent, so start the installed engine once.
+5. **R5 NO EVIDENCE = NO CLAIM** — service started is not harness PASS; report actual command result separately.
+6. **R6 €0 / SPEND DISCIPLINE** — no paid services or provider; stop on any paid prompt; no installation/config mutation.
+7. **R7 ALLOWANCE DISCIPLINE** — no provider tokens; local Docker resource use is unmetered, no extra API route.
+8. **R8 NO BLIND RETRIES** — after start, inspect engine/image; build only if missing; don't repeat an identical failure.
+9. **R9 WORK THE BLOCKER** — the user-authorized local engine start resolves the named harness prerequisite within scope.
+10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — this addendum records the authorization and exact limits; stop/re-review if broader action is needed.
+11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — only the full harness output establishes local PASS.
+12. **R12 LEARNING MUST BE LOGGED** — record and read back any startup/build/harness failure before retry.
+
+[UPDATED_DOCKER_ROUTE] Start the existing engine, inspect local image availability, then run the updated harness. No install or system configuration change.
