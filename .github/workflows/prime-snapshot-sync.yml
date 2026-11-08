@@ -17,8 +17,22 @@ on:
       - 'BUFFER_QUEUE_STATE.md'
       - 'BLOG_QUEUE_STATE.md'
       - 'scripts/update_prime_snapshot.py'
+      - 'scripts/prime_snapshot_sync.py'
   # Schedule removed 2026-10-28 (owner): GitHub Actions minutes are exhausted. Disabled, not deleted.
   workflow_dispatch:
+    inputs:
+      pulse_run_id:
+        description: Originating ICARUS Pulse run ID
+        type: string
+        required: false
+      pulse_event:
+        description: Originating ICARUS Pulse event
+        type: string
+        required: false
+      pulse_sha:
+        description: Originating ICARUS Pulse checkout SHA
+        type: string
+        required: false
 
 permissions:
   contents: write
@@ -26,8 +40,8 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: prime-snapshot-sync
-  cancel-in-progress: true
+  group: prime-snapshot-sync-${{ inputs.pulse_run_id || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -63,7 +77,7 @@ jobs:
 
       - name: Refresh Buffer queue state
         id: buffer_refresh
-        if: steps.gate.outputs.allowed == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        if: steps.gate.outputs.allowed == 'true' && github.ref == 'refs/heads/main' && !inputs.pulse_run_id && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
         run: |
@@ -103,73 +117,14 @@ jobs:
         if: steps.gate.outputs.allowed == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PULSE_RUN_ID: ${{ inputs.pulse_run_id }}
+          PULSE_EVENT: ${{ inputs.pulse_event }}
+          PULSE_SHA: ${{ inputs.pulse_sha }}
         run: python scripts/update_prime_snapshot.py
 
-      - name: Update fixed Google Form response
+      - name: Append new Google Form response
         if: steps.gate.outputs.allowed == 'true'
         env:
+          PRIME_SNAPSHOT_FORM_URL: ${{ secrets.PRIME_SNAPSHOT_FORM_URL }}
           PRIME_SNAPSHOT_EDIT_URL: ${{ secrets.PRIME_SNAPSHOT_EDIT_URL }}
-        run: |
-          python - <<'PY'
-          import html
-          import json
-          import os
-          import urllib.parse
-          import urllib.request
-          from html.parser import HTMLParser
-
-          class FormParser(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.action = None
-                  self.hidden = {}
-              def handle_starttag(self, tag, attrs):
-                  attrs = dict(attrs)
-                  if tag == "form" and attrs.get("action") and self.action is None:
-                      self.action = attrs["action"]
-                  if tag == "input" and attrs.get("type") == "hidden" and attrs.get("name"):
-                      self.hidden[attrs["name"]] = attrs.get("value", "")
-
-          edit_url = os.environ["PRIME_SNAPSHOT_EDIT_URL"]
-          if not edit_url.startswith("https://docs.google.com/forms/"):
-              raise SystemExit("Invalid PRIME_SNAPSHOT_EDIT_URL")
-
-          req = urllib.request.Request(edit_url, headers={"User-Agent":"HumanVibe-Prime-Snapshot/1.0"})
-          with urllib.request.urlopen(req, timeout=30) as resp:
-              page = resp.read().decode("utf-8", errors="replace")
-
-          parser = FormParser()
-          parser.feed(page)
-          if not parser.action:
-              raise SystemExit("Google Form edit page did not expose a form action")
-
-          payload = json.load(open("prime_snapshot_payload.json", encoding="utf-8"))
-          data = dict(parser.hidden)
-          data.update({
-              "entry.1699301106": payload["run_id"],
-              "entry.807518215": payload["marker"],
-              "entry.465536805": payload["sequence"],
-              "entry.1756592575": payload["total"],
-              "entry.414143502": payload["snapshot"],
-          })
-
-          encoded = urllib.parse.urlencode(data).encode("utf-8")
-          post = urllib.request.Request(
-              parser.action,
-              data=encoded,
-              headers={
-                  "Content-Type":"application/x-www-form-urlencoded",
-                  "User-Agent":"HumanVibe-Prime-Snapshot/1.0",
-              },
-              method="POST",
-          )
-          with urllib.request.urlopen(post, timeout=60) as resp:
-              body = resp.read().decode("utf-8", errors="replace")
-              status = resp.status
-
-          if status != 200:
-              raise SystemExit(f"Google Form update failed HTTP {status}")
-          if "Your response has been recorded" not in body and "Edit your response" not in body:
-              print("FORM_UPDATE_HTTP_200 confirmation-text-not-detected")
-          print(f"FORM_UPDATE_OK marker={payload['marker']} chars={len(payload['snapshot'])}")
-          PY
+        run: python scripts/prime_snapshot_sync.py

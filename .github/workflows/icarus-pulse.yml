@@ -34,12 +34,13 @@ jobs:
           python3 scripts/icarus_duty_runner.py
 
       - name: Dispatch Prime Snapshot Sync
-        if: ${{ success() && hashFiles('RUN_LOG.jsonl') != '' }}
-        continue-on-error: true
+        if: ${{ !cancelled() && github.run_attempt == 1 && hashFiles('RUN_LOG.jsonl') != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh workflow run prime-snapshot-sync.yml --ref main
+        run: |
+          gh workflow run prime-snapshot-sync.yml --ref "$GITHUB_REF_NAME" \
+            -f pulse_run_id="$GITHUB_RUN_ID" -f pulse_event="$GITHUB_EVENT_NAME" -f pulse_sha="$GITHUB_SHA"
 
       - name: Persist Execution Evidence
         if: always()
