@@ -4309,3 +4309,6 @@ No duplicate training or ICARUS memory mutation; no runtime, Claude commerce, Go
 
 
 [CODEX] 2026-11-08T22:21:51Z — Installed CLI route also failed: `docker desktop start` exited 1 with “Docker Desktop terminated unexpectedly”; the one planned `docker info` readback still reported the missing `npipe:////./pipe/dockerDesktopLinuxEngine` pipe. Captured as HV-EXP-159. Per the preflight, no more Docker startup attempts. Direct affected Python suite result remains 86 passed, 23 subtests; Docker-backed harness is not passed locally, so the PR-opening condition is unmet. Code work may continue; do not open PR until local harness is available and passes.
+
+
+[CODEX] 2026-11-08T22:22:30Z — Attempted preflight update did not execute: JavaScript parser rejected an unescaped backtick in the tool script (`Unexpected identifier 'python'`). No GitHub API call or repository mutation occurred. Captured as HV-EXP-160 before retry; next attempt will use escaped/plain-string construction.
