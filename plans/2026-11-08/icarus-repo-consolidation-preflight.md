@@ -94,3 +94,24 @@ The direct Python test attempt and exact aggregate result were durably logged/re
 12. **R12 LEARNING MUST BE LOGGED** — HV-EXP-156 is recorded; append additional verified causes before any further retry.
 
 [UPDATED_LOCAL_TEST] Use one affected-suite run with `TMP` and `TEMP` pointed to a writable directory under this repository, preserving full output to an allowed workspace file. Do not rerun the Docker harness or the prior command unchanged.
+
+
+## Re-preflight after core-path protection regression (2026-11-08T22:13Z)
+
+HV-EXP-157 records the affected-suite result before repair: 86 passed, 2 failed. Read-only inspection found `dsh/cordis/kernel.py:HARD_DENY` contains `icarus/runtime` but no `icarus/core`; `validate_path` already compares deny prefixes case-insensitively. The next code change adds `icarus/core` to this existing protected set and keeps both canonical and case-variant regression tests. The test run will be repeated once with the workspace temp root and complete output retained. No auth, runtime, provider, or deployment scope changes.
+
+### R1–R12 review for this repair
+1. **R1 PRIOR ART FIRST** — reuse the existing case-insensitive `HARD_DENY` mechanism; add no parallel policy.
+2. **R2 PREFLIGHT FIRST** — HV-EXP-157 is read back; this scoped repair receipt is read back before editing.
+3. **R3 CORRECT ROUTING** — edit local policy/test files; use GitHub only for branch commits and PR evidence.
+4. **R4 HISTORY/TRAINING FIRST** — apply HV-EXP-157 and prior HV-EXP-124/153/154/155.
+5. **R5 NO EVIDENCE = NO CLAIM** — current test proves only the two path checks fail; rerun required after repair.
+6. **R6 €0 / SPEND DISCIPLINE** — no paid service or provider call; no Docker startup.
+7. **R7 ALLOWANCE DISCIPLINE** — stay within remaining bounded shell/connector budget; tokens remain unmetered.
+8. **R8 NO BLIND RETRIES** — change the missing canonical deny prefix, then run focused tests before the full suite.
+9. **R9 WORK THE BLOCKER** — repair DSH's own path policy, preserving denied access through all runtime layers.
+10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — no route/scope/cost change; this addendum records the evidence and exact repair.
+11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — only focused and suite outputs can establish the fix.
+12. **R12 LEARNING MUST BE LOGGED** — HV-EXP-157 captured the regression; record any further failure before retry.
+
+[UPDATED_REPAIR] Add `icarus/core` to `dsh.cordis.kernel.HARD_DENY`; run only the two targeted deny-path tests once, then the affected suite once. Preserve output. CI remains the Docker verification surface.
