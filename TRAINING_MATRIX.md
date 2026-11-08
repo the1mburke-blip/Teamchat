@@ -2233,3 +2233,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not rerun the same Docker command unchanged or start/install Docker as an inferred side effect. Run direct local Python tests, then rely on the PR workflow only for a fresh build/run receipt.
 - recovery_status: Docker harness BLOCKED locally; direct suite and PR Actions remain to be run/read back.
 - external_cost: EUR 0; no provider spend; runtime allowance not measurable.
+
+
+[CODEX] ## HV-EXP-156 — Route pytest temporary files into the writable workspace (2026-11-08)
+- experience_id: HV-EXP-156; date_utc: 2026-11-08.
+- incident: The direct affected-suite command exited 1 with 42 failed, 28 passed, 46 errors, and 19 subtests passed. Captured errors include `PermissionError: [WinError 5] Access is denied` during `TemporaryDirectory` cleanup under the sandbox AppData Temp root. The output was truncated, so non-temp-related causes have not yet been classified.
+- evidence: tool readback for the command showed the test summary and repeated teardown paths under `C:\Users\the1m\AppData\Local\Packages\sandbox...\AC\Temp`; no test run was repeated.
+- lesson: In a restricted Windows runner, check that Python's temp root is writable before interpreting a broad suite failure as source regression. Preserve the initial result, then use an explicitly writable workspace temp root and inspect any remaining first failure.
+- what_not_to_retry: Do not rerun the same command with the sandbox AppData temp path or treat the aggregate result as a meaningful code verdict.
+- recovery_status: Initial direct suite result FAIL/ENVIRONMENT-TAINTED; diagnosis incomplete pending a materially different temp path. Docker harness remains independently BLOCKED.
+- external_cost: EUR 0; token/runtime allowance not measurable.
