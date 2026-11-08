@@ -179,3 +179,24 @@ HV-EXP-160 also records a preflight-update script syntax failure (no API write);
 12. **R12 LEARNING MUST BE LOGGED** — all known failures through HV-EXP-160 are recorded/read back; append later failures before retry.
 
 [UPDATED_ENDPOINT] Source refactor and branch commit may be completed. PR creation is HOLD pending a successful local python harness_runner.py run with the repository Docker image. No more Docker start attempts under this preflight.
+## Re-preflight after local completion-integrity diagnosis (2026-11-08T22:35Z)
+
+HV-EXP-161 is diagnosed and the cause is recorded/read back as HV-EXP-162: a prior CHAT_LOG entry contains the whole word “completed”, so the exact existing protected-log matcher requires an Actions-backed receipt. The gate remains unchanged. Source refactor commit is 99dc2f5f6139ed0519d06ced503a3facff40ec30 and remote branch readback matched it. Direct affected suite: 86 passed and 23 subtests passed with workspace TMP/TEMP. Local Docker harness has not passed; Docker Desktop terminated unexpectedly. Local completion-integrity invocation on the committed head returns the receipt-required error. No PR is opened.
+
+[UPDATED_CI_ROUTE] Once the local Docker harness condition is met, open the PR. The first GitHub Actions harness run must build/run and emit COMPLETION_MANIFEST. Use the repository's receipt workflow/CLI as allowed to add only the required receipt JSON, then rerun completion-integrity and read both required checks on the final PR head. Do not weaken the gate or rewrite append-only logs.
+
+### R1–R12 re-review
+1. **R1 PRIOR ART FIRST** — use the exact existing trusted harness, manifest and receipt flow.
+2. **R2 PREFLIGHT FIRST** — HV-EXP-161/162 read back; this re-preflight is read back before any follow-up.
+3. **R3 CORRECT ROUTING** — remote source commit is prepared; PR wait is based on the explicit local test condition.
+4. **R4 HISTORY/TRAINING FIRST** — apply HV-EXP-124 and HV-EXP-153–162; preserve the new matcher diagnosis.
+5. **R5 NO EVIDENCE = NO CLAIM** — source commit and pytest are not Docker harness PASS; local audit FAIL means receipt absent.
+6. **R6 €0 / SPEND DISCIPLINE** — no paid provider, installation, or gate bypass.
+7. **R7 ALLOWANCE DISCIPLINE** — remain within bounded operations; unmetered token usage is unknown.
+8. **R8 NO BLIND RETRIES** — don't rerun the same local audit or Docker startup without changed evidence.
+9. **R9 WORK THE BLOCKER** — preserve the branch artifact and resume the authorized PR sequence when local Docker is available.
+10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — any alternative to the local-harness condition requires owner direction and a new review.
+11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — branch ready, harness BLOCKED, integrity receipt pending, no PR.
+12. **R12 LEARNING MUST BE LOGGED** — all causes through HV-EXP-162 have been logged/read back; report terminal status and later verify.
+
+[STATUS] PARTIAL. Source refactor is committed/read back on the authorized branch; affected Python tests pass. PR remains blocked by the explicit local Docker-harness precondition. No PR URL exists.
