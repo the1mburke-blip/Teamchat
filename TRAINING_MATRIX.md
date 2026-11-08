@@ -2283,3 +2283,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not resend the same unescaped template literal.
 - recovery_status: Captured before correction; retry may use a materially corrected string construction.
 - external_cost: EUR 0; no API call completed.
+
+
+[CODEX] ## HV-EXP-161 — Diagnose unexpected completion receipt requirement on source refactor (2026-11-08)
+- experience_id: HV-EXP-161; date_utc: 2026-11-08.
+- incident: Local invocation of the exact completion-integrity CLI against the remote branch commit exited 1 with `FRAUDULENT_OR_UNVERIFIED_COMPLETION_CLAIM: No completion receipt accompanies the state write`.
+- evidence: command was `python -m icarus.harness.runner --audit-state-writes`, with ICARUS_AUDIT_BASE=`1f0a35eeb1b99395632416233392f7794c7375b5` and ICARUS_AUDIT_HEAD=`99dc2f5f6139ed0519d06ced503a3facff40ec30`; exit code 1.
+- lesson: A source-only refactor can still trip the append-only CHAT_LOG completion-claim detector; inspect actual changed paths and appended bytes before assuming the audit's state-write classification.
+- what_not_to_retry: Do not rerun the same audit without diagnosing its protected-path trigger; do not weaken or bypass the gate.
+- recovery_status: Local completion-integrity FAIL pending path/claim diagnosis. Docker harness independently remains BLOCKED; PR not opened.
+- external_cost: EUR 0; no provider or paid service.
