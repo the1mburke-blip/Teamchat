@@ -4303,3 +4303,6 @@ No duplicate training or ICARUS memory mutation; no runtime, Claude commerce, Go
 
 
 [CODEX] 2026-11-08T22:13:29Z — Workspace-temp affected suite retry completed: 86 passed, 2 failed, 21 subtests passed in 32.05s. Both failures are the added `tests/test_kernel.py` deny-path cases: `icarus/core/runtime.py` and `ICARUS/CORE/runtime.py` were allowed by `dsh.cordis.kernel.validate_path`. Failure captured as HV-EXP-157. Diagnosis: the new package path was not added to the DSH kernel's protected-path policy. Next materially different action is inspect that validator and add a case-insensitive core-prefix denial before a focused rerun. No source change from the run; €0 spend.
+
+
+[CODEX] 2026-11-08T22:19:17Z — Owner-authorized Docker Desktop start attempt did not start the engine: `Start-Process` returned, but no `Docker Desktop`, `com.docker.backend`, or `com.docker.service` process was present, and the follow-up `docker info` still failed on missing `npipe:////./pipe/dockerDesktopLinuxEngine`. `docker context ls` confirms `desktop-linux` is selected. Captured as HV-EXP-158 before any further startup attempt. No config/service install was attempted; local Python suite remains 86 passed after the path-policy fix. €0.
