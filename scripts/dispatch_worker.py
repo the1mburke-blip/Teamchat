@@ -25,12 +25,18 @@ def gh(*args):
     return run("gh", *args).stdout.strip()
 
 
-def read_dispatch(event_path, repository, number):
+def read_dispatch(event_path, repository, number, event_name):
     event = json.loads(Path(event_path).read_text(encoding="utf-8"))
-    issue = event["issue"]
-    if (number < 1 or type(issue["number"]) is not int or issue["number"] != number
-            or event["action"] != "labeled" or event["label"]["name"] != LABEL
-            or event["repository"]["full_name"] != repository
+    if number < 1 or event["repository"]["full_name"] != repository:
+        raise ValueError("Invalid dispatch issue or repository")
+    if event_name == "workflow_dispatch" and str(event["inputs"]["issue_number"]) == str(number):
+        # Manual dispatch events carry an issue number rather than an issue body.
+        issue = json.loads(gh("api", f"repos/{repository}/issues/{number}"))
+    elif event_name == "issues" and event["action"] == "labeled" and event["label"]["name"] == LABEL:
+        issue = event["issue"]
+    else:
+        raise ValueError("Event does not match the requested issue dispatch")
+    if (type(issue["number"]) is not int or issue["number"] != number
             or issue["state"] != "open" or "pull_request" in issue):
         raise ValueError("Event does not match an open issue dispatch in this repository")
     body = issue.get("body")
@@ -130,8 +136,10 @@ def main():
     try:
         repository = os.environ["GITHUB_REPOSITORY"]
         base_sha = os.environ["GITHUB_SHA"]
-        instructions, base = read_dispatch(os.environ["GITHUB_EVENT_PATH"], repository, number)
-        check_issue(repository, number)
+        event_name = os.environ["GITHUB_EVENT_NAME"]
+        instructions, base = read_dispatch(os.environ["GITHUB_EVENT_PATH"], repository, number, event_name)
+        if event_name == "issues":
+            check_issue(repository, number)
         branch = f"worker/{number}"
         head = prepare_commit(number, instructions, branch, base_sha)
         head = publish_branch(branch, head)

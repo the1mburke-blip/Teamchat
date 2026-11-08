@@ -3,14 +3,20 @@ name: Icarus Issue Dispatch Worker
 on:
   issues:
     types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Open Teamchat issue to dispatch
+        required: true
+        type: number
 
 jobs:
   dispatch:
-    if: github.event.label.name == 'icarus-dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'icarus-dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:
-      group: icarus-dispatch-${{ github.event.issue.number }}
+      group: icarus-dispatch-${{ inputs.issue_number || github.event.issue.number }}
       cancel-in-progress: false
     permissions:
       contents: write
@@ -29,5 +35,5 @@ jobs:
       - name: Run the worker and publish its reviewed handoff
         env:
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ inputs.issue_number || github.event.issue.number }}
         run: python scripts/dispatch_worker.py --issue-number "$ISSUE_NUMBER"
