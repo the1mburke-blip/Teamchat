@@ -2253,3 +2253,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not rerun the same suite unchanged or assume one runtime's HARD_DENY protects DSH; inspect `validate_path` and add the new canonical/case-insensitive path before focused retest.
 - recovery_status: Failure logged before retry. Next route is policy inspection/edit followed by focused deny-path tests, then full affected suite.
 - external_cost: EUR 0; no provider; token allowance not measurable.
+
+
+[CODEX] ## HV-EXP-158 — Docker Desktop process start did not bring up the engine (2026-11-08)
+- experience_id: HV-EXP-158; date_utc: 2026-11-08.
+- incident: After Michael authorized the existing local Docker start for the harness, PowerShell `Start-Process` returned, but process readback found no `Docker Desktop`, `com.docker.backend`, or `com.docker.service` process. `docker info` continued to fail because `npipe:////./pipe/dockerDesktopLinuxEngine` did not exist. The selected Docker context is `desktop-linux`.
+- evidence: exact `docker info` error says the named pipe could not be found; `Get-Process` returned no matching processes; `docker context ls` listed `desktop-linux` selected and endpoint `npipe:////./pipe/dockerDesktopLinuxEngine`.
+- lesson: A successful `Start-Process` invocation is not evidence that the engine started. Read back the process and server endpoint before invoking a Docker-backed harness.
+- what_not_to_retry: Do not repeat the same hidden process start unchanged or treat the active context as a live daemon. Do not install Docker or change service/configuration.
+- recovery_status: Local Docker harness remains BLOCKED. Direct affected Python suite passes (86 passed, 23 subtests); remote CI still must run Docker.
+- external_cost: EUR 0; no provider spend.
