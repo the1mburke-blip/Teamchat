@@ -157,3 +157,25 @@ HV-EXP-158 captured the failed hidden `Start-Process` path. Read-only inspection
 12. **R12 LEARNING MUST BE LOGGED** — record and read back any CLI/start failure before another action.
 
 [UPDATED_ENGINE_ROUTE] One `docker desktop start`, then one `docker info` readback. Stop if engine remains unavailable or approval is required.
+
+## Re-preflight: local Docker start is blocked; PR remains gated (2026-11-08T22:21Z)
+
+The one product-CLI Docker start and one server readback failed as recorded/read back in HV-EXP-159. No more Docker startup attempts, daemon/config edits, or installs. This leaves the user-directed condition “before opening the PR” unmet: the Docker-backed harness has NOT passed locally. Do not create/open a PR yet. Continue only with source/reference inspection, static validation, direct local Python suite (86 passed/23 subtests with workspace TMP/TEMP), and remote branch preparation via GitHub tree/commit/ref APIs. After source commit and readback, wait for Michael to make the existing Docker engine available or give a different explicit instruction. The final PR must not be created until the local Docker harness passes; PR Actions then remain required verification.
+
+HV-EXP-160 also records a preflight-update script syntax failure (no API write); use corrected plain-string construction.
+
+### R1–R12 re-review for the blocked PR route
+1. **R1 PRIOR ART FIRST** — preserve direct test evidence and the existing Docker/CI gate.
+2. **R2 PREFLIGHT FIRST** — HV-EXP-159 and HV-EXP-160 are read back; this replacement is read back before further execution.
+3. **R3 CORRECT ROUTING** — GitHub connector may prepare the authorized branch commit; no PR while prerequisite unmet.
+4. **R4 HISTORY/TRAINING FIRST** — apply HV-EXP-124 and HV-EXP-153–160, including all recorded launch/test/tool-script failures.
+5. **R5 NO EVIDENCE = NO CLAIM** — local pytest is not the Docker harness; report Docker status BLOCKED.
+6. **R6 €0 / SPEND DISCIPLINE** — no paid provider, service, install, or daemon/config modification.
+7. **R7 ALLOWANCE DISCIPLINE** — remain within bounded tool budgets; model tokens are unmetered.
+8. **R8 NO BLIND RETRIES** — no more Docker startup or unchanged test command; retain exact logs.
+9. **R9 WORK THE BLOCKER** — finish the source branch artifact, preserving the PR hold until local Docker passes.
+10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — any owner instruction changing PR gate, Docker route, or cost requires another review.
+11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — branch commits/direct tests are intermediate; no PR or harness PASS claim.
+12. **R12 LEARNING MUST BE LOGGED** — all known failures through HV-EXP-160 are recorded/read back; append later failures before retry.
+
+[UPDATED_ENDPOINT] Source refactor and branch commit may be completed. PR creation is HOLD pending a successful local python harness_runner.py run with the repository Docker image. No more Docker start attempts under this preflight.
