@@ -52,3 +52,24 @@ Direct read of `dsh/state_write_gate.py` confirms `protected(path)` returns fals
 - Ghost/experimental workflows operate on separate draft paths; they are not direct consumers of files being moved. No deletion is authorized by this audit.
 
 [UPDATED_ROUTE] Continue the authorized code-only refactor as scoped; no protected governance/runtime state files will be edited. If testing requires a config/state mutation or tests trigger provider access, stop and re-preflight.
+
+
+## Re-preflight after local Docker blocker (2026-11-08T21:54Z)
+
+Material verification-route update under R10: `docker image inspect teamchat-harness:test` exited 1 because the Docker Desktop Linux engine pipe was absent. The exact failure was recorded and read back as HV-EXP-155 before changing route. Do not start or install Docker. Local Docker harness status is BLOCKED; run the directly executable Python suite against the edited worktree as the local substitute. The PR's `harness` job must independently build `teamchat-harness:test` from the PR head and run the container harness. The `completion-integrity` job must run on the same head. Report these outcomes separately.
+
+### R1–R12 re-review for the changed verification route
+1. **R1 PRIOR ART FIRST** — no source architecture change; known Docker wrapper contract and PR gate retained.
+2. **R2 PREFLIGHT FIRST** — HV-EXP-155 was recorded/read back; this replacement receipt is read back before direct tests.
+3. **R3 CORRECT ROUTING** — direct Python suite runs locally; Docker image harness runs only in PR Actions where the runner can build it.
+4. **R4 HISTORY/TRAINING FIRST** — apply HV-EXP-124, HV-EXP-153, HV-EXP-154 and new HV-EXP-155.
+5. **R5 NO EVIDENCE = NO CLAIM** — local Python tests cannot be described as Docker harness pass; wait for separate CI readback.
+6. **R6 €0 / SPEND DISCIPLINE** — no daemon startup, installation, provider, secret, or paid API.
+7. **R7 ALLOWANCE DISCIPLINE** — remain within the previously bounded request/shell caps; unknown token usage remains unmetered.
+8. **R8 NO BLIND RETRIES** — the unavailable Docker pipe is not retried unchanged; the local route materially changes to Python tests.
+9. **R9 WORK THE BLOCKER** — complete independent source/tests work, then use the authorized public-repository Actions path for container verification.
+10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — this addendum captures the route change; any further change triggers another review.
+11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — local suite and both PR checks need actual exit/conclusion evidence.
+12. **R12 LEARNING MUST BE LOGGED** — HV-EXP-155 is durable and read back; log final outcomes separately.
+
+[UPDATED_LOCAL_ROUTE] Run `python -m pytest` on the bounded affected suites (or full suite if available); do not claim the Docker-backed `harness` job locally passed. The PR gate remains mandatory.
