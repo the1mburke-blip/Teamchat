@@ -2293,3 +2293,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not rerun the same audit without diagnosing its protected-path trigger; do not weaken or bypass the gate.
 - recovery_status: Local completion-integrity FAIL pending path/claim diagnosis. Docker harness independently remains BLOCKED; PR not opened.
 - external_cost: EUR 0; no provider or paid service.
+
+
+[CODEX] ## HV-EXP-162 — Completion matcher treats completed test runs as protected claims (2026-11-08)
+- experience_id: HV-EXP-162; date_utc: 2026-11-08.
+- incident: HV-EXP-161 local completion-integrity run required a receipt. Comparing changed CHAT_LOG bytes against the gate's exact matcher located the trigger: “Workspace-temp affected suite retry completed: 86 passed...” contains whole-word `completed` and therefore requires protected-state proof.
+- evidence: `dsh/state_write_gate.py` applies `CLAIM` to appended CHAT_LOG text; the changed branch diff contains that exact line. No source or gate modification was made to suppress it.
+- lesson: The gate deliberately requires receipt evidence for append-only CHAT_LOG lines that say any work completed, even a test run. The PR's harness job must generate a manifest, followed by a receipt-only commit and a fresh completion-integrity readback.
+- what_not_to_retry: Do not remove/rewrite the append-only log, weaken the matcher, or repeat the local audit expecting PASS without an Actions-backed receipt.
+- recovery_status: Root cause VERIFIED. Local audit failure is expected until a GitHub Actions harness artifact can be converted into a receipt. PR creation is separately gated by Michael's local Docker-harness requirement, which remains blocked.
+- external_cost: EUR 0; no provider spend.
