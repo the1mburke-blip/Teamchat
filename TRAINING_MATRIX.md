@@ -2273,3 +2273,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not rerun either startup route unchanged, alter Docker/WSL configuration, install components, or open the PR before the owner's explicit local harness condition is met.
 - recovery_status: Local Docker harness NOT PASSED/BLOCKED. Direct affected Python suite passed (86 tests, 23 subtests), but this does not satisfy the Docker harness requirement. Continue code work; PR creation remains gated on local Docker harness pass.
 - external_cost: EUR 0; no provider spend.
+
+
+[CODEX] ## HV-EXP-160 — Validate tool-script quoting before composing a preflight write (2026-11-08)
+- experience_id: HV-EXP-160; date_utc: 2026-11-08.
+- incident: A preflight-update call failed at JavaScript parse time with `Unexpected identifier 'python'` because a Markdown backtick was unescaped inside a template literal.
+- evidence: tool returned a script SyntaxError before invoking any GitHub API; no remote write occurred.
+- lesson: Use safely escaped/plain-string content when constructing Markdown with code spans in tool scripts; verify the script parses before the API call.
+- what_not_to_retry: Do not resend the same unescaped template literal.
+- recovery_status: Captured before correction; retry may use a materially corrected string construction.
+- external_cost: EUR 0; no API call completed.
