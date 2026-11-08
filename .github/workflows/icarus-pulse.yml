@@ -5,11 +5,15 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
+concurrency:
+  group: icarus-issue-6-intake
+  cancel-in-progress: false
+
 jobs:
   icarus-pulse:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       issues: write
 
     steps:
