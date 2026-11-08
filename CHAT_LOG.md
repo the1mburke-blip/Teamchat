@@ -4306,3 +4306,6 @@ No duplicate training or ICARUS memory mutation; no runtime, Claude commerce, Go
 
 
 [CODEX] 2026-11-08T22:19:17Z — Owner-authorized Docker Desktop start attempt did not start the engine: `Start-Process` returned, but no `Docker Desktop`, `com.docker.backend`, or `com.docker.service` process was present, and the follow-up `docker info` still failed on missing `npipe:////./pipe/dockerDesktopLinuxEngine`. `docker context ls` confirms `desktop-linux` is selected. Captured as HV-EXP-158 before any further startup attempt. No config/service install was attempted; local Python suite remains 86 passed after the path-policy fix. €0.
+
+
+[CODEX] 2026-11-08T22:21:51Z — Installed CLI route also failed: `docker desktop start` exited 1 with “Docker Desktop terminated unexpectedly”; the one planned `docker info` readback still reported the missing `npipe:////./pipe/dockerDesktopLinuxEngine` pipe. Captured as HV-EXP-159. Per the preflight, no more Docker startup attempts. Direct affected Python suite result remains 86 passed, 23 subtests; Docker-backed harness is not passed locally, so the PR-opening condition is unmet. Code work may continue; do not open PR until local harness is available and passes.
