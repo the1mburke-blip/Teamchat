@@ -136,3 +136,24 @@ Michael explicitly directed: “Ensure the updated trusted-file list passes the 
 12. **R12 LEARNING MUST BE LOGGED** — record and read back any startup/build/harness failure before retry.
 
 [UPDATED_DOCKER_ROUTE] Start the existing engine, inspect local image availability, then run the updated harness. No install or system configuration change.
+
+
+## Re-preflight for installed Docker Desktop CLI route (2026-11-08T22:19Z)
+
+HV-EXP-158 captured the failed hidden `Start-Process` path. Read-only inspection now confirms the installed Docker CLI plugin directory contains `docker-desktop.exe`, and no Desktop/backend/service process is present. Next attempt will use the distinct installed `docker desktop start` command to bring up the already installed engine. This adds no software and edits no config. If the command requires interaction, elevated privileges, license, or payment, stop. Read back engine status once; do not repeat unchanged.
+
+### R1–R12 re-review
+1. **R1 PRIOR ART FIRST** — use the installed, product-provided desktop CLI, not a custom service workaround.
+2. **R2 PREFLIGHT FIRST** — HV-EXP-158 read back; this route receipt is read back before command.
+3. **R3 CORRECT ROUTING** — local desktop CLI for local harness; PR Actions still validates hosted behavior.
+4. **R4 HISTORY/TRAINING FIRST** — apply HV-EXP-155/158 and prior ordering/path lessons.
+5. **R5 NO EVIDENCE = NO CLAIM** — command invocation is not engine readiness; query server pipe.
+6. **R6 €0 / SPEND DISCIPLINE** — no paid provider or install; stop on any license/payment prompt.
+7. **R7 ALLOWANCE DISCIPLINE** — bounded single start and one status read; token usage unmetered.
+8. **R8 NO BLIND RETRIES** — do not repeat PowerShell Start-Process; use the distinct documented CLI only once.
+9. **R9 WORK THE BLOCKER** — pursue this supported route within the owner's local harness authorization.
+10. **R10 MATERIAL CHANGE = RE-PREFLIGHT** — this route substitution is explicitly recorded.
+11. **R11 STARTED != COMPLETED / PASS REQUIRES EVIDENCE** — only successful engine and harness output establish local check.
+12. **R12 LEARNING MUST BE LOGGED** — record and read back any CLI/start failure before another action.
+
+[UPDATED_ENGINE_ROUTE] One `docker desktop start`, then one `docker info` readback. Stop if engine remains unavailable or approval is required.
