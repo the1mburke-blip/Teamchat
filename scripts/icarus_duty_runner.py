@@ -380,13 +380,21 @@ def main():
         "loop_state": "IDLE_SELECT",
         "first_processing_error": None,
     }
+    # Twelve slots per day for up to 30 days gives a 360-slot monthly budget.
+    cadence_skip = (
+        os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+        and (timestamp.hour % 2 != 0 or timestamp.day == 31)
+    )
     try:
-        token = os.getenv("GITHUB_TOKEN")
-        if not token:
-            raise RuntimeError("GITHUB_TOKEN is missing or empty")
-        repo = os.getenv("GITHUB_REPOSITORY", "the1mburke-blip/Teamchat")
-        mailbox = int(os.getenv("ICARUS_ISSUE_NUMBER", "6"))
-        monitor_issues(repo, mailbox, token, status)
+        if cadence_skip:
+            status.update(monitoring_result="SKIPPED", loop_state="SKIPPED_CADENCE")
+        else:
+            token = os.getenv("GITHUB_TOKEN")
+            if not token:
+                raise RuntimeError("GITHUB_TOKEN is missing or empty")
+            repo = os.getenv("GITHUB_REPOSITORY", "the1mburke-blip/Teamchat")
+            mailbox = int(os.getenv("ICARUS_ISSUE_NUMBER", "6"))
+            monitor_issues(repo, mailbox, token, status)
     except Exception as error:
         status.update(monitoring_result="FAILURE", first_processing_error=str(error))
 
@@ -396,6 +404,8 @@ def main():
     status["new_tasks_dispatched"] = len(receipts)
     if failed:
         status["intake_state"] = "ERROR"
+    elif cadence_skip:
+        status["intake_state"] = "SKIPPED"
     elif receipts:
         status["intake_state"] = "DELEGATED"
     else:
