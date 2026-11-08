@@ -5,8 +5,8 @@
  *
  * Why Apps Script: GitHub Actions minutes are exhausted; Apps Script time triggers cost EUR 0.
  * Triggers (installed by installAthenaTriggers):
- *   athenaPoll   every 5 minutes: run the oldest unprocessed OWNER comment starting "ICARUS_RUN" on a Teamchat issue
- *   athenaHourly every hour: the standing hourly repo check
+ *   athenaPoll   every 10 minutes: run the oldest unprocessed OWNER comment starting "ICARUS_RUN" on a Teamchat issue
+ *   athenaHourly every 2 hours: the standing repo check
  * Script Properties (existing ones are reused): GITHUB_PAT (or GITHUB_TOKEN), GEMINI_API_KEY,
  * optional OPENROUTER_API_KEY, optional ATHENA_REPO (default the1mburke-blip/Teamchat).
  *
@@ -49,7 +49,7 @@ var LOOP_STEPS = [
 
 /* ---------- entry points ---------- */
 
-/** Time trigger, every 5 minutes: handle at most one new team comment (ICARUS_RUN task, completion claim, or address). */
+/** Time trigger, every 10 minutes: handle at most one new team comment (ICARUS_RUN task, completion claim, or address). */
 function athenaPoll() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
@@ -76,7 +76,7 @@ function athenaPoll() {
   } finally { lock.releaseLock(); }
 }
 
-/** Time trigger, hourly: the standing hourly check (no reply comment; receipt only). */
+/** Time trigger, every 2 hours: the standing check (no reply comment; receipt only). */
 function athenaHourly() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) return;
@@ -90,11 +90,11 @@ function installAthenaTriggers() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (['athenaPoll', 'athenaHourly'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('athenaPoll').timeBased().everyMinutes(5).create();
-  ScriptApp.newTrigger('athenaHourly').timeBased().everyHours(1).create();
+  ScriptApp.newTrigger('athenaPoll').timeBased().everyMinutes(10).create();
+  ScriptApp.newTrigger('athenaHourly').timeBased().everyHours(2).create();
   var p = PropertiesService.getScriptProperties();
   if (!p.getProperty('ATHENA_SEEN_SINCE')) p.setProperty('ATHENA_SEEN_SINCE', new Date().toISOString());
-  return 'installed athenaPoll (5 min) and athenaHourly (1 h); secrets present: ' + JSON.stringify(secretStatus_());
+  return 'installed athenaPoll (10 min) and athenaHourly (2 h); secrets present: ' + JSON.stringify(secretStatus_());
 }
 
 /** Run by hand for a one-off check that the keys and repo access work (no model call, no writes). */
