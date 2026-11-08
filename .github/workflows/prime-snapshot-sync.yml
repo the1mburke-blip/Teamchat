@@ -1,24 +1,8 @@
 name: Prime Snapshot Sync
 
 on:
-  issues:
-    types: [opened, edited, closed, reopened, assigned, unassigned, labeled, unlabeled]
-  # issue_comment trigger removed 2026-10-28 (owner): every comment, including Icarus's replies, started a run. Disabled, not deleted.
-  push:
-    branches: [main]
-    paths:
-      - 'README.md'
-      - 'STATUS.md'
-      - 'OPERATING_RULES.md'
-      - 'HANDOFF_PROTOCOL.md'
-      - 'CONTENT_PIPELINE.md'
-      - 'CHAT_LOG.md'
-      - 'TRAINING_MATRIX.md'
-      - 'BUFFER_QUEUE_STATE.md'
-      - 'BLOG_QUEUE_STATE.md'
-      - 'scripts/update_prime_snapshot.py'
-      - 'scripts/prime_snapshot_sync.py'
-  # Schedule removed 2026-10-28 (owner): GitHub Actions minutes are exhausted. Disabled, not deleted.
+  schedule:
+    - cron: '0 */4 * * *'
   workflow_dispatch:
     inputs:
       pulse_run_id:
