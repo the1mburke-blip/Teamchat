@@ -64,6 +64,14 @@ sections = [
     f"SOURCE_REPOSITORY: {REPO}",
     f"TRIGGER: {os.environ.get('GITHUB_EVENT_NAME','unknown')}",
     f"RUN_ID: {os.environ.get('GITHUB_RUN_ID','unknown')}",
+]
+if pulse_id := os.environ.get("PULSE_RUN_ID"):
+    sections.extend([
+        f"PULSE_RUN_ID: {pulse_id}",
+        f"PULSE_TRIGGER: {os.environ['PULSE_EVENT']}",
+        f"PULSE_CHECKOUT_SHA: {os.environ['PULSE_SHA']}",
+    ])
+sections += [
     "",
     "## Recent Team Room comments — highest priority",
     "\n".join(team_room_lines),
