@@ -125,6 +125,10 @@ test('write_file without OWNER_APPROVED is denied; runtime paths always denied',
     gemini: (n) => n === 1 ? { answer: '', tool: { name: 'write_file', args: { path: 'icarus/athena-gas/Athena.gs', content: 'x' } } } : { answer: 'done', tool: null } });
   env2.ctx.athenaPoll();
   assert(!('icarus/athena-gas/Athena.gs' in env2.writes), 'runtime self-edit went through');
+  const env3 = makeEnv({ comments: ownerComment('ICARUS_RUN write\nOWNER_APPROVED: edit core runtime\nloop: off'),
+    gemini: (n) => n === 1 ? { answer: '', tool: { name: 'write_file', args: { path: 'icarus/core/runtime.py', content: 'x' } } } : { answer: 'done', tool: null } });
+  env3.ctx.athenaPoll();
+  assert(!('icarus/core/runtime.py' in env3.writes), 'core runtime write went through');
 });
 
 test('quota 429 fails over to the next approved model', () => {

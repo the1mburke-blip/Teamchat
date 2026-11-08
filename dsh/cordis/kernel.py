@@ -16,7 +16,7 @@ import time
 import uuid
 from dataclasses import dataclass
 
-HARD_DENY = {".git", ".github", "dsh/cordis", "icarus/runtime", ".icarus_lease.lock"}
+HARD_DENY = {".git", ".github", "dsh/cordis", "icarus/runtime", "icarus/core", ".icarus_lease.lock"}
 
 
 class LeaseError(RuntimeError):

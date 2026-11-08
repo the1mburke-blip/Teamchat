@@ -6,6 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 COPY proxy_monitor.py harness-runner.py ./
+COPY icarus/__init__.py ./icarus/__init__.py
+COPY icarus/harness/ ./icarus/harness/
 COPY dsh/ ./dsh/
 USER 1000:1000
 ENTRYPOINT ["python3", "proxy_monitor.py"]

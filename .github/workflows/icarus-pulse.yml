@@ -31,14 +31,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ICARUS_ISSUE_NUMBER: "6"
         run: |
-          python3 scripts/icarus_duty_runner.py
+          python3 -m icarus.core.duty_runner
 
       - name: Check ICARUS Pulse inference partition
         id: pulse_quota
         if: github.event_name == 'schedule'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python3 icarus/runtime/icarus_run.py --pulse-reserve
+        run: python3 -m icarus.core.runtime --pulse-reserve
 
       - name: Persist ICARUS Pulse inference reservation
         id: pulse_reservation
@@ -59,7 +59,7 @@ jobs:
           COMMENT_ID: pulse-${{ github.run_id }}
           COMMENT_ACTOR: schedule
           PULSE_RESERVATION_ID: ${{ steps.pulse_reservation.outputs.artifact-id }}
-        run: python3 icarus/runtime/icarus_run.py --pulse-infer
+        run: python3 -m icarus.core.runtime --pulse-infer
 
       - name: Persist Execution Evidence
         if: always()

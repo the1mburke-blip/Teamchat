@@ -6,10 +6,14 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import update_prime_snapshot as snapshot
+from icarus.core import snapshot
+from scripts import update_prime_snapshot as legacy_snapshot
 
 
 class PrimeSnapshotTests(unittest.TestCase):
+    def test_legacy_module_reexports_packaged_implementation(self):
+        self.assertIs(legacy_snapshot.main, snapshot.main)
+
     def test_comment_tail_crosses_pages_newest_first(self):
         first = [{"id": n} for n in range(1, 6)]
         previous = [{"id": n} for n in range(6, 11)]

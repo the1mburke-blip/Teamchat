@@ -96,7 +96,8 @@ class KernelChecks(unittest.TestCase):
     def test_all_named_protected_directories_are_denied(self):
         for target in (
             ".git/config", ".github/workflows/check.yml", "dsh/cordis/kernel.py",
-            "icarus/runtime/icarus_run.py", "nested/dsh/cordis/secret.py",
+            "icarus/runtime/icarus_run.py", "icarus/core/runtime.py",
+            "nested/dsh/cordis/secret.py",
         ):
             with self.subTest(target=target):
                 with self.assertRaises(SystemExit) as result:
@@ -106,7 +107,8 @@ class KernelChecks(unittest.TestCase):
     def test_case_variants_of_protected_paths_are_denied(self):
         for target in (
             ".GIT/config", ".GitHub/workflows/check.yml", "DSH/CORDIS/kernel.py",
-            "ICARUS/RUNTIME/icarus_run.py", "nested/DsH/CoRdIs/secret.py",
+            "ICARUS/RUNTIME/icarus_run.py", "ICARUS/CORE/runtime.py",
+            "nested/DsH/CoRdIs/secret.py",
         ):
             with self.subTest(target=target):
                 with self.assertRaises(SystemExit) as result:

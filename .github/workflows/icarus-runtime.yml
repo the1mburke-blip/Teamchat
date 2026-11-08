@@ -50,7 +50,7 @@ jobs:
             export COMMENT_ID="hourly-${{ github.run_id }}"
             export COMMENT_ACTOR="schedule"
           fi
-          python3 icarus/runtime/icarus_run.py
+          python3 -m icarus.core.runtime
 
       - name: Save receipt (append-only new file)
         if: always()

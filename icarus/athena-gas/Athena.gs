@@ -25,7 +25,7 @@ var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 var OR_BASE = 'https://openrouter.ai/api/v1';
 var FAILOVER_CODES = [0, 404, 408, 429, 500, 502, 503, 504];
 var HOURLY_TASK = 'ICARUS_RUN Hourly repo check (first duty of every hour): read icarus/runtime/endpoints.json and report the status of each endpoint and any with no check-in in 24 hours; then list icarus/memory, icarus/proposals and icarus/runs, read icarus/memory/current-state.md, and report what is new since the last receipt and anything that needs the owner.\nVERIFY_FILE: icarus/memory/identity.md\nVERIFY_FILE: icarus/runtime/endpoints.json';
-var HARD_DENY = ['.git/', '.github/', 'icarus/runtime/', 'icarus/athena-gas/'];
+var HARD_DENY = ['.git/', '.github/', 'icarus/runtime/', 'icarus/core/', 'icarus/athena-gas/'];
 var STOP = {};
 ('this that with from have been were will would should could there their what when where which about into your only also than then them they does done make made must need needs more most some such very each both over under after before again task rule rules read file files state states').split(' ').forEach(function (w) { STOP[w] = 1; });
 
@@ -34,7 +34,7 @@ var DEFAULT_CFG = {
   verifyUrlHosts: ['github.com', 'raw.githubusercontent.com', 'api.github.com'],
   tools: ['read_file', 'list_dir', 'read_issue', 'list_issues', 'write_file', 'delete_file', 'delegate'],
   maxToolCalls: 6, maxPlanSteps: 4, readPathPrefixes: [''], denyPathPrefixes: ['.git/'],
-  writeDenyPathPrefixes: ['.git/', '.github/workflows/', 'icarus/runtime/enforcement.json', 'icarus/runtime/icarus_run.py'],
+  writeDenyPathPrefixes: ['.git/', '.github/workflows/', 'icarus/runtime/enforcement.json', 'icarus/runtime/icarus_run.py', 'icarus/core/'],
   maxWrites: 8, delegateTargets: ['LUNA', 'SOL', 'PRIME', 'DEEPSEEK', 'CLAUDE', 'CODEX'], maxDelegations: 2, wakeIssue: 8,
   maxWriteBytes: 100000, readChunkChars: 4000, writeBack: true,
   riskyActionPattern: '\\b(publish|post to|send (?:an? )?(?:email|message|dm)|delete|purchase|buy|pay|transfer|deploy|force.push|wipe)\\b'

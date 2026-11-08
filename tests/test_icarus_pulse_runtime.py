@@ -7,10 +7,14 @@ from contextlib import chdir, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from icarus.runtime import icarus_run as runtime
+from icarus.core import runtime
+from icarus.runtime import icarus_run as legacy_runtime
 
 
 class PulseRuntimeTests(unittest.TestCase):
+    def test_legacy_runtime_module_reexports_packaged_implementation(self):
+        self.assertIs(legacy_runtime.main, runtime.main)
+
     def setUp(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.enterContext(chdir(root))

@@ -9,7 +9,8 @@ from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
-from scripts import icarus_duty_runner as runner
+from icarus.core import duty_runner as runner
+from scripts import icarus_duty_runner as legacy_runner
 
 
 def task(task_id):
@@ -270,3 +271,6 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["first_processing_error"],
                          "GET /repos/example/Teamchat/issues/19/comments: HTTP 503")
         self.assertFalse(self.posts)
+def test_legacy_module_reexports_packaged_implementation():
+    assert legacy_runner.main is runner.main
+
