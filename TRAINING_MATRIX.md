@@ -2243,3 +2243,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what_not_to_retry: Do not rerun the same command with the sandbox AppData temp path or treat the aggregate result as a meaningful code verdict.
 - recovery_status: Initial direct suite result FAIL/ENVIRONMENT-TAINTED; diagnosis incomplete pending a materially different temp path. Docker harness remains independently BLOCKED.
 - external_cost: EUR 0; token/runtime allowance not measurable.
+
+
+[CODEX] ## HV-EXP-157 — Extend DSH path denial to the new Icarus core package (2026-11-08)
+- experience_id: HV-EXP-157; date_utc: 2026-11-08.
+- incident: After relocating the runtime to `icarus/core/runtime.py`, two new tests failed: `test_all_named_protected_directories_are_denied` and its case-variant test. `dsh.cordis.kernel.validate_path` allowed both `icarus/core/runtime.py` and `ICARUS/CORE/runtime.py`.
+- evidence: affected-suite output captured at `C:\Users\the1m\Documents\Codex\.tmp-icarus-tests\icarus-consolidation-pytest.log`: 86 passed, 2 failed, 21 subtests passed. The same run resolved earlier temp cleanup errors by using workspace TMP/TEMP.
+- lesson: Moving a protected runtime into a new package requires updating each independent path-denial layer, including DSH Cordis, not only the runtime's own deny list and Athena.
+- what_not_to_retry: Do not rerun the same suite unchanged or assume one runtime's HARD_DENY protects DSH; inspect `validate_path` and add the new canonical/case-insensitive path before focused retest.
+- recovery_status: Failure logged before retry. Next route is policy inspection/edit followed by focused deny-path tests, then full affected suite.
+- external_cost: EUR 0; no provider; token allowance not measurable.
