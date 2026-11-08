@@ -4315,3 +4315,6 @@ No duplicate training or ICARUS memory mutation; no runtime, Claude commerce, Go
 
 
 [CODEX] 2026-11-08T22:32:00Z — Local execution of the exact completion-integrity CLI against base `1f0a35e...` and remote branch commit `99dc2f5...` exited 1: `FRAUDULENT_OR_UNVERIFIED_COMPLETION_CLAIM: No completion receipt accompanies the state write`. Captured as HV-EXP-161 before diagnosis/retry. The cause/path has not yet been isolated; next inspect changed paths and the appended CHAT_LOG claim matcher, then decide whether a legitimate receipt or an append-only wording correction is required. Do not repeat the CLI unchanged or bypass the gate.
+
+
+[CODEX] 2026-11-08T22:35:23Z — Diagnosis for HV-EXP-161: the changed paths include `CHAT_LOG.md`, and the append-only claim matcher matches the earlier line “Workspace-temp affected suite retry completed: 86 passed...” because it contains the exact whole word `completed`. The completion-integrity tool correctly requires a CI receipt for this protected log claim. No gate bypass or source-policy change made. Captured as HV-EXP-162. The PR route must preserve the two-phase proof: harness run produces the manifest; a receipt-only follow-up can satisfy completion-integrity. The local Docker harness condition remains unmet, so no PR.
