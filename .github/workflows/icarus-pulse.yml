@@ -1,8 +1,6 @@
 name: ICARUS Pulse & Operational Duty
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 concurrency:
@@ -10,44 +8,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  icarus-pulse:
+  canary:
+    if: ${{ github.ref == 'refs/heads/audit/icarus-canary-closeout-20261108' && github.run_attempt == 1 }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       actions: write
       contents: read
       issues: write
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
         with:
-          python-version: '3.12'
-
-      - name: Execute ICARUS On-Duty Runner
+          persist-credentials: false
+      - name: Run the PR runner's adjudicator against Issue 6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ICARUS_ISSUE_NUMBER: "6"
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          python3 scripts/icarus_duty_runner.py
+          python3 - <<'PY'
+          import os
+          from scripts import icarus_duty_runner as runner
 
-      - name: Dispatch Prime Snapshot Sync
-        if: ${{ !cancelled() && github.run_attempt == 1 && hashFiles('RUN_LOG.jsonl') != '' }}
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GITHUB_TOKEN"]
+          task_id = "CANARY-INTAKE-001"
+          receipt_id = 6720043721
+          outbox = f"https://api.github.com/repos/{repo}/issues/6/comments"
+          comments = runner.fetch_pages(outbox + "?since=2026-11-08T01:06:00Z", token)
+          if any(packet["task id"] == task_id for _, packet in
+                 runner.comment_packets(comments, runner.ADJUDICATION_HEADER, bot_only=True)):
+              raise SystemExit("Canary already has a bot adjudication; verify the existing receipt.")
+          original_ids = {6715421000, 6715423547, 6720040376, receipt_id}
+          evidence = [comment for comment in comments if comment["id"] in original_ids]
+          if {comment["id"] for comment in evidence} != original_ids:
+              raise SystemExit("Required GitHub evidence is incomplete")
+          dispatches = list(runner.comment_packets(evidence, runner.DISPATCH_HEADER, bot_only=True))
+          record = {"adjudication_receipts": []}
+          runner.adjudicate_canaries(repo, 6, evidence, dispatches, outbox, token, record)
+          if len(record["adjudication_receipts"]) != 1:
+              raise SystemExit("Runner did not adjudicate the verified canary")
+          receipt = record["adjudication_receipts"][0]
+          if receipt["task_id"] != task_id or receipt["work_receipt_comment_id"] != receipt_id:
+              raise SystemExit("Adjudication receipt does not match the target")
+          print(f"ICARUS_ADJUDICATION_OK comment_id={receipt['adjudication_comment_id']} work_receipt_id={receipt_id}")
+          PY
+      - name: Dispatch Prime Snapshot Sync on the isolated branch
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: |
-          gh workflow run prime-snapshot-sync.yml --ref "$GITHUB_REF_NAME" \
-            -f pulse_run_id="$GITHUB_RUN_ID" -f pulse_event="$GITHUB_EVENT_NAME" -f pulse_sha="$GITHUB_SHA"
-
-      - name: Persist Execution Evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: icarus-duty-ledger
-          path: |
-            icarus_status.json
-            RUN_LOG.jsonl
-          retention-days: 30
+        run: gh workflow run prime-snapshot-sync.yml --ref "$GITHUB_REF_NAME"

@@ -45,7 +45,7 @@ concurrency:
 
 jobs:
   sync:
-    if: ${{ vars.PRIME_SNAPSHOT_ENABLED == 'true' }}
+    if: ${{ vars.PRIME_SNAPSHOT_ENABLED == 'true' && github.ref == 'refs/heads/audit/icarus-canary-closeout-20261108' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -121,6 +121,48 @@ jobs:
           PULSE_EVENT: ${{ inputs.pulse_event }}
           PULSE_SHA: ${{ inputs.pulse_sha }}
         run: python scripts/update_prime_snapshot.py
+
+      - name: Include the verified Icarus canary receipt
+        if: steps.gate.outputs.allowed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import icarus_duty_runner as runner
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GITHUB_TOKEN"]
+          outbox = f"https://api.github.com/repos/{repo}/issues/6/comments"
+          comments = runner.fetch_pages(outbox + "?since=2026-11-08T09:53:32Z", token)
+          matches = [(comment, fields) for comment, fields in
+                     runner.comment_packets(comments, runner.ADJUDICATION_HEADER, bot_only=True)
+                     if fields["task id"] == "CANARY-INTAKE-001"]
+          if len(matches) != 1:
+              raise SystemExit("Expected exactly one bot adjudication for CANARY-INTAKE-001")
+          comment, fields = matches[0]
+          link = f"https://github.com/{repo}/issues/6#issuecomment-"
+          pulse = fields.get("pulse run id", "")
+          if fields.get("work receipt") != link + "6720043721" or not pulse.isdecimal():
+              raise SystemExit("Adjudication is missing the pinned Work receipt or Pulse run ID")
+          path = Path("prime_snapshot_payload.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          header, _, contents = payload["snapshot"].partition("\n\n")
+          proof = (
+              "\n\n## Icarus canary adjudication\n"
+              f"ADJUDICATION_COMMENT_ID: {comment['id']}\n"
+              f"ADJUDICATION_LINK: {link}{comment['id']}\n"
+              f"PULSE_RUN_ID: {pulse}\n"
+              "PULSE_TRIGGER: workflow_dispatch (isolated adjudication harness)\n"
+              f"PULSE_CHECKOUT_SHA: {os.environ['GITHUB_SHA']}\n"
+              f"{comment['body'].strip()}\n\n"
+          )
+          payload["snapshot"] = (header + proof + contents)[:13940] + "\n[SNAPSHOT_TRUNCATED_TO_SAFE_CELL_LIMIT]\n"
+          path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+          print(f"ICARUS_LEDGER_PAYLOAD_OK comment_id={comment['id']} pulse_run_id={pulse}")
+          PY
 
       - name: Append new Google Form response
         if: steps.gate.outputs.allowed == 'true'
