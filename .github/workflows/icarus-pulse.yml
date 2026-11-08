@@ -1,33 +1,39 @@
-name: ICARUS Pulse
+name: ICARUS Pulse & Operational Duty
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: '*/30 * * * *'
-
-permissions:
-  contents: read
+  workflow_dispatch:
 
 jobs:
-  pulse:
+  icarus-pulse:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Write heartbeat
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
+    permissions:
+      contents: write
+      issues: write
 
-          heartbeat = {"status": "PULSE_OK", "actor": "GITHUB_ACTIONS_RUNNER"}
-          Path("icarus_status.json").write_text(json.dumps(heartbeat) + "\n", encoding="utf-8")
-          PY
-      - name: Upload heartbeat artifact
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Execute ICARUS On-Duty Runner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ICARUS_ISSUE_NUMBER: "6"
+        run: |
+          python3 scripts/icarus_duty_runner.py
+
+      - name: Persist Execution Evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: icarus-heartbeat
-          path: icarus_status.json
-          retention-days: 1
+          name: icarus-duty-ledger
+          path: |
+            icarus_status.json
+            RUN_LOG.jsonl
+          retention-days: 30
