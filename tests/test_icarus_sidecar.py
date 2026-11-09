@@ -24,6 +24,22 @@ def test_sidecar_rejects_self_review_or_ambiguous_identity(authors, sidecar_id):
         sidecar.rotation(authors, CHAIRS, sidecar_id)
 
 
+def test_sidecar_refuses_the_repository_owner_credential(monkeypatch, tmp_path):
+    policy = tmp_path / "policy.json"
+    policy.write_text(json.dumps({"chairs": CHAIRS, "sidecar_user_id": 400, "pull_requests": [188]}))
+    monkeypatch.setattr(sidecar, "POLICY_PATH", policy)
+    monkeypatch.setattr(sidecar, "on_live_schedule", lambda repo: True)
+    monkeypatch.setenv("SIDECAR_VERIFIER_TOKEN", "fixture")
+    def read(url, token):
+        if url.endswith("/user"):
+            return {"id": 400}, ""
+        assert url.endswith(sidecar.REPOSITORY)
+        return {"id": sidecar.REPOSITORY_ID, "owner": {"id": 400}}, ""
+    monkeypatch.setattr(sidecar, "call_github_api", read)
+    with pytest.raises(ValueError, match="separate from repository owner"):
+        sidecar.main()
+
+
 def test_expired_edited_or_spoofed_seat_reports_are_unknown():
     now = datetime.datetime(2026, 11, 9, 13, 0, tzinfo=datetime.timezone.utc)
     def row(id, actor, created, updated, state):
