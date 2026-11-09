@@ -158,6 +158,9 @@ def main():
     identity, _ = call_github_api("https://api.github.com/user", token)
     sidecar_id = policy["sidecar_user_id"]
     require(type(sidecar_id) is int and sidecar_id == identity.get("id"), "Sidecar credential identity mismatch")
+    repository, _ = call_github_api(f"https://api.github.com/repos/{REPOSITORY}", token)
+    require(repository.get("id") == REPOSITORY_ID and type(actor(repository, "owner")) is int
+            and actor(repository, "owner") != sidecar_id, "Sidecar credential must be separate from repository owner")
     approvals = fetch_pages(f"https://api.github.com/repos/{REPOSITORY}/issues/141/comments", token)
     require(owner_approved(approvals, TASK_ID, hashlib.sha256(raw_policy).hexdigest(),
                            datetime.datetime.now(datetime.timezone.utc)), "Gatekeeper Sidecar approval missing")
