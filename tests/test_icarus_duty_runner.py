@@ -136,6 +136,18 @@ class DutyRunnerTests(unittest.TestCase):
             "Directive: Inspect the evidence\nBudget: €0.00 | Repair Leash: 1 attempt"
         ])
 
+    def test_named_specialists_receive_their_own_task_packets(self):
+        chairs = ("[CODEX]", "[SOL]", "[LUNA]", "[GRACE]")
+        self.comments[6] = [
+            comment(10 + i, task(f"SPECIALIST-{i}").replace("[WORK]", chair))
+            for i, chair in enumerate(chairs)
+        ]
+        record = self.run_pulse()
+        self.assertEqual([entry["delegated_to"] for entry in record["dispatch_receipts"]], list(chairs))
+        for chair, body in zip(chairs, self.posts):
+            self.assertIn(f"Target Chair: {chair}", body)
+            self.assertIn("Repair Leash: 1 attempt", body)
+
     def test_other_issue_titles_bodies_and_comments_are_inspected(self):
         self.issues += [
             issue(14, title="[TASK_INCOMING]", body=task("TITLE").split("\n", 1)[1]),
