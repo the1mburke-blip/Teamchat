@@ -2,7 +2,9 @@ name: ICARUS Pulse & Operational Duty
 
 on:
   schedule:
-    - cron: '7 * * * *'
+    - cron: '7 0-22/2 1-30 * *'  # Operational duty
+    - cron: '7 1-23/2 1-30 * *'  # Heartbeat
+    - cron: '7 * 31 * *'         # Heartbeat on day 31
   workflow_dispatch:
 
 concurrency:
@@ -12,6 +14,8 @@ concurrency:
 jobs:
   icarus-pulse:
     runs-on: ubuntu-latest
+    env:
+      ICARUS_PULSE_DUTY_SCHEDULE: '7 0-22/2 1-30 * *'
     permissions:
       actions: write
       contents: read
@@ -30,12 +34,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ICARUS_ISSUE_NUMBER: "6"
+          ICARUS_PULSE_TRIGGER_SCHEDULE: ${{ github.event.schedule }}
         run: |
           python3 -m icarus.core.duty_runner
 
       - name: Check ICARUS Pulse inference partition
         id: pulse_quota
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && github.event.schedule == env.ICARUS_PULSE_DUTY_SCHEDULE
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 -m icarus.core.runtime --pulse-reserve
