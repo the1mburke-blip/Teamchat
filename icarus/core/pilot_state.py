@@ -79,6 +79,7 @@ def parse_timestamp(value):
 def availability(comments, reporters, now):
     """Only a fresh, unedited report from the enrolled GitHub actor counts."""
     states = dict.fromkeys(SEATS, "unknown")
+    expiries = {}
     reported = set()
     for comment in sorted(comments, key=lambda row: row["id"], reverse=True):
         packet = fields(comment, SEAT_REPORT)
@@ -93,7 +94,8 @@ def availability(comments, reporters, now):
                 and datetime.timedelta(0) <= now - timestamp < MAX_REPORT_AGE
                 and packet["Availability"] in {"available", "unavailable"}):
             states[seat] = packet["Availability"]
-    return states
+            expiries[seat] = timestamp + MAX_REPORT_AGE
+    return states, expiries
 
 
 def reserved(comments, task_id):
@@ -142,7 +144,7 @@ def on_live_schedule(repo):
             and os.environ.get("GITHUB_WORKFLOW_REF") == f"{repo}/.github/workflows/icarus-pulse.yml@refs/heads/main")
 
 
-def execute_readback(task_id, chair, states, spec):
+def execute_readback(task_id, chair, states, expires_at, spec):
     """The live pilot can materialize a preapproved repository artifact."""
     root = POLICY_PATH.parents[2].resolve()
     relative = Path(spec["path"])
@@ -154,8 +156,7 @@ def execute_readback(task_id, chair, states, spec):
         proof = Path(attempts) / "proof.bin"
         route = {
             "target_chair": chair, "seat_availability": states, "allow_pilot": True,
-            "availability_expires_at": (datetime.datetime.now(datetime.timezone.utc)
-                                        + datetime.timedelta(minutes=1)).isoformat(),
+            "availability_expires_at": expires_at.isoformat(),
             "task": {"task_id": task_id, "cost_tier": "LOW", "decision_changing": True,
                      "owner_preauthorized": True,
                      "command": [sys.executable, "-I", "-S", "-c",
