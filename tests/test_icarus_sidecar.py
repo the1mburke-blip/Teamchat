@@ -69,12 +69,15 @@ def test_ambiguous_reservation_post_cannot_buy_another_attempt():
     assert len(events) == 1
 
 
-def test_report_expiry_during_reservation_prevents_launch(monkeypatch):
+@pytest.mark.parametrize("blocker", ["seat_expiry", "approval_revoked"])
+def test_recheck_after_reservation_prevents_unauthorized_launch(monkeypatch, blocker):
     states = dict.fromkeys(pilot_state.SEATS, "unavailable")
-    snapshots = iter([(states, {}), ({**states, "SOL": "unknown"}, {})])
-    monkeypatch.setattr(duty_runner, "fetch_pages", lambda *args: [])
+    current = {**states, "SOL": "unknown"} if blocker == "seat_expiry" else states
+    snapshots = iter([(states, {}), (current, {})])
+    approvals = iter([["approval"], [] if blocker == "approval_revoked" else ["approval"]])
+    monkeypatch.setattr(duty_runner, "fetch_pages", lambda url, token: next(approvals) if url.endswith("/141/comments") else [])
     monkeypatch.setattr(pilot_state, "availability", lambda *args: next(snapshots))
-    monkeypatch.setattr(pilot_state, "owner_approved", lambda *args: True)
+    monkeypatch.setattr(pilot_state, "owner_approved", lambda comments, *args: bool(comments))
     monkeypatch.setattr(pilot_state, "reserve_attempt", lambda *args: 55)
     monkeypatch.setattr(pilot_state, "execute_readback", lambda *args: pytest.fail("Pilot launched after expiry"))
     monkeypatch.setenv("GITHUB_SHA", "a" * 40)
