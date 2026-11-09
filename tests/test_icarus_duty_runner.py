@@ -1,3 +1,4 @@
+import hashlib
 import io
 import json
 import os
@@ -10,6 +11,7 @@ from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 from icarus.core import duty_runner as runner
+from icarus.core import pilot_state
 from scripts import icarus_duty_runner as legacy_runner
 
 
@@ -68,6 +70,7 @@ class DutyRunnerTests(unittest.TestCase):
             runner, LEDGER_PATH=self.ledger, STATUS_PATH=self.status,
             call_github_api=self.github,
         ))
+        self.enterContext(patch.object(pilot_state, "PROOF_PATH", str(self.ledger.parent / "proof.bin")))
 
     def github(self, url, token, method="GET", payload=None):
         path = urlsplit(url).path
@@ -88,6 +91,7 @@ class DutyRunnerTests(unittest.TestCase):
                 10000 + len(self.posts), payload["body"],
                 association="NONE", author="github-actions[bot]",
             )
+            receipt["user"]["id"] = pilot_state.PULSE_ACTOR_ID
             rows.append(receipt)
             return receipt, ""
         query = parse_qs(urlsplit(url).query)
@@ -99,11 +103,12 @@ class DutyRunnerTests(unittest.TestCase):
     def run_pulse(self, expected_exit=0, *, at=None):
         stdout, stderr = io.StringIO(), io.StringIO()
         with (
-            patch.object(runner.datetime, "datetime") as clock,
+            patch.object(runner, "datetime") as clock,
             redirect_stdout(stdout),
             redirect_stderr(stderr),
         ):
-            clock.now.return_value = at or datetime(2026, 11, 8, 14, 7, tzinfo=timezone.utc)
+            clock.timezone = timezone
+            clock.datetime.now.return_value = at or datetime(2026, 11, 8, 14, 7, tzinfo=timezone.utc)
             self.assertEqual(runner.main(), expected_exit)
         record = json.loads(self.ledger.read_text().splitlines()[-1])
         self.assertEqual(json.loads(self.status.read_text())[-1], record)
@@ -142,11 +147,56 @@ class DutyRunnerTests(unittest.TestCase):
             comment(10 + i, task(f"SPECIALIST-{i}").replace("[WORK]", chair))
             for i, chair in enumerate(chairs)
         ]
-        record = self.run_pulse()
+        reporters = {chair.strip("[]"): 101 + i for i, chair in enumerate(chairs)}
+        self.add_seat_reports(reporters, "available")
+        with patch.object(pilot_state, "load_policy", return_value=(
+                {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}, "digest")):
+            record = self.run_pulse()
         self.assertEqual([entry["delegated_to"] for entry in record["dispatch_receipts"]], list(chairs))
         for chair, body in zip(chairs, self.posts):
             self.assertIn(f"Target Chair: {chair}", body)
             self.assertIn("Repair Leash: 1 attempt", body)
+
+    def add_seat_reports(self, reporters, state):
+        for i, (seat, uid) in enumerate(reporters.items()):
+            row = comment(30 + i, f"{pilot_state.SEAT_REPORT}\nSeat: {seat}\nAvailability: {state}")
+            row.update(created_at="2026-11-08T14:02:00Z", updated_at="2026-11-08T14:02:00Z")
+            row["user"]["id"] = uid
+            self.comments.setdefault(6, []).append(row)
+
+    def test_unknown_specialist_holds_before_dispatch(self):
+        self.comments[6] = [comment(10, task("HOLD").replace("[WORK]", "[CODEX]"))]
+        self.assertEqual(self.run_pulse()["held_specialist_routes"], [
+            {"task_id": "HOLD", "target_chair": "[CODEX]", "availability": "unknown"},
+        ])
+        self.assertEqual(self.posts, [])
+
+    def test_scheduled_pilot_consumes_one_attempt_across_wakes(self):
+        number = 88
+        task_id = f"BACKLOG-{number}"
+        source = "harness-runner.py"
+        source_bytes = (Path(__file__).resolve().parents[1] / source).read_bytes()
+        expected = hashlib.sha256(source_bytes).hexdigest()
+        reporters = {seat: 101 + i for i, seat in enumerate(sorted(pilot_state.SEATS))}
+        self.add_seat_reports(reporters, "unavailable")
+        self.issues.append({**issue(number, title="[READY] Artifact readback", body="[TO] [CODEX]"), "state": "open"})
+        approval = comment(55, f"{pilot_state.PILOT_APPROVAL}\nTask ID: {task_id}\nPolicy SHA-256: digest")
+        approval.update(created_at="2026-11-08T14:00:00Z", updated_at="2026-11-08T14:00:00Z")
+        self.comments[141] = [approval]
+        policy = {"seat_reporters": reporters, "verifier_user_id": 999,
+                  "approved_pilots": {task_id: {"path": source, "sha256": expected}}}
+        with (patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule", "GITHUB_ACTIONS": "true",
+                                      "GITHUB_REF": "refs/heads/main", "GITHUB_SHA": "a" * 40,
+                                      "GITHUB_WORKFLOW_REF": "example/Teamchat/.github/workflows/icarus-pulse.yml@refs/heads/main"}),
+              patch.object(pilot_state, "load_policy", return_value=(policy, "digest"))):
+            first = self.run_pulse()
+            second = self.run_pulse()
+        self.assertEqual(first["loop_state"], "WAITING_FOR_INDEPENDENT_VERIFIER")
+        self.assertEqual(first["pilot_attempt"]["process_exit_code"], 0)
+        self.assertEqual(first["pilot_attempt"]["sha256"], expected)
+        self.assertEqual((self.ledger.parent / "proof.bin").read_bytes(), source_bytes)
+        self.assertIsNone(second["pilot_attempt"])
+        self.assertEqual(self.posts, [f"{pilot_state.PILOT_RESERVATION}\nTask ID: {task_id}"])
 
     def test_other_issue_titles_bodies_and_comments_are_inspected(self):
         self.issues += [
