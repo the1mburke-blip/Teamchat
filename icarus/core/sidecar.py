@@ -22,6 +22,11 @@ CHAIRS = {"SOL", "CLAUDE", "CODEX"}
 MIN_TESTS = 215
 PULSE_WORKFLOW_ID = 410687420
 TASK_ID = "TASK-SIDECAR-VERIFIER-ROTATION-01"
+PROOF_PRODUCERS = (
+    ".github/workflows/icarus-pulse.yml", "Dockerfile", "docker/verify-and-test.py",
+    "harness-runner.py", "icarus/harness/runner.py", "icarus/harness/container.py",
+    "dsh/state_write_gate.py", "dsh/execution_integrity.py", "requirements-dev.txt", "pytest.ini",
+)
 
 
 def require(condition, reason):
@@ -53,6 +58,14 @@ def ledger_bytes(api, sha):
     result = api.get(f"/contents/{LEDGER}?ref={sha}")
     require(result.get("encoding") == "base64", "Ledger encoding unsupported")
     return base64.b64decode(result["content"])
+
+
+def verify_producer(api, base, source):
+    for path in PROOF_PRODUCERS:
+        trusted = api.get(f"/contents/{path}?ref={base}").get("sha")
+        candidate = api.get(f"/contents/{path}?ref={source}").get("sha")
+        require(isinstance(trusted, str) and re.fullmatch(r"[0-9a-f]{40}", trusted) and trusted == candidate,
+                "CI proof producer differs from protected base: " + path)
 
 
 def independent_receipt(api, head, commit, verifier_id, number):
@@ -122,6 +135,7 @@ def review(number, token, chairs, sidecar_id, api):
     require(commit.get("sha") == head and len(parents) == 1 and parents[0]["sha"] == commits[-2]["sha"],
             "Verifier receipt does not directly follow source")
     receipt = independent_receipt(api, head, commit, verifier_id, number)
+    verify_producer(api, pr["base"]["sha"], receipt["source_commit"])
     count = physical_ci(api, receipt)
     checked = api.get(f"/actions/workflows/{PULSE_WORKFLOW_ID}/runs?event=pull_request&head_sha={head}&status=success")
     require(any(run.get("head_sha") == head and run.get("conclusion") == "success"
