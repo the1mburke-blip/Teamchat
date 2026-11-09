@@ -152,7 +152,7 @@ def adjudicate_canaries(repo, mailbox, comments, dispatches, outbox_url, token, 
     claims = {comment["id"]: (comment, packet)
               for comment, packet in comment_packets(comments, "[WORK] CLAIMED")}
     link = f"https://github.com/{repo}/issues/{mailbox}#issuecomment-"
-    waiting = False
+    waiting = []
     for dispatch, packet in dispatches:
         task_id = packet["task id"]
         if (not task_id.startswith("CANARY-INTAKE-") or task_id in adjudicated
@@ -192,7 +192,7 @@ def adjudicate_canaries(repo, mailbox, comments, dispatches, outbox_url, token, 
             adjudicated.add(task_id)
             break
         else:
-            waiting = True
+            waiting.append({"task_id": task_id, "dispatch_comment_id": dispatch["id"]})
     return waiting
 
 
@@ -307,19 +307,23 @@ def monitor_issues(repo, mailbox, token, record):
         return
 
     bot_dispatches = list(comment_packets(outbox_comments, DISPATCH_HEADER, bot_only=True))
-    waiting = adjudicate_canaries(repo, mailbox, outbox_comments, bot_dispatches, outbox_url, token, record)
+    record["waiting_canary"] = adjudicate_canaries(
+        repo, mailbox, outbox_comments, bot_dispatches, outbox_url, token, record,
+    )
+    record["waiting_backlog"] = [
+        {"task_id": packet["task id"], "dispatch_comment_id": dispatch["id"]}
+        for dispatch, packet in bot_dispatches
+        if (match := re.fullmatch(r"BACKLOG-(\d+)", packet["task id"])) and int(match[1]) in open_issues
+    ]
     if record["adjudication_receipts"]:
         record["loop_state"] = "ADJUDICATED"
         return
-    for _, packet in bot_dispatches:
-        match = re.fullmatch(r"BACKLOG-(\d+)", packet["task id"])
-        if match and int(match[1]) in open_issues:
-            waiting = True
-            break
-    if waiting or record["dispatch_receipts"]:
+    if record["waiting_canary"] or record["waiting_backlog"] or record["dispatch_receipts"]:
         record["loop_state"] = "WAITING_FOR_RECEIPT"
+    if record["dispatch_receipts"]:
         return
 
+    # Outstanding receipts are recorded above. Discovery already excludes their dispatched backlog tasks.
     # Resume a previously persisted claim first. The workflow serializes Pulse jobs.
     for _, candidate, claim in sorted(candidates, key=lambda item: (item[0], item[1])):
         _, number, chair, _ = candidate
@@ -376,6 +380,8 @@ def main():
         "monitor_only_events": [],
         "dispatch_receipts": [],
         "adjudication_receipts": [],
+        "waiting_canary": [],
+        "waiting_backlog": [],
         "backlog_claim": None,
         "loop_state": "IDLE_SELECT",
         "first_processing_error": None,

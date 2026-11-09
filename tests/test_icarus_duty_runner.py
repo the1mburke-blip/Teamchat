@@ -31,6 +31,18 @@ def comment(comment_id, body, *, association="OWNER", author="maintainer"):
     }
 
 
+def canary_comments(task_id):
+    return [
+        comment(10, f"[TASK_INCOMING]\nTask ID: {task_id}\nTarget Chair: [WORK]\n"
+                    f"Directive: {runner.ECHO_DIRECTIVE}"),
+        comment(11, f"[ICARUS DISPATCH]\nTask ID: {task_id}\nTarget Chair: [WORK]\n"
+                    f"Directive: {runner.ECHO_DIRECTIVE}",
+                association="NONE", author="github-actions[bot]"),
+        comment(12, f"[WORK] CLAIMED\nTask ID: {task_id}\n"
+                    "Dispatch: https://github.com/example/Teamchat/issues/6#issuecomment-11"),
+    ]
+
+
 class DutyRunnerTests(unittest.TestCase):
     def setUp(self):
         self.issues = [issue(6)]
@@ -189,7 +201,44 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(first["backlog_claim"]["issue_number"], 9)
         self.assertTrue(self.comments[9][-1]["body"].startswith(runner.CLAIM_HEADER))
         self.assertIn("Source Issue: #9 (comment 10001)", self.comments[6][-1]["body"])
-        self.assertEqual(self.run_pulse()["loop_state"], "WAITING_FOR_RECEIPT")
+        second = self.run_pulse()
+        self.assertEqual(second["backlog_claim"]["issue_number"], 8)
+        self.assertEqual(second["waiting_backlog"], [
+            {"task_id": "BACKLOG-9", "dispatch_comment_id": 10002},
+        ])
+        third = self.run_pulse()
+        self.assertEqual(third["loop_state"], "WAITING_FOR_RECEIPT")
+        self.assertIsNone(third["backlog_claim"])
+        self.assertFalse(third["dispatch_receipts"])
+        self.assertEqual(len(self.comments[9]), 1)
+        self.assertEqual(len(self.comments[8]), 1)
+        self.assertEqual(len(self.posts), 4)
+
+    def test_pending_canary_does_not_block_authorized_backlog(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        self.comments[6] = canary_comments("CANARY-INTAKE-001")
+        self.issues += [
+            {**issue(7, title="[P0] [READY] Untrusted", association="CONTRIBUTOR"), "state": "open"},
+            {**issue(8, title="[READY] Authorized"), "state": "open"},
+        ]
+        waiting = [{"task_id": "CANARY-INTAKE-001", "dispatch_comment_id": 11}]
+
+        first = self.run_pulse()
+        self.assertEqual(first["waiting_canary"], waiting)
+        self.assertFalse(first["adjudication_receipts"])
+        self.assertEqual(first["backlog_claim"], {"issue_number": 8, "claim_comment_id": 10001})
+        self.assertEqual(first["dispatch_receipts"], [{
+            "issue_number": 8, "source_comment_id": 10001, "task_id": "BACKLOG-8",
+            "delegated_to": "[WORK]", "dispatch_comment_id": 10002,
+        }])
+
+        second = self.run_pulse()
+        self.assertEqual(second["waiting_canary"], waiting)
+        self.assertEqual(second["waiting_backlog"], [
+            {"task_id": "BACKLOG-8", "dispatch_comment_id": 10002},
+        ])
+        self.assertIsNone(second["backlog_claim"])
+        self.assertFalse(second["dispatch_receipts"])
         self.assertEqual(len(self.posts), 2)
 
     def test_interrupted_dispatch_resumes_claim_without_reposting(self):
@@ -215,12 +264,7 @@ class DutyRunnerTests(unittest.TestCase):
         task_id = "CANARY-INTAKE-001"
         link = "https://github.com/example/Teamchat/issues/6#issuecomment-"
         directive = runner.ECHO_DIRECTIVE
-        self.comments[6] = [
-            comment(10, f"[TASK_INCOMING]\nTask ID: {task_id}\nTarget Chair: [WORK]\nDirective: {directive}"),
-            comment(11, f"[ICARUS DISPATCH]\nTask ID: {task_id}\nTarget Chair: [WORK]\nDirective: {directive}",
-                    association="NONE", author="github-actions[bot]"),
-            comment(12, f"[WORK] CLAIMED\nTask ID: {task_id}\nDispatch: {link}11"),
-        ]
+        self.comments[6] = canary_comments(task_id)
         receipt = (
             f"[WORK] EXECUTION RECEIPT\nTask ID: {task_id}\nExecutor: ChatGPT Work\n"
             f"Worker result: ECHO_COMPLETE\nEcho: {directive}\nOwner intake: {link}10\n"
@@ -228,7 +272,9 @@ class DutyRunnerTests(unittest.TestCase):
         )
         self.comments[6].append(comment(13, receipt, association="CONTRIBUTOR"))
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
-        self.assertEqual(self.run_pulse()["loop_state"], "WAITING_FOR_RECEIPT")
+        pending = self.run_pulse()
+        self.assertEqual(pending["loop_state"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(pending["waiting_canary"], [{"task_id": task_id, "dispatch_comment_id": 11}])
         self.assertFalse(self.posts)
         self.comments[6].append(comment(14, receipt))
         os.environ["GITHUB_EVENT_NAME"] = "workflow_dispatch"
@@ -236,6 +282,7 @@ class DutyRunnerTests(unittest.TestCase):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         first = self.run_pulse()
         self.assertEqual(first["loop_state"], "ADJUDICATED")
+        self.assertFalse(first["waiting_canary"])
         self.assertEqual(first["adjudication_receipts"][0]["work_receipt_comment_id"], 14)
         self.assertTrue(self.posts[0].startswith(runner.ADJUDICATION_HEADER))
         self.assertEqual(self.run_pulse()["loop_state"], "IDLE_SELECT")
