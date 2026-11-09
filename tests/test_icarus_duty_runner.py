@@ -13,6 +13,9 @@ from icarus.core import duty_runner as runner
 from scripts import icarus_duty_runner as legacy_runner
 
 
+DUTY_SCHEDULE = "7 0-22/2 1-30 * *"
+
+
 def task(task_id):
     return (
         f"[TASK_INCOMING]\nTask ID: {task_id}\n"
@@ -58,6 +61,8 @@ class DutyRunnerTests(unittest.TestCase):
             "GITHUB_REPOSITORY": "example/Teamchat",
             "ICARUS_ISSUE_NUMBER": "6",
             "GITHUB_EVENT_NAME": "workflow_dispatch",
+            "ICARUS_PULSE_DUTY_SCHEDULE": DUTY_SCHEDULE,
+            "ICARUS_PULSE_TRIGGER_SCHEDULE": DUTY_SCHEDULE,
         }))
         self.enterContext(patch.multiple(
             runner, LEDGER_PATH=self.ledger, STATUS_PATH=self.status,
@@ -105,14 +110,13 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(json.loads((stderr if expected_exit else stdout).getvalue()), record)
         return record
 
-    def test_scheduled_pulse_skips_off_hours_and_day_31_with_evidence(self):
+    def test_heartbeat_and_missing_trigger_skip_duty_with_evidence(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         del os.environ["GITHUB_TOKEN"]
-        for timestamp in (
-            datetime(2026, 12, 30, 15, 7, tzinfo=timezone.utc),
-            datetime(2026, 12, 31, 14, 7, tzinfo=timezone.utc),
-        ):
-            with self.subTest(timestamp=timestamp):
+        for trigger in ("7 1-23/2 1-30 * *", "7 * 31 * *", ""):
+            with self.subTest(trigger=trigger):
+                os.environ["ICARUS_PULSE_TRIGGER_SCHEDULE"] = trigger
+                timestamp = datetime(2027, 1, 1, 0, 7, tzinfo=timezone.utc)
                 record = self.run_pulse(at=timestamp)
                 self.assertEqual(record["monitoring_result"], "SKIPPED")
                 self.assertEqual(record["loop_state"], "SKIPPED_CADENCE")
@@ -122,6 +126,7 @@ class DutyRunnerTests(unittest.TestCase):
                 self.assertEqual(self.requests, [])
 
     def test_issue_six_still_dispatches_its_original_packet(self):
+        os.environ["ICARUS_PULSE_TRIGGER_SCHEDULE"] = ""
         self.comments[6] = [comment(10, task("LEGACY"))]
         record = self.run_pulse(at=datetime(2026, 12, 31, 15, 7, tzinfo=timezone.utc))
         self.assertEqual(record["new_tasks_dispatched"], 1)
@@ -196,7 +201,7 @@ class DutyRunnerTests(unittest.TestCase):
             {**issue(7, title="[P0] [READY] Paid", body="[COST] €0.50"), "state": "open"},
             {**issue(3, title="[P0] [READY] Closed"), "state": "closed"},
         ]
-        first = self.run_pulse()
+        first = self.run_pulse(at=datetime(2026, 11, 8, 15, 7, tzinfo=timezone.utc))
         self.assertEqual(first["loop_state"], "WAITING_FOR_RECEIPT")
         self.assertEqual(first["backlog_claim"]["issue_number"], 9)
         self.assertTrue(self.comments[9][-1]["body"].startswith(runner.CLAIM_HEADER))

@@ -386,10 +386,11 @@ def main():
         "loop_state": "IDLE_SELECT",
         "first_processing_error": None,
     }
-    # Twelve slots per day for up to 30 days gives a 360-slot monthly budget.
+    # GitHub can start a scheduled run after its intended UTC slot.
+    duty_schedule = os.environ.get("ICARUS_PULSE_DUTY_SCHEDULE")
     cadence_skip = (
         os.environ.get("GITHUB_EVENT_NAME") == "schedule"
-        and (timestamp.hour % 2 != 0 or timestamp.day == 31)
+        and (not duty_schedule or os.environ.get("ICARUS_PULSE_TRIGGER_SCHEDULE") != duty_schedule)
     )
     try:
         if cadence_skip:
