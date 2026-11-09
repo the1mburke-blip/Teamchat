@@ -23,6 +23,7 @@ MONITOR_ONLY_MARKER = re.compile(
 )
 TRUSTED_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 CHAIRS = {"[WORK]", "[CODEX]", "[SOL]", "[LUNA]", "[GRACE]"}
+LEGACY_CHAIRS = {"[WORK]", "[SOL]"}
 READY = {"REQUESTED", "READY", "TODO", "BACKLOG", "OPEN"}
 UNAVAILABLE = {
     "BLOCKED", "IN PROGRESS", "CLAIMED", "EXECUTING", "VERIFYING", "WAITING",
@@ -270,7 +271,7 @@ def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_u
         return
     approvals = fetch_pages(f"{issues_url}/141/comments", token)
     now = datetime.datetime.now(datetime.timezone.utc)
-    states = pilot_state.availability(fetch_pages(outbox_url, token), policy["seat_reporters"], now)
+    states, _ = pilot_state.availability(fetch_pages(outbox_url, token), policy["seat_reporters"], now)
     if (any(value != "unavailable" for value in states.values())
             or not pilot_state.owner_approved(approvals, task_id, policy_digest, now)):
         return
@@ -281,7 +282,14 @@ def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_u
                                "reservation_comment_id": reservation,
                                "verifier_user_id": policy["verifier_user_id"],
                                "source_commit": os.environ["GITHUB_SHA"]}
-    record["pilot_attempt"].update(pilot_state.execute_readback(task_id, seat, states, spec))
+    current_reports = fetch_pages(outbox_url, token)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    states, expiries = pilot_state.availability(current_reports, policy["seat_reporters"], now)
+    if (any(value != "unavailable" for value in states.values())
+            or not pilot_state.owner_approved(approvals, task_id, policy_digest, now)):
+        record["pilot_attempt"]["blocked_before_execution"] = "Availability or owner approval changed after reservation"
+        return
+    record["pilot_attempt"].update(pilot_state.execute_readback(task_id, seat, states, min(expiries.values()), spec))
     record["loop_state"] = "WAITING_FOR_INDEPENDENT_VERIFIER"
 
 
@@ -293,6 +301,7 @@ def monitor_issues(repo, mailbox, token, record):
     outbox_comments = fetch_pages(outbox_url, token)
     policy, policy_digest = pilot_state.load_policy()
     reporters = policy["seat_reporters"]
+    registry_ready = set(reporters) == pilot_state.SEATS
     dispatch_packets = [packet for _, packet in comment_packets(outbox_comments, DISPATCH_HEADER)]
     dispatched = {packet["task id"] for packet in dispatch_packets}
     dispatched_sources = {
@@ -318,7 +327,7 @@ def monitor_issues(repo, mailbox, token, record):
             task_id = f"BACKLOG-{number}"
             if (task_id not in dispatched and number not in dispatched_sources
                     and not pilot_state.reserved(outbox_comments, task_id)
-                    and (not live_schedule or candidate[2] != "[WORK]")):
+                    and (registry_ready or candidate[2] in LEGACY_CHAIRS)):
                 claim = next((comment for comment, packet in comment_packets(comments, CLAIM_HEADER, bot_only=True)
                               if packet["task id"] == task_id
                               and packet.get("target chair") == candidate[2]), None)
@@ -330,9 +339,9 @@ def monitor_issues(repo, mailbox, token, record):
             record["duplicate_directives_ignored"] += 1
             continue
         seat = chair.strip("[]")
-        if seat in pilot_state.SEATS:
-            states = pilot_state.availability(fetch_pages(outbox_url, token), reporters,
-                                              datetime.datetime.now(datetime.timezone.utc))
+        if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
+            reports = fetch_pages(outbox_url, token)
+            states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
             if states[seat] != "available":
                 record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
                                                          "availability": states[seat]})
@@ -369,9 +378,9 @@ def monitor_issues(repo, mailbox, token, record):
             continue
         task_id = f"BACKLOG-{number}"
         seat = chair.strip("[]")
-        if seat in pilot_state.SEATS:
-            states = pilot_state.availability(fetch_pages(outbox_url, token), reporters,
-                                              datetime.datetime.now(datetime.timezone.utc))
+        if seat in pilot_state.SEATS and registry_ready:
+            reports = fetch_pages(outbox_url, token)
+            states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
             if states[seat] != "available":
                 record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
                                                          "availability": states[seat]})
