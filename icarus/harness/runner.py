@@ -235,10 +235,14 @@ def verify(spec):
                 raise EvidenceFailure("Expected exactly one ledger row; found " + str(matches))
         after = os.fstat(artifact.fileno())
         try:
-            current = os.stat(path)
+            # Compare handle metadata throughout. On Windows, stat by path and
+            # fstat can report different timestamps for the same file.
+            with os.fdopen(os.open(path, flags), "rb") as reopened:
+                current = os.fstat(reopened.fileno())
         except (FileNotFoundError, NotADirectoryError) as exc:
             raise EvidenceFailure("Artifact disappeared during readback") from exc
-        if fingerprint(before) != fingerprint(after) or fingerprint(after) != fingerprint(current):
+        if (not stat.S_ISREG(current.st_mode) or fingerprint(before) != fingerprint(after)
+                or fingerprint(after) != fingerprint(current)):
             raise EvidenceFailure("Artifact changed during readback")
     return str(path.absolute())
 
