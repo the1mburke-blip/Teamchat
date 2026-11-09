@@ -282,6 +282,7 @@ def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_u
                                "reservation_comment_id": reservation,
                                "verifier_user_id": policy["verifier_user_id"],
                                "source_commit": os.environ["GITHUB_SHA"]}
+    approvals = fetch_pages(f"{issues_url}/141/comments", token)
     current_reports = fetch_pages(outbox_url, token)
     now = datetime.datetime.now(datetime.timezone.utc)
     states, expiries = pilot_state.availability(current_reports, policy["seat_reporters"], now)
