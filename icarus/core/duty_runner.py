@@ -8,6 +8,8 @@ import re
 import sys
 import urllib.request
 
+from icarus.core import pilot_state
+
 
 TASK_HEADER = "[TASK_INCOMING]"
 DISPATCH_HEADER = "[ICARUS DISPATCH]"
@@ -262,12 +264,35 @@ def dispatch_task(outbox_url, token, origin, task, mailbox, record):
     })
 
 
+def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_url, outbox_url, token, record):
+    spec = policy["approved_pilots"].get(task_id)
+    if not spec or policy["verifier_user_id"] is None:
+        return
+    approvals = fetch_pages(f"{issues_url}/141/comments", token)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    states = pilot_state.availability(fetch_pages(outbox_url, token), policy["seat_reporters"], now)
+    if (any(value != "unavailable" for value in states.values())
+            or not pilot_state.owner_approved(approvals, task_id, policy_digest, now)):
+        return
+    reservation = pilot_state.reserve_attempt(task_id, outbox_url, token, fetch_pages, post_comment)
+    if reservation is None:
+        return
+    record["pilot_attempt"] = {"task_id": task_id, "issue_number": number,
+                               "reservation_comment_id": reservation,
+                               "verifier_user_id": policy["verifier_user_id"],
+                               "source_commit": os.environ["GITHUB_SHA"]}
+    record["pilot_attempt"].update(pilot_state.execute_readback(task_id, seat, states, spec))
+    record["loop_state"] = "WAITING_FOR_INDEPENDENT_VERIFIER"
+
+
 def monitor_issues(repo, mailbox, token, record):
     issues_url = f"https://api.github.com/repos/{repo}/issues"
     outbox_url = f"{issues_url}/{mailbox}/comments"
     issues = fetch_pages(f"{issues_url}?state=open&sort=created&direction=asc", token)
     open_issues = {issue["number"]: issue for issue in issues if "pull_request" not in issue}
     outbox_comments = fetch_pages(outbox_url, token)
+    policy, policy_digest = pilot_state.load_policy()
+    reporters = policy["seat_reporters"]
     dispatch_packets = [packet for _, packet in comment_packets(outbox_comments, DISPATCH_HEADER)]
     dispatched = {packet["task id"] for packet in dispatch_packets}
     dispatched_sources = {
@@ -277,6 +302,7 @@ def monitor_issues(repo, mailbox, token, record):
     pending = []
     candidates = []
     scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+    live_schedule = pilot_state.on_live_schedule(repo)
 
     # Finish discovery and read all prior receipts before making any dispatch writes.
     for number, issue in sorted(open_issues.items()):
@@ -290,7 +316,9 @@ def monitor_issues(repo, mailbox, token, record):
         record["issue_numbers_inspected"].append(number)
         if scheduled and number != mailbox and (candidate := backlog_candidate(issue)):
             task_id = f"BACKLOG-{number}"
-            if task_id not in dispatched and number not in dispatched_sources:
+            if (task_id not in dispatched and number not in dispatched_sources
+                    and not pilot_state.reserved(outbox_comments, task_id)
+                    and (not live_schedule or candidate[2] != "[WORK]")):
                 claim = next((comment for comment, packet in comment_packets(comments, CLAIM_HEADER, bot_only=True)
                               if packet["task id"] == task_id
                               and packet.get("target chair") == candidate[2]), None)
@@ -301,6 +329,14 @@ def monitor_issues(repo, mailbox, token, record):
         if task_id in dispatched:
             record["duplicate_directives_ignored"] += 1
             continue
+        seat = chair.strip("[]")
+        if seat in pilot_state.SEATS:
+            states = pilot_state.availability(fetch_pages(outbox_url, token), reporters,
+                                              datetime.datetime.now(datetime.timezone.utc))
+            if states[seat] != "available":
+                record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
+                                                         "availability": states[seat]})
+                continue
         dispatch_task(outbox_url, token, origin, (task_id, chair, scope), mailbox, record)
         dispatched.add(task_id)
     if not scheduled:
@@ -332,6 +368,18 @@ def monitor_issues(repo, mailbox, token, record):
         if fresh != candidate:
             continue
         task_id = f"BACKLOG-{number}"
+        seat = chair.strip("[]")
+        if seat in pilot_state.SEATS:
+            states = pilot_state.availability(fetch_pages(outbox_url, token), reporters,
+                                              datetime.datetime.now(datetime.timezone.utc))
+            if states[seat] != "available":
+                record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
+                                                         "availability": states[seat]})
+                record["loop_state"] = "WAITING_FOR_SPECIALIST"
+                if claim is None and live_schedule and all(value == "unavailable" for value in states.values()):
+                    run_pilot_if_approved(task_id, number, seat, policy, policy_digest,
+                                          issues_url, outbox_url, token, record)
+                break
         claim_id = claim["id"] if claim else post_comment(f"{issues_url}/{number}/comments", token, (
             f"{CLAIM_HEADER}\nTask ID: {task_id}\nTarget Chair: {chair}\n"
             "Budget: €0.00 | Repair Leash: 1 attempt"
@@ -383,6 +431,8 @@ def main():
         "waiting_canary": [],
         "waiting_backlog": [],
         "backlog_claim": None,
+        "held_specialist_routes": [],
+        "pilot_attempt": None,
         "loop_state": "IDLE_SELECT",
         "first_processing_error": None,
     }
