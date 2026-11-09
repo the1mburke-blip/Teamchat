@@ -7,7 +7,7 @@ import zipfile
 
 import pytest
 
-from icarus.core import pilot_state, sidecar
+from icarus.core import duty_runner, pilot_state, sidecar
 
 
 CHAIRS = {"SOL": 100, "CLAUDE": 200, "CODEX": 300}
@@ -49,9 +49,11 @@ def test_expired_edited_or_spoofed_seat_reports_are_unknown():
     valid = row(1, 100, fresh, fresh, "available")
     forged = row(2, 999, fresh, fresh, "unavailable")
     edited = row(3, 100, fresh, "2026-11-09T12:59:00Z", "unavailable")
-    assert pilot_state.availability([valid, forged], {"SOL": 100}, now)["SOL"] == "available"
-    assert pilot_state.availability([valid, edited], {"SOL": 100}, now)["SOL"] == "unknown"
-    assert pilot_state.availability([valid], {"SOL": 100}, now + datetime.timedelta(minutes=15))["SOL"] == "unknown"
+    states, expiries = pilot_state.availability([valid, forged], {"SOL": 100}, now)
+    assert states["SOL"] == "available"
+    assert expiries["SOL"] == now + datetime.timedelta(minutes=10)
+    assert pilot_state.availability([valid, edited], {"SOL": 100}, now)[0]["SOL"] == "unknown"
+    assert pilot_state.availability([valid], {"SOL": 100}, now + datetime.timedelta(minutes=15))[0]["SOL"] == "unknown"
 
 
 def test_ambiguous_reservation_post_cannot_buy_another_attempt():
@@ -65,6 +67,31 @@ def test_ambiguous_reservation_post_cannot_buy_another_attempt():
         pilot_state.reserve_attempt("BACKLOG-1", "url", "token", read, post)
     assert pilot_state.reserve_attempt("BACKLOG-1", "url", "token", read, post) is None
     assert len(events) == 1
+
+
+def test_report_expiry_during_reservation_prevents_launch(monkeypatch):
+    states = dict.fromkeys(pilot_state.SEATS, "unavailable")
+    snapshots = iter([(states, {}), ({**states, "SOL": "unknown"}, {})])
+    monkeypatch.setattr(duty_runner, "fetch_pages", lambda *args: [])
+    monkeypatch.setattr(pilot_state, "availability", lambda *args: next(snapshots))
+    monkeypatch.setattr(pilot_state, "owner_approved", lambda *args: True)
+    monkeypatch.setattr(pilot_state, "reserve_attempt", lambda *args: 55)
+    monkeypatch.setattr(pilot_state, "execute_readback", lambda *args: pytest.fail("Pilot launched after expiry"))
+    monkeypatch.setenv("GITHUB_SHA", "a" * 40)
+    record = {}
+    policy = {"approved_pilots": {"BACKLOG-1": {"path": "proof"}}, "verifier_user_id": 999, "seat_reporters": {}}
+    duty_runner.run_pilot_if_approved("BACKLOG-1", 1, "CODEX", policy, "digest", "issues", "outbox", "token", record)
+    assert record["pilot_attempt"]["reservation_comment_id"] == 55
+    assert "blocked_before_execution" in record["pilot_attempt"]
+
+
+def test_sidecar_requires_the_proof_producer_to_match_protected_base():
+    class Api:
+        def get(self, path):
+            changed = path.startswith("/contents/Dockerfile?") and path.endswith("ref=source")
+            return {"sha": ("b" if changed else "a") * 40}
+    with pytest.raises(ValueError, match="protected base: Dockerfile"):
+        sidecar.verify_producer(Api(), "base", "source")
 
 
 def test_receipt_requires_a_verified_append_only_commit():
