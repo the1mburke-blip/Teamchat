@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
@@ -157,10 +157,10 @@ class DutyRunnerTests(unittest.TestCase):
             self.assertIn(f"Target Chair: {chair}", body)
             self.assertIn("Repair Leash: 1 attempt", body)
 
-    def add_seat_reports(self, reporters, state):
+    def add_seat_reports(self, reporters, state, at="2026-11-08T14:02:00Z"):
         for i, (seat, uid) in enumerate(reporters.items()):
             row = comment(30 + i, f"{pilot_state.SEAT_REPORT}\nSeat: {seat}\nAvailability: {state}")
-            row.update(created_at="2026-11-08T14:02:00Z", updated_at="2026-11-08T14:02:00Z")
+            row.update(created_at=at, updated_at=at)
             row["user"]["id"] = uid
             self.comments.setdefault(6, []).append(row)
 
@@ -171,6 +171,16 @@ class DutyRunnerTests(unittest.TestCase):
         ])
         self.assertEqual(self.posts, [])
 
+    def test_empty_registry_keeps_legacy_backlog_route(self):
+        self.issues += [
+            {**issue(7, title="[P0] [READY] Unenrolled", body="[TO] [CODEX]"), "state": "open"},
+            {**issue(8, title="[READY] Existing Sol route", body="[TO] [SOL]"), "state": "open"},
+        ]
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}):
+            record = self.run_pulse()
+        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-8")
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
+
     def test_scheduled_pilot_consumes_one_attempt_across_wakes(self):
         number = 88
         task_id = f"BACKLOG-{number}"
@@ -178,10 +188,12 @@ class DutyRunnerTests(unittest.TestCase):
         source_bytes = (Path(__file__).resolve().parents[1] / source).read_bytes()
         expected = hashlib.sha256(source_bytes).hexdigest()
         reporters = {seat: 101 + i for i, seat in enumerate(sorted(pilot_state.SEATS))}
-        self.add_seat_reports(reporters, "unavailable")
+        at = datetime.now(timezone.utc).replace(microsecond=0)
+        reported_at = (at - timedelta(minutes=1)).isoformat().replace("+00:00", "Z")
+        self.add_seat_reports(reporters, "unavailable", reported_at)
         self.issues.append({**issue(number, title="[READY] Artifact readback", body="[TO] [CODEX]"), "state": "open"})
         approval = comment(55, f"{pilot_state.PILOT_APPROVAL}\nTask ID: {task_id}\nPolicy SHA-256: digest")
-        approval.update(created_at="2026-11-08T14:00:00Z", updated_at="2026-11-08T14:00:00Z")
+        approval.update(created_at=reported_at, updated_at=reported_at)
         self.comments[141] = [approval]
         policy = {"seat_reporters": reporters, "verifier_user_id": 999,
                   "approved_pilots": {task_id: {"path": source, "sha256": expected}}}
@@ -189,8 +201,8 @@ class DutyRunnerTests(unittest.TestCase):
                                       "GITHUB_REF": "refs/heads/main", "GITHUB_SHA": "a" * 40,
                                       "GITHUB_WORKFLOW_REF": "example/Teamchat/.github/workflows/icarus-pulse.yml@refs/heads/main"}),
               patch.object(pilot_state, "load_policy", return_value=(policy, "digest"))):
-            first = self.run_pulse()
-            second = self.run_pulse()
+            first = self.run_pulse(at=at)
+            second = self.run_pulse(at=at)
         self.assertEqual(first["loop_state"], "WAITING_FOR_INDEPENDENT_VERIFIER")
         self.assertEqual(first["pilot_attempt"]["process_exit_code"], 0)
         self.assertEqual(first["pilot_attempt"]["sha256"], expected)
