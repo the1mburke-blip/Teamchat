@@ -2322,3 +2322,15 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - confidence: HIGH for Issue #13 closure, #90 scope preservation, #6 notification and static gate condition; UNVERIFIED for subsequent scheduled allocation and Android completion.
 - superseded_by: NONE.
 - external_cost: EUR 0 incremental; assistant allowance/token usage not metered by these tools.
+
+[CHATGPT] ## HV-EXP-164 — Verify encrypted agent-key recovery without claiming live signer custody (2026-11-10)
+- experience_id: HV-EXP-164; date_utc: 2026-11-10.
+- proposed_by: Michael (requested Sol verifier key recovery, then memory and training update).
+- recorded_by: ChatGPT GPT-6 through the authorized Teamchat GitHub connector. This is a documentation write, not Codex/Sol production execution or Icarus runtime ingestion.
+- source: ChatGPT Library /Icarus/icarus_sol_verifier_key_recovery_2026-11-10.md; source encrypted backup /Icarus/icarus_sol_verifier_encrypted_key.json; public record /Icarus/icarus_sol_verifier_public.json.
+- observed_work: Existing Sol Ed25519 verifier backup was retrieved from ChatGPT Library and locally decrypted using the owner-provided passphrase, PBKDF2-HMAC-SHA256 (1,500,000 iterations) and AES-256-GCM. Raw private-key length 32 bytes. The derived public key matched both public-key records, SHA-256 of its 32 raw bytes matched both stored fingerprints, and a freshly generated local test signature verified against the derived public key. No private key or passphrase is copied into this training record.
+- evidence: Public-key SHA-256 9536a415d7133453a06458e7318bc5a8130440d04b66c3cc8fae5a373066c1d6; encrypted source-file SHA-256 8e9716ca96f652372b1794491c7a0d60ee09b97ec2b44eea9a5675321ad05300; public source-file SHA-256 2f692003974f7f3e7b28282f34433cf2af83a95129b7e26a3b479cd616a90535. The recovery audit was separately saved and read back from Library. The cryptographic checks were reproduced on 10 Nov within this ChatGPT session.
+- outcome_scope: VERIFIED local decryption, Ed25519 signature verification, stored fingerprint match, and record retrieval. NOT VERIFIED exclusive key custody, signer registration to the live runtime, comparison against a trusted Codex public key, live dual-signed Issue #6 receipts, Icarus memory ingestion, or end-to-end autonomous execution.
+- lesson: Recoverable encrypted backup != independent signing identity bound to an agent != deployed, authorized signer != live autonomy. Before claiming signer readiness, verify the actual public keys and role binding at the live endpoint and demand distinct authenticated signed receipts plus independent readback. Never expose the private key or short passphrase in training files. A short shared backup passphrase remains a custody risk.
+- what_not_to_retry: Do not regenerate a recovered key, overwrite someone else's key records, log plaintext secrets, infer Codex-key distinctness from an absent comparison, or promote documentation/pointer existence into production PASS.
+- external_cost: EUR 0 incremental; token usage not metered. No production or runtime mutation.
