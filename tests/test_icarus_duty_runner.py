@@ -85,6 +85,7 @@ class DutyRunnerTests(unittest.TestCase):
             "ICARUS_PULSE_DUTY_SCHEDULE": DUTY_SCHEDULE,
             "ICARUS_PULSE_TRIGGER_SCHEDULE": DUTY_SCHEDULE,
             "ICARUS_DUTY_VERIFIER_USER_ID": "",
+            "ICARUS_DUTY_AGENT_SIGNERS": "",
         }))
         self.enterContext(patch.multiple(
             runner, LEDGER_PATH=self.ledger, STATUS_PATH=self.status,
@@ -231,6 +232,65 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(row["terminal_receipts"], [])
         self.assertNotIn("idle_receipt", row)
         self.assertEqual(self.issues[-1]["state"], "open")
+
+    def test_same_github_account_requires_two_distinct_task_bound_signatures(self):
+        dispatch = self.start_backlog()
+        self.terminal_proof(9, dispatch, worker_id=102)
+        worker, verifier = self.comments[6][-2:]
+        for receipt in (worker, verifier):
+            receipt["user"] = {"id": 102, "type": "User", "login": "maintainer"}
+        outbox = "https://api.github.com/repos/example/Teamchat/issues/6/comments"
+        directory = self.ledger.parent
+
+        keys = {}
+        for role in ("executor", "verifier"):
+            private = directory / f"{role}.pem"
+            subprocess.run(
+                ["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(private)], check=True,
+            )
+            der = subprocess.check_output([
+                "openssl", "pkey", "-in", str(private), "-pubout", "-outform", "DER",
+            ])
+            self.assertEqual(der[:-32].hex(), "302a300506032b6570032100")
+            keys[role] = der[-32:]
+
+        config = {"executors": {"[WORK]": keys["executor"].hex()}, "verifier": keys["verifier"].hex()}
+        os.environ["ICARUS_DUTY_AGENT_SIGNERS"] = json.dumps(config)
+        with self.assertRaisesRegex(ValueError, "distinct public keys"):
+            runner.load_agent_signers(json.dumps({**config, "verifier": keys["executor"].hex()}))
+
+        def sign(receipt, header, role, mailbox_url=outbox):
+            _, packet = next(runner.comment_packets([receipt], header))
+            message = directory / "signed-input"
+            message.write_bytes(runner.agent_receipt_message(mailbox_url, header, packet))
+            private = directory / f"{role}.pem"
+            signature = subprocess.check_output([
+                "openssl", "pkeyutl", "-sign", "-rawin", "-inkey", str(private), "-in", str(message),
+            ])
+            return receipt["body"] + "\nAgent Signature: " + signature.hex()
+
+        unsigned = verifier["body"]
+        worker["body"] = sign(worker, runner.EXECUTION_HEADER, "executor")
+        for mode, body in (
+            ("unsigned", unsigned),
+            ("self-signed", sign(verifier, runner.VERIFICATION_HEADER, "executor")),
+            ("different mailbox", sign(verifier, runner.VERIFICATION_HEADER, "verifier", outbox.replace("/6/", "/7/"))),
+            ("tampered", sign(verifier, runner.VERIFICATION_HEADER, "verifier").replace(
+                "Observed SHA256: " + "a" * 64, "Observed SHA256: " + "b" * 64)),
+        ):
+            with self.subTest(mode=mode):
+                verifier["body"] = body
+                self.assertEqual(self.run_pulse()["terminal_receipts"], [])
+                self.assertEqual(self.issues[-1]["state"], "open")
+
+        verifier["body"] = unsigned
+        verifier["body"] = sign(verifier, runner.VERIFICATION_HEADER, "verifier")
+        result = self.run_pulse()["terminal_receipts"][0]
+        self.assertEqual((result["status"], result["exit_code"]), ("CLOSED", 0))
+        self.assertEqual(result["executor_sha"], hashlib.sha256(keys["executor"]).hexdigest())
+        self.assertEqual(result["verifier_sha"], hashlib.sha256(keys["verifier"]).hexdigest())
+        self.assertEqual(self.issues[-1]["state"], "closed")
+        self.assertEqual(self.run_pulse()["terminal_receipts"], [])
 
     def test_terminal_exhausted_reissue_leash_leaves_issue_open(self):
         dispatch = self.start_backlog()

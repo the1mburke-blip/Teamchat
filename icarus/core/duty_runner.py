@@ -6,11 +6,13 @@ Scheduled backlog issues use `[SOURCE_FILE]`. The echo canary has no file.
 """
 
 import datetime
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 import urllib.request
 from pathlib import Path
 
@@ -211,13 +213,62 @@ def adjudicate_canaries(repo, mailbox, comments, dispatches, outbox_url, token, 
     return waiting
 
 
-def verified_backlog_results(comments, verifier_id):
+def load_agent_signers(raw):
+    """Load enrolled raw Ed25519 public keys from trusted runner configuration."""
+    config = json.loads(raw)
+    if not isinstance(config, dict) or config.keys() != {"executors", "verifier"}:
+        raise ValueError("Invalid ICARUS_DUTY_AGENT_SIGNERS fields")
+    executors = config["executors"]
+    if not isinstance(executors, dict) or not executors or not executors.keys() <= CHAIRS:
+        raise ValueError("Invalid ICARUS_DUTY_AGENT_SIGNERS executors")
+    signers = {**executors, VERIFICATION_HEADER: config["verifier"]}
+    if any(not isinstance(key, str) or not re.fullmatch(r"[0-9a-f]{64}", key)
+           for key in signers.values()):
+        raise ValueError("Invalid ICARUS_DUTY_AGENT_SIGNERS public key")
+    signers = {role: bytes.fromhex(key) for role, key in signers.items()}
+    if len(set(signers.values())) != len(signers):
+        raise ValueError("ICARUS_DUTY_AGENT_SIGNERS requires distinct public keys")
+    return signers
+
+
+def agent_receipt_message(outbox_url, header, packet):
+    """Canonical UTF-8 payload for an execution or independent verification signature."""
+    return json.dumps({
+        "domain": "icarus-duty-agent-receipt-v1",
+        "outbox": outbox_url,
+        "header": header,
+        "fields": {key: value for key, value in packet.items() if key != "agent signature"},
+    }, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def verifies_agent_receipt(outbox_url, header, packet, public_key):
+    signature = packet.get("agent signature", "")
+    if public_key is None or not re.fullmatch(r"[0-9a-f]{128}", signature):
+        return False
+    with tempfile.TemporaryDirectory(prefix="icarus-agent-receipt-") as directory:
+        files = Path(directory)
+        # RFC 8410 SubjectPublicKeyInfo for a raw Ed25519 public key.
+        (files / "key.der").write_bytes(bytes.fromhex("302a300506032b6570032100") + public_key)
+        (files / "receipt").write_bytes(agent_receipt_message(outbox_url, header, packet))
+        (files / "signature").write_bytes(bytes.fromhex(signature))
+        result = subprocess.run(
+            ["openssl", "pkeyutl", "-verify", "-rawin", "-pubin", "-keyform", "DER",
+             "-inkey", "key.der", "-in", "receipt", "-sigfile", "signature"],
+            cwd=files, capture_output=True, timeout=5, check=False,
+        )
+        return result.returncode == 0
+
+
+def verified_backlog_results(comments, verifier_id, agent_signers, outbox_url):
     workers = {comment["id"]: (comment, packet)
                for comment, packet in comment_packets(comments, EXECUTION_HEADER)}
     for comment, proof in comment_packets(comments, VERIFICATION_HEADER):
         verifier = comment.get("user") or {}
-        if (str(verifier.get("id")) != verifier_id or not unedited(comment)
-                or verifier.get("type") != "Bot" or verifier.get("login") == "github-actions[bot]"):
+        if not unedited(comment):
+            continue
+        if not agent_signers and (
+                str(verifier.get("id")) != verifier_id or verifier.get("type") != "Bot"
+                or verifier.get("login") == "github-actions[bot]"):
             continue
         worker_id = proof.get("execution comment id", "")
         if not worker_id.isascii() or not worker_id.isdecimal() or len(worker_id) > 20:
@@ -225,7 +276,8 @@ def verified_backlog_results(comments, verifier_id):
         worker, execution = workers.get(int(worker_id), ({}, {}))
         worker_user = worker.get("user") or {}
         if (type(worker_user.get("id")) is not int or worker_user["id"] <= 0
-                or str(worker_user["id"]) == verifier_id or not unedited(worker)
+                or (not agent_signers and str(worker_user["id"]) == verifier_id)
+                or not unedited(worker)
                 or worker["id"] >= comment["id"]
                 or execution.get("task id") != proof["task id"]
                 or execution.get("dispatch comment id") != proof.get("dispatch comment id")
@@ -241,7 +293,20 @@ def verified_backlog_results(comments, verifier_id):
                 or not re.fullmatch(r"[0-9a-f]{64}", expected)
                 or (observed != "missing" and not re.fullmatch(r"[0-9a-f]{64}", observed))):
             continue
-        yield comment, proof, execution, int(exit_code), expected, observed
+        fingerprints = {}
+        if agent_signers:
+            executor_key = agent_signers.get(execution.get("target chair"))
+            verifier_key = agent_signers[VERIFICATION_HEADER]
+            if (not verifies_agent_receipt(outbox_url, EXECUTION_HEADER, execution, executor_key)
+                    or not verifies_agent_receipt(outbox_url, VERIFICATION_HEADER, proof, verifier_key)):
+                continue
+            fingerprints = {
+                "executor_sha": hashlib.sha256(executor_key).hexdigest(),
+                "verifier_sha": hashlib.sha256(verifier_key).hexdigest(),
+            }
+            if fingerprints["executor_sha"] == fingerprints["verifier_sha"]:
+                continue
+        yield comment, proof, execution, int(exit_code), expected, observed, fingerprints
 
 
 def unedited(comment):
@@ -263,14 +328,17 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
     """Consume separate automated execution and verification receipts.
 
     A worker reports the source commit and dispatch ID under EXECUTION_HEADER.
-    The configured verifier bot independently reports that pair, the execution
-    comment ID, actual exit code, expected and observed artifact SHA-256, scope
-    and cost under VERIFICATION_HEADER. GitHub comment IDs bind the attempt.
+    The verifier independently reports that pair, the execution comment ID,
+    exit code, artifact SHA-256 values, scope and cost under VERIFICATION_HEADER.
+    With enrolled signing keys, both roles sign and the GitHub account transports
+    their receipts. Legacy deployments can still use an independent verifier bot.
     """
+    raw_signers = os.getenv("ICARUS_DUTY_AGENT_SIGNERS", "")
+    agent_signers = load_agent_signers(raw_signers) if raw_signers else None
     verifier_id = os.getenv("ICARUS_DUTY_VERIFIER_USER_ID", "")
-    if not verifier_id:
+    if not agent_signers and not verifier_id:
         return
-    if not re.fullmatch(r"[1-9][0-9]{0,19}", verifier_id):
+    if not agent_signers and not re.fullmatch(r"[1-9][0-9]{0,19}", verifier_id):
         raise ValueError("Invalid ICARUS_DUTY_VERIFIER_USER_ID")
 
     active = {}
@@ -293,8 +361,8 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
         for comment, packet in comment_packets(comments, TERMINAL_HEADER, bot_only=True)
     }
     outbox_url = f"{issues_url}/{mailbox}/comments"
-    for verification, proof, execution, exit_code, expected, observed in verified_backlog_results(
-            comments, verifier_id):
+    for verification, proof, execution, exit_code, expected, observed, fingerprints in verified_backlog_results(
+            comments, verifier_id, agent_signers, outbox_url):
         task_id = proof["task id"]
         if task_id not in active:
             continue
@@ -330,6 +398,7 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
             "verification_comment_id": verification["id"], "git_commit_sha": proof["git commit sha"],
             "exit_code": exit_code, "expected_sha256": expected, "observed_sha256": observed,
             "verdict": verdict,
+            **fingerprints,
         }
         marker = (
             f"{TERMINAL_HEADER}\nTask ID: {task_id}\nDispatch Comment ID: {dispatch_id}\n"
@@ -337,6 +406,9 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
             f"Git Commit SHA: {proof['git commit sha']}\nExit Code: {exit_code}\n"
             f"Expected SHA256: {expected}\nObserved SHA256: {observed}"
         )
+        if fingerprints:
+            marker += (f"\nExecutor SHA: {fingerprints['executor_sha']}"
+                       f"\nVerifier SHA: {fingerprints['verifier_sha']}")
         if key in prepared:
             prior = prepared[key]
             if prior.get("body") != marker:

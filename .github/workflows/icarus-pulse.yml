@@ -40,6 +40,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ICARUS_ISSUE_NUMBER: "6"
           ICARUS_PULSE_TRIGGER_SCHEDULE: ${{ github.event.schedule }}
+          # Public Ed25519 keys only. The executor and verifier keep separate private keys.
+          ICARUS_DUTY_AGENT_SIGNERS: ${{ vars.ICARUS_DUTY_AGENT_SIGNERS }}
         run: |
           python3 -m icarus.core.duty_runner
 
