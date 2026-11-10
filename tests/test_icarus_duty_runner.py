@@ -2,6 +2,7 @@ import hashlib
 import io
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -18,14 +19,17 @@ from scripts import icarus_duty_runner as legacy_runner
 DUTY_SCHEDULE = "7 0-22/2 1-30 * *"
 
 
-def task(task_id):
+def task(task_id, source="harness-runner.py"):
     return (
         f"[TASK_INCOMING]\nTask ID: {task_id}\n"
         "Target Chair: [WORK]\nScope Instruction: Inspect the evidence"
+        + (f"\nSource File: {source}" if source is not None else "")
     )
 
 
 def issue(number, *, title="", body="", association="OWNER"):
+    if "[READY]" in title and "[SOURCE_FILE]" not in body:
+        body += "\n[SOURCE_FILE] harness-runner.py"
     return {"number": number, "title": title, "body": body, "author_association": association}
 
 
@@ -49,12 +53,27 @@ def canary_comments(task_id):
 
 
 class DutyRunnerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        repo = Path(cls.enterClassContext(tempfile.TemporaryDirectory()))
+        (repo / "harness-runner.py").write_text("# Source file for preflight\n", encoding="utf-8")
+        (repo / "icarus").mkdir()
+        (repo / "icarus" / "__init__.py").touch()
+        for args in (
+            ["init", "--quiet"], ["add", "."],
+            ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+             "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "Preflight source fixture"],
+        ):
+            subprocess.run(["git", *args], cwd=repo, check=True)
+        cls.repo = repo
+
     def setUp(self):
         self.issues = [issue(6)]
         self.comments = {}
         self.requests = []
         self.posts = []
         self.fail_request = None
+        self.ambiguous_patch = False
         temp = self.enterContext(tempfile.TemporaryDirectory())
         self.ledger = Path(temp, "RUN_LOG.jsonl")
         self.status = Path(temp, "icarus_status.json")
@@ -65,10 +84,11 @@ class DutyRunnerTests(unittest.TestCase):
             "GITHUB_EVENT_NAME": "workflow_dispatch",
             "ICARUS_PULSE_DUTY_SCHEDULE": DUTY_SCHEDULE,
             "ICARUS_PULSE_TRIGGER_SCHEDULE": DUTY_SCHEDULE,
+            "ICARUS_DUTY_VERIFIER_USER_ID": "",
         }))
         self.enterContext(patch.multiple(
             runner, LEDGER_PATH=self.ledger, STATUS_PATH=self.status,
-            call_github_api=self.github,
+            call_github_api=self.github, REPO_ROOT=self.repo,
         ))
         self.enterContext(patch.object(pilot_state, "PROOF_PATH", str(self.ledger.parent / "proof.bin")))
 
@@ -79,9 +99,18 @@ class DutyRunnerTests(unittest.TestCase):
             raise RuntimeError(f"{method} {path}: HTTP 503")
         if path == "/repos/example/Teamchat/issues":
             self.assertEqual(parse_qs(urlsplit(url).query)["state"], ["open"])
-            rows = self.issues
+            rows = [row for row in self.issues if row.get("state") != "closed"]
+        elif path.startswith("/repos/example/Teamchat/issues/comments/"):
+            comment_id = int(path.rsplit("/", 1)[-1])
+            return next(row for rows in self.comments.values() for row in rows if row["id"] == comment_id), ""
         elif not path.endswith("/comments"):
-            return next(row for row in self.issues if row["number"] == int(path.split("/")[-1])), ""
+            row = next(row for row in self.issues if row["number"] == int(path.split("/")[-1]))
+            if method == "PATCH":
+                row.update(payload)
+                if self.ambiguous_patch:
+                    self.ambiguous_patch = False
+                    raise RuntimeError("PATCH response lost after mutation")
+            return row, ""
         else:
             number = int(path.split("/")[-2])
             rows = self.comments.setdefault(number, [])
@@ -92,6 +121,7 @@ class DutyRunnerTests(unittest.TestCase):
                 association="NONE", author="github-actions[bot]",
             )
             receipt["user"]["id"] = pilot_state.PULSE_ACTOR_ID
+            receipt["issue_url"] = f"https://api.github.com{path.removesuffix('/comments')}"
             rows.append(receipt)
             return receipt, ""
         query = parse_qs(urlsplit(url).query)
@@ -130,7 +160,102 @@ class DutyRunnerTests(unittest.TestCase):
                 self.assertEqual(record["timestamp_utc"], timestamp.isoformat())
                 self.assertEqual(self.requests, [])
 
-    def test_issue_six_still_dispatches_its_original_packet(self):
+    def test_completed_inspection_writes_zero_task_tool_idle_receipt(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        record = self.run_pulse()
+        self.assertEqual(record["idle_receipt"], {
+            "verdict": "PASS", "reason": "NO_TASK_ACTION_REQUIRED",
+            "required_task_tool_calls": 0, "exit_code": 0,
+        })
+        self.assertEqual(record["issue_numbers_inspected"], [6])
+        self.assertEqual(self.posts, [])
+
+    def test_blocked_source_preflight_does_not_emit_an_idle_pass(self):
+        self.comments[6] = [comment(10, task("BLOCKED", source="missing.py"))]
+        record = self.run_pulse()
+        self.assertEqual(record["task_states"]["BLOCKED"]["status"], "PREFLIGHT_BLOCKED")
+        self.assertNotIn("idle_receipt", record)
+
+    def terminal_proof(self, number, dispatch, *, exit_code=0, observed="a" * 64,
+                       worker_id=101, verifier_id=102, source_sha="c" * 40):
+        task_id = f"BACKLOG-{number}"
+        worker_comment_id = dispatch + 100
+        proof_comment_id = dispatch + 101
+        stamps = dict(created_at="2026-11-10T14:00:00Z", updated_at="2026-11-10T14:00:00Z")
+        binding = f"Task ID: {task_id}\nDispatch Comment ID: {dispatch}\nGit Commit SHA: {source_sha}"
+        worker = comment(worker_comment_id, f"{runner.EXECUTION_HEADER}\n{binding}\nTarget Chair: [WORK]")
+        worker.update(stamps, user={"id": worker_id, "type": "Bot", "login": "worker[bot]"})
+        proof = comment(proof_comment_id, (
+            f"{runner.VERIFICATION_HEADER}\n{binding}\nExecution Comment ID: {worker_comment_id}\n"
+            f"Exit Code: {exit_code}\nExpected SHA256: {'a' * 64}\nObserved SHA256: {observed}\n"
+            "Scope Verified: true\nIncremental Spend EUR: 0"
+        ))
+        proof.update(stamps, user={"id": verifier_id, "type": "Bot", "login": "verifier[bot]"})
+        self.comments[6].extend([worker, proof])
+
+    def start_backlog(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        os.environ["ICARUS_DUTY_VERIFIER_USER_ID"] = "102"
+        self.issues.append({**issue(9, title="[READY] Verify artifact"), "state": "open"})
+        row = self.run_pulse()
+        return row["dispatch_receipts"][0]["dispatch_comment_id"]
+
+    def test_terminal_reissue_and_close_are_read_back_and_replay_safe(self):
+        original = self.start_backlog()
+        self.terminal_proof(9, original, observed="b" * 64)
+        failed = self.run_pulse()["terminal_receipts"][0]
+        retry = failed["reissue_comment_id"]
+        self.assertEqual((failed["verdict"], failed["status"]), ("FAIL", "WAITING_FOR_RECEIPT"))
+        self.assertEqual(self.issues[-1]["state"], "open")
+        self.assertIn(f"Reissue Of: {original}", self.posts[-1])
+        self.assertIn(f"independently verify expected artifact digest {'a' * 64}", self.posts[-1])
+        self.assertIn("Repair Leash: 0 attempts", self.posts[-1])
+        self.assertEqual(self.run_pulse()["waiting_backlog"], [
+            {"task_id": "BACKLOG-9", "dispatch_comment_id": retry},
+        ])
+
+        self.terminal_proof(9, retry)
+        closed = self.run_pulse()["terminal_receipts"][0]
+        self.assertEqual((closed["verdict"], closed["status"], closed["exit_code"]), ("PASS", "CLOSED", 0))
+        self.assertEqual(self.issues[-1]["state_reason"], "completed")
+        self.assertTrue(closed["closure_comment_id"])
+        count = len(self.posts)
+        self.assertEqual(self.run_pulse()["terminal_receipts"], [])
+        self.assertEqual(len(self.posts), count)
+        self.assertEqual(sum(method == "PATCH" for method, _ in self.requests), 1)
+
+    def test_terminal_verifier_cannot_be_the_executor(self):
+        dispatch = self.start_backlog()
+        self.terminal_proof(9, dispatch, worker_id=102)
+        row = self.run_pulse()
+        self.assertEqual(row["terminal_receipts"], [])
+        self.assertNotIn("idle_receipt", row)
+        self.assertEqual(self.issues[-1]["state"], "open")
+
+    def test_terminal_exhausted_reissue_leash_leaves_issue_open(self):
+        dispatch = self.start_backlog()
+        self.terminal_proof(9, dispatch, exit_code=1)
+        retry = self.run_pulse()["terminal_receipts"][0]["reissue_comment_id"]
+        self.terminal_proof(9, retry, exit_code=1)
+        blocked = self.run_pulse()["terminal_receipts"][0]
+        self.assertEqual((blocked["verdict"], blocked["status"]), ("FAIL", "BLOCKED"))
+        self.assertNotIn("reissue_comment_id", blocked)
+        self.assertEqual(self.issues[-1]["state"], "open")
+        count = len(self.posts)
+        self.run_pulse()
+        self.assertEqual(len(self.posts), count)
+
+    def test_terminal_closure_resumes_after_ambiguous_patch_without_repeating_it(self):
+        dispatch = self.start_backlog()
+        self.terminal_proof(9, dispatch)
+        self.ambiguous_patch = True
+        failed = self.run_pulse(expected_exit=1)
+        self.assertEqual(failed["terminal_receipts"][0]["status"], "ADJUDICATED")
+        self.assertIn("response lost", failed["first_processing_error"])
+        self.assertEqual(self.run_pulse()["terminal_receipts"][0]["status"], "CLOSED")
+        self.assertEqual(sum(method == "PATCH" for method, _ in self.requests), 1)
+
+    def test_issue_six_dispatch_includes_verified_source(self):
         os.environ["ICARUS_PULSE_TRIGGER_SCHEDULE"] = ""
         self.comments[6] = [comment(10, task("LEGACY"))]
         record = self.run_pulse(at=datetime(2026, 12, 31, 15, 7, tzinfo=timezone.utc))
@@ -138,7 +263,9 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["dispatch_receipts"][0]["source_comment_id"], 10)
         self.assertEqual(self.posts, [
             "[ICARUS DISPATCH]\nTask ID: LEGACY\nTarget Chair: [WORK]\n"
-            "Directive: Inspect the evidence\nBudget: €0.00 | Repair Leash: 1 attempt"
+            "Directive: Inspect the evidence\nBudget: €0.00 | Repair Leash: 1 attempt\n"
+            "Source File: harness-runner.py\n"
+            f"Source Blob: {record['task_states']['LEGACY']['source_blob']}"
         ])
 
     def test_named_specialists_receive_their_own_task_packets(self):
@@ -276,7 +403,8 @@ class DutyRunnerTests(unittest.TestCase):
             {**issue(3, title="[P0] [READY] Closed"), "state": "closed"},
         ]
         first = self.run_pulse(at=datetime(2026, 11, 8, 15, 7, tzinfo=timezone.utc))
-        self.assertEqual(first["loop_state"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(first["loop_state"], "DISPATCHED")
+        self.assertEqual(first["task_states"]["BACKLOG-9"]["status"], "WAITING_FOR_RECEIPT")
         self.assertEqual(first["backlog_claim"]["issue_number"], 9)
         self.assertTrue(self.comments[9][-1]["body"].startswith(runner.CLAIM_HEADER))
         self.assertIn("Source Issue: #9 (comment 10001)", self.comments[6][-1]["body"])
@@ -285,8 +413,12 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(second["waiting_backlog"], [
             {"task_id": "BACKLOG-9", "dispatch_comment_id": 10002},
         ])
+        self.assertEqual(set(second["task_states"]), {"BACKLOG-8", "BACKLOG-9"})
+        self.assertEqual(second["task_states"]["BACKLOG-9"]["dispatch_comment_id"], 10002)
+        self.assertEqual(second["task_states"]["BACKLOG-8"]["dispatch_comment_id"], 10004)
         third = self.run_pulse()
-        self.assertEqual(third["loop_state"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(third["loop_state"], "IDLE_SELECT")
+        self.assertEqual(third["task_states"], second["task_states"])
         self.assertIsNone(third["backlog_claim"])
         self.assertFalse(third["dispatch_receipts"])
         self.assertEqual(len(self.comments[9]), 1)
@@ -310,6 +442,7 @@ class DutyRunnerTests(unittest.TestCase):
             "issue_number": 8, "source_comment_id": 10001, "task_id": "BACKLOG-8",
             "delegated_to": "[WORK]", "dispatch_comment_id": 10002,
         }])
+        self.assertEqual(first["task_states"]["CANARY-INTAKE-001"]["status"], "WAITING_FOR_RECEIPT")
 
         second = self.run_pulse()
         self.assertEqual(second["waiting_canary"], waiting)
@@ -319,6 +452,42 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertIsNone(second["backlog_claim"])
         self.assertFalse(second["dispatch_receipts"])
         self.assertEqual(len(self.posts), 2)
+
+    def test_preflight_blocked_backlog_is_never_claimed_and_next_task_dispatches(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        self.issues.extend([
+            {**issue(7, title="[P0] [READY] Missing file", body="[SOURCE_FILE] absent.py"),
+             "state": "open"},
+            {**issue(8, title="[READY] Valid"), "state": "open"},
+        ])
+        record = self.run_pulse()
+        self.assertEqual(record["task_states"]["BACKLOG-7"]["source_preflight"], "SOURCE_FILE_NOT_TRACKED")
+        self.assertEqual(record["task_states"]["BACKLOG-7"]["status"], "PREFLIGHT_BLOCKED")
+        self.assertFalse(self.comments.get(7))
+        self.assertEqual(record["task_states"]["BACKLOG-8"]["status"], "WAITING_FOR_RECEIPT")
+        blob = subprocess.check_output(
+            ["git", "rev-parse", "HEAD:harness-runner.py"], cwd=runner.REPO_ROOT, text=True,
+        ).strip()
+        self.assertEqual(record["task_states"]["BACKLOG-8"]["source_blob"], blob)
+        self.assertIn(f"Source Blob: {blob}", self.comments[6][-1]["body"])
+
+    def test_invalid_directive_sources_are_isolated_and_valid_dispatch_is_durable(self):
+        self.comments[6] = [
+            comment(10, task("MISSING", None)),
+            comment(11, task("TRAVERSAL", "../harness-runner.py")),
+            comment(12, task("AMBIGUOUS") + "\nSource File: icarus/core/duty_runner.py"),
+            comment(13, task("DIRECTORY", "icarus")),
+            comment(14, task("VALID") + "\nSource Blob: scope text"),
+        ]
+        record = self.run_pulse()
+        self.assertEqual({key: value["source_preflight"] for key, value in record["task_states"].items()}, {
+            "MISSING": "SOURCE_FILE_REQUIRED", "TRAVERSAL": "INVALID_SOURCE_PATH",
+            "AMBIGUOUS": "AMBIGUOUS_SOURCE_FILE", "DIRECTORY": "SOURCE_FILE_NOT_TRACKED",
+            "VALID": "VERIFIED",
+        })
+        self.assertEqual([receipt["task_id"] for receipt in record["dispatch_receipts"]], ["VALID"])
+        self.assertEqual(self.run_pulse()["task_states"]["VALID"], record["task_states"]["VALID"])
+        self.assertEqual(len(self.posts), 1)
 
     def test_interrupted_dispatch_resumes_claim_without_reposting(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
@@ -352,7 +521,8 @@ class DutyRunnerTests(unittest.TestCase):
         self.comments[6].append(comment(13, receipt, association="CONTRIBUTOR"))
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         pending = self.run_pulse()
-        self.assertEqual(pending["loop_state"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(pending["loop_state"], "IDLE_SELECT")
+        self.assertEqual(pending["task_states"][task_id]["status"], "WAITING_FOR_RECEIPT")
         self.assertEqual(pending["waiting_canary"], [{"task_id": task_id, "dispatch_comment_id": 11}])
         self.assertFalse(self.posts)
         self.comments[6].append(comment(14, receipt))
@@ -361,10 +531,13 @@ class DutyRunnerTests(unittest.TestCase):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         first = self.run_pulse()
         self.assertEqual(first["loop_state"], "ADJUDICATED")
+        self.assertEqual(first["task_states"][task_id]["status"], "ADJUDICATED")
         self.assertFalse(first["waiting_canary"])
         self.assertEqual(first["adjudication_receipts"][0]["work_receipt_comment_id"], 14)
         self.assertTrue(self.posts[0].startswith(runner.ADJUDICATION_HEADER))
-        self.assertEqual(self.run_pulse()["loop_state"], "IDLE_SELECT")
+        next_run = self.run_pulse()
+        self.assertEqual(next_run["loop_state"], "IDLE_SELECT")
+        self.assertEqual(next_run["task_states"][task_id], first["task_states"][task_id])
         self.assertEqual(len(self.posts), 1)
 
     def test_receipt_prevents_repeat_dispatch_with_a_closed_source(self):
