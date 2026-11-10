@@ -1,5 +1,8 @@
 {
-  "seat_reporters": {},
+  "seat_reporters": {
+    "CODEX": 324897963,
+    "SOL": 324897963
+  },
   "verifier_user_id": null,
   "approved_pilots": {}
 }
