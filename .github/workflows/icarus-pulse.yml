@@ -112,6 +112,8 @@ jobs:
       actions: read
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      evidence-id: ${{ steps.evidence.outputs.artifact-id }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -127,8 +129,13 @@ jobs:
       - name: Run harness
         id: harness
         run: |
+          set +e
           set -o pipefail
           python3 -m icarus.harness.container 2>&1 | tee harness.log
+          codes=("${PIPESTATUS[@]}")
+          echo "exit-code=${codes[0]}" >> "$GITHUB_OUTPUT" || exit 1
+          if (( codes[0] != 0 )); then exit "${codes[0]}"; fi
+          exit "${codes[1]}"
 
       - name: Produce physical state readback manifest
         if: success()
@@ -143,6 +150,7 @@ jobs:
         env:
           BUILD_OUTCOME: ${{ steps.build.outcome }}
           HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          HARNESS_EXIT_CODE: ${{ steps.harness.outputs.exit-code }}
         run: |
           python3 - <<'PY'
           import json, os, pathlib, re
@@ -151,7 +159,9 @@ jobs:
               p = pathlib.Path(name)
               return p.read_text(errors="replace") if p.exists() else ""
           log = read("harness.log")
-          match = re.search(r"HARNESS (PASS|FAIL): exit code (-?\d+)", log)
+          raw_exit_code = os.environ["HARNESS_EXIT_CODE"]
+          exit_code = int(raw_exit_code) if raw_exit_code else None
+          harness_status = None if exit_code is None else ("PASS" if exit_code == 0 else "FAIL")
           summary = re.findall(r"=+ (.*(?:passed|failed|error).*) =+", log)
           record = {
               "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -162,8 +172,8 @@ jobs:
               "ref": os.environ["GITHUB_REF"], "sha": os.environ["GITHUB_SHA"],
               "build_outcome": os.environ["BUILD_OUTCOME"],
               "harness_outcome": os.environ["HARNESS_OUTCOME"],
-              "harness_status": match.group(1) if match else None,
-              "harness_exit_code": int(match.group(2)) if match else None,
+              "harness_status": harness_status,
+              "harness_exit_code": exit_code,
               "pytest_summary": summary[-1] if summary else None,
               "build_log_tail": read("build.log").splitlines()[-40:],
               "harness_log_tail": log.splitlines()[-80:],
@@ -174,6 +184,7 @@ jobs:
           PY
 
       - name: Upload physical run evidence
+        id: evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -183,6 +194,36 @@ jobs:
             COMPLETION_MANIFEST.json
           if-no-files-found: error
           retention-days: 30
+
+  harness-writeback:
+    needs: harness
+    if: >-
+      ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+          && github.repository == 'the1mburke-blip/Teamchat' && needs.harness.outputs.evidence-id != '' }}
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.harness.outputs.evidence-id }}
+          path: harness-evidence
+      - name: Post harness evidence to Issue 6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 harness-runner.py --writeback-issue6 harness-evidence/RUN_LOG.jsonl
+      - name: Upload mailbox writeback ledger
+        uses: actions/upload-artifact@v7
+        with:
+          name: harness-mailbox-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: harness-evidence/RUN_LOG.jsonl
+          if-no-files-found: error
+          retention-days: 7
 
   completion-integrity:
     name: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && 'completion-integrity' || 'completion-integrity (inactive)' }}
