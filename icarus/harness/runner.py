@@ -10,6 +10,13 @@ These flags require event/count/task-ID validation as well as artifact readback.
 Use --validate-execution task.json receipt.json for admission-only checks, or
 --test-suite for the offline Python and Apps Script regression suite.
 
+Use --route-task routing.json attempts_dir for the supervised operating loop.
+The trusted supervisor supplies a task, target_chair, seat_availability,
+availability_expires_at (UTC), and allow_pilot (boolean). An available target
+returns a delegation decision (exit 4). Pilot admission requires all four seats
+to be explicitly unavailable and an unused task ID in the durable attempt store.
+Exit 0 in pilot mode returns physical evidence for a separate adjudicator.
+
 Readback schemas (no additional keys):
   {"type":"file_hash", "path":"result.bin", "expected_hash":"<64 hex digits>"}
   {"type":"ledger_row", "path":"ledger.jsonl", "row_id":"task-1",
@@ -29,6 +36,7 @@ this gate's exit status AND parsed verdict. The hash must come from a trusted
 source; field presence alone does not attest ledger truth or artifact freshness.
 """
 
+import datetime
 import hashlib
 import hmac
 import json
@@ -52,6 +60,9 @@ MAX_INPUT_BYTES = 1024 * 1024
 MAX_LEDGER_LINE_BYTES = 1024 * 1024
 COMMAND_TIMEOUT_SECONDS = 300
 DIAGNOSTIC_BYTES = 16384
+SPECIALISTS = frozenset({"CODEX", "SOL", "LUNA", "GRACE"})
+ROUTING_FIELDS = frozenset({"task", "target_chair", "seat_availability",
+                            "availability_expires_at", "allow_pilot"})
 
 
 class InvalidPacket(ValueError):
@@ -235,12 +246,26 @@ def verify(spec):
                 raise EvidenceFailure("Expected exactly one ledger row; found " + str(matches))
         after = os.fstat(artifact.fileno())
         try:
-            current = os.stat(path)
+            # Path and handle stat can disagree on Windows for the same file.
+            with os.fdopen(os.open(path, flags), "rb") as reopened:
+                current = os.fstat(reopened.fileno())
         except (FileNotFoundError, NotADirectoryError) as exc:
             raise EvidenceFailure("Artifact disappeared during readback") from exc
-        if fingerprint(before) != fingerprint(after) or fingerprint(after) != fingerprint(current):
+        if (not stat.S_ISREG(current.st_mode) or fingerprint(before) != fingerprint(after)
+                or fingerprint(after) != fingerprint(current)):
             raise EvidenceFailure("Artifact changed during readback")
     return str(path.absolute())
+
+
+def load_packet(source):
+    if source == "-":
+        raw = sys.stdin.buffer.read(MAX_INPUT_BYTES + 1)
+    else:
+        with open(source, "rb") as stream:
+            raw = stream.read(MAX_INPUT_BYTES + 1)
+    if len(raw) > MAX_INPUT_BYTES:
+        raise InvalidPacket("Task input exceeds size limit")
+    return parse_json(raw.decode("utf-8"))
 
 
 def main():
@@ -249,24 +274,86 @@ def main():
         return 2
     source = sys.argv[1] if len(sys.argv) == 2 else "-"
     try:
-        if source == "-":
-            raw = sys.stdin.buffer.read(MAX_INPUT_BYTES + 1)
-        else:
-            with open(source, "rb") as stream:
-                raw = stream.read(MAX_INPUT_BYTES + 1)
+        packet = load_packet(source)
+        command = validate(packet)
     except OSError as exc:
         return escalate("Make the task input readable by the runner account.", exc)
-    try:
-        if len(raw) > MAX_INPUT_BYTES:
-            raise InvalidPacket("Task input exceeds size limit")
-        packet = parse_json(raw.decode("utf-8"))
-        command = validate(packet)
     except (ValueError, UnicodeError, RecursionError) as exc:
         emit_diagnostic({"verdict": "HALT_ZERO_VALUE", "reason": str(exc)})
         return 2
     if not packet["owner_preauthorized"]:
         return escalate("Authorize this task in a trusted task packet.",
                         "owner_preauthorized is false")
+    return run_task(packet, command)
+
+
+def validate_routing(route):
+    if not isinstance(route, dict) or set(route) != ROUTING_FIELDS:
+        raise InvalidPacket("Invalid supervised routing fields")
+    target = route["target_chair"]
+    seats = route["seat_availability"]
+    expires = route["availability_expires_at"]
+    if not isinstance(target, str) or target not in SPECIALISTS:
+        raise InvalidPacket("Invalid target chair")
+    if (not isinstance(seats, dict) or set(seats) != SPECIALISTS
+            or any(status not in ("available", "unavailable", "unknown") for status in seats.values())):
+        raise InvalidPacket("Expected an explicit availability status for each specialist")
+    if type(route["allow_pilot"]) is not bool:
+        raise InvalidPacket("allow_pilot must be boolean")
+    if not isinstance(expires, str) or not expires.endswith(("Z", "+00:00")):
+        raise InvalidPacket("Expected a UTC availability expiry")
+    if expires.endswith("Z"):
+        expires = expires[:-1] + "+00:00"
+    expiry = datetime.datetime.fromisoformat(expires)
+    if expiry.utcoffset() != datetime.timedelta(0):
+        raise InvalidPacket("Expected a timezone-aware UTC availability expiry")
+    packet = route["task"]
+    command = validate(packet)
+    return packet, command, expiry
+
+
+def route_task(source, attempts_dir):
+    try:
+        route = load_packet(source)
+        packet, command, expiry = validate_routing(route)
+    except OSError as exc:
+        return escalate("Provide a readable trusted routing packet.", exc)
+    except (ValueError, UnicodeError, RecursionError) as exc:
+        emit_diagnostic({"verdict": "HALT_ZERO_VALUE", "reason": str(exc)})
+        return 2
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if not packet["owner_preauthorized"] or expiry <= now:
+        return escalate("Refresh the authorized routing packet.",
+                        "Missing owner authorization or expired availability")
+    target = route["target_chair"]
+    seats = route["seat_availability"]
+    task_id = packet["task_id"]
+    if seats[target] == "available":
+        print(json.dumps({"task_id": task_id, "route": "DELEGATE", "target_chair": target}), flush=True)
+        return 4
+    if any(status != "unavailable" for status in seats.values()):
+        return escalate("Resolve specialist routing before considering pilot execution.",
+                        "All specialist seats must be confirmed unavailable")
+    if not route["allow_pilot"] or packet["readback"]["type"] != "file_hash":
+        return escalate("Supply an authorized pilot command and independent SHA-256 target.",
+                        "Pilot authorization and file_hash readback are required")
+
+    # Reserve before any subprocess effect. An interrupted attempt stays reserved.
+    name = hashlib.sha256(task_id.encode("utf-8")).hexdigest() + ".json"
+    try:
+        with (Path(attempts_dir) / name).open("x", encoding="utf-8") as marker:
+            json.dump({"task_id": task_id, "reserved_at_utc": now.isoformat()}, marker)
+            marker.flush()
+            os.fsync(marker.fileno())
+    except FileExistsError:
+        return escalate("Hand the task back for adjudication.", "Harness Pilot attempt already reserved")
+    except OSError as exc:
+        return escalate("Provide a writable durable pilot attempt store.", exc)
+    return run_task(packet, command, pilot=True)
+
+
+def run_task(packet, command, *, pilot=False):
     try:
         execution = execute(command)
     except OSError as exc:
@@ -300,7 +387,13 @@ def main():
         emit_diagnostic({"task_id": packet["task_id"], "verdict": "FAIL",
                          "reason": "Readback interrupted"})
         return 1
-    # Only this branch may emit a verdict on stdout.
+    if pilot:
+        print(json.dumps({"task_id": packet["task_id"], "route": "HARNESS_PILOT",
+                          "verdict": "VERIFYING", "exit_code": execution["exit_code"],
+                          "proof_artifact": proof, "sha256": packet["readback"]["expected_hash"].lower()}),
+              flush=True)
+        return 0
+    # The legacy evidence-only interface retains its original verdict format.
     sys.stdout.write(json.dumps({"evaluator": "CHAIR_JUDGE", "task_id": packet["task_id"],
                                  "verdict": "PASS", "proof_artifact": proof,
                                  "readback_status": "VERIFIED"}, ensure_ascii=True) + "\n")
@@ -309,6 +402,8 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 4 and sys.argv[1] == "--route-task":
+        sys.exit(route_task(sys.argv[2], sys.argv[3]))
     if sys.argv[1:] == ["--test-suite"]:
         sys.exit(subprocess.run([sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "tests/"],
                                 cwd=Path(__file__).resolve().parents[2], check=False).returncode)

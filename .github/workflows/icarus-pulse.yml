@@ -40,6 +40,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ICARUS_ISSUE_NUMBER: "6"
           ICARUS_PULSE_TRIGGER_SCHEDULE: ${{ github.event.schedule }}
+          # Public Ed25519 keys only. The executor and verifier keep separate private keys.
+          ICARUS_DUTY_AGENT_SIGNERS: ${{ vars.ICARUS_DUTY_AGENT_SIGNERS }}
         run: |
           python3 -m icarus.core.duty_runner
 
@@ -79,8 +81,28 @@ jobs:
           path: |
             icarus_status.json
             RUN_LOG.jsonl
+            icarus-pilot-proof.bin
             icarus/runs/*-pulse-${{ github.run_id }}.md
           retention-days: 30
+
+  sidecar-verifier:
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main' && vars.ICARUS_SIDECAR_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: icarus-sidecar
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify and submit exact-head review
+        env:
+          SIDECAR_VERIFIER_TOKEN: ${{ secrets.SIDECAR_VERIFIER_TOKEN }}
+        run: python3 -m icarus.core.sidecar
 
   harness:
     name: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && 'harness' || 'harness (inactive)' }}

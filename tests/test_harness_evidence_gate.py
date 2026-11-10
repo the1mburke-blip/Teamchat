@@ -1,4 +1,5 @@
 """CLI contract checks for the evidence gate; no network or provider calls."""
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -122,3 +123,82 @@ def test_ledger_physical_readback(packet, tmp_path, rows, expected):
     result = invoke(packet, tmp_path, expected)
     if expected == 0:
         assert json.loads(result.stdout)["readback_status"] == "VERIFIED"
+
+
+@pytest.fixture
+def supervised_route(packet, tmp_path):
+    attempts = tmp_path / "attempts"
+    attempts.mkdir()
+    return {
+        "task": packet,
+        "target_chair": "CODEX",
+        "seat_availability": dict.fromkeys(("CODEX", "SOL", "LUNA", "GRACE"), "unavailable"),
+        "availability_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+        "allow_pilot": True,
+    }
+
+
+def invoke_route(route, tmp_path):
+    return subprocess.run(
+        [sys.executable, str(RUNNER), "--route-task", "-", str(tmp_path / "attempts")],
+        input=json.dumps(route), text=True, capture_output=True, cwd=tmp_path, timeout=15,
+    )
+
+
+def test_available_specialist_routes_before_pilot(supervised_route, tmp_path):
+    supervised_route["seat_availability"]["CODEX"] = "available"
+    result = invoke_route(supervised_route, tmp_path)
+    assert result.returncode == 4
+    assert json.loads(result.stdout) == {
+        "task_id": "HV-GATE-001", "route": "DELEGATE", "target_chair": "CODEX",
+    }
+    assert not (tmp_path / "proof.txt").exists()
+    assert not list((tmp_path / "attempts").iterdir())
+
+
+@pytest.mark.parametrize("status", ["unknown", "available"])
+def test_pilot_waits_when_any_seat_is_unresolved_or_available(supervised_route, tmp_path, status):
+    supervised_route["seat_availability"]["GRACE"] = status
+    result = invoke_route(supervised_route, tmp_path)
+    assert result.returncode == 3
+    assert "All specialist seats must be confirmed unavailable" in result.stderr
+    assert not (tmp_path / "proof.txt").exists()
+    assert not list((tmp_path / "attempts").iterdir())
+
+
+@pytest.mark.parametrize("changes, code", [
+    ({"allow_pilot": False}, 3),
+    ({"availability_expires_at": "2000-01-01T00:00:00Z"}, 3),
+    ({"availability_expires_at": "2000-01-01+00:00"}, 2),
+    ({"seat_availability": {"CODEX": "unavailable"}}, 2),
+])
+def test_pilot_rejects_unapproved_or_invalid_routing(supervised_route, tmp_path, changes, code):
+    supervised_route.update(changes)
+    result = invoke_route(supervised_route, tmp_path)
+    assert result.returncode == code
+    assert not (tmp_path / "proof.txt").exists()
+    assert not list((tmp_path / "attempts").iterdir())
+
+
+@pytest.mark.parametrize("matches", [True, False])
+def test_pilot_records_physical_evidence_and_never_repeats(supervised_route, tmp_path, matches):
+    task = supervised_route["task"]
+    if not matches:
+        task["readback"]["expected_hash"] = "0" * 64
+    result = invoke_route(supervised_route, tmp_path)
+    assert result.returncode == (0 if matches else 1), result.stderr
+    if matches:
+        evidence = json.loads(result.stdout)
+        assert evidence["verdict"] == "VERIFYING"
+        assert evidence["exit_code"] == 0
+        assert evidence["sha256"] == hashlib.sha256((tmp_path / "proof.txt").read_bytes()).hexdigest()
+    else:
+        assert "SHA-256 mismatch" in result.stderr
+        assert not result.stdout
+    (tmp_path / "proof.txt").unlink()
+    result = invoke_route(supervised_route, tmp_path)
+    assert result.returncode == 3
+    assert "Harness Pilot attempt already reserved" in result.stderr
+    assert not (tmp_path / "proof.txt").exists()
+    marker, = (tmp_path / "attempts").iterdir()
+    assert json.loads(marker.read_text())["task_id"] == task["task_id"]

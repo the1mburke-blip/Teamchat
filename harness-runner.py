@@ -1,4 +1,4 @@
-"""Compatibility entry point for the packaged evidence runner."""
+"""Run the packaged evidence gate or its supervised --route-task entry point."""
 import runpy
 
 
