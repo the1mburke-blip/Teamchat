@@ -72,6 +72,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.comments = {}
         self.requests = []
         self.posts = []
+        self.relay_dispatches = []
         self.fail_request = None
         self.ambiguous_patch = False
         temp = self.enterContext(tempfile.TemporaryDirectory())
@@ -98,6 +99,10 @@ class DutyRunnerTests(unittest.TestCase):
         self.requests.append((method, url))
         if (method, path) == self.fail_request:
             raise RuntimeError(f"{method} {path}: HTTP 503")
+        if path == "/repos/example/Teamchat/actions/workflows/icarus-codex-wake.yml/dispatches":
+            self.assertEqual(method, "POST")
+            self.relay_dispatches.append(payload)
+            return {}, ""
         if path == "/repos/example/Teamchat/issues":
             self.assertEqual(parse_qs(urlsplit(url).query)["state"], ["open"])
             rows = [row for row in self.issues if row.get("state") != "closed"]
@@ -401,13 +406,15 @@ class DutyRunnerTests(unittest.TestCase):
         self.comments[6][-1]["id"] = 10002
         policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
         with (
-            patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule", "GITHUB_RUN_ID": "1234",
-                                    "ICARUS_CODEX_WAKE_PR": "8"}),
+            patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule", "GITHUB_RUN_ID": "1234"}),
             patch.object(pilot_state, "on_live_schedule", return_value=True),
             patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
         ):
             record = self.run_pulse()
         self.assertEqual(self.posts[0], f"{runner.CODEX_WAKE_HEADER}\nPulse Run ID: 1234")
+        self.assertEqual(self.relay_dispatches, [{
+            "ref": "main", "inputs": {"pulse_run_id": "1234", "request_comment_id": "10001"},
+        }])
         self.assertEqual(record["codex_wake"], {
             "request_comment_id": 10001, "availability": "available", "response_comment_id": 10002,
         })
@@ -418,14 +425,26 @@ class DutyRunnerTests(unittest.TestCase):
         issues_url = "https://api.github.com/repos/example/Teamchat/issues"
         record = {}
         with (
-            patch.object(runner.time, "monotonic", side_effect=[0, 0, 150, 150]),
+            patch.object(runner.time, "monotonic", side_effect=[0, 0, runner.CODEX_WAKE_WAIT_SECONDS,
+                                                               runner.CODEX_WAKE_WAIT_SECONDS]),
             patch.object(runner.time, "sleep"),
         ):
             state = runner.refresh_codex_availability(
-                issues_url, f"{issues_url}/6/comments", "test-token", 101, "8", "1234", record,
+                "example/Teamchat", f"{issues_url}/6/comments", "test-token", 101, "1234", record,
             )
         self.assertEqual(state, "unknown")
         self.assertEqual(record["codex_wake"], {"request_comment_id": 10001, "availability": "unknown"})
+
+    def test_codex_wake_dispatch_failure_cannot_reuse_a_report(self):
+        self.add_seat_reports({"CODEX": 101}, "available", at="2026-11-08T14:07:00Z")
+        self.fail_request = ("POST", "/repos/example/Teamchat/actions/workflows/icarus-codex-wake.yml/dispatches")
+        outbox = "https://api.github.com/repos/example/Teamchat/issues/6/comments"
+        record = {}
+        self.assertEqual(
+            runner.refresh_codex_availability("example/Teamchat", outbox, "test-token", 101, "1234", record),
+            "unknown",
+        )
+        self.assertIn("HTTP 503", record["codex_wake"]["dispatch_error"])
 
     def test_scheduled_pilot_consumes_one_attempt_across_wakes(self):
         number = 88

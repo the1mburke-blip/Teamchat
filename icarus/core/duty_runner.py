@@ -30,8 +30,8 @@ EXECUTION_HEADER = "[ICARUS EXECUTION RECEIPT]"
 VERIFICATION_HEADER = "[ICARUS INDEPENDENT VERIFICATION]"
 TERMINAL_HEADER = "[ICARUS TERMINAL EVIDENCE]"
 TERMINAL_CLOSED_HEADER = "[ICARUS TERMINAL CLOSED]"
-CODEX_WAKE_HEADER = "[ICARUS CODEX AVAILABILITY REQUEST]"
-CODEX_WAKE_WAIT_SECONDS = 150
+CODEX_WAKE_HEADER = "[ICARUS CODEX WAKE RELAY REQUEST]"
+CODEX_WAKE_WAIT_SECONDS = 180
 ECHO_DIRECTIVE = "Echo test for task intake and worker delegation verification."
 MONITOR_ONLY_MARKER = re.compile(
     r"^\s*(\[ICARUS SUPERVISORY DIRECTIVE\]|ICARUS_RUN)(?=\s|$)",
@@ -71,7 +71,8 @@ def call_github_api(url, token, method="GET", payload=None):
         with urllib.request.urlopen(request, timeout=30) as response:
             if not 200 <= response.status < 300:
                 raise RuntimeError(f"HTTP {response.status}")
-            return json.load(response), response.headers.get("Link", "")
+            data = {} if response.status == 204 else json.load(response)
+            return data, response.headers.get("Link", "")
     except (OSError, ValueError, RuntimeError) as error:
         raise RuntimeError(f"{method} {url}: {error}") from error
 
@@ -626,13 +627,22 @@ def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_u
     record["loop_state"] = "WAITING_FOR_INDEPENDENT_VERIFIER"
 
 
-def refresh_codex_availability(issues_url, outbox_url, token, actor, wake_pr, run_id, record):
+def refresh_codex_availability(repo, outbox_url, token, actor, run_id, record):
+    if (wake := record.get("codex_wake")) is not None:
+        return wake["availability"]
     requested_at = datetime.datetime.now(datetime.timezone.utc)
-    wake_id = post_comment(
-        f"{issues_url}/{wake_pr}/comments", token, f"{CODEX_WAKE_HEADER}\nPulse Run ID: {run_id}",
-    )
+    wake_id = post_comment(outbox_url, token, f"{CODEX_WAKE_HEADER}\nPulse Run ID: {run_id}")
     wake = {"request_comment_id": wake_id, "availability": "unknown"}
     record["codex_wake"] = wake
+    relay_url = f"https://api.github.com/repos/{repo}/actions/workflows/icarus-codex-wake.yml/dispatches"
+    try:
+        call_github_api(relay_url, token, "POST", {
+            "ref": "main",
+            "inputs": {"pulse_run_id": run_id, "request_comment_id": str(wake_id)},
+        })
+    except RuntimeError as error:
+        wake["dispatch_error"] = str(error)
+        return wake["availability"]
     since = requested_at.strftime("%Y-%m-%dT%H:%M:%SZ")
     query = urllib.parse.urlencode({"since": since})
     deadline = time.monotonic() + CODEX_WAKE_WAIT_SECONDS
@@ -776,12 +786,10 @@ def monitor_issues(repo, mailbox, token, record):
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = fetch_pages(outbox_url, token)
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
-            wake_pr = os.getenv("ICARUS_CODEX_WAKE_PR", "")
             run_id = os.getenv("GITHUB_RUN_ID", "")
-            if (seat == "CODEX" and live_schedule and wake_pr == "8"
-                    and re.fullmatch(r"[1-9][0-9]{0,19}", run_id)):
+            if seat == "CODEX" and live_schedule and re.fullmatch(r"[1-9][0-9]{0,19}", run_id):
                 states[seat] = refresh_codex_availability(
-                    issues_url, outbox_url, token, reporters[seat], wake_pr, run_id, record,
+                    repo, outbox_url, token, reporters[seat], run_id, record,
                 )
                 refreshed, _ = call_github_api(f"{issues_url}/{number}", token)
                 if backlog_candidate(refreshed) != candidate or refreshed.get("body") != current.get("body"):

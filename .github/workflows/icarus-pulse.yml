@@ -25,7 +25,6 @@ jobs:
       actions: write
       contents: read
       issues: write
-      pull-requests: write
 
     steps:
       - name: Checkout Repository
@@ -40,7 +39,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ICARUS_ISSUE_NUMBER: "6"
-          ICARUS_CODEX_WAKE_PR: ${{ vars.ICARUS_CODEX_WAKE_PR }}
           ICARUS_PULSE_TRIGGER_SCHEDULE: ${{ github.event.schedule }}
           # Public Ed25519 keys only. The executor and verifier keep separate private keys.
           ICARUS_DUTY_AGENT_SIGNERS: ${{ vars.ICARUS_DUTY_AGENT_SIGNERS }}
