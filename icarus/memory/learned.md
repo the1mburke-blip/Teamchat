@@ -306,3 +306,12 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - **Do not infer:** This does not verify sole custody, an independent Codex public-key comparison, actual registered signer identity, live dual-signed receipts on Issue #6, working autonomous adjudication, or that a running ICARUS instance loaded this memory update.
 - **Hard rule:** Key file presence and local decryption prove recoverability only. Before authorizing live signer use, read the deployed signer registry, verify role-bound public keys, require distinct authenticated execution/verification receipts, and independently inspect the final effect. Do not log the private key or passphrase; the short shared backup passphrase is a security limitation.
 - **Persistence boundary:** This GitHub memory entry becomes available to source readers after branch merge into main; it is not evidence of runtime ingestion or model retraining.
+
+## 2026-11-10 — BACKLOG-191: DRAFT hold deadlocked the Codex wake; cleared by owner authorization (HV-EXP-165)
+- **Recorded by:** [CLAUDE] read-only auditor, 2026-11-10T21:45Z. Codex was the active owner and made the only issue edit.
+- **What was true at `main` 1311d81:** a `[STATUS] DRAFT` issue is never a backlog candidate (`duty_runner.py:47`, `:144`), and the Codex wake runs only for a candidate (`:790`). #191 was told to stay DRAFT until the wake was proven, so the wake could never run (0 relay runs).
+- **What changed:** with Michael's authorization, Codex set #191 to `[STATUS] READY` at 21:28:22Z. The runner's own `backlog_candidate()` now selects it (P0, `[CODEX]`). A claim still requires live Codex availability from the wake; `approved_pilots` is empty, so no fallback pilot fires.
+- **Still unproven:** a real scheduled Pulse run reaching the wake (schedule runs were sparse: last 16:58Z); Sol verifier registration, key distinctness, live signing route and posting identity; dual-signed receipts in #6; terminal PASS and closure of #191.
+- **Sol receipt format:** see HV-EXP-165 (`sol_receipt_spec`); it was tested against the runner's real verify code with a throwaway key only.
+- **Hard rule:** a hold state must not block the only path that produces its own release evidence. Check this whenever a gate says "wait until X is proven".
+- **Persistence boundary:** available to source readers after this branch is merged into main; not evidence that a running ICARUS loaded it.
