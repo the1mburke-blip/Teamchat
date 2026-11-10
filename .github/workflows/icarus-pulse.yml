@@ -1,7 +1,7 @@
 name: Codex bot wake transport canary
 on: workflow_dispatch
 permissions:
-  issues: write
+  pull-requests: write
   contents: read
 jobs:
   signal:
