@@ -13,6 +13,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -28,6 +30,8 @@ EXECUTION_HEADER = "[ICARUS EXECUTION RECEIPT]"
 VERIFICATION_HEADER = "[ICARUS INDEPENDENT VERIFICATION]"
 TERMINAL_HEADER = "[ICARUS TERMINAL EVIDENCE]"
 TERMINAL_CLOSED_HEADER = "[ICARUS TERMINAL CLOSED]"
+CODEX_WAKE_HEADER = "[ICARUS CODEX AVAILABILITY REQUEST]"
+CODEX_WAKE_WAIT_SECONDS = 150
 ECHO_DIRECTIVE = "Echo test for task intake and worker delegation verification."
 MONITOR_ONLY_MARKER = re.compile(
     r"^\s*(\[ICARUS SUPERVISORY DIRECTIVE\]|ICARUS_RUN)(?=\s|$)",
@@ -622,6 +626,32 @@ def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_u
     record["loop_state"] = "WAITING_FOR_INDEPENDENT_VERIFIER"
 
 
+def refresh_codex_availability(issues_url, outbox_url, token, actor, wake_pr, run_id, record):
+    requested_at = datetime.datetime.now(datetime.timezone.utc)
+    wake_id = post_comment(
+        f"{issues_url}/{wake_pr}/comments", token, f"{CODEX_WAKE_HEADER}\nPulse Run ID: {run_id}",
+    )
+    wake = {"request_comment_id": wake_id, "availability": "unknown"}
+    record["codex_wake"] = wake
+    since = requested_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    query = urllib.parse.urlencode({"since": since})
+    deadline = time.monotonic() + CODEX_WAKE_WAIT_SECONDS
+    while time.monotonic() < deadline:
+        replies = [
+            row for row in fetch_pages(f"{outbox_url}?{query}", token)
+            if row["id"] > wake_id and pilot_state.actor_id(row) == actor
+            and pilot_state.fields(row, pilot_state.SEAT_REPORT).get("Seat") == "CODEX"
+        ]
+        states, _ = pilot_state.availability(
+            replies, {"CODEX": actor}, datetime.datetime.now(datetime.timezone.utc),
+        )
+        if states["CODEX"] != "unknown":
+            wake.update(availability=states["CODEX"], response_comment_id=max(row["id"] for row in replies))
+            break
+        time.sleep(max(0, min(10, deadline - time.monotonic())))
+    return wake["availability"]
+
+
 def monitor_issues(repo, mailbox, token, record):
     issues_url = f"https://api.github.com/repos/{repo}/issues"
     outbox_url = f"{issues_url}/{mailbox}/comments"
@@ -675,7 +705,7 @@ def monitor_issues(repo, mailbox, token, record):
             task_id = f"BACKLOG-{number}"
             if (task_id not in dispatched and number not in dispatched_sources
                     and not pilot_state.reserved(outbox_comments, task_id)
-                    and (registry_ready or candidate[2] in LEGACY_CHAIRS)):
+                    and (candidate[2] in LEGACY_CHAIRS or candidate[2].strip("[]") in reporters)):
                 claim = next((comment for comment, packet in comment_packets(comments, CLAIM_HEADER, bot_only=True)
                               if packet["task id"] == task_id
                               and packet.get("target chair") == candidate[2]), None)
@@ -743,9 +773,19 @@ def monitor_issues(repo, mailbox, token, record):
         if not preflight_source(task, record):
             continue
         seat = chair.strip("[]")
-        if seat in pilot_state.SEATS and registry_ready:
+        if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = fetch_pages(outbox_url, token)
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
+            wake_pr = os.getenv("ICARUS_CODEX_WAKE_PR", "")
+            run_id = os.getenv("GITHUB_RUN_ID", "")
+            if (seat == "CODEX" and live_schedule and wake_pr == "8"
+                    and re.fullmatch(r"[1-9][0-9]{0,19}", run_id)):
+                states[seat] = refresh_codex_availability(
+                    issues_url, outbox_url, token, reporters[seat], wake_pr, run_id, record,
+                )
+                refreshed, _ = call_github_api(f"{issues_url}/{number}", token)
+                if backlog_candidate(refreshed) != candidate or refreshed.get("body") != current.get("body"):
+                    continue
             if states[seat] != "available":
                 record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
                                                          "availability": states[seat]})
