@@ -14,12 +14,19 @@
  * - The model never self-awards PASS. Verdict is binary and comes only from deterministic gates in the owner's comment.
  * - Approved free routes only (icarus/runtime/approved-routes.json). No model discovery.
  * - Writes, deletes and closes need an OWNER_APPROVED: line; runtime, workflow and git paths are never writable.
- * - Memory is never rewritten; each run adds one receipt file under icarus/runs/ and proposes lessons under icarus/proposals/.
+ * - Memory is never rewritten; each attempt records one issue receipt; proposed lessons remain part of that receipt.
+ *
+ * Production cutover: preserve both installed triggers. Set the append-only
+ * ATHENA_QUARANTINE_V1|<lowercase repo>/<issue>/<comment> entries and configure
+ * ATHENA_CUTOVER_V1 with repo, sourceRevision (approved Git commit), historicalThrough
+ * (UTC cutoff), receiptActorId, hourlyReceiptIssue and mode 'observe'. Activate
+ * only after an authorized observer reads the scheduled exclusion proof back.
+ * The existing source issue is the receipt destination for comment-triggered work.
  * - No secrets are printed.
  * Apps Script limits: one execution may run 6 minutes, so cooldowns and budgets are smaller than on Actions.
  */
 
-var ATHENA_VERSION = 'cloud-3 (Recall v3, team overseer)';  // shown as "Icarus runtime cloud-3"
+var ATHENA_VERSION = 'cloud-4 (durable attempts)';  // shown as "Icarus runtime cloud-3"
 var GH_API = 'https://api.github.com';
 var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 var OR_BASE = 'https://openrouter.ai/api/v1';
@@ -49,39 +56,46 @@ var LOOP_STEPS = [
 
 /* ---------- entry points ---------- */
 
-/** Time trigger, every 10 minutes: handle at most one new team comment (ICARUS_RUN task, completion claim, or address). */
+/** The existing scheduled poll runs at most one previously unclaimed comment. */
 function athenaPoll() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
   try {
-    var t = nextTrigger_();
-    if (!t) return;
     var props = PropertiesService.getScriptProperties();
-    var checkpoint = JSON.parse(props.getProperty('ATHENA_TASK_CHECKPOINT') || '{}');
-    // Recover a crash between durable completion and cursor acknowledgment.
-    if (checkpoint.id === String(t.c.id) && checkpoint.state === 'COMPLETED') {
-      var checkRun = newRun_({ id: String(t.c.id), branch: 'main' });
-      var prior = ghGet_(checkRun, checkpoint.receipt);
-      if (prior.code === 200 && prior.text && prior.text.indexOf('- VERDICT: PASS - ') >= 0) {
-        markSeen_(t.c);
-        return;
-      }
+    var R = newRun_({ id: 'poll', actor: 'poll' });
+    var cutover = cutoverConfig_(R, props);
+    if (!cutover) return;
+    if (cutover.mode === 'observe') {
+      observeCutover_(R, props, cutover);
+      return;
     }
-    props.setProperty('ATHENA_TASK_CHECKPOINT', JSON.stringify({ id: String(t.c.id), state: 'PENDING' }));
-    var result = runAthena_({ body: t.c.body, id: String(t.c.id), actor: t.c.user.login, issue: issueNumberOf_(t.c), branch: 'main', kind: t.kind });
-    if (result.completed === true && result.receiptVerified === true) {
-      props.setProperty('ATHENA_TASK_CHECKPOINT', JSON.stringify({ id: String(t.c.id), state: 'COMPLETED', receipt: result.receipt }));
-      markSeen_(t.c);
-    }
+    if (props.getProperty('ATHENA_CUTOVER_OBSERVED_V1') !== cutover.proof) return;
+    reconcileOnePendingReceipt_(R, props);
+    var t = nextTrigger_(R, props, cutover);
+    if (!t) return;
+    executeAttempt_(R, props, cutover, {
+      body: t.c.body, id: String(t.c.id), actor: t.c.user.login,
+      issue: issueNumberOf_(t.c), kind: t.kind
+    });
+    var cursorKey = 'ATHENA_COMMENT_CURSOR_V1|' + R.repo;
+    if (Date.parse(t.c.created_at) > Date.parse(props.getProperty(cursorKey) || cutover.historicalThrough))
+      storeAndReadBack_(props, cursorKey, t.c.created_at);
   } finally { lock.releaseLock(); }
 }
 
-/** Time trigger, every 2 hours: the standing check (no reply comment; receipt only). */
+/** The existing standing check uses its separately configured receipt issue. */
 function athenaHourly() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) return;
   try {
-    runAthena_({ body: HOURLY_TASK, id: 'hourly-' + Utilities.formatDate(new Date(), 'UTC', "yyyyMMdd'T'HH"), actor: 'schedule', issue: 0, branch: 'main' });
+    var props = PropertiesService.getScriptProperties();
+    var R = newRun_({ id: 'hourly', actor: 'schedule' });
+    var cutover = cutoverConfig_(R, props);
+    if (!cutover || cutover.mode !== 'active' || !cutover.hourlyReceiptIssue ||
+        props.getProperty('ATHENA_CUTOVER_OBSERVED_V1') !== cutover.proof) return;
+    executeAttempt_(R, props, cutover, { body: HOURLY_TASK,
+      id: 'hourly-' + Utilities.formatDate(new Date(), 'UTC', "yyyyMMdd'T'HH"),
+      actor: 'schedule', issue: 0, kind: 'hourly' });
   } finally { lock.releaseLock(); }
 }
 
@@ -92,8 +106,6 @@ function installAthenaTriggers() {
   });
   ScriptApp.newTrigger('athenaPoll').timeBased().everyMinutes(10).create();
   ScriptApp.newTrigger('athenaHourly').timeBased().everyHours(2).create();
-  var p = PropertiesService.getScriptProperties();
-  if (!p.getProperty('ATHENA_SEEN_SINCE')) p.setProperty('ATHENA_SEEN_SINCE', new Date().toISOString());
   return 'installed athenaPoll (10 min) and athenaHourly (2 h); secrets present: ' + JSON.stringify(secretStatus_());
 }
 
@@ -126,21 +138,89 @@ function classifyComment_(c) {
   return null;
 }
 
-function nextTrigger_() {
-  var p = PropertiesService.getScriptProperties();
-  var since = p.getProperty('ATHENA_SEEN_SINCE') || new Date().toISOString();
-  var done = JSON.parse(p.getProperty('ATHENA_DONE_IDS') || '[]');
-  var R = newRun_({ body: '', id: 'poll', actor: 'poll', issue: 0, branch: 'main' });
-  var r = gh_(R, 'GET', 'issues/comments?sort=created&direction=asc&per_page=100&since=' + encodeURIComponent(since));
-  if (r.code !== 200) return null;
-  var rows = JSON.parse(r.text);
-  for (var i = 0; i < rows.length; i++) {
-    var c = rows[i];
-    if (done.indexOf(String(c.id)) >= 0) continue;
-    var kind = classifyComment_(c);
-    if (kind) return { c: c, kind: kind };
+var ATHENA_OLD_COMMENT = '6704645457';
+var ATHENA_OLD_ISSUE = 6;
+var ATHENA_CUTOVER_KEY = 'ATHENA_CUTOVER_V1';
+var ATHENA_ATTEMPT_PREFIX = 'ATHENA_ATTEMPT_V1|';
+var ATHENA_QUARANTINE_PREFIX = 'ATHENA_QUARANTINE_V1|';
+var ATHENA_INCIDENT_READS = ['icarus/memory/current-state.md', 'icarus/runtime/endpoints.json'];
+
+function commandKey_(repo, issue, id) {
+  return repo.toLowerCase() + '/' + issue + '/' + id;
+}
+
+function storeAndReadBack_(props, key, value) {
+  props.setProperty(key, value);
+  if (props.getProperty(key) !== value) throw new Error('Durable state readback failed: ' + key);
+}
+
+function cutoverConfig_(R, props) {
+  var raw = props.getProperty(ATHENA_CUTOVER_KEY);
+  if (!raw || !R.gh) return null;
+  var c = JSON.parse(raw);
+  var oldKey = commandKey_(R.repo, ATHENA_OLD_ISSUE, ATHENA_OLD_COMMENT);
+  if (c.repo !== R.repo || ['observe', 'active'].indexOf(c.mode) < 0 ||
+      !/^[a-f0-9]{40}$/.test(c.sourceRevision) || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(c.historicalThrough) ||
+      !Number.isFinite(Date.parse(c.historicalThrough)) || !Number.isSafeInteger(c.receiptActorId) || c.receiptActorId <= 0 ||
+      !Number.isSafeInteger(c.hourlyReceiptIssue) || c.hourlyReceiptIssue <= 0 ||
+      props.getProperty(ATHENA_QUARANTINE_PREFIX + oldKey) !== 'QUARANTINED_UNCERTAIN') return null;
+  var floor = props.getProperty('ATHENA_HISTORICAL_THROUGH_V1|' + R.repo);
+  if (floor && Date.parse(c.historicalThrough) < Date.parse(floor)) return null;
+  c.proof = JSON.stringify([c.repo, c.sourceRevision, c.historicalThrough, c.receiptActorId, c.hourlyReceiptIssue, oldKey]);
+  return c;
+}
+
+function observeCutover_(R, props, cutover) {
+  var r = gh_(R, 'GET', 'issues/comments/' + ATHENA_OLD_COMMENT);
+  if (r.code !== 200) return;
+  var c = JSON.parse(r.text);
+  if (String(c.id) !== ATHENA_OLD_COMMENT || issueNumberOf_(c) !== ATHENA_OLD_ISSUE ||
+      Date.parse(c.created_at) > Date.parse(cutover.historicalThrough) || !excludedCommand_(R, props, cutover, c)) return;
+  storeAndReadBack_(props, 'ATHENA_HISTORICAL_THROUGH_V1|' + R.repo, cutover.historicalThrough);
+  storeAndReadBack_(props, 'ATHENA_CUTOVER_OBSERVED_V1', cutover.proof);
+  console.log('ATHENA_CUTOVER_OBSERVED ' + cutover.sourceRevision + ' excluded comment ' + ATHENA_OLD_COMMENT);
+}
+
+function excludedCommand_(R, props, cutover, c) {
+  var created = Date.parse(c.created_at), issue = issueNumberOf_(c);
+  return !issue || !/^\d+$/.test(String(c.id)) || !Number.isFinite(created) ||
+    created <= Date.parse(cutover.historicalThrough) || String(c.id) === ATHENA_OLD_COMMENT ||
+    !!props.getProperty(ATHENA_QUARANTINE_PREFIX + commandKey_(R.repo, issue, c.id));
+}
+
+function sinceBefore_(date) {
+  return new Date(Date.parse(date) - 1000).toISOString();
+}
+
+/** Use the next relation and increment the known endpoint ourselves. */
+function scanComments_(R, endpoint, visit) {
+  for (var page = 1; page <= 100; page++) {
+    var r = gh_(R, 'GET', endpoint + '&page=' + page);
+    if (r.code !== 200) return { complete: false };
+    var rows = JSON.parse(r.text);
+    if (!Array.isArray(rows)) return { complete: false };
+    for (var i = 0; i < rows.length; i++) {
+      var found = visit(rows[i]);
+      if (found) return { complete: true, found: found };
+    }
+    if (!/rel="next"/i.test(r.link || '')) return { complete: true };
   }
-  return null;
+  return { complete: false };
+}
+
+function nextTrigger_(R, props, cutover) {
+  var cursor = props.getProperty('ATHENA_COMMENT_CURSOR_V1|' + R.repo) || cutover.historicalThrough;
+  // Revisit recent pages and equal timestamps; the durable attempt keys deduplicate.
+  var since = new Date(Math.max(Date.parse(cutover.historicalThrough) - 1000, Date.parse(cursor) - 600000)).toISOString();
+  var endpoint = 'issues/comments?sort=created&direction=asc&per_page=100&since=' + encodeURIComponent(since);
+  var scanned = scanComments_(R, endpoint, function (c) {
+    if (excludedCommand_(R, props, cutover, c)) return null;
+    var key = commandKey_(R.repo, issueNumberOf_(c), c.id);
+    if (props.getProperty(ATHENA_ATTEMPT_PREFIX + key)) return null;
+    var kind = classifyComment_(c);
+    return kind ? { c: c, kind: kind } : null;
+  });
+  return scanned.found || null;
 }
 
 /** Checkable evidence named in a completion claim's EVIDENCE lines: repo file paths (also GitHub blob links
@@ -170,12 +250,103 @@ function agentOf_(body, login) {
   return m ? m[1] + ' (via ' + login + ')' : login;
 }
 
-function markSeen_(c) {
-  var p = PropertiesService.getScriptProperties();
-  var done = JSON.parse(p.getProperty('ATHENA_DONE_IDS') || '[]');
-  done.push(String(c.id));
-  p.setProperty('ATHENA_DONE_IDS', JSON.stringify(done.slice(-200)));
-  p.setProperty('ATHENA_SEEN_SINCE', c.created_at);
+function persistAttempt_(props, a, state) {
+  a.state = state;
+  storeAndReadBack_(props, ATHENA_ATTEMPT_PREFIX + a.command, JSON.stringify(a));
+}
+
+function receiptDigest_(payload) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, payload, Utilities.Charset.UTF_8)
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
+}
+
+function receiptHeader_(a) {
+  return '# Icarus run receipt v1\nCommand: ' + a.command + '\nAttempt: ' + a.id +
+    '\nReceipt key: ' + a.receiptKey + '\nDigest: sha256:' + a.digest + '\nOutcome: EXECUTION_' + a.outcome + '\n\n';
+}
+
+function receiptMatches_(R, a, c) {
+  var header = receiptHeader_(a), body = String(c.body || '');
+  return Number.isSafeInteger(c.id) && c.id > 0 && c.user && c.user.id === a.receiptActorId &&
+    c.issue_url === GH_API + '/repos/' + R.repo + '/issues/' + a.destination &&
+    !!c.created_at && c.created_at === c.updated_at && body.indexOf(header) === 0 &&
+    receiptDigest_(body.slice(header.length)) === a.digest;
+}
+
+function findReceipt_(R, a) {
+  var matchingKey = '\nReceipt key: ' + a.receiptKey + '\n';
+  var endpoint = 'issues/' + a.destination + '/comments?per_page=100&since=' + encodeURIComponent(sinceBefore_(a.startedAt));
+  var matches = [];
+  var scan = scanComments_(R, endpoint, function (c) {
+    if (String(c.body || '').indexOf(matchingKey) >= 0) matches.push(c);
+    return null;
+  });
+  if (!scan.complete || matches.length > 1) return { uncertain: true };
+  if (!matches.length) return {};
+  return { id: matches[0].id, uncertain: !receiptMatches_(R, a, matches[0]) };
+}
+
+function acknowledgeReceipt_(R, props, a, id) {
+  if (!Number.isSafeInteger(id) || id <= 0) return false;
+  var got = gh_(R, 'GET', 'issues/comments/' + id);
+  if (got.code !== 200) return false;
+  var c = JSON.parse(got.text);
+  if (c.id !== id || !receiptMatches_(R, a, c)) return false;
+  a.receiptId = id;
+  persistAttempt_(props, a, 'RECEIPTED');
+  persistAttempt_(props, a, a.outcome === 'PASS' ? 'ACKNOWLEDGED' : 'FAILED');
+  return true;
+}
+
+function reconcileOnePendingReceipt_(R, props) {
+  var prefix = ATHENA_ATTEMPT_PREFIX + R.repo.toLowerCase() + '/';
+  var states = props.getProperties();
+  var pending = [];
+  Object.keys(states).filter(function (key) { return key.indexOf(prefix) === 0; }).sort().forEach(function (key) {
+    var a;
+    try { a = JSON.parse(states[key]); } catch (e) { return; }
+    if (!a || ATHENA_ATTEMPT_PREFIX + a.command !== key) return;
+    if (a.state === 'CLAIMED' || a.state === 'RUNNING') {
+      persistAttempt_(props, a, 'QUARANTINED_UNCERTAIN');
+    } else if (['EXECUTED_PENDING_RECEIPT', 'RECEIPT_UNCERTAIN', 'RECEIPTED'].indexOf(a.state) >= 0) {
+      pending.push(a);
+    }
+  });
+  if (!pending.length) return;
+  var cursorKey = 'ATHENA_RECEIPT_SCAN_V1|' + R.repo;
+  var last = props.getProperty(cursorKey) || '';
+  var a = pending.find(function (item) { return item.command > last; }) || pending[0];
+  storeAndReadBack_(props, cursorKey, a.command);
+  var lookup = findReceipt_(R, a);
+  if (lookup.uncertain || !acknowledgeReceipt_(R, props, a, lookup.id)) persistAttempt_(props, a, 'RECEIPT_UNCERTAIN');
+}
+
+function executeAttempt_(R, props, cutover, ev) {
+  var key = commandKey_(R.repo, ev.issue, ev.id);
+  if (props.getProperty(ATHENA_ATTEMPT_PREFIX + key)) return;
+  var a = { command: key, id: Utilities.getUuid(), sourceRevision: cutover.sourceRevision,
+    startedAt: new Date().toISOString(), commandDigest: receiptDigest_(ev.body), destination: ev.issue || cutover.hourlyReceiptIssue,
+    receiptActorId: cutover.receiptActorId };
+  a.receiptKey = key + '|' + a.id + '|v1';
+  persistAttempt_(props, a, 'CLAIMED');
+  persistAttempt_(props, a, 'RUNNING');
+  var result = runAthena_(ev);
+  var payload = result.payload.slice(0, 15000);
+  // Avoid splitting a surrogate pair in the bounded GitHub comment body.
+  if (/[\uD800-\uDBFF]$/.test(payload)) payload = payload.slice(0, -1);
+  a.digest = receiptDigest_(payload);
+  a.outcome = result.verdict;
+  persistAttempt_(props, a, 'EXECUTED_PENDING_RECEIPT');
+
+  var lookup = findReceipt_(R, a);
+  if (!lookup.uncertain && lookup.id && acknowledgeReceipt_(R, props, a, lookup.id)) return;
+  persistAttempt_(props, a, 'RECEIPT_UNCERTAIN');
+  if (lookup.uncertain || lookup.id) return;
+
+  // The intent is durable before this sole POST. Recovery only reads the destination.
+  var post = gh_(R, 'POST', 'issues/' + a.destination + '/comments', { body: receiptHeader_(a) + payload });
+  if (post.code === 201) acknowledgeReceipt_(R, props, a, JSON.parse(post.text).id);
+  else console.log('ATHENA_RECEIPT_UNCERTAIN ' + a.receiptKey + ' HTTP ' + post.code);
 }
 
 function issueNumberOf_(c) {
@@ -223,7 +394,8 @@ function http_(R, method, url, body) {
   if (body !== undefined && body !== null) { opt.contentType = 'application/json'; opt.payload = JSON.stringify(body); }
   try {
     var res = UrlFetchApp.fetch(url, opt);
-    return { code: res.getResponseCode(), text: res.getContentText('UTF-8') };
+    var headersOut = res.getAllHeaders();
+    return { code: res.getResponseCode(), text: res.getContentText('UTF-8'), link: String(headersOut.Link || headersOut.link || '') };
   } catch (e) {
     return { code: 0, text: String(e && e.message || e) };
   }
@@ -776,20 +948,19 @@ function executeTool_(R, name, args, allowed) {
   return out;
 }
 
-function executionIntegrity_(R, kind) {
+function executionIntegrity_(R, kind, requiredReads) {
   var events = R.toolEvents, count = events.filter(function (e) { return e.executed; }).length;
   if (!count) return 'ZERO_TOOL_EXECUTION_REJECTED';
   if (events.some(function (e) { return !e.executed || !e.success; })) return 'TOOL_EXECUTION_FAILED';
-  // Every required scheduled read must appear in the actual tool trace.
-  if (kind === 'hourly') {
-    var required = [['read_file', 'icarus/runtime/endpoints.json'], ['list_dir', 'icarus/memory'],
-      ['list_dir', 'icarus/proposals'], ['list_dir', 'icarus/runs'], ['read_file', 'icarus/memory/current-state.md']];
-    for (var i = 0; i < required.length; i++) {
-      var req = required[i];
-      if (!events.some(function (e) { return e.success && e.name === req[0] && norm_(e.args.path) === req[1]; }))
-        return 'REQUIRED_TOOL_EXECUTION_MISSING: ' + req.join(' ');
-    }
+  var required = kind === 'hourly' ? [['read_file', 'icarus/runtime/endpoints.json'], ['list_dir', 'icarus/memory'],
+    ['list_dir', 'icarus/proposals'], ['list_dir', 'icarus/runs'], ['read_file', 'icarus/memory/current-state.md']]
+    : (requiredReads || []).map(function (path) { return ['read_file', path]; });
+  for (var i = 0; i < required.length; i++) {
+    var req = required[i];
+    if (!events.some(function (e) { return e.executed && e.success && e.name === req[0] && norm_(e.args.path) === req[1]; }))
+      return 'REQUIRED_TOOL_EXECUTION_MISSING: ' + req.join(' ');
   }
+
   for (var j = 0; j < R.effects.length; j++) {
     var effect = R.effects[j];
     delete R.cache[effect.path];
@@ -843,8 +1014,14 @@ function runAthena_(ev) {
   var risky = new RegExp(R.cfg.riskyActionPattern, 'i').exec(task);
   var stamp = Utilities.formatDate(R.now, 'UTC', "yyyyMMdd'T'HHmmss'Z'");
   var day = stamp.slice(0, 8), daily = 0;
+  var props = PropertiesService.getScriptProperties();
+  var counterKey = 'ATHENA_DAILY_RUNS_V1|' + R.repo;
+  var count = JSON.parse(props.getProperty(counterKey) || '{}');
+  var localRuns = count.day === day ? count.runs : 0;
+  if (!Number.isSafeInteger(localRuns) || localRuns < 0) throw new Error('Invalid durable daily run count');
   var runsDir = gh_(R, 'GET', 'contents/icarus/runs?ref=' + encodeURIComponent(R.branch));
   try { if (runsDir.code === 200) daily = JSON.parse(runsDir.text).filter(function (x) { return x.name.indexOf(day + 'T') === 0; }).length; } catch (e) { /* 0 */ }
+  daily += localRuns;
   var stopPre = '';
   if (daily >= R.cfg.dailyRunCap) stopPre = 'HARD STOP: daily run cap reached (' + daily + '/' + R.cfg.dailyRunCap + ')';
   else if (risky && !approvedLine && !readOnly) stopPre = "HARD STOP: owner approval required for action '" + risky[0] + "' (add an OWNER_APPROVED: <what you approve> line)";
@@ -866,6 +1043,7 @@ function runAthena_(ev) {
     if (R.skipped.length) R.log.push('openrouter routes skipped (OPENROUTER_API_KEY not set): ' + R.skipped.join(', '));
     if (!cands.length) err = e || 'no approved route';
     else {
+      storeAndReadBack_(props, counterKey, JSON.stringify({ day: day, runs: localRuns + 1 }));
       var gpaths = gates.filter(function (g) { return g.indexOf('VERIFY_FILE') === 0; }).map(function (g) { return g.slice(g.indexOf(':') + 1).trim(); });
       var hint = gpaths.length ? '\n\nOWNER-NAMED EVIDENCE FILES (read_file these; the runtime also checks them itself): ' + gpaths.join(', ') : '';
       var steps = [task + hint], stepTools = readOnly ? [LOOP_READ] : null;
@@ -916,7 +1094,12 @@ function runAthena_(ev) {
 
   var toolsTxt = (R.cfg.tools.join(', ') || 'none') + ' (' + toolLog.length + '/' + R.cfg.maxToolCalls + ' calls used' + (toolLog.length ? ': ' + toolLog.join('; ') : '') + ')';
   var gateResults = gates.map(function (g) { return gate_(R, g); });
-  var integrityError = executionIntegrity_(R, kind);
+  var evidencePaths = gates.filter(function (g) { return /^VERIFY_FILE\s*:/.test(g); })
+    .map(function (g) { return norm_(g.slice(g.indexOf(':') + 1).trim()); });
+  var incidentReads = kind === 'run' && ATHENA_INCIDENT_READS.every(function (path) {
+    return evidencePaths.indexOf(path) >= 0;
+  }) ? ATHENA_INCIDENT_READS : [];
+  var integrityError = executionIntegrity_(R, kind, incidentReads);
   var passed = gateResults.length > 0 && gateResults.every(function (x) { return x[0]; }) && answer !== null && !err && !integrityError;
   var reason = !gates.length ? (kind === 'claim' ? 'the claim names no checkable evidence (repo file path or commit hash); a PASS claim without checkable evidence is FAIL'
     : 'no evidence gate supplied (add VERIFY_FILE:/VERIFY_URL:/VERIFY_PR_MERGED:/VERIFY_CONTAINS: lines); output is UNVERIFIED')
@@ -925,12 +1108,8 @@ function runAthena_(ev) {
   var verdict = passed ? 'PASS' : 'FAIL';
   var ans = answer || {};
   var les = redact_(R, String(ans.lesson || '')).replace(/\n/g, ' ').trim().slice(0, 300);
-  var wb = 'none';
-  if (R.cfg.writeBack && verdict === 'PASS' && les) {
-    var pf = 'icarus/proposals/' + stamp + '-' + R.cid + '.md';
-    var pr = putFile_(R, pf, '# Proposed lesson (NOT canonical memory; owner promotes)\n- Source run: comment ' + R.cid + ' by ' + R.actor + ', model ' + used + ' (Icarus cloud)\n- Lesson: ' + les + '\n', 'chore(icarus): cloud lesson proposal ' + R.cid);
-    wb = (pr.code === 200 || pr.code === 201) ? pf : 'proposal write failed: HTTP ' + pr.code;
-  }
+  var wb = R.cfg.writeBack && verdict === 'PASS' && les ? 'proposal captured in this receipt: ' + les : 'none';
+
   var usageTxt = Object.keys(R.usage).sort().map(function (m) { return m + ' ' + R.usage[m] + (R.rpd[m] ? '/' + R.rpd[m] : ''); }).join(', ') || 'none';
   var out = [
     '# Icarus run ' + Utilities.formatDate(R.now, 'UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'"),
@@ -949,7 +1128,7 @@ function runAthena_(ev) {
     '- Execution integrity: ' + (integrityError || 'tool trace and mutation readbacks verified'));
   if (testNotes.length) out.push('- TEST HOOKS ACTIVE (owner-set): ' + testNotes.join(', '));
   if (R.delegated.length) out.push('- Delegations (status REQUESTED, not executed): ' + R.delegated.join('; '));
-  out.push('- VERDICT: ' + verdict + ' - ' + reason, '', '## Task', task || '(empty)', '', '## Gates');
+  out.push('- Execution verdict: ' + verdict + ' - ' + reason, '', '## Task', task || '(empty)', '', '## Gates');
   gateResults.forEach(function (g) { out.push('- ' + (g[0] ? 'ok' : 'FAIL') + ': ' + g[1]); });
   if (!gateResults.length) out.push('- none');
   out.push('');
@@ -960,12 +1139,8 @@ function runAthena_(ev) {
   if (err) out.push('', '## Error\n' + redact_(R, err));
   var text = redact_(R, out.join('\n'));
 
-  var receiptPath = 'icarus/runs/' + stamp + '-' + R.cid + '.md';
-  var wr = putFile_(R, receiptPath, text + '\n', 'chore(icarus): cloud run receipt ' + R.cid);
-  delete R.cache[receiptPath];
-  var receiptVerified = (wr.code === 200 || wr.code === 201) && ghGet_(R, receiptPath).text === text + '\n';
-  var receiptNote = receiptVerified ? receiptPath : 'receipt persistence/readback failed: HTTP ' + wr.code;
-  if (R.issueN) gh_(R, 'POST', 'issues/' + R.issueN + '/comments', { body: text.slice(0, 60000) + '\n\n_Receipt: ' + receiptNote + '_' });
-  console.log(text.slice(0, 2000));
-  return { verdict: verdict, receipt: receiptNote, receiptVerified: receiptVerified, completed: passed && receiptVerified };
+  console.log('ATHENA_EXECUTION_RESULT ' + R.cid + ' ' + verdict);
+  return { verdict: verdict, payload: text };
+
+
 }
