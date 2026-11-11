@@ -330,7 +330,7 @@ function executeAttempt_(R, props, cutover, ev) {
   a.receiptKey = key + '|' + a.id + '|v1';
   persistAttempt_(props, a, 'CLAIMED');
   persistAttempt_(props, a, 'RUNNING');
-  var result = runAthena_(ev);
+  var result = runAthena_(ev, a.sourceRevision);
   var payload = result.payload.slice(0, 15000);
   // Avoid splitting a surrogate pair in the bounded GitHub comment body.
   if (/[\uD800-\uDBFF]$/.test(payload)) payload = payload.slice(0, -1);
@@ -973,7 +973,7 @@ function executionIntegrity_(R, kind, requiredReads) {
 
 /* ---------- one run ---------- */
 
-function runAthena_(ev) {
+function runAthena_(ev, sourceRevision) {
   var R = newRun_(ev);
   R.cfg = loadCfg_(R);
   R.usage = usageToday_(R);
@@ -1120,6 +1120,7 @@ function runAthena_(ev) {
     '- Memory read: icarus/memory/{identity,inherited,current-state,learned}.md (recent tails) + TRAINING_MATRIX.md tail (read-only); long-term recall by keyword over learned.md, TRAINING_MATRIX.md, lessons/',
     '- Recalled: ' + (R.recalled.join('; ') || 'none')
   ];
+  if (sourceRevision) out.push('- Configured source revision: ' + sourceRevision);
   if (R.loopOn) out.push('- Loop: DISCOVER (read-only) -> DECIDE (no tools) -> ACT');
   else if (planSteps.length) out.push('- Plan: ' + planSteps.length + ' steps: ' + planSteps.join(' | '));
   out.push('- Lesson write-back: ' + wb, '- Usage today (Icarus calls, incl. this run): ' + usageTxt, '- Model attempts: ' + (R.log.join('; ') || 'none'),
