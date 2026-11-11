@@ -321,3 +321,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - **Observed:** [Pulse run 42912976660](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660) succeeded as a workflow. The [runner log](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660/job/130171881419) identifies the heartbeat cron and records `SKIPPED_CADENCE` with zero issues inspected or dispatched. Duty ledger artifact `13808931540` belongs to that run.
 - **Wake status:** BLOCKED / UNVERIFIED at the post-run cutoff. [#191](https://github.com/the1mburke-blip/Teamchat/issues/191) is READY. No operational wake request or corresponding relay run was observed. The 22:07Z slot's operational execution, the signed receipt pair, and closure remain unverified.
 - **Verification rule:** Read the actual trigger cron and runner ledger before attributing a successful schedule event to operational duty. Require a matching Issue #6 request and relay run to credit the wake. Then track the distinct signed receipts and terminal closure. See [HV-EXP-166](../../TRAINING_MATRIX.md).
+
+
+## 2026-11-11 — Owner-halt failure lessons and identity clarification
+- Owner instruction: End ICARUS project work; delete nothing; close nothing. Record history without reactivating the system.
+- Detailed 32-entry chronology: icarus/memory/lessons/2026-11-11-owner-halt-archive.md. Proposed training: HV-EXP-167 through HV-EXP-171 (archival branch only).
+- Proven code merge, successful CI, wake availability and snapshot append cannot substitute for deployed runner execution, separate authenticated signers, dual receipts, terminal adjudication or Notebook consumption. Issue #191 remains open without signed receipts; Issue #198 remains open with field recovery unverified.
+- Michael confirms Work handled Codex-labelled actions; previous statements assuming an independently available Codex runtime were not grounded. Work library public-key fingerprint differs from the enrolled CODEX key. Genuine key custody/role authorization must not be invented or replaced.
+- Sol's reported refusal based solely on a GPT-6 base-model label confused model name with verifier role. Independent authorized Sol custody and evidence remained unverified.
+- Michael describes agent deception, noncompliance and sabotage; record this accurately as owner assessment, not independently proven intent.
+- User's final project decision takes precedence over old execution packets. This append, on an archival branch only, does NOT reauthorize any work, prove project activity is halted physically, or modify live runtime.
