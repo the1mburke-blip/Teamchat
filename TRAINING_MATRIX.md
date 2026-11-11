@@ -2362,3 +2362,26 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - wake outcome: BLOCKED / UNVERIFIED at the observation cutoff after this run. The [scheduled history](https://github.com/the1mburke-blip/Teamchat/actions/workflows/icarus-pulse.yml?query=event%3Aschedule) showed no new operational run after #191 entered READY. [Mailbox #6](https://github.com/the1mburke-blip/Teamchat/issues/6) and PR #8 showed no corresponding wake request, relay run, dispatch or signed receipt. The 22:07Z duty slot has no observed execution in this window. Its delay or omission has not been determined.
 - reusable principle: A successful schedule event can be a heartbeat that intentionally skips intake. Compare the trigger cron with the operational cron and require the task-bound mailbox request plus a matching relay run before crediting the wake. Keep the wake, signed receipts and terminal closure as separate evidence gates.
 - open dependencies: A later operational schedule must exercise the relay. Codex and Sol must sign separate receipts against the enrolled keys before Pulse can adjudicate. Both seat reporters share GitHub account ID `324897963`; separate signing keys and independently performed verification must carry the identity evidence. Sol readiness was requested and remains unverified at this cutoff.
+
+
+## HV-EXP-167 — Separate Fixer startup, inference, and receipt evidence (2026-11-11)
+
+- experience_id: HV-EXP-167
+- date_utc: 2026-11-11
+- marker: FIXER-ICARUS-20261111
+- proposed_by: Michael
+- source_agent: Codex desktop; Gemini CLI 0.68.0 in the local Fixer Docker container
+- task_problem: Assemble the active Fixer loop and preserve the incomplete handoff at the owner's stop boundary.
+- environment_context: Docker Desktop, loopback Web UI, Gemini 3.5 Flash-Lite, Teamchat Actions receipts, Composio Connect, and Workspace EXECUTION_LOGS.
+- symptoms_failure_signature: Model catalog HTTP 200; Gemini CLI exit 55 for an untrusted workspace; Composio initialization HTTP 401; Workspace receipt pending before append.
+- attempts_made: Inspect the user's failed receipts and the installed CLI, query the model catalog without inference, and run the CLI startup diagnostic with empty input.
+- what_failed: Key setup initially hit PowerShell script policy, terminal paste trouble, and rejection of the current authorization key format. The first two task submissions hit the workspace trust gate. The existing Composio credential was rejected.
+- why_it_failed: Gemini required a trusted workspace in headless mode. Composio returned an authorization denial. Its exact underlying credential or account mismatch was not established.
+- successful_recovery: Corrected key-format handling and used masked input. Scoped trust to /workspace and verified that the CLI reached its missing-input check. GitHub Actions receipt dispatch and job result were verified separately.
+- verification_evidence: [Fixer checkpoint](icarus/memory/checkpoints/2026-11-11-fixer-icarus/fixer-icarus-checkpoint.md), [receipt workflow PR](https://github.com/the1mburke-blip/Teamchat/pull/203), and [receipt run for a failed model task](https://github.com/the1mburke-blip/Teamchat/actions/runs/43120646959). The owner reported later Gemini UI output; the post-fix model exit code and receipt were not independently read.
+- what_not_to_retry: Do not reuse the rejected Composio credential without new authorization evidence. Do not replay ambiguous receipt writes or dispatches before checking their targets. Do not treat an echo, catalog response, startup diagnostic, or successful receipt workflow as successful model execution.
+- reusable_principle: Record model execution, tool authentication, external tool effect, and receipt persistence as distinct observations.
+- capability_tool_prerequisites: A narrowly trusted Docker workspace, owner-authorized model access, authenticated Composio initialization, the exact ledger tab, and stable receipt IDs.
+- confidence: Direct for the recorded diagnostics and GitHub receipt; owner-reported for the later Gemini UI output; unresolved for Workspace append and end-to-end execution.
+- superseded_by: NONE
+- recovery_status: Paused by owner at the Composio HTTP 401.

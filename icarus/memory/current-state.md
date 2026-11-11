@@ -63,3 +63,16 @@ Michael's owner-requested failure and allowance snapshot procedure have been wri
 - **Operational requirement:** disclose the actual blocker, relevant evidence, and legitimate recovery routes; pursue the task to its verified effect; never misreport incomplete work as complete.
 - **Production boundary:** The current isolated Icarus–Hermes pilot, its test sweep, and learning writeback do not authorize production activation. Any proposal to lift an earlier prohibition is not itself owner authorization.
 - **Verification boundary:** All linked files were read back from GitHub. Whether a particular fresh Icarus runtime session has loaded and followed the contract remains untested; no claim of live uptake.
+
+
+## 11 November 2026 — Fixer ICARUS checkpoint
+
+[CODEX] FIXER-ICARUS-20261111
+
+Owner Michael paused `ASSEMBLE_FIXER_RUNTIME_CONTAINER_V1` at the Composio
+initialization HTTP 401. The Docker UI is live. Gemini's workspace-trust
+failure was fixed, and Michael reported Gemini UI output. The matching
+provider exit code and post-fix receipt remain unverified. GitHub Actions
+returned a successful receipt run for an earlier failed submission. Workspace receipts
+are still pending before append to ICARUS — Control Plane / EXECUTION_LOGS.
+See the [checkpoint and stop boundary](checkpoints/2026-11-11-fixer-icarus/fixer-icarus-checkpoint.md) before resuming.

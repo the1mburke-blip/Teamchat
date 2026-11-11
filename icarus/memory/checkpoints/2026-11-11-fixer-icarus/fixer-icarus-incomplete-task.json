@@ -1,0 +1,199 @@
+{
+  "task_id": "ASSEMBLE_FIXER_RUNTIME_CONTAINER_V1",
+  "checkpoint_at": "2026-11-11T23:42:01Z",
+  "user_timezone": "Europe/London",
+  "owner": "Michael",
+  "executor": "Codex",
+  "status": "PARTIAL",
+  "stopped_by_owner": true,
+  "original_task_packet": {
+    "task_id": "ASSEMBLE_FIXER_RUNTIME_CONTAINER_V1",
+    "target_container": "icarus-daemon",
+    "base_image": "python:3.11-slim",
+    "environment_variables": {
+      "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+      "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+      "COMPOSIO_API_KEY": "${COMPOSIO_API_KEY}"
+    },
+    "volume_mounts": [
+      {
+        "source": "./icarus/memory",
+        "target": "/workspace/icarus/memory",
+        "mode": "rw"
+      },
+      {
+        "source": "./dsh",
+        "target": "/workspace/dsh",
+        "mode": "ro"
+      }
+    ],
+    "runtime_components": {
+      "entrypoint_script": "icarus_daemon.py",
+      "harness_runner": "harness-runner-v2.py",
+      "verification_script": "verify_icarus_pulse.py"
+    },
+    "integrations": {
+      "github_actions_writeback": true,
+      "composio_mcp_gateway": true,
+      "google_workspace_ledger_sync": true
+    },
+    "execution_steps": [
+      "1. Mount persistent state directory (/icarus/memory) and harness scripts into container filesystem.",
+      "2. Inject runtime environment keys (GITHUB_TOKEN, GEMINI_API_KEY, COMPOSIO_API_KEY) into container context.",
+      "3. Initialize icarus_daemon.py loop linked to harness-runner-v2.py for task execution and tool invocation.",
+      "4. Enable Composio API gateway and GitHub writeback handlers inside the execution sandbox.",
+      "5. Run verify_icarus_pulse.py to validate container readiness, tool connectivity, and ledger synchronization."
+    ],
+    "acceptance_criteria": {
+      "harness_exit_code": 0,
+      "github_writeback": "ENABLED",
+      "composio_mcp_status": "CONNECTED",
+      "ledger_sync": "ENABLED"
+    }
+  },
+  "subscription_extension_source": "subscription-model-spec.json",
+  "requested_user_endpoint": [
+    "Submit a task through the local Fixer Web UI.",
+    "Load identity.md and current-state.md from Icarus memory and reason using the chosen model.",
+    "Execute requested GitHub and Composio tool actions.",
+    "Stream the response back to the Web UI and record a receipt."
+  ],
+  "actual_deployment": {
+    "docker_context": "desktop-linux",
+    "container": "icarus-daemon",
+    "last_observed_running_container_id": "1ff34efb6c3bf23d7859631c96ae01c26335998ac1a86eca8abd95341b2f08bb",
+    "local_ui": "http://127.0.0.1:8787",
+    "image_tag": "fixer-icarus:gemini-actions",
+    "latest_local_image_manifest": "sha256:a258e70553a0ae4fc1fca8bbb17c5314da2b4b439980f267b41b72ccb012161b",
+    "image_note": "The latest tagged image was rebuilt with the trust fix. The running container received the same trust fix in place and was not recreated from the rebuilt image.",
+    "entrypoint": [
+      "python",
+      "-B",
+      "/app/fixer_icarus.py"
+    ],
+    "model_runner": "/app/harness_runner_v2.py",
+    "source_directory": "Local Fixer source directory",
+    "mounts": [
+      {
+        "source": "Local Fixer writable memory copy",
+        "target": "/workspace/icarus/memory",
+        "mode": "rw"
+      },
+      {
+        "source": "Teamchat dsh/",
+        "target": "/workspace/dsh",
+        "mode": "ro"
+      },
+      {
+        "source": "icarus-codex-state",
+        "target": "/home/icarus/.codex",
+        "mode": "rw"
+      },
+      {
+        "source": "icarus-claude-state",
+        "target": "/home/icarus/.claude",
+        "mode": "rw"
+      }
+    ],
+    "rollback_containers": [
+      "icarus-daemon-fixer-4f09c34fe9b7",
+      "icarus-daemon-fixer-7e37ad2a54c5",
+      "icarus-daemon-echo-f7630710105e"
+    ]
+  },
+  "models": {
+    "gemini": {
+      "model": "gemini-3.5-flash-lite",
+      "cli_version": "0.68.0",
+      "key_saved_with_mode": "0600",
+      "free_tier": "Confirmed by owner during key setup",
+      "catalog_readback": "HTTP 200 for the selected model using the saved key",
+      "last_fix": "Scoped trust entry /workspace = TRUST_FOLDER at /home/icarus/.gemini/trustedFolders.json, plus corrected enableAutoUpdate setting",
+      "startup_readback_after_fix": "With empty stdin, exit 42 and reached No input provided via stdin. Workspace trust refusal absent.",
+      "successful_inference_after_fix": "Owner reported a Gemini UI test result. Inference completion remains independently unverified."
+    },
+    "openai": {
+      "model": "gpt-6.1-sol",
+      "cli_version": "0.159.1",
+      "status": "Installed and configured. Native ChatGPT sign-in and included-usage confirmation deferred by owner."
+    },
+    "anthropic": {
+      "model": "sonnet",
+      "cli_version": "2.1.311",
+      "status": "Installed and configured. Native Claude sign-in and included-usage confirmation deferred by owner."
+    }
+  },
+  "acceptance_status": {
+    "harness_exit_code": {
+      "status": "INCOMPLETE",
+      "detail": "The earlier echo smoke command returned 0. Two real Gemini submissions failed before inference. The repaired CLI passed the trust gate with empty input, which returned 42 because no task was supplied."
+    },
+    "github_writeback": {
+      "status": "RECEIPT_WORKFLOW_VERIFIED",
+      "repository": "the1mburke-blip/Teamchat",
+      "branch": "main",
+      "pull_request": "https://github.com/the1mburke-blip/Teamchat/pull/203",
+      "merge_commit": "5890786a10cde3ce4778b4006801be34c24abb2f",
+      "workflow": "https://github.com/the1mburke-blip/Teamchat/blob/main/.github/workflows/fixer-writeback.yml",
+      "required_checks": "harness and completion-integrity succeeded on PR #203",
+      "observed_run": "https://github.com/the1mburke-blip/Teamchat/actions/runs/43120646959",
+      "detail": "The workflow completed successfully for a FAILED model receipt. Direct GitHub repo and issue MCP tool execution remains unverified."
+    },
+    "composio_mcp_status": {
+      "status": "BLOCKED_HTTP_401",
+      "endpoint": "https://connect.composio.dev/mcp",
+      "evidence": "The live container was rejected at MCP initialization. Composio returned Authorization required and said the credential was not a valid AuthKit JWT for this resource or had no matching Composio account."
+    },
+    "ledger_sync": {
+      "status": "CONFIGURED_BLOCKED_BEFORE_APPEND",
+      "spreadsheet": "ICARUS — Control Plane",
+      "tab": "EXECUTION_LOGS",
+      "observed_state": "PENDING for both inspected receipts. Composio authentication stopped the writer before append."
+    },
+    "container_verifier": {
+      "status": "MISSING",
+      "detail": "The existing verify_icarus_pulse.py candidate verifies a GitHub Actions run given RUN_ID and MERGE_SHA. The requested end-to-end container verifier was not found or run."
+    }
+  },
+  "recent_local_receipts": [
+    {
+      "run_id": "FIXER-8d29944bec334899b75128884c7ff269",
+      "timestamp_utc": "2026-11-11T23:31:51.739796Z",
+      "model_status": "FAILED",
+      "workspace_sync": "PENDING",
+      "github_actions_sync": "DISPATCHED"
+    },
+    {
+      "run_id": "FIXER-69b7944c0f7c4824a4ca2e276b704a09",
+      "timestamp_utc": "2026-11-11T23:32:44.265902Z",
+      "model_status": "FAILED",
+      "workspace_sync": "PENDING",
+      "github_actions_sync": "DISPATCHED",
+      "github_actions_run_conclusion": "success"
+    }
+  ],
+  "last_owner_test_result": {
+    "reported_text": "Task **Run task**\nModel: Gemini Time: Wednesday, November 11, 2026",
+    "model": "Gemini",
+    "displayed_date": "Wednesday, November 11, 2026",
+    "evidence_limit": "Owner-reported UI output. The underlying model exit code and receipt were not checked after the stop instruction."
+  },
+  "stop_boundary": {
+    "reason": "Owner directed checkpoint and stop at the next blocker.",
+    "current_blocker": "Composio authentication returns HTTP 401 from the live container.",
+    "remediation_attempted_after_stop_request": false,
+    "owner_action_required_on_resume": "Authorize a Composio Connect credential or OAuth identity for the intended account.",
+    "next_admissible_action_on_resume": "Bind the authorized Composio credential to Fixer and read back the MCP initialization result without appending to Sheets.",
+    "final_evidence_required": "A real authorized Web UI task must return a streamed result, record the actual model exit status, show any requested tool effect through readback, and match its receipt ID in both GitHub Actions and EXECUTION_LOGS."
+  },
+  "guardrails": {
+    "no_tests_except_system_mandatory": true,
+    "paid_spend": "None observed. Remaining authority is EUR 0.",
+    "preserve": [
+      "Credential volumes and Fixer receipt files",
+      "Canonical Teamchat memory source and protected main branch rules",
+      "Existing Pulse workflow and prior rollback containers",
+      "Pending receipts until exact row or workflow readback makes retry safe"
+    ]
+  }
+}
