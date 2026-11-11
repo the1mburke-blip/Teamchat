@@ -63,3 +63,14 @@ Michael's owner-requested failure and allowance snapshot procedure have been wri
 - **Operational requirement:** disclose the actual blocker, relevant evidence, and legitimate recovery routes; pursue the task to its verified effect; never misreport incomplete work as complete.
 - **Production boundary:** The current isolated Icarus–Hermes pilot, its test sweep, and learning writeback do not authorize production activation. Any proposal to lift an earlier prohibition is not itself owner authorization.
 - **Verification boundary:** All linked files were read back from GitHub. Whether a particular fresh Icarus runtime session has loaded and followed the contract remains untested; no claim of live uptake.
+
+
+## 2026-11-11 — OWNER HALT / FINAL PRESERVATION ENTRY
+- Proposed by: Michael; recorded by GPT-6 for archival purposes. External spend EUR 0; model allowance unmetered.
+- Owner ends ICARUS project work after approximately three months. DELETE NOTHING. CLOSE NOTHING. No continued project execution, new tests, deployment, PRs, issue closure, branch deletion, key changes or agent dispatch authorized by this archive.
+- Status: OWNER-HALTED, end-to-end autonomy UNVERIFIED. Issue #191 OPEN with claim 6781930665 and dispatch 6781930879, but no genuine signed Codex/Work executor, Sol independent verifier or ICARUS terminal receipt.
+- Issue #198 OPEN. GitHub PR #201 merged at 11:27:04Z as 0e018fcd319c1377b03e70c55d448f96a6ecb8ba, required CI checks reported PASS, but Apps Script production deployment, cessation of old command 6704645457 replay, zero-tool and HTTP 409 defects remain UNVERIFIED.
+- Audit issues #197, #199, #200 remain open. Snapshot workflow 42997212755 produced FORM_APPEND_OK, not proof Notebook ingested it.
+- Michael corrected that Work performed actions labelled Codex; a separate Codex agent was not operationally involved. Work's recovered public key differs from enrolled CODEX executor public key; do not infer signing custody from labels.
+- Full 32-event chronology preserved at icarus/memory/lessons/2026-11-11-owner-halt-archive.md. Training archive proposed lessons HV-EXP-167 through HV-EXP-171.
+- This documentation is on archive/icarus-owner-halt-2026-11-11 only, NOT main. It does not prove live ICARUS/Notebook read it. Existing schedules were NOT disabled. GitHub Team Room #6 archive comment 6796350014 read back.
