@@ -321,3 +321,15 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - **Observed:** [Pulse run 42912976660](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660) succeeded as a workflow. The [runner log](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660/job/130171881419) identifies the heartbeat cron and records `SKIPPED_CADENCE` with zero issues inspected or dispatched. Duty ledger artifact `13808931540` belongs to that run.
 - **Wake status:** BLOCKED / UNVERIFIED at the post-run cutoff. [#191](https://github.com/the1mburke-blip/Teamchat/issues/191) is READY. No operational wake request or corresponding relay run was observed. The 22:07Z slot's operational execution, the signed receipt pair, and closure remain unverified.
 - **Verification rule:** Read the actual trigger cron and runner ledger before attributing a successful schedule event to operational duty. Require a matching Issue #6 request and relay run to credit the wake. Then track the distinct signed receipts and terminal closure. See [HV-EXP-166](../../TRAINING_MATRIX.md).
+
+
+## 11 November 2026 — Fixer ICARUS deployment and evidence
+
+[CODEX] FIXER-ICARUS-20261111
+
+Diagnose Gemini CLI startup separately from Google model catalog access.
+A scoped `/workspace` trust entry cleared exit 55 in an empty-input
+diagnostic. A successful GitHub Actions receipt can record a failed model
+run. Configuration readback, actual tool authentication, and a confirmed
+Workspace append each require their own evidence. The Composio 401 and
+the owner's reported post-fix UI output are preserved in the [checkpoint](checkpoints/2026-11-11-fixer-icarus/fixer-icarus-checkpoint.md).

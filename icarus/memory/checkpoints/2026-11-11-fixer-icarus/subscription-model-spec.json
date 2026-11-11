@@ -1,0 +1,103 @@
+{
+  "task_id": "ASSEMBLE_FIXER_RUNTIME_CONTAINER_V1",
+  "target_container": "icarus-daemon",
+  "base_image": "python:3.11-slim",
+  "environment_variables": {
+    "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+    "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+    "COMPOSIO_API_KEY": "${COMPOSIO_API_KEY}"
+  },
+  "volume_mounts": [
+    {
+      "source": "./icarus/memory",
+      "target": "/workspace/icarus/memory",
+      "mode": "rw"
+    },
+    {
+      "source": "./dsh",
+      "target": "/workspace/dsh",
+      "mode": "ro"
+    },
+    {
+      "type": "volume",
+      "source": "icarus-codex-state",
+      "target": "/var/lib/icarus/codex",
+      "mode": "rw"
+    },
+    {
+      "type": "volume",
+      "source": "icarus-claude-state",
+      "target": "/var/lib/icarus/claude",
+      "mode": "rw"
+    }
+  ],
+  "runtime_components": {
+    "entrypoint_script": "icarus_daemon.py",
+    "harness_runner": "harness-runner-v2.py",
+    "verification_script": "verify_icarus_pulse.py"
+  },
+  "model_options": {
+    "openai": {
+      "model": "gpt-6.1-sol",
+      "client": "OpenAI Codex CLI",
+      "environment": {
+        "CODEX_HOME": "/var/lib/icarus/codex"
+      },
+      "codex_config": {
+        "forced_login_method": "chatgpt",
+        "cli_auth_credentials_store": "file"
+      },
+      "login_argv": ["codex", "login", "--device-auth"],
+      "auth_check_argv": ["codex", "login", "status"],
+      "required_auth": "chatgpt",
+      "run_argv": ["codex", "exec", "--json", "--model", "gpt-6.1-sol", "-"],
+      "prompt_input": "stdin",
+      "response_format": "jsonl"
+    },
+    "anthropic": {
+      "model": "sonnet",
+      "client": "Anthropic Claude Code CLI",
+      "environment": {
+        "CLAUDE_CONFIG_DIR": "/var/lib/icarus/claude"
+      },
+      "login_argv": ["claude", "auth", "login"],
+      "auth_check_argv": ["claude", "auth", "status"],
+      "required_auth": {
+        "authMethod": "claude.ai"
+      },
+      "run_argv": ["claude", "--print", "--model", "sonnet", "--output-format", "json"],
+      "prompt_input": "stdin",
+      "response_format": "json"
+    }
+  },
+  "subscription_policy": {
+    "api_key_fallback": false,
+    "on_auth_failure": "stop_selected_model_task",
+    "on_usage_limit": "stop_selected_model_task",
+    "account_setup": "Before running inference, confirm the signed-in accounts and workspace settings will stop at the included allowance without spending purchased credits, usage credits, or pay-as-you-go overage. Keep the affected option inactive if that cannot be confirmed."
+  },
+  "integrations": {
+    "github_actions_writeback": true,
+    "composio_mcp_gateway": true,
+    "google_workspace_ledger_sync": true
+  },
+  "execution_steps": [
+    "1. Mount persistent Icarus state and the read-only harness scripts. Mount the two CLI state volumes with access limited to the runtime account.",
+    "2. Inject the existing integration credentials through environment bindings. Install the official Codex and Claude Code CLIs in the image and write the Codex settings to config.toml under CODEX_HOME.",
+    "3. Have the owner complete each CLI's native sign-in in the container using the runtime account and the same state directories used for inference.",
+    "4. Initialize icarus_daemon.py and link it to harness-runner-v2.py. Keep the existing Gemini route and dispatch explicit OpenAI or Anthropic selections to their configured CLI in the task workspace.",
+    "5. For the two subscription routes, launch the CLI directly with a clean subprocess environment containing its state directory and the system variables needed to run it. Exclude API keys, alternate provider credentials, and endpoint overrides. Check the required sign-in mode before inference. Stop the selected task if authentication fails or included usage is exhausted.",
+    "6. Enable Composio and GitHub writeback in the execution sandbox.",
+    "7. Run verify_icarus_pulse.py to check readiness, tool connectivity, and ledger synchronization. For each new model option, verify subscription sign-in and run a minimal prompt through the harness after the account setup check. Confirm that a missing sign-in stops before inference."
+  ],
+  "acceptance_criteria": {
+    "harness_exit_code": 0,
+    "github_writeback": "ENABLED",
+    "composio_mcp_status": "CONNECTED",
+    "ledger_sync": "ENABLED",
+    "openai_subscription_inference": "REQUIRED",
+    "anthropic_subscription_inference": "REQUIRED",
+    "missing_subscription_sign_in": "STOP_BEFORE_INFERENCE",
+    "api_key_or_paid_overage_fallback": "DISABLED"
+  }
+}
