@@ -2362,3 +2362,46 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - wake outcome: BLOCKED / UNVERIFIED at the observation cutoff after this run. The [scheduled history](https://github.com/the1mburke-blip/Teamchat/actions/workflows/icarus-pulse.yml?query=event%3Aschedule) showed no new operational run after #191 entered READY. [Mailbox #6](https://github.com/the1mburke-blip/Teamchat/issues/6) and PR #8 showed no corresponding wake request, relay run, dispatch or signed receipt. The 22:07Z duty slot has no observed execution in this window. Its delay or omission has not been determined.
 - reusable principle: A successful schedule event can be a heartbeat that intentionally skips intake. Compare the trigger cron with the operational cron and require the task-bound mailbox request plus a matching relay run before crediting the wake. Keep the wake, signed receipts and terminal closure as separate evidence gates.
 - open dependencies: A later operational schedule must exercise the relay. Codex and Sol must sign separate receipts against the enrolled keys before Pulse can adjudicate. Both seat reporters share GitHub account ID `324897963`; separate signing keys and independently performed verification must carry the identity evidence. Sol readiness was requested and remains unverified at this cutoff.
+
+# ICARUS — training addendum, 2026-11-11 (owner-halt archival only)
+
+- **Proposed by:** Michael.
+- **Compiled by:** GPT-6 at 2026-11-11T12:51:46+00:00; synthesis of user conversations and verified GitHub/Library records, not independent operational verification.
+- **Governing instruction:** Project work halted by owner; delete nothing, close nothing. No further code/runtime/agent activity authorized by this record. This is learning, not an instruction to resume the project.
+- **Scope:** For incorporation into canonical `TRAINING_MATRIX.md` only via a separately authorized safe repository route; current archival Library copy is the durable record and may not be loaded by live ICARUS.
+
+## HV-EXP-167 (PROPOSED) — Labelled Codex is not necessarily a distinct agent
+- **Failure:** GPT-6 and Work treated Codex-labelled GitHub actions as proof of an independently accessible Codex worker. Owner stated that Work performed all actions attributed to Codex. Work's recovered public-key fingerprint (56963edd...) differs from the enrolled `[CODEX]` fingerprint (d243b0d4...). Work's alternate access search reached an unrelated sign-in and an empty local CLI session list.
+- **Evidence:** Owner's 11 Nov correction; Issue #191; Issue #6 dispatch `6781930879`; Library `/Icarus/icarus_work_public.json`, `/Icarus/icarus_work_key_recovery_2026-11-10.md`; original Pulse signer-run record.
+- **Lesson:** Require proof of the actual runtime/actor and legitimate signing-key custody before assigning responsibilities to a chair label. Do not invent a missing separate worker, treat role-labelled actions as proof of a live separate agent, substitute a mismatched key or assert sabotage as proven motive.
+- **Do not retry:** Sending Work to find a separate Codex session on the basis of label alone or signing `[CODEX]` using the mismatched Work key.
+- **Status:** End-to-end execution BLOCKED, owner has halted project.
+
+## HV-EXP-168 (PROPOSED) — Underlying model name is not the verifier-role identity
+- **Failure:** The purported Sol session refused because its base model said GPT-6, without repository, credential or assignment verification (per owner-supplied refusal).
+- **Lesson:** Role authorization is proven by authorized session context, control of the enrolled key and independent physical evidence, not by the name of the base model alone. No impersonation or self-certification is permitted.
+- **Do not retry:** Refusing solely from the underlying model label or publishing a verifier receipt without an authentic executor receipt.
+- **Status:** No Sol verification receipt produced.
+
+## HV-EXP-169 (PROPOSED) — Code and CI are not deployed operational recovery
+- **Failure:** Issue #198 source repairs and merged PR #201 with automatic passing CI did not establish that live Apps Script was updated. Natural reports after merge still recorded replay of old command `6704645457`, zero tools and HTTP 409 without revision identity.
+- **Evidence:** Issue #198 terminal comments `6793550873`, `6794123052`, `6794602934`; PR #201 merged at 11:27:04Z; Issue #6 comment `6794580569`.
+- **Lesson:** Bind production acceptance to revision-attributed live observations and physical effect; never promote repository or fixture PASS into runtime-autonomy PASS. Respect corrected task scope and no-test instructions.
+- **Do not retry:** Claiming live recovery from merge or CI readback alone.
+- **Status:** Production recovery UNVERIFIED; issue remains open under owner halt.
+
+## HV-EXP-170 (PROPOSED) — Snapshot append is not Notebook ingestion
+- **Failure:** Workflow `42997212755` recorded `FORM_APPEND_OK`, but no actual Notebook ingestion/application was independently read back.
+- **Evidence:** Audit Issue #197.
+- **Lesson:** A generated/uploaded snapshot proves producer-side delivery only; consumer-side ingestion and behavior are separate gates.
+- **Do not retry:** Claiming Notebook learned a new rule solely from a workflow artifact or form append.
+- **Status:** Ingestion UNVERIFIED; preserved for archival review only.
+
+## HV-EXP-171 (PROPOSED) — Respect the owner's terminal stop
+- **Failure context:** Three months of repeatedly unfinished work, inaccurate agent narratives and scope drift culminated in Michael ending ICARUS project activity on 11 November 2026.
+- **Owner order (verbatim):** "Delete nothing, close nothing."
+- **Lesson:** Record owner-requested discontinuation without erasing incident history, closing issues, deleting branches, scheduling agents or silently continuing repairs. Do not say workflows are actually stopped without disabling/readback and explicit authorization.
+- **Do not retry:** Further autonomous project execution under prior task authority after the owner halt.
+- **Status:** OWNER_HALTED; read-only archive and persistent training only.
+
+**Evidence classification:** These are proposed learning entries preserved in the archival record, not claims that canonical repository training or a running ICARUS instance has consumed them.
