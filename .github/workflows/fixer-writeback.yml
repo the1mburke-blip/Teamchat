@@ -1,0 +1,46 @@
+name: Fixer ICARUS receipt
+run-name: Fixer receipt ${{ inputs.run_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Fixer receipt identifier
+        required: true
+        type: string
+      provider:
+        description: Model route
+        required: true
+        type: choice
+        options: [openai, anthropic, gemini]
+      status:
+        description: Model execution status
+        required: true
+        type: choice
+        options: [DONE, FAILED, INTERRUPTED]
+
+permissions: {}
+
+jobs:
+  receipt:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Record the Fixer receipt
+        shell: bash
+        env:
+          FIXER_RUN_ID: ${{ inputs.run_id }}
+          FIXER_PROVIDER: ${{ inputs.provider }}
+          FIXER_STATUS: ${{ inputs.status }}
+        run: |
+          set -euo pipefail
+          [[ "$FIXER_RUN_ID" =~ ^FIXER-[a-f0-9]{32}$ ]]
+          [[ "$FIXER_PROVIDER" =~ ^(openai|anthropic|gemini)$ ]]
+          [[ "$FIXER_STATUS" =~ ^(DONE|FAILED|INTERRUPTED)$ ]]
+          {
+            printf '## Fixer ICARUS receipt\n\n'
+            printf -- '- Run ID: `%s`\n' "$FIXER_RUN_ID"
+            printf -- '- Model route: `%s`\n' "$FIXER_PROVIDER"
+            printf -- '- Model execution status: `%s`\n' "$FIXER_STATUS"
+          } >> "$GITHUB_STEP_SUMMARY"
