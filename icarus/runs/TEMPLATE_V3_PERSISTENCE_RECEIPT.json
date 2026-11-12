@@ -1,0 +1,93 @@
+{
+  "task_id": "DEPLOY_DELEGATION_TEMPLATE_V3",
+  "template_version": "v3.0.0",
+  "executed_by": "Claude Code (claude-opus-5-5) - authoring agent",
+  "proposed_by": "Michael",
+  "receipt_written_at_utc": "2026-11-12T23:46:15Z",
+  "status": "PENDING_VERIFICATION",
+  "status_reason": "v3 rule 3: the authoring agent cannot pass its own work. Tier 1 machine results are recorded below at their tier. Overall PASS needs an independent Tier 2 or Tier 3 verdict, recorded separately; this receipt is not edited after merge (v3 rule 7).",
+  "repository": "the1mburke-blip/Teamchat",
+  "branch": "agent/task-delegation-template-v3",
+  "baseline_main_sha": "951111b52170d9da0b830252213fb1f6e75144e0",
+  "preflight": {
+    "issued_in_conversation_at_utc": "2026-11-12T23:44:56Z",
+    "training_quote_source": "HV-EXP-170",
+    "note": "Issued in the Claude Code conversation before the first stage commit (stage 1 commit time 2026-11-12T23:45:25Z)."
+  },
+  "sources": {
+    "notebook": "HumanVibe Master Control Plane — STAGING (ce3276ef-e8a4-4ebf-bdfd-559fd41abb56)",
+    "retrieval_route": "Claude in Chrome on the owner's signed-in Google session; Studio menu Download",
+    "task_packet": {
+      "artifact": "deploy-template-v3-task-packet.json",
+      "bytes": 3415,
+      "sha256": "968e45ba448d61d9e4a68f46d7a5bf925be22673ae4cb0bcd247df375b9415ee",
+      "git_blob_sha": "831591f98efeaaf41d27f7b56f215154cf777ae7"
+    },
+    "template": {
+      "artifact": "task-delegation-template-v3.json",
+      "bytes": 4242,
+      "sha256": "e889eb960f2db455814bb0a38eb49fb8b408f6324bcd882d6ae2bdd629b99edf",
+      "git_blob_sha": "bfcb52ca65da7f542e10bb0113be7993fe194db4"
+    }
+  },
+  "stages": [
+    {
+      "stage_id": "STAGE_1_PERSIST_V3_TEMPLATE",
+      "commit_sha": "7dcce837ef2df6119ebafc1cdf2a435c12f1fea4",
+      "commit_time_utc": "2026-11-12T23:45:25Z",
+      "attempts": 1,
+      "path": "training/TASK_DELEGATION_TEMPLATE.json",
+      "previous_blob_sha": "ef4300d8dedc68d5f800009091d16c5476abcf69",
+      "blob_sha": "bfcb52ca65da7f542e10bb0113be7993fe194db4",
+      "check": "committed blob equals the source artifact blob"
+    },
+    {
+      "stage_id": "STAGE_2_INDEX_IN_TRAINING_MATRIX",
+      "commit_sha": "674b9b9e10f0a38bc14ae40c1a50ccf22d5e2b03",
+      "commit_time_utc": "2026-11-12T23:45:44Z",
+      "attempts": 1,
+      "path": "TRAINING_MATRIX.md",
+      "blob_sha": "a53ec25089b6aab0e579e154f1dc9142c407bc9d",
+      "entry": "HV-EXP-171",
+      "check": "baseline file is an exact byte prefix; 2207 bytes appended"
+    },
+    {
+      "stage_id": "STAGE_3_APPEND_VERIFICATION_RECEIPT",
+      "path": "icarus/runs/TEMPLATE_V3_PERSISTENCE_RECEIPT.json",
+      "attempts": 1,
+      "commit_sha": "recorded on the pull request (a file cannot contain its own commit SHA)"
+    }
+  ],
+  "route_deviations": [
+    "The packet names training/TRAINING_MATRIX.md, which does not exist on main; HV-EXP-171 was appended to the canonical root TRAINING_MATRIX.md instead of creating a competing index."
+  ],
+  "tier_1_machine_results": {
+    "gate_1_technical": {
+      "exit_codes": "0 for each stage commit",
+      "output_file_exists": true,
+      "git_shas_logged": true,
+      "result": "PASS (Tier 1)"
+    },
+    "gate_2_policy": {
+      "schema_valid": "NOT VERIFIED - no formal JSON Schema exists for the template; JSON parses and the top-level keys present are template_version, title, authority_scope, task_id, objective, immutable_execution_rules, stages_to_execute, adjudication, acceptance_criteria",
+      "immutable_rules_present": [
+        "rule_1_pre_execution_route_lock",
+        "rule_2_dual_gate_verification",
+        "rule_3_independent_verifier_selection",
+        "rule_4_solution_discovery_loop",
+        "rule_5_evidence_claims_and_peer_escalation",
+        "rule_6_negative_constraint_supremacy",
+        "rule_7_immutable_append_only_ledger"
+      ],
+      "zero_secrets_detected": true,
+      "negative_constraints": {
+        "only_mapped_paths_changed": true,
+        "no_existing_training_entries_changed": true,
+        "no_production_or_other_files": "only the three mapped paths are in the branch diff"
+      },
+      "result": "MACHINE CHECKS RECORDED; policy verdict reserved for an independent verifier"
+    }
+  },
+  "independent_verification": "PENDING - assign to a Tier 2 independent AI chair with no shared history, or Tier 3 owner",
+  "cost_eur": 0
+}
