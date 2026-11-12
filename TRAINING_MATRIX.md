@@ -2371,3 +2371,12 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - stage evidence: stage 1 commit `5d511b31c453c2afb3917cf54563fcbb97eebd76` (template). Stage 2 is the commit containing this entry. The receipt is `icarus/runs/TEMPLATE_PERSISTENCE_RECEIPT.json`.
 - reusable principle: map every stage before executing and treat the map as the only authorized route; record a verified git SHA per stage; `blocker_halt_protocol` and `blocker_condition` point to the blocker rule in HV-EXP-152. When the target branch is protected, the pull request is the route to main, and the change counts as landed only after the merge.
 - status: PARTIAL until Icarus adjudicates independently.
+
+## HV-EXP-168 — Check that a "new version" differs before merging it (2026-11-12)
+- experience_id: HV-EXP-168; date_utc: 2026-11-12.
+- proposed_by: Michael. Recorded by Claude Code under task CLAUDE-TASK-DELEGATION-TEMPLATE-UPDATE-20261112. External cost: EUR 0.
+- task_problem: The task asked for an updated Task Delegation Template from a NotebookLM Studio artifact to be merged into `training/TASK_DELEGATION_TEMPLATE.json` (HV-EXP-167).
+- what_happened: The built-in browser hit a Google sign-in. A Drive search found no exported copy. The shared artifact view showed a blank content frame. The Studio item is download-only. With owner approval it was downloaded through the owner's signed-in Chrome. Its git blob is `ea1199d8a7fedcc5e6167ee025e7db8aad0a12d4`, byte-identical to the file on main at `d22b564c510183b2f127b08723a3e6624ec967d4`.
+- reusable_principle: **Hash the retrieved source against the live file before preparing an update. If they match, there is nothing to incorporate: do not rewrite the file, and do not substitute a different-looking version (for example a richer task packet pasted into chat or shown in the notebook chat) for the named source.**
+- route_note: NotebookLM Studio code artifacts can be download-only and render blank in the shared view; the Studio item menu Download is the retrieval route (needs the owner's session and an approval to download). Chrome may save the file as a `.tmp` name.
+- status: PASS_NO_CHANGE; template unchanged; receipt updated under `update_check_runs` in `icarus/runs/TEMPLATE_PERSISTENCE_RECEIPT.json`. HV-EXP-167 is unchanged.

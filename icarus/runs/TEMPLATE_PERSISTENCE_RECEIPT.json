@@ -26,5 +26,35 @@
   ],
   "route_deviation": "Direct commit to main was rejected (422: pull request and 2 required status checks). Route changed to branch plus pull request.",
   "cost_eur": 0,
-  "independent_adjudication": "PENDING_ICARUS"
+  "independent_adjudication": "PENDING_ICARUS",
+  "update_check_runs": [
+    {
+      "task_id": "CLAUDE-TASK-DELEGATION-TEMPLATE-UPDATE-20261112",
+      "executed_by": "Claude Code (claude-opus-5-5)",
+      "proposed_by": "Michael",
+      "recorded_at_utc": "2026-11-12T22:10Z",
+      "status": "PASS_NO_CHANGE",
+      "status_reason": "The NotebookLM Studio artifact was retrieved in full and is byte-identical to training/TASK_DELEGATION_TEMPLATE.json on main. No update existed to incorporate; the template file was not modified. Owner instructed: log as no change.",
+      "source": {
+        "share_link": "https://notebooklm.link.google/c5msZWytgP0Y",
+        "notebook": "HumanVibe Master Control Plane — STAGING (ce3276ef-e8a4-4ebf-bdfd-559fd41abb56)",
+        "artifact": "task-delegation-template.json (84c814ad-97c0-4865-a8c4-21dd361b0e94), Studio, download-only, 97 sources",
+        "retrieval_route": "Claude in Chrome on the owner's signed-in Google session; Studio menu Download, with owner approval",
+        "bytes": 1224,
+        "sha256": "1fe8c4c43b0c34d0e7f476b4950aa8392bc73a03e427323c77784914c5e31d73",
+        "git_blob_sha": "ea1199d8a7fedcc5e6167ee025e7db8aad0a12d4"
+      },
+      "baseline_main_sha": "d22b564c510183b2f127b08723a3e6624ec967d4",
+      "baseline_template_blob_sha": "ea1199d8a7fedcc5e6167ee025e7db8aad0a12d4",
+      "comparison": "git show origin/main:training/TASK_DELEGATION_TEMPLATE.json compared with cmp against the downloaded artifact: identical. Fields added 0, removed 0, changed 0.",
+      "failed_routes": [
+        "Built-in browser pane: Google sign-in required (unauthenticated).",
+        "Google Drive connector search: no exported copy found.",
+        "Shared artifact view in Chrome: content frame rendered blank."
+      ],
+      "template_modified": false,
+      "cost_eur": 0,
+      "independent_adjudication": "PENDING_ICARUS"
+    }
+  ]
 }
