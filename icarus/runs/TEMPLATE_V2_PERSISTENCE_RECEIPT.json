@@ -3,8 +3,8 @@
   "executed_by": "Claude Code (claude-opus-5-5)",
   "proposed_by": "Michael",
   "recorded_at_utc": "2026-11-12T22:25Z",
-  "status": "PARTIAL",
-  "status_reason": "Both stages committed and blob-verified on branch agent/task-delegation-template-v2. main is branch-protected, so v2 is on main only after the pull request is merged; merge SHA and main readback are recorded in the pull request and the closing report.",
+  "status": "PASS",
+  "status_reason": "Both stages merged to main through PR #210 after the required checks passed; the template on main was read back and is byte-identical to the Studio source.",
   "repository": "the1mburke-blip/Teamchat",
   "branch": "agent/task-delegation-template-v2",
   "baseline_main_sha": "7cf8e1433f1551ef269c2b0229f4851a5d2d5c5d",
@@ -52,5 +52,36 @@
   },
   "rule_change_disclosure": "v2 merges pre_execution_mapping and route_authorization_lock into rule_1_pre_execution_route_lock, adds the adjudication block, and rewords success_condition to the dual-gate form, dropping the words 'recorded in the receipt file' (verification_file is kept).",
   "cost_eur": 0,
-  "independent_adjudication": "PENDING (TIER_1_MACHINE self-check only)"
+  "independent_adjudication": "PENDING (TIER_1_MACHINE self-check only)",
+  "status_history": [
+    {
+      "status": "PARTIAL",
+      "status_reason": "Both stages committed and blob-verified on branch agent/task-delegation-template-v2. main is branch-protected, so v2 is on main only after the pull request is merged; merge SHA and main readback are recorded in the pull request and the closing report.",
+      "recorded_at_utc": "2026-11-12T22:25Z"
+    }
+  ],
+  "pull_request": {
+    "number": 210,
+    "url": "https://github.com/the1mburke-blip/Teamchat/pull/210",
+    "head_sha": "7b04c8bee8223e641ebc4d50bb75fee67f3a69dc",
+    "required_checks": "completion-integrity=success, harness=success (sidecar-verifier and icarus-pulse skipped)",
+    "merge_sha": "5f977c23cdc4a59529d940b4b00ea54f14acd8dd",
+    "merged_at_utc": "2026-11-12T22:20:48Z"
+  },
+  "main_readback": {
+    "main_sha": "5f977c23cdc4a59529d940b4b00ea54f14acd8dd",
+    "template_blob_sha": "ef4300d8dedc68d5f800009091d16c5476abcf69",
+    "template_byte_identical_to_source": true,
+    "files_changed_vs_baseline": [
+      "TRAINING_MATRIX.md",
+      "icarus/runs/TEMPLATE_V2_PERSISTENCE_RECEIPT.json",
+      "training/TASK_DELEGATION_TEMPLATE.json"
+    ],
+    "training_entries_present": [
+      "HV-EXP-167",
+      "HV-EXP-168",
+      "HV-EXP-169"
+    ]
+  },
+  "receipt_finalized_by": "follow-up PR (this update); its own merge SHA is recorded in that pull request"
 }
