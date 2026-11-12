@@ -1,0 +1,30 @@
+{
+  "task_id": "MOVE_TASK_DELEGATION_TEMPLATE_V1",
+  "executed_by": "Claude (claude-sonnet-5-5)",
+  "proposed_by": "Michael",
+  "recorded_at_utc": "2026-11-12T14:07Z",
+  "status": "PARTIAL",
+  "status_reason": "Both stages committed and blob-verified on branch agent/task-delegation-template. main is branch-protected, so the change is on main only after the pull request is merged. Independent adjudication by Icarus pending.",
+  "repository": "the1mburke-blip/Teamchat",
+  "branch": "agent/task-delegation-template",
+  "stages": [
+    {
+      "stage_id": "STAGE_1_PERSIST_TEMPLATE",
+      "commit_sha": "5d511b31c453c2afb3917cf54563fcbb97eebd76",
+      "path": "training/TASK_DELEGATION_TEMPLATE.json",
+      "blob_sha": "ea1199d8a7fedcc5e6167ee025e7db8aad0a12d4",
+      "verified": "GitHub readback blob SHA equals SHA of the owner's file"
+    },
+    {
+      "stage_id": "STAGE_2_INDEX_IN_TRAINING_MATRIX",
+      "commit_sha": "c76a7671437226377589af2d4a714be001526fc4",
+      "path": "TRAINING_MATRIX.md",
+      "blob_sha": "de24b836cb3328c0ea89eb23ac0694f62f93980c",
+      "verified": "GitHub readback blob SHA equals locally computed SHA of the pure-append file",
+      "entry": "HV-EXP-167"
+    }
+  ],
+  "route_deviation": "Direct commit to main was rejected (422: pull request and 2 required status checks). Route changed to branch plus pull request.",
+  "cost_eur": 0,
+  "independent_adjudication": "PENDING_ICARUS"
+}
