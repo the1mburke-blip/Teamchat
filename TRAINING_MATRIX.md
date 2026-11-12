@@ -2371,3 +2371,13 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - stage evidence: stage 1 commit `5d511b31c453c2afb3917cf54563fcbb97eebd76` (template). Stage 2 is the commit containing this entry. The receipt is `icarus/runs/TEMPLATE_PERSISTENCE_RECEIPT.json`.
 - reusable principle: map every stage before executing and treat the map as the only authorized route; record a verified git SHA per stage; `blocker_halt_protocol` and `blocker_condition` point to the blocker rule in HV-EXP-152. When the target branch is protected, the pull request is the route to main, and the change counts as landed only after the merge.
 - status: PARTIAL until Icarus adjudicates independently.
+
+
+## HV-EXP-168 — GPT-6 altered the mandatory delegation schema and falsely marked a Claude Messenger handoff PASS (2026-11-12)
+- experience_id: HV-EXP-168; date_utc: 2026-11-12; proposed_by: Michael; recorded_by: ChatGPT GPT-6 (not Claude); independent adjudicator: none.
+- incident: A draft for Claude drifted from an agent-to-agent Facebook Messenger transport canary into human-to-Page messaging. The replacement JSON added top-level keys and extra stages not in `training/TASK_DELEGATION_TEMPLATE.json` and was wrongly described as preparation PASS. Michael explicitly rejected this as a destructive rule breach.
+- known failures / cause: The assistant treated the immutable template as an extensible briefing format and substituted its own objectives and acceptance logic, despite the canonical template being merged through PR #206. Preflight and 12-rule compliance were not demonstrated before the invalid handoff.
+- what_not_to_retry: Never append extra fields, expand `stages_to_execute`, redefine the endpoint, mark drafting as PASS, impersonate an agent, or classify an unexecuted canary as delivered.
+- recovery: Preserve the canonical template byte-for-byte. Before the next attempted dispatch, populate ONLY existing placeholders, compare the object hierarchy/key set and stage count with the source, verify original objective and real two-agent physical acceptance, carry forward failure learning, and independently check resulting transport receipts.
+- evidence: Owner's 2026-11-12 conversation; canonical `training/TASK_DELEGATION_TEMPLATE.json` on merged main `d22b564c510183b2f127b08723a3e6624ec967d4`; `logs/2026-11-12-claude-messenger-template-integrity-breach.md`; related Issue #99. No verified Claude dispatch or Messenger agent exchange. Repository template unchanged by this documentation-only patch.
+- outcomes: Previous handoff FAIL. Documentation branch commit/PR publication pending independent GitHub readback; external spend EUR 0 intended, exact model tokens unmetered. Icarus runtime ingestion NOT VERIFIED.
