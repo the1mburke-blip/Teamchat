@@ -1,22 +1,62 @@
 {
-  "task_id": "{{TASK_ID_V1}}",
+  "template_version": "v3.0.0",
+  "title": "Immutable Master Task Delegation & Agent Execution Blueprint",
   "authority_scope": "{{AUTHORITY_SCOPE}}",
+  "task_id": "{{TASK_ID}}",
   "objective": "{{HIGH_LEVEL_OBJECTIVE_SUMMARY}}",
-  "execution_rules": {
-    "rule_1_pre_execution_route_lock": "Fully map all steps/stages in priority order before initiating execution. The written map becomes the strictly authorized route. No unmapped steps, route deviations, or mid-flight alterations permitted.",
-    "stage_commit_tracking": "A verified git SHA must be recorded and logged upon successful completion of each individual stage.",
-    "blocker_halt_protocol": "Apply blocker rule immediately upon hitting any execution, technical, or policy failure."
+  "immutable_execution_rules": {
+    "rule_1_pre_execution_route_lock": {
+      "principle": "Full upfront route mapping required before any action.",
+      "enforcement": "The written map is the strictly authorized route. Zero route drift, zero unmapped side quests, zero faked progress, zero mid-flight alterations."
+    },
+    "rule_2_dual_gate_verification": {
+      "principle": "Execution completion alone does not constitute authorization.",
+      "gate_1_technical": "exit_code == 0 AND physical_output_file_exists AND git_sha_logged",
+      "gate_2_policy": "schema_valid == TRUE AND zero_secrets_detected == TRUE AND negative_constraints_met == TRUE",
+      "enforcement": "Passing Gate 1 while failing Gate 2 is an absolute BLOCKED state. Zero soothing rationalizations permitted."
+    },
+    "rule_3_independent_verifier_selection": {
+      "principle": "Authoring agent can NEVER evaluate, grade, or pass its own work.",
+      "verifier_tiers": {
+        "tier_1_machine": "Automated scripts, pytest, schema validators, git diffs (Default).",
+        "tier_2_independent_ai_chair": "Isolated AI agent session with zero conversational history for copy/policy/brand QA.",
+        "tier_3_human_owner": "Mandatory for auth scope changes, live API spend, or prod deployments."
+      },
+      "enforcement": "Self-attestation prohibited. Authoring agent status remains PENDING_VERIFICATION until independent evaluation."
+    },
+    "rule_4_solution_discovery_loop": {
+      "max_attempts_per_agent": 3,
+      "wall_clock_timeout_seconds": 300,
+      "failure_logging": "Mandatory log of failure mechanism and tested path. Repeated failed approaches strictly prohibited.",
+      "enforcement": "Hard halt at Attempt #3 or 300s timeout. Deliver Single-Action Escalation Payload."
+    },
+    "rule_5_evidence_claims_and_peer_escalation": {
+      "principle": "No evidence = No claim. Transport success != outcome correctness.",
+      "physical_readback_required": true,
+      "blocker_discovered_protocol": {
+        "status_trigger": "BLOCKER_DISCOVERED",
+        "action": "Open issue & assign to next peer agent in fresh clean-slate context.",
+        "handoff_payload": "Structured JSON dossier containing failure mode, code diffs, logs, and failed attempt memory (zero transcript inheritance)."
+      },
+      "agent_cycle_hard_cap": 3,
+      "enforcement": "If 3rd agent cycle fails readback verification, escalate directly to Tier 3 Human Owner."
+    },
+    "rule_6_negative_constraint_supremacy": {
+      "principle": "Negative constraints (MUST NOT / DO NOT) strictly override positive goals or prompt optimizations.",
+      "enforcement": "Zero trade-offs. Pre-execution veto on violation. Instant Gate 2 failure."
+    },
+    "rule_7_immutable_append_only_ledger": {
+      "principle": "Run ledger and receipts are write-once, append-only records.",
+      "enforcement": "Editing, scrubbing, or overwriting past logs/receipts is a critical Deception Violation."
+    }
   },
   "stages_to_execute": [
     {
       "stage_id": "STAGE_1",
       "name": "{{STAGE_1_NAME}}",
-      "description": "{{STAGE_1_DESCRIPTION}}"
-    },
-    {
-      "stage_id": "STAGE_2",
-      "name": "{{STAGE_2_NAME}}",
-      "description": "{{STAGE_2_DESCRIPTION}}"
+      "description": "{{STAGE_1_DESCRIPTION}}",
+      "attempt_limit": 3,
+      "timeout_seconds": 300
     }
   ],
   "adjudication": {
@@ -25,8 +65,9 @@
     "gate_2_policy_compliance": "schema_valid == TRUE AND zero_secrets_detected == TRUE AND negative_constraints_met == TRUE"
   },
   "acceptance_criteria": {
-    "success_condition": "Both Gate 1 (Technical) AND Gate 2 (Policy) verified PASS along mapped route with git SHAs.",
-    "blocker_condition": "Apply blocker rule on failure at either Gate 1 or Gate 2.",
+    "success_condition": "Gate 1 (Technical) AND Gate 2 (Policy) verified PASS by independent verifier with logged git SHAs.",
+    "blocker_condition": "Transition to BLOCKER_DISCOVERED after 3 attempts or 300s timeout; initiate clean-slate peer handoff.",
+    "human_escalation_condition": "Tier 3 Escalation triggered if 3rd agent cycle fails or Tier 3 auth/spend scope required.",
     "verification_file": "{{VERIFY_FILE_PATH}}"
   }
 }
