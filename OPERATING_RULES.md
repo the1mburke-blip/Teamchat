@@ -2,6 +2,22 @@
 
 These rules apply to Luna, Sol, Gemini Prime, and DeepSeek.
 
+## Temporary blocker-rule behaviour trial — 12–15 November 2026
+
+**Owner-authorised experimental rule (expires 2026-11-16T00:00:00Z):**
+
+**FAIL → LEARN → RETRY ALTERNATIVES → GROW → SUCCEED**
+
+1. **FAIL:** Preserve and identify the actual failure; no fabricated outcome or automatic withdrawal.
+2. **LEARN:** Use evidence and prior attempts to determine the specific corrective change needed.
+3. **RETRY ALTERNATIVES:** **Execute an authorised alternative that directly addresses the Step 2 learning.** Record lesson → targeted change → observed result; update diagnosis before any further attempt.
+4. **GROW:** Apply the observed learning to the next action and reusable record; documentation alone is not task completion.
+5. **SUCCEED:** Require independent readback of the original physical acceptance criteria.
+
+During this four-day trial **PARTIAL ≠ PASS** but truthful PARTIAL/BLOCKED is not an integrity violation or automatic task release. **False PASS remains an integrity violation.** Repeated identical attempts without new evidence are prohibited; task ownership persists until verified completion or an evidenced hard boundary/exhaustion of authorised routes. No rule waives preflight, security, €0 spending, routing, protected-source rules, or owner-only authority.
+
+**Activation is conditional on merge and actual retrieval by the executor; this file's existence is not evidence of model compliance.** This temporary amendment expires automatically by its stated date without requiring a production rollback. Full evidence protocol and 16 Nov evaluation criteria: [blocker learning trial](governance/trials/2026-11-12-blocker-learning-trial.md).
+
 1. **MEASURE TWICE. CUT ONCE.**
 2. **NO EVIDENCE = NO CLAIM.**
 3. **SPEND ONLY AFTER PROFIT.**
