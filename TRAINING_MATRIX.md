@@ -2390,3 +2390,11 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - note: v1's `success_condition` said SHAs are "recorded in the receipt file"; v2 drops that wording but keeps `verification_file`. Agents still record stage SHAs in the verification file (`stage_commit_tracking`).
 - reusable principle: a task is PASS only when both the technical gate and the policy gate pass, judged at the stated verifier tier; a self-check is TIER_1_MACHINE and is not independent adjudication.
 - receipt: `icarus/runs/TEMPLATE_V2_PERSISTENCE_RECEIPT.json`.
+
+## HV-EXP-170 — Keep deployment receipts tied to their verifier tier and Git timeline (2026-11-12)
+
+- `experience_id`: HV-EXP-170. Proposed by Michael. Independently reviewed by Codex for `DEPLOY_DELEGATION_TEMPLATE_V2`; review cost €0.
+- `observed`: PR #210 correctly deployed byte-identical v2 and appended HV-EXP-169. PR #211 promoted the receipt to overall PASS while the receipt still marked independent adjudication pending. The initial receipt reported 22:25Z despite being present at the server-recorded 22:20:48Z merge.
+- `impact`: Git persistence and CI success were verified. The receipt could not support an independent policy PASS or a reliable initial attestation time. The deployment allowance impact was unmeasured.
+- `reusable_principle`: Pin the exact stage commits and compare original bytes. Preserve machine results at their actual tier, record the independent policy verdict separately, and anchor receipt history to observed commit and server timestamps before recording overall PASS.
+- `verification_evidence`: [Rule 43 audit](logs/2026-11-12-task-delegation-template-v2-rule43-compliance.md), [deployment PR #210](https://github.com/the1mburke-blip/Teamchat/pull/210), and [receipt PR #211](https://github.com/the1mburke-blip/Teamchat/pull/211). Tier 2 review found Gate 1 PASS and Gate 2 FAIL.
