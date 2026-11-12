@@ -66,7 +66,7 @@
     "head_sha": "7b04c8bee8223e641ebc4d50bb75fee67f3a69dc",
     "required_checks": "completion-integrity=success, harness=success (sidecar-verifier and icarus-pulse skipped)",
     "merge_sha": "5f977c23cdc4a59529d940b4b00ea54f14acd8dd",
-    "merged_at_utc": "2026-11-12T22:21Z"
+    "merged_at_utc": "2026-11-12T22:20:48Z"
   },
   "main_readback": {
     "main_sha": "5f977c23cdc4a59529d940b4b00ea54f14acd8dd",
