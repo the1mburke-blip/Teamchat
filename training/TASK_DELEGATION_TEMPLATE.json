@@ -1,0 +1,28 @@
+{
+  "task_id": "{{TASK_ID_V1}}",
+  "authority_scope": "{{AUTHORITY_SCOPE}}",
+  "objective": "{{HIGH_LEVEL_OBJECTIVE_SUMMARY}}",
+  "execution_rules": {
+    "pre_execution_mapping": "Fully map all steps/stages in priority order before initiating execution. The written map becomes the strictly authorized route.",
+    "route_authorization_lock": "Once the execution map is created, the chosen route to the endpoint is strictly the ONLY authorized path. No unmapped steps or route deviations are permitted.",
+    "stage_commit_tracking": "A verified git SHA must be recorded and logged upon the successful completion of each individual stage.",
+    "blocker_halt_protocol": "Apply blocker rule"
+  },
+  "stages_to_execute": [
+    {
+      "stage_id": "STAGE_1",
+      "name": "{{STAGE_1_NAME}}",
+      "description": "{{STAGE_1_DESCRIPTION}}"
+    },
+    {
+      "stage_id": "STAGE_2",
+      "name": "{{STAGE_2_NAME}}",
+      "description": "{{STAGE_2_DESCRIPTION}}"
+    }
+  ],
+  "acceptance_criteria": {
+    "success_condition": "All stages executed along the mapped route with verified git SHAs recorded in the receipt file.",
+    "blocker_condition": "Apply blocker rule",
+    "verification_file": "{{VERIFY_FILE_PATH}}"
+  }
+}
