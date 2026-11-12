@@ -1,0 +1,56 @@
+{
+  "task_id": "DEPLOY_DELEGATION_TEMPLATE_V2",
+  "executed_by": "Claude Code (claude-opus-5-5)",
+  "proposed_by": "Michael",
+  "recorded_at_utc": "2026-11-12T22:25Z",
+  "status": "PARTIAL",
+  "status_reason": "Both stages committed and blob-verified on branch agent/task-delegation-template-v2. main is branch-protected, so v2 is on main only after the pull request is merged; merge SHA and main readback are recorded in the pull request and the closing report.",
+  "repository": "the1mburke-blip/Teamchat",
+  "branch": "agent/task-delegation-template-v2",
+  "baseline_main_sha": "7cf8e1433f1551ef269c2b0229f4851a5d2d5c5d",
+  "source": {
+    "notebook": "HumanVibe Master Control Plane — STAGING (ce3276ef-e8a4-4ebf-bdfd-559fd41abb56)",
+    "artifact": "task-delegation-template-v2.json (Studio, download-only, 97 sources)",
+    "retrieval_route": "Claude in Chrome on the owner's signed-in Google session; Studio menu Download, with owner approval",
+    "bytes": 1563,
+    "sha256": "64cded6c264bb512e9fd1c529929bf87e5907e60f55f6c8325d976c04adb33f0",
+    "git_blob_sha": "ef4300d8dedc68d5f800009091d16c5476abcf69"
+  },
+  "stages": [
+    {
+      "stage_id": "STAGE_1_PERSIST_V2_TEMPLATE",
+      "commit_sha": "63d1eaf43e9471459ac914c6731711ddeb42a52f",
+      "path": "training/TASK_DELEGATION_TEMPLATE.json",
+      "previous_blob_sha": "ea1199d8a7fedcc5e6167ee025e7db8aad0a12d4",
+      "blob_sha": "ef4300d8dedc68d5f800009091d16c5476abcf69",
+      "verified": "committed blob SHA equals git blob SHA of the downloaded Studio artifact"
+    },
+    {
+      "stage_id": "STAGE_2_INDEX_IN_LEARNED_FILES",
+      "commit_sha": "227736461c7ad0ce7be5cd546d803c346ebbaecb",
+      "path": "TRAINING_MATRIX.md",
+      "blob_sha": "089ad3fad9fd6d717a86d82ae1508cd897b2bbaa",
+      "entry": "HV-EXP-169",
+      "verified": "append-only diff (10 additions, 0 deletions)"
+    }
+  ],
+  "adjudication": {
+    "verifier_tier": "TIER_1_MACHINE",
+    "gate_1_technical_completion": {
+      "file_exists": true,
+      "git_exit_code": 0,
+      "git_sha_logged": true,
+      "result": "PASS"
+    },
+    "gate_2_policy_compliance": {
+      "schema_valid": true,
+      "zero_secrets_detected": true,
+      "negative_constraints_met": true,
+      "result": "PASS",
+      "method": "json.load parses the file; secret-pattern grep finds only the field name zero_secrets_detected; only the three task files changed, no other files or production systems touched"
+    }
+  },
+  "rule_change_disclosure": "v2 merges pre_execution_mapping and route_authorization_lock into rule_1_pre_execution_route_lock, adds the adjudication block, and rewords success_condition to the dual-gate form, dropping the words 'recorded in the receipt file' (verification_file is kept).",
+  "cost_eur": 0,
+  "independent_adjudication": "PENDING (TIER_1_MACHINE self-check only)"
+}

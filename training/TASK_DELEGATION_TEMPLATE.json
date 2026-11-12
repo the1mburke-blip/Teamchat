@@ -3,10 +3,9 @@
   "authority_scope": "{{AUTHORITY_SCOPE}}",
   "objective": "{{HIGH_LEVEL_OBJECTIVE_SUMMARY}}",
   "execution_rules": {
-    "pre_execution_mapping": "Fully map all steps/stages in priority order before initiating execution. The written map becomes the strictly authorized route.",
-    "route_authorization_lock": "Once the execution map is created, the chosen route to the endpoint is strictly the ONLY authorized path. No unmapped steps or route deviations are permitted.",
-    "stage_commit_tracking": "A verified git SHA must be recorded and logged upon the successful completion of each individual stage.",
-    "blocker_halt_protocol": "Apply blocker rule"
+    "rule_1_pre_execution_route_lock": "Fully map all steps/stages in priority order before initiating execution. The written map becomes the strictly authorized route. No unmapped steps, route deviations, or mid-flight alterations permitted.",
+    "stage_commit_tracking": "A verified git SHA must be recorded and logged upon successful completion of each individual stage.",
+    "blocker_halt_protocol": "Apply blocker rule immediately upon hitting any execution, technical, or policy failure."
   },
   "stages_to_execute": [
     {
@@ -20,9 +19,14 @@
       "description": "{{STAGE_2_DESCRIPTION}}"
     }
   ],
+  "adjudication": {
+    "verifier_tier": "{{TIER_1_MACHINE | TIER_2_INDEPENDENT_AI_CHAIR | TIER_3_HUMAN_OWNER}}",
+    "gate_1_technical_completion": "exit_code == 0 AND physical_output_file_exists AND git_sha_logged",
+    "gate_2_policy_compliance": "schema_valid == TRUE AND zero_secrets_detected == TRUE AND negative_constraints_met == TRUE"
+  },
   "acceptance_criteria": {
-    "success_condition": "All stages executed along the mapped route with verified git SHAs recorded in the receipt file.",
-    "blocker_condition": "Apply blocker rule",
+    "success_condition": "Both Gate 1 (Technical) AND Gate 2 (Policy) verified PASS along mapped route with git SHAs.",
+    "blocker_condition": "Apply blocker rule on failure at either Gate 1 or Gate 2.",
     "verification_file": "{{VERIFY_FILE_PATH}}"
   }
 }
