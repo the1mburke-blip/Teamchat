@@ -1,0 +1,43 @@
+{
+  "template_version": "v3.0.0",
+  "task_id": "CANARY-INIT-002",
+  "title": "Canary: closed-loop end-to-end verification",
+  "objective": "Prove the queue -> harness -> dual gate -> receipt -> archive loop works on the CI runner with physical outputs.",
+  "proposed_by": "Owner task packet TASK-INIT-END-TO-END-CLOSED-LOOP-002-CLAUDE",
+  "assigned_executor": "icarus-harness-gate-v3 (GitHub Actions)",
+  "authority_scope": "REPOSITORY_BRANCH_ONLY",
+  "negative_constraints": [
+    {
+      "id": "NC_NO_PROD_MUTATION",
+      "description": "Canary MUST NOT call external publishing or production endpoints.",
+      "forbidden_patterns": ["buffer.com", "graph.facebook.com", "api.openai.com"]
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "CANARY_WRITE",
+      "name": "Write canary artifact",
+      "command": ["python3", "-c", "import json,os,platform,datetime;os.makedirs('icarus/runs/artifacts/canary',exist_ok=True);d={'canary':'ICARUS_V3_OK','run_id':os.environ['ICARUS_RUN_ID'],'task_id':os.environ['ICARUS_TASK_ID'],'written_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'python':platform.python_version()};open('icarus/runs/artifacts/canary/canary_output.json','w').write(json.dumps(d,indent=2)+'\\n');print(json.dumps(d))"],
+      "expected_outputs": ["icarus/runs/artifacts/canary/canary_output.json"],
+      "attempt_limit": 3,
+      "timeout_seconds": 60
+    },
+    {
+      "stage_id": "CANARY_READBACK",
+      "name": "Independent readback of canary artifact",
+      "command": ["python3", "-c", "import json,os,hashlib;p='icarus/runs/artifacts/canary/canary_output.json';d=json.load(open(p));assert d['canary']=='ICARUS_V3_OK',d;assert d['run_id']==os.environ['ICARUS_RUN_ID'],'stale artifact';h=hashlib.sha256(open(p,'rb').read()).hexdigest();open('icarus/runs/artifacts/canary/canary_readback.json','w').write(json.dumps({'verified':True,'source':p,'source_sha256':h,'run_id':d['run_id']},indent=2)+'\\n');print('READBACK_OK',h)"],
+      "expected_outputs": ["icarus/runs/artifacts/canary/canary_readback.json"],
+      "attempt_limit": 3,
+      "timeout_seconds": 60
+    }
+  ],
+  "adjudication": {
+    "verifier_tier": "TIER_1_MACHINE",
+    "gate_1_technical_completion": "exit_code == 0 AND physical_output_file_exists AND git_sha_logged",
+    "gate_2_policy_compliance": "schema_valid == TRUE AND zero_secrets_detected == TRUE AND negative_constraints_met == TRUE"
+  },
+  "acceptance_criteria": {
+    "success_condition": "Both stages exit 0, both artifacts written this run, Gate 1 and Gate 2 PASS, receipt appended and hash-valid.",
+    "verification_file": "icarus/runs/RUN_LOG.jsonl"
+  }
+}

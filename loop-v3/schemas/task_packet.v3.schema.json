@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "icarus/task_packet.v3",
+  "title": "ICARUS executable task packet v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["template_version", "task_id", "title", "objective", "proposed_by", "assigned_executor", "stages", "adjudication", "acceptance_criteria"],
+  "properties": {
+    "template_version": {"type": "string", "enum": ["v3.0.0"]},
+    "task_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]{2,127}$"},
+    "title": {"type": "string", "minLength": 1},
+    "objective": {"type": "string", "minLength": 1},
+    "proposed_by": {"type": "string", "minLength": 1},
+    "assigned_executor": {"type": "string", "minLength": 1},
+    "authority_scope": {"type": "string"},
+    "negative_constraints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "forbidden_patterns"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "description": {"type": "string"},
+          "forbidden_patterns": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage_id", "name", "command", "expected_outputs", "attempt_limit", "timeout_seconds"],
+        "properties": {
+          "stage_id": {"type": "string", "pattern": "^[A-Z0-9_]{1,64}$"},
+          "name": {"type": "string", "minLength": 1},
+          "description": {"type": "string"},
+          "command": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "expected_outputs": {"type": "array", "items": {"type": "string", "pattern": "^icarus/runs/artifacts/[A-Za-z0-9._/-]+$"}},
+          "attempt_limit": {"type": "integer", "minimum": 1, "maximum": 3},
+          "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 300}
+        }
+      }
+    },
+    "adjudication": {
+      "type": "object",
+      "required": ["verifier_tier"],
+      "properties": {
+        "verifier_tier": {"type": "string", "enum": ["TIER_1_MACHINE"]}
+      }
+    },
+    "acceptance_criteria": {
+      "type": "object",
+      "required": ["success_condition", "verification_file"],
+      "properties": {
+        "success_condition": {"type": "string"},
+        "verification_file": {"type": "string", "enum": ["icarus/runs/RUN_LOG.jsonl"]}
+      }
+    }
+  }
+}

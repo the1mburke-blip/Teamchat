@@ -1,0 +1,118 @@
+name: loop-v3-gate
+
+# Work-branch only. No schedule, no listener: runs on push to the loop-v3 branch or by manual dispatch.
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/end-to-end-autonomous-loop-teamchat"]
+    paths:
+      - "loop-v3/**"
+      - ".github/workflows/loop-v3-gate.yml"
+
+permissions:
+  contents: write        # commit receipts back to the work branch
+  issues: write          # one receipt comment on Team Room issue #6
+  id-token: write        # keyless attestation (Sigstore)
+  attestations: write
+
+concurrency:
+  group: loop-v3-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RECEIPT_ISSUE: "6"
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: loop-v3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Harness self-tests (Tier 1 machine verifier)
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Ledger integrity precheck
+        run: python3 harness-runner-v3.py --verify-ledger
+
+      - name: Dispatch queue
+        id: pilot
+        run: |
+          set +e
+          python3 icarus_pilot.py | tee "$RUNNER_TEMP/pilot.json"
+          echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit receipts and archive
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          git config user.name "icarus-harness[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A loop-v3/icarus/runs loop-v3/processed loop-v3/task_queue
+          if git diff --cached --quiet; then
+            echo "Nothing to commit (queue was empty)."
+            exit 0
+          fi
+          git commit -m "loop-v3: receipt(s) from run ${GITHUB_RUN_ID} [executed at ${GITHUB_SHA}]"
+          for i in 1 2 3 4; do
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep $((2 ** i)); git pull --rebase origin "${GITHUB_REF_NAME}"
+          done
+          echo "receipt_commit=$(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post-commit ledger readback
+        if: always()
+        run: python3 harness-runner-v3.py --verify-ledger
+
+      - name: Attest ledger (keyless signature)
+        id: attest
+        if: steps.pilot.outputs.rc == '0'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: loop-v3/icarus/runs/RUN_LOG.jsonl
+
+      - name: Verify attestation
+        id: verify
+        if: steps.attest.outcome == 'success'
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh attestation verify loop-v3/icarus/runs/RUN_LOG.jsonl --repo "$GITHUB_REPOSITORY" --format json > "$RUNNER_TEMP/attest-verify.json"
+          echo "verified=true" >> "$GITHUB_OUTPUT"
+
+      - name: Post receipt to Teamchat Issue 6
+        id: comment
+        if: steps.pilot.outputs.rc == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNED: ${{ steps.verify.outputs.verified == 'true' && 'true' || 'false' }}
+          ATTEST_URL: ${{ steps.attest.outputs.attestation-url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 receipt_comment.py --signed "$SIGNED" --attestation-url "$ATTEST_URL" --run-url "$RUN_URL" > "$RUNNER_TEMP/receipt.md"
+          url=$(gh issue comment "$RECEIPT_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/receipt.md")
+          echo "comment_url=$url" >> "$GITHUB_OUTPUT"
+          echo "comment_url=$url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Readback canonical comment
+        if: steps.comment.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMENT_URL: ${{ steps.comment.outputs.comment_url }}
+        run: |
+          id="${COMMENT_URL##*issuecomment-}"
+          body=$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$id" --jq .body)
+          h=$(python3 -c "import json;print(json.loads([l for l in open('icarus/runs/RUN_LOG.jsonl') if l.strip()][-1])['receipt_hash'])")
+          echo "$body" | grep -q "receipt_hash=$h"
+          echo "$body" | head -1 | grep -q '^\[HARNESS-V3\]'
+          echo "READBACK_OK comment $id carries receipt_hash $h"
+
+      - name: Enforce gate result
+        if: always()
+        run: test "${{ steps.pilot.outputs.rc }}" = "0"
