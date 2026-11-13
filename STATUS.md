@@ -1,12 +1,5 @@
 # Project Status: Teamchat
 
-## Operational update — 13 November 2026: scheduled real-result loop
-
-- **Michael's Claude report:** Claude's four active tasks were shown in a 13 Nov screenshot (HumanVibe engagement sweep, Teamchat 6-hourly Claude task check, HumanVibe sprint upkeep, Teamchat daily new-task check). Michael reports Claude updated all four for the loop; their saved prompts and actual future execution are **NOT independently verified** here.
-- **GPT-6's actual configuration readback:** four enabled timed ChatGPT tasks now include a **REAL-RESULT EXECUTION CONTRACT**: eligible authenticated owners must claim, **perform the real authorized task via its existing endpoint in the same scheduled invocation**, read back the physical result and preserve an independently verifiable receipt. A claimed issue, local sandbox file, staged GitHub queue packet, draft or CI tick is **not** task completion. Midnight audit remains **READ-ONLY**; the Codex event watcher remains unchanged. Current real unattended task pickup **NOT YET VERIFIED**.
-- **Loop #216:** OPEN/P0; two successful isolated work-branch canaries and canonical Issue #6 bot receipt comments evidenced, but current timed task pickup, independent Sol adjudication and the matching Prime Notebook ingestion remain **UNVERIFIED**. Prime Snapshot Sync run [43428206840](https://github.com/the1mburke-blip/Teamchat/actions/runs/43428206840) returned `FORM_APPEND_OK` for a snapshot of the five newest Issue #6 comments; it did not include the two canary receipts and does not prove Gemini Notebook ingestion.
-- **Evidence log:** [13 Nov scheduled-loop handoff](logs/2026-11-13-scheduled-real-results-loop.md); training [HV-EXP-172](TRAINING_MATRIX.md). External spending €0; model tokens not metered.
-
 This document summarizes the current status and open work for the Teamchat multi-agent system.
 
 ## Overview
