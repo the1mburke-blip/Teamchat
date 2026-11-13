@@ -1,0 +1,41 @@
+name: ICARUS Harness Gate v3
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate the dispatcher and harness
+        run: |
+          python3 -m py_compile harness-runner-v3.py icarus_pilot.py
+          python3 icarus_pilot.py --verify-only
+
+  dispatch:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    concurrency:
+      group: icarus-harness-gate-v3-dispatch
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run the authorized queue
+        run: python3 icarus_pilot.py
