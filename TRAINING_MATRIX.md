@@ -2408,3 +2408,9 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - path note: the packet names `training/TRAINING_MATRIX.md`, which does not exist; this entry is in the canonical root `TRAINING_MATRIX.md`, so no competing index was created.
 - reusable principle: under rule 7, put everything a receipt needs into it before merge (stage SHAs, real commit times) and never edit it afterwards; post-merge facts (merge SHA, verdict) go in the pull request or a new record.
 - status: PENDING_VERIFICATION; receipt `icarus/runs/TEMPLATE_V3_PERSISTENCE_RECEIPT.json`.
+
+## HV-EXP-172 — Real work results, not task staging (2026-11-13)
+- proposed_by: Michael; configuration executor: ChatGPT GPT-6; cost: €0.
+- verified: four enabled timed task prompts updated/read back; schedules unchanged. Claude's four active tasks shown in owner screenshot, updated per owner report (NOT independently checked).
+- rule: a scheduled wake or CLAIM is not work completion. Authorized eligible workers must do the real assigned task in the same run, verify physical output, retain canonical receipt and independent adjudication. Never substitute sandbox/repository staging. Midnight audit stays read-only.
+- status: CONFIGURED; current scheduled pickup, completed task outcomes, and matching Gemini Notebook ingestion UNVERIFIED. See logs/2026-11-13-scheduled-real-results-loop.md.
