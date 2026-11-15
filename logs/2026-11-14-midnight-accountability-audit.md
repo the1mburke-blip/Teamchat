@@ -123,3 +123,17 @@ Older P0/DRAFT issues #198, #200 and #197 were checked for current state; each r
 - Full Claude scheduler prompt history, scheduled-run transcripts, authenticated Claude runtime identity, Codex signer receipt, and measured model token use remain unavailable.
 
 **Final status: PARTIAL.** Repository evidence and read-only allocation/loop checks are recorded. Operational execution, scheduled-run visibility, independent worker identity, training ingestion and task completion remain unverified.
+
+
+## Append-only verification addendum — 14 November 2026
+
+The initial header's phrase “readback required” described the state immediately after the first file write. This addendum records the completed independent readback without altering or removing the earlier text.
+
+- File fetched again from branch `audit/2026-11-14-midnight-accountability`.
+- Readback blob SHA: `2347132af6f0a3533ebc1f8d5112ae5f4c672f53` (pre-addendum version).
+- Readback length: 16,097 characters.
+- Required sections present: Claude Issue #226 assessment; Issue #6 allocation check; separate LOOP WATCH; pending training entries; final PARTIAL status.
+- The initial commit `9a122f0c09fa02ffb67e741bd9b57db2c537debc` was independently fetched; its only changed file was this audit path.
+- This verifies the audit record's persistence only. It does not verify Claude/Codex execution, scheduler ingestion, worker identity, task completion or operational effects.
+
+**Record persistence:** PASS (physical readback). **Operational result:** PARTIAL.
