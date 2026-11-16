@@ -321,3 +321,10 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - **Observed:** [Pulse run 42912976660](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660) succeeded as a workflow. The [runner log](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660/job/130171881419) identifies the heartbeat cron and records `SKIPPED_CADENCE` with zero issues inspected or dispatched. Duty ledger artifact `13808931540` belongs to that run.
 - **Wake status:** BLOCKED / UNVERIFIED at the post-run cutoff. [#191](https://github.com/the1mburke-blip/Teamchat/issues/191) is READY. No operational wake request or corresponding relay run was observed. The 22:07Z slot's operational execution, the signed receipt pair, and closure remain unverified.
 - **Verification rule:** Read the actual trigger cron and runner ledger before attributing a successful schedule event to operational duty. Require a matching Issue #6 request and relay run to credit the wake. Then track the distinct signed receipts and terminal closure. See [HV-EXP-166](../../TRAINING_MATRIX.md).
+
+## 2026-11-16 — Deployment of `context-cadence` skill and handoff protocol
+- Provenance: User-requested task to create and deploy a skill managing 10% context refreshes and an 85% handoff.
+- Skill: `context-cadence` deployed to `~/.dsh/skills/context-cadence/SKILL.md`.
+- Protocol: 10% interval re-read of immutable memory; 85% interval automatic handoff file generation.
+- Verification: Skill catalog registration verified; initial state file `context-cadence-state.json` created in workspace.
+- Status: Verified deployed; logged in local and remote memory.
