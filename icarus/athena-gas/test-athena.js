@@ -127,6 +127,7 @@ const ownerComment = (body, id = 5001) => [{ id, body, author_association: 'OWNE
 test('poll runs an owner ICARUS_RUN comment end to end: recall, 3-step loop, gate PASS, receipt, reply', () => {
   const env = makeEnv({ comments: ownerComment('ICARUS_RUN Say hello and list the last 3 entries in icarus/memory/learned.md.\nVERIFY_FILE: icarus/memory/learned.md'),
     gemini: (n) => n === 1 ? { answer: '', tool: { name: 'read_file', args: { path: 'icarus/memory/learned.md', offset: 0 } } }
+      : n === 2 ? { answer: 'DECISION: READ_ONLY', tool: null, unverified_claims: ['none'], needs_owner: false, owner_reason: '', lesson: '' }
       : { answer: 'step ' + n + ' done', tool: null, unverified_claims: ['none'], needs_owner: false, owner_reason: '', lesson: '' } });
   env.ctx.athenaPoll();
   const t = receiptOf(env);
