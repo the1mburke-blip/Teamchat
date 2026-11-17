@@ -2414,3 +2414,11 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - verified: four enabled timed task prompts updated/read back; schedules unchanged. Claude's four active tasks shown in owner screenshot, updated per owner report (NOT independently checked).
 - rule: a scheduled wake or CLAIM is not work completion. Authorized eligible workers must do the real assigned task in the same run, verify physical output, retain canonical receipt and independent adjudication. Never substitute sandbox/repository staging. Midnight audit stays read-only.
 - status: CONFIGURED; current scheduled pickup, completed task outcomes, and matching Gemini Notebook ingestion UNVERIFIED. See logs/2026-11-13-scheduled-real-results-loop.md.
+
+## HV-EXP-173 — Windows checkout breaks Linux container entrypoints (2026-11-17)
+- proposed_by: Michael (approved commit); recorded by: Claude Code; cost: €0.
+- failure: icarus-primitives restart-looped with `/app/entrypoint.sh: 4: set: Illegal option -`. Git on Windows (`core.autocrlf=true`, no `.gitattributes`) checked out `docker/primitives-entrypoint.sh` with CRLF; sh read `set -eu\r`. Secrets and setup checks were fine. One owner script run was spent on it.
+- fix: LF-normalised the container files, rebuilt, and ran with the existing env file (never read). Result: `Up`, 0 restarts, log `{"status": "idle"}`. Durable fix: `.gitattributes` forces LF for `*.sh` only. A wider rule (`*.py`, `Dockerfile*`) was tried and withdrawn before push: some of those blobs are stored with CRLF, so the rule marked 42 files (including protected `icarus/core` and `icarus/runtime`) modified on every checkout and blocked the rebase.
+- reusable principle: before a Windows owner builds a Linux image, check `git ls-files --eol` / CRLF in every file the Dockerfile COPYs and executes. A container `Restarting` with `Illegal option` or `\r: not found` means line endings first.
+- what not to retry: re-running the setup script or re-entering keys does not fix a CRLF entrypoint.
+- status: PARTIAL (self-verified by the executor; independent verification pending).

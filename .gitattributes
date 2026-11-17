@@ -1,0 +1,5 @@
+# Shell scripts run inside Linux containers must keep LF line endings, even on a
+# Windows checkout with core.autocrlf=true. A CRLF entrypoint fails with
+# "set: Illegal option -" (HV-EXP-173). Scoped to *.sh on purpose: some *.py and
+# Dockerfile blobs are stored with CRLF, and a wider rule marks them all modified.
+*.sh text eol=lf
