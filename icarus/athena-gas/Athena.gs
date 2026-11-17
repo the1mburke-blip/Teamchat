@@ -26,7 +26,7 @@
  * Apps Script limits: one execution may run 6 minutes, so cooldowns and budgets are smaller than on Actions.
  */
 
-var ATHENA_VERSION = 'cloud-4.4 (ledger bridge: ICARUS_QUEUE + outcome relay)';  // shown as "Icarus runtime cloud-3"
+var ATHENA_VERSION = 'cloud-4.5 (ledger bridge on icarus-ledger branch)';  // shown as "Icarus runtime cloud-3"
 var GH_API = 'https://api.github.com';
 var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 var OR_BASE = 'https://openrouter.ai/api/v1';
@@ -1322,6 +1322,16 @@ function runAthena_(ev, sourceRevision) {
 var LEDGER_DIR = 'icarus/ledger';
 var LEDGER_FINAL = ['done', 'BLOCKER_DISCOVERED'];
 var LEDGER_RELAYED_PREFIX = 'ATHENA_LEDGER_RELAYED_V1|';
+// main requires pull requests with no bypass, so direct ledger writes there fail with HTTP 409.
+// The ledger lives on its own branch; the daemon reads and writes the same one (ICARUS_LEDGER_BRANCH).
+var LEDGER_BRANCH = 'icarus-ledger';
+
+/** Run fn with R pointed at the ledger branch, then restore R's own branch. */
+function onLedgerBranch_(R, fn) {
+  var own = R.branch;
+  R.branch = LEDGER_BRANCH;
+  try { return fn(); } finally { R.branch = own; }
+}
 
 /** OWNER comment: "ICARUS_QUEUE" then a JSON object {job_id, task, verify_spec, max_attempts?}. */
 function parseQueueJob_(body) {
@@ -1340,6 +1350,10 @@ function parseQueueJob_(body) {
 }
 
 function enqueueLedgerJob_(R, ev) {
+  return onLedgerBranch_(R, function () { return enqueueOnLedgerBranch_(R, ev); });
+}
+
+function enqueueOnLedgerBranch_(R, ev) {
   var parsed = parseQueueJob_(ev.body);
   var head = '# Icarus run (ledger enqueue)\n\n';
   if (parsed.err) return { verdict: 'BLOCKED', payload: head + 'BLOCKED: ' + parsed.err + '. Nothing was queued.' };
@@ -1363,6 +1377,10 @@ function enqueueLedgerJob_(R, ev) {
 
 /** Relay at most one final ledger outcome per poll to the job's source issue. */
 function relayLedgerResult_(R, props) {
+  return onLedgerBranch_(R, function () { return relayOnLedgerBranch_(R, props); });
+}
+
+function relayOnLedgerBranch_(R, props) {
   var list = gh_(R, 'GET', 'contents/' + encPath_(LEDGER_DIR + '/state') + '?ref=' + encodeURIComponent(R.branch));
   if (list.code !== 200) return;
   var rows = JSON.parse(list.text);
