@@ -186,3 +186,53 @@ def test_path_escape_rejected(tmp_path):
     out = run_once(tmp_path, FakeReasoner([plan]), "x")
     assert out["receipt"]["verdict"] == "FAIL"
     assert not list(tmp_path.parent.rglob("escape.txt"))
+
+
+def test_openai_compat_waits_out_rate_limit_then_succeeds():
+    calls = {"n": 0}
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers["Content-Length"]))
+            calls["n"] += 1
+            if calls["n"] == 1:
+                self.send_response(429); self.send_header("Content-Length", "0"); self.end_headers()
+                return
+            out = json.dumps({"choices": [{"message": {"content": PLAN_OK}}]}).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(out)))
+            self.end_headers(); self.wfile.write(out)
+
+        def log_message(self, *a):
+            pass
+
+    slept = []
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        r = OpenAICompatReasoner(f"http://127.0.0.1:{srv.server_port}/v1", "m", api_key="k",
+                                 sleep=slept.append)
+        plan = r.plan({"objective": "x"})
+    finally:
+        srv.shutdown()
+    assert plan["commands"] == [[PY, "make.py"]] and calls["n"] == 2 and slept == [90]
+
+
+def test_openai_compat_persistent_rate_limit_is_a_reasoner_error():
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers["Content-Length"]))
+            self.send_response(429); self.send_header("Content-Length", "0"); self.end_headers()
+
+        def log_message(self, *a):
+            pass
+
+    slept = []
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        r = OpenAICompatReasoner(f"http://127.0.0.1:{srv.server_port}/v1", "m", sleep=slept.append)
+        with pytest.raises(ReasonerError, match="HTTP 429"):
+            r.plan({"objective": "x"})
+    finally:
+        srv.shutdown()
+    assert slept == [90, 90]

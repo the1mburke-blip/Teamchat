@@ -18,7 +18,15 @@ from __future__ import annotations
 
 import json
 import os
+import time
+import urllib.error
 import urllib.request
+
+# Per-minute rate limits (e.g. Gemini on the Google AI Plus subscription): wait out the
+# minute window instead of burning a job attempt. Matches the 90 s failover cooldown.
+RATE_LIMIT_CODES = (429, 503)
+COOLDOWN_SECONDS = 90
+MAX_COOLDOWNS = 2
 
 SYSTEM_PROMPT = (
     "You plan one job. Reply with a single JSON object only, keys: "
@@ -69,11 +77,14 @@ class FakeReasoner:
 
 class OpenAICompatReasoner:
     def __init__(self, base_url: str | None = None, model: str | None = None,
-                 api_key: str | None = None, timeout: int = 120):
+                 api_key: str | None = None, timeout: int = 120,
+                 cooldown: float = COOLDOWN_SECONDS, sleep=time.sleep):
         self.base_url = (base_url or os.environ.get("ICARUS_REASONER_URL", "")).rstrip("/")
         self.model = model or os.environ.get("ICARUS_REASONER_MODEL", "")
         self.api_key = api_key if api_key is not None else os.environ.get("ICARUS_REASONER_KEY", "")
         self.timeout = timeout
+        self.cooldown = cooldown
+        self._sleep = sleep
         if not self.base_url or not self.model:
             raise ReasonerError("ICARUS_REASONER_URL and ICARUS_REASONER_MODEL must be set")
 
@@ -94,12 +105,17 @@ class OpenAICompatReasoner:
             self.base_url + "/chat/completions",
             data=json.dumps(payload).encode(), headers=headers, method="POST",
         )
-        try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
-                body = json.loads(r.read())
-            text = body["choices"][0]["message"]["content"]
-        except ReasonerError:
-            raise
-        except Exception as e:  # network, HTTP, shape
-            raise ReasonerError(f"reasoner call failed: {type(e).__name__}: {e}") from e
+        for waited in range(MAX_COOLDOWNS + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                    body = json.loads(r.read())
+                text = body["choices"][0]["message"]["content"]
+                break
+            except urllib.error.HTTPError as e:
+                if e.code in RATE_LIMIT_CODES and waited < MAX_COOLDOWNS:
+                    self._sleep(self.cooldown)  # rate window, not a failed attempt
+                    continue
+                raise ReasonerError(f"reasoner call failed: HTTP {e.code}") from e
+            except Exception as e:  # network, shape
+                raise ReasonerError(f"reasoner call failed: {type(e).__name__}: {e}") from e
         return parse_plan(text)
