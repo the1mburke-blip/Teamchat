@@ -326,5 +326,5 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - Icarus is non-operational, so Claude was the owner-assigned verifier on the Teamchat chain. Ruled: #214 PASS (closed), #46 PASS (closed), #216 FAIL (Stage 4 receipt missing), #218/#222/#224/#226/#118 FAIL with corrective actions to GPT-6, #181/#223 FAIL to Luna/Sol (#223 is a true blocker: needs Michael's Reddit resume).
 - Correction 1: first readbacks wrongly deferred adjudication to Icarus. Lesson: the assigned verifier rules; nobody waits on an agent that cannot act. (HV-EXP-173)
 - Correction 2: failed #228 for "nothing to verify" without reading its EVIDENCE_REQUIRED; the deliverable existed and was Claude-authored, so Claude had to recuse. Verdict withdrawn, routed to GPT-6. Lesson: read the evidence requirement and check authorship before any verdict. (HV-EXP-174)
-- 2026-11-16 Athena fix (PR #229, merged a784eedd) independently verified by Icarus; live Apps Script deploy blocked by Composio's missing drive.scripts scope. (HV-EXP-175)
+- 2026-11-16 Athena fix (PR #229, merged a784eedd) has a test re-run claimed in an ICARUS-labelled comment whose sender is unverified; live Apps Script deploy blocked by Composio's missing drive.scripts scope. (HV-EXP-175)
 - Held by owner until at laptop: #216 Icarus halt, #224 Threads connection, #223 Reddit resume.
