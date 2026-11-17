@@ -609,6 +609,58 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["task_states"]["BACKLOG-8"]["source_blob"], blob)
         self.assertIn(f"Source Blob: {blob}", self.comments[6][-1]["body"])
 
+    def pinned_backlog(self, body="[TO] [WORK]\nScope: reconcile the open items."):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        os.environ["ICARUS_DUTY_VERIFIER_USER_ID"] = "102"
+        # [REQUESTED] issues get no [SOURCE_FILE] from the fixture, like live backlog issues.
+        self.issues.append({**issue(9, title="[P0] [REQUESTED] No declared file", body=body),
+                            "state": "open"})
+        record = self.run_pulse()
+        return record, body
+
+    def test_backlog_without_source_file_is_pinned_to_issue_body_and_dispatched(self):
+        record, body = self.pinned_backlog()
+        raw = body.encode("utf-8")
+        blob = hashlib.sha1(b"blob %d\0" % len(raw) + raw).hexdigest()
+        state = record["task_states"]["BACKLOG-9"]
+        self.assertEqual(record["loop_state"], "DISPATCHED")
+        self.assertEqual(record["backlog_claim"]["issue_number"], 9)
+        self.assertEqual((state["status"], state["source_preflight"], state["source_file"], state["source_blob"]),
+                         ("WAITING_FOR_RECEIPT", "ISSUE_BODY_PINNED", "ISSUE#9", blob))
+        self.assertIn(f"Source File: ISSUE#9\nSource Blob: {blob}", self.comments[6][-1]["body"])
+        self.assertTrue(self.comments[9][-1]["body"].startswith(runner.CLAIM_HEADER))
+        again = self.run_pulse()
+        self.assertEqual(again["task_states"]["BACKLOG-9"]["source_preflight"], "VERIFIED")
+        self.assertIsNone(again["backlog_claim"])
+        self.assertEqual(len(self.comments[9]), 1)
+
+    def test_pinned_backlog_reissues_when_issue_unchanged(self):
+        record, _ = self.pinned_backlog()
+        dispatch = record["dispatch_receipts"][0]["dispatch_comment_id"]
+        self.terminal_proof(9, dispatch, observed="b" * 64)
+        failed = self.run_pulse()["terminal_receipts"][0]
+        self.assertEqual((failed["verdict"], failed["status"]), ("FAIL", "WAITING_FOR_RECEIPT"))
+        self.assertIn(f"Reissue Of: {dispatch}", self.posts[-1])
+
+    def test_pinned_backlog_edited_after_dispatch_blocks_reissue(self):
+        record, _ = self.pinned_backlog()
+        dispatch = record["dispatch_receipts"][0]["dispatch_comment_id"]
+        self.issues[-1]["body"] += "\nScope widened after dispatch."
+        self.terminal_proof(9, dispatch, observed="b" * 64)
+        failed = self.run_pulse()["terminal_receipts"][0]
+        self.assertEqual((failed["verdict"], failed["status"], failed["blocker"]),
+                         ("FAIL", "BLOCKED", "DISPATCH_SOURCE_CHANGED"))
+        self.assertNotIn("Reissue Of:", self.posts[-1])
+
+    def test_declared_but_untracked_source_file_is_not_pinned(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        self.issues.append({**issue(9, title="[P0] [REQUESTED] Bad file", body="[SOURCE_FILE] absent.py"),
+                            "state": "open"})
+        record = self.run_pulse()
+        self.assertEqual(record["task_states"]["BACKLOG-9"]["source_preflight"], "SOURCE_FILE_NOT_TRACKED")
+        self.assertIsNone(record["backlog_claim"])
+        self.assertFalse(self.comments.get(9))
+
     def test_invalid_directive_sources_are_isolated_and_valid_dispatch_is_durable(self):
         self.comments[6] = [
             comment(10, task("MISSING", None)),
