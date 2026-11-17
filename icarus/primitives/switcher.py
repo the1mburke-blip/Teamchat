@@ -60,11 +60,14 @@ def load_pool(routes_path: str | Path, google_key: str, openrouter_key: str = ""
 class ModelSwitcher:
     def __init__(self, pool: list[dict], cooldown: float = COOLDOWN, pool_break: float = POOL_BREAK,
                  max_pool_breaks: int = 0, sleep=time.sleep, clock=time.monotonic,
-                 make=lambda e: OpenAICompatReasoner(e["base"], e["model"], api_key=e["key"])):
+                 identity=lambda: "", make=None):
         self.pool = pool
         self.cooldown, self.pool_break = cooldown, pool_break
         self.max_pool_breaks = max_pool_breaks  # 0 = never give up on rate limits
-        self._sleep, self._clock, self._make = sleep, clock, make
+        self._sleep, self._clock = sleep, clock
+        self._identity = identity  # callable: fresh Icarus identity text per job
+        self._make = make or (lambda e, ident: OpenAICompatReasoner(e["base"], e["model"], api_key=e["key"],
+                                                                   identity=ident))
         self._rest_until: dict[str, float] = {}
         self.current = 0
         self.trace: list[dict] = []
@@ -72,6 +75,7 @@ class ModelSwitcher:
     def plan(self, task: dict) -> dict:
         self.trace = []
         breaks = 0
+        ident = self._identity()  # same Icarus for every model this job
         while True:
             for _ in range(len(self.pool)):
                 e = self.pool[self.current]
@@ -79,7 +83,7 @@ class ModelSwitcher:
                     self.current = (self.current + 1) % len(self.pool)
                     continue
                 try:
-                    plan = self._make(e).plan(task)
+                    plan = self._make(e, ident).plan(task)
                     self.trace.append({"model": e["model"], "result": "ok"})
                     return plan  # stay on this model for the next job
                 except ReasonerHTTPError as err:

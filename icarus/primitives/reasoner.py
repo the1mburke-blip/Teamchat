@@ -78,11 +78,12 @@ class FakeReasoner:
 
 class OpenAICompatReasoner:
     def __init__(self, base_url: str | None = None, model: str | None = None,
-                 api_key: str | None = None, timeout: int = 120):
+                 api_key: str | None = None, timeout: int = 120, identity: str = ""):
         self.base_url = (base_url or os.environ.get("ICARUS_REASONER_URL", "")).rstrip("/")
         self.model = model or os.environ.get("ICARUS_REASONER_MODEL", "")
         self.api_key = api_key if api_key is not None else os.environ.get("ICARUS_REASONER_KEY", "")
         self.timeout = timeout
+        self.identity = identity  # Icarus identity block, prepended to the plan contract
         if not self.base_url or not self.model:
             raise ReasonerError("ICARUS_REASONER_URL and ICARUS_REASONER_MODEL must be set")
 
@@ -90,7 +91,7 @@ class OpenAICompatReasoner:
         payload = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": (self.identity + "\n\n" + SYSTEM_PROMPT) if self.identity else SYSTEM_PROMPT},
                 {"role": "user", "content": json.dumps(task)},
             ],
             "response_format": {"type": "json_object"},

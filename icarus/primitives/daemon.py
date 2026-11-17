@@ -34,6 +34,7 @@ from pathlib import Path
 from .gitledger import ClaimLost, GitLedger, GitLedgerError
 from .reasoner import ReasonerError
 from .runner import execute
+from .identity import load_identity
 from .switcher import ModelSwitcher, OwnerAuthError, load_pool
 from .verify import verify
 
@@ -91,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"OWNER ASSISTANCE REQUIRED — set GEMINI_API_KEY for the model switcher\n"
               f"Evidence: {e}", file=sys.stderr)
         return 3
-    reasoner = ModelSwitcher(pool)
+    reasoner = ModelSwitcher(pool, identity=lambda: load_identity(clone))
     lease = int(os.environ.get("ICARUS_LEASE_SECONDS", "21600"))
     work = Path(os.environ.get("ICARUS_WORK_DIR", "/tmp/icarus-work"))
     runner_id = os.environ.get("ICARUS_RUNNER_ID", "daemon")

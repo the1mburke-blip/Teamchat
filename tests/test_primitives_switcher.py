@@ -36,7 +36,7 @@ def scripted(script, seen):
             if out == "bad":
                 raise ReasonerError("reasoner returned invalid JSON")
             raise ReasonerHTTPError(out, f"{self.m}: HTTP {out}")
-    return lambda e: R(e)
+    return lambda e, ident="": R(e)
 
 
 POOL = [{"model": m, "base": "b", "key": "k"} for m in ("a", "b", "c")]
@@ -115,3 +115,57 @@ def test_load_pool_rejects_paid_route(tmp_path):
                                          "costPolicy": "verified-zero-cost"}]}))
     with pytest.raises(ReasonerError, match="invalid route"):
         load_pool(p, "gk", "ok")
+
+
+def test_every_model_gets_the_same_icarus_identity():
+    got = []
+
+    class R:
+        def __init__(self, e, ident):
+            self.m, self.ident = e["model"], ident
+
+        def plan(self, task):
+            got.append((self.m, self.ident))
+            if self.m == "a":
+                raise ReasonerHTTPError(429, "limited")
+            return PLAN
+
+    clk = Clock()
+    sw = ModelSwitcher(POOL, sleep=clk.sleep, clock=clk, identity=lambda: "I am Icarus",
+                       make=lambda e, ident: R(e, ident))
+    sw.plan({"objective": "x"})
+    assert got == [("a", "I am Icarus"), ("b", "I am Icarus")]
+
+
+def test_identity_loaded_from_repo_memory_files():
+    from icarus.primitives.identity import OPENING, load_identity
+    text = load_identity(ROOT)
+    assert text.startswith(OPENING)
+    assert (ROOT / "icarus/memory/identity.md").read_text(encoding="utf-8").strip()[:40] in text
+    assert "RECENT TRAINING" in text and len(text) < 20000
+
+
+def test_identity_reaches_the_model_request():
+    import http.server
+    import threading
+    seen = {}
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            seen["body"] = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            out = json.dumps({"choices": [{"message": {"content": json.dumps(PLAN)}}]}).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(out)))
+            self.end_headers(); self.wfile.write(out)
+
+        def log_message(self, *a):
+            pass
+
+    from icarus.primitives.reasoner import OpenAICompatReasoner
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        OpenAICompatReasoner(f"http://127.0.0.1:{srv.server_port}/v1", "m", identity="I am Icarus").plan({"x": 1})
+    finally:
+        srv.shutdown()
+    system = seen["body"]["messages"][0]["content"]
+    assert system.startswith("I am Icarus") and '"commands"' in system
