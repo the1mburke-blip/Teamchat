@@ -136,3 +136,29 @@ def test_harness_gate_fail(tmp_path, expected, pre, code):
     spec = {"expected_files": ["out.txt"], "harness": _harness(expected, pre)}
     r = verify(d, spec, _exec(), task_id="t1")
     assert r["verdict"] == "FAIL" and r["harness"]["exit_code"] == code
+
+
+def test_model_sees_job_limits_but_not_pass_hashes():
+    from icarus.primitives.daemon import model_task
+    job = {"task": {"objective": "x"}, "verify_spec": {**SPEC, "forbidden_patterns": ["GH_TOKEN"]}}
+    seen = model_task(job)
+    assert seen["objective"] == "x"
+    assert seen["limits"]["allowed_commands"] == [PYNAME] and seen["limits"]["expected_files"] == ["out.txt"]
+    assert HELLO not in json.dumps(seen) and "GH_TOKEN" not in json.dumps(seen)
+
+
+def test_identity_read_from_main_while_ledger_on_other_branch(tmp_path, remote):
+    from icarus.primitives.identity import load_identity
+    seed = tmp_path / "seed"
+    (seed / "icarus/memory").mkdir(parents=True)
+    (seed / "icarus/memory/identity.md").write_text("MAIN IDENTITY")
+    git(seed, "add", "-A"); git(seed, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "-m", "id")
+    git(seed, "push", "--quiet", "origin", "HEAD:main")
+    git(seed, "push", "--quiet", "origin", "HEAD:icarus-ledger")
+    (seed / "icarus/memory/identity.md").write_text("NEW MAIN IDENTITY")
+    git(seed, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "-am", "id2")
+    git(seed, "push", "--quiet", "origin", "HEAD:main")
+    c = tmp_path / "daemon"
+    git(tmp_path, "clone", "--quiet", "-b", "icarus-ledger", str(remote), str(c))
+    text = load_identity(c)
+    assert "NEW MAIN IDENTITY" in text  # memory edits on main reach the daemon

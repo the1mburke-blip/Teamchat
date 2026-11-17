@@ -11,16 +11,27 @@ TRAINING_MATRIX.md tail 3000. Missing files are skipped, never invented.
 """
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
+
+MEMORY_BRANCH = "main"  # memory lives on main even when the ledger runs on its own branch
 
 OPENING = "You are Icarus, a persistent autonomous fixer. Memory belongs to Icarus, not the model."
 
 
+def _from_main(root: Path, rel: str) -> str | None:
+    r = subprocess.run(["git", "show", f"origin/{MEMORY_BRANCH}:{rel}"], cwd=root,
+                       capture_output=True, text=True, timeout=30)
+    return r.stdout if r.returncode == 0 else None
+
+
 def _read(root: Path, rel: str, head: int = 0, tail: int = 0) -> str:
-    p = root / rel
-    if not p.is_file():
-        return ""
-    t = p.read_text(encoding="utf-8", errors="replace")
+    t = _from_main(root, rel) if (root / ".git").exists() else None
+    if t is None:  # not a clone, or main not fetched: fall back to the working tree
+        p = root / rel
+        if not p.is_file():
+            return ""
+        t = p.read_text(encoding="utf-8", errors="replace")
     if (head or tail) and len(t) > head + tail:
         return t[:head] + "\n[...trimmed...]\n" + (t[-tail:] if tail else "")
     return t
@@ -28,6 +39,9 @@ def _read(root: Path, rel: str, head: int = 0, tail: int = 0) -> str:
 
 def load_identity(root: str | Path) -> str:
     root = Path(root)
+    if (root / ".git").exists():
+        subprocess.run(["git", "fetch", "--quiet", "--depth", "1", "origin", MEMORY_BRANCH],
+                       cwd=root, capture_output=True, timeout=120)
     parts = [
         OPENING,
         _read(root, "icarus/memory/identity.md"),

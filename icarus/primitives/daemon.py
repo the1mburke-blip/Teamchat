@@ -41,6 +41,18 @@ from .verify import verify
 log = logging.getLogger("icarus.daemon")
 
 
+def model_task(job: dict) -> dict:
+    """What the model sees: the task plus the job's hard limits, so it plans inside them.
+    Pass criteria stay with the verifier (hashes/forbidden patterns are not shown)."""
+    spec = job["verify_spec"]
+    limits = {"expected_files": spec.get("expected_files", [])}
+    if spec.get("allowed_commands") is not None:
+        limits["allowed_commands"] = spec["allowed_commands"]
+    limits["note"] = ("Use only allowed_commands as argv[0] (or no commands at all). Files listed in "
+                      "'files' are written for you, so creating a file needs no command.")
+    return {**job["task"], "limits": limits}
+
+
 def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
           lease_seconds: int = 21600) -> dict:
     try:
@@ -53,7 +65,7 @@ def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
     job_dir = work_dir / job["id"] / f"attempt-{attempt}"
     job_dir.mkdir(parents=True, exist_ok=True)
     try:
-        plan, plan_error = reasoner.plan(job["task"]), None
+        plan, plan_error = reasoner.plan(model_task(job)), None
     except OwnerAuthError:
         raise  # owner-only boundary: leave the job claimed-and-expiring, stop the daemon
     except ReasonerError as e:
