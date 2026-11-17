@@ -1,0 +1,210 @@
+{
+  "template_version": "v3.0.0",
+  "title": "Immutable Master Task Delegation & Agent Execution Blueprint",
+  "authority_scope": "Owner (Michael) delegated the Icarus ledger-loop work to Claude Code on 2026-11-17 (\"its all you\"). The next chair may run the stages below on Michael's laptop and post ICARUS_QUEUE canaries on Teamchat issue #237. It MUST NOT change branch protection on main, Apps Script triggers or Script Properties, read or relay secrets, or merge to main without owner review.",
+  "task_id": "ICARUS-LEDGER-LOOP-HANDOVER-2026-11-17",
+  "objective": "Hand over the live Icarus ledger loop: Athena pulse (cloud-4.5) to icarus-ledger branch to laptop daemon to verifier to relay. First end-to-end PASS achieved (canary-003, issue #237, 2026-11-17T23:47:11Z). Next: prove commit 1b9addf (model sees job limits) by passing canary-004 under the strict spec canary-002 failed, then close source drift and the compliance tracker.",
+  "immutable_execution_rules": {
+    "rule_1_pre_execution_route_lock": {
+      "principle": "Full upfront route mapping required before any action.",
+      "enforcement": "The written map is the strictly authorized route. Zero route drift, zero unmapped side quests, zero faked progress, zero mid-flight alterations."
+    },
+    "rule_2_dual_gate_verification": {
+      "principle": "Execution completion alone does not constitute authorization.",
+      "gate_1_technical": "exit_code == 0 AND physical_output_file_exists AND git_sha_logged",
+      "gate_2_policy": "schema_valid == TRUE AND zero_secrets_detected == TRUE AND negative_constraints_met == TRUE",
+      "enforcement": "Passing Gate 1 while failing Gate 2 is an absolute BLOCKED state. Zero soothing rationalizations permitted."
+    },
+    "rule_3_independent_verifier_selection": {
+      "principle": "Authoring agent can NEVER evaluate, grade, or pass its own work.",
+      "verifier_tiers": {
+        "tier_1_machine": "Automated scripts, pytest, schema validators, git diffs (Default).",
+        "tier_2_independent_ai_chair": "Isolated AI agent session with zero conversational history for copy/policy/brand QA.",
+        "tier_3_human_owner": "Mandatory for auth scope changes, live API spend, or prod deployments."
+      },
+      "enforcement": "Self-attestation prohibited. Authoring agent status remains PENDING_VERIFICATION until independent evaluation."
+    },
+    "rule_4_solution_discovery_loop": {
+      "max_attempts_per_agent": 3,
+      "wall_clock_timeout_seconds": 300,
+      "failure_logging": "Mandatory log of failure mechanism and tested path. Repeated failed approaches strictly prohibited.",
+      "enforcement": "Hard halt at Attempt #3 or 300s timeout. Deliver Single-Action Escalation Payload."
+    },
+    "rule_5_evidence_claims_and_peer_escalation": {
+      "principle": "No evidence = No claim. Transport success != outcome correctness.",
+      "physical_readback_required": true,
+      "blocker_discovered_protocol": {
+        "status_trigger": "BLOCKER_DISCOVERED",
+        "action": "Open issue & assign to next peer agent in fresh clean-slate context.",
+        "handoff_payload": "Structured JSON dossier containing failure mode, code diffs, logs, and failed attempt memory (zero transcript inheritance)."
+      },
+      "agent_cycle_hard_cap": 3,
+      "enforcement": "If 3rd agent cycle fails readback verification, escalate directly to Tier 3 Human Owner."
+    },
+    "rule_6_negative_constraint_supremacy": {
+      "principle": "Negative constraints (MUST NOT / DO NOT) strictly override positive goals or prompt optimizations.",
+      "enforcement": "Zero trade-offs. Pre-execution veto on violation. Instant Gate 2 failure."
+    },
+    "rule_7_immutable_append_only_ledger": {
+      "principle": "Run ledger and receipts are write-once, append-only records.",
+      "enforcement": "Editing, scrubbing, or overwriting past logs/receipts is a critical Deception Violation."
+    }
+  },
+  "stages_to_execute": [
+    {
+      "stage_id": "STAGE_1",
+      "name": "Rebuild daemon from 1b9addf",
+      "description": "On the laptop: confirm no job is claimed (docker logs --tail 20 icarus-primitives shows idle). git -C $HOME\\Teamchat-primitives fetch origin; git checkout --detach origin/agent/icarus-primitives (must resolve to 1b9addf). docker build -f docker/Dockerfile.primitives -t icarus-primitives <worktree>. docker rm -f icarus-primitives, then run exactly: docker run -d --name icarus-primitives --restart unless-stopped --env-file \"$env:USERPROFILE\\.icarus\\primitives.env\" -e ICARUS_LEDGER_BRANCH=icarus-ledger -v icarus-ledger:/data/ledger -v icarus-work:/data/work --cap-drop ALL --security-opt no-new-privileges:true icarus-primitives. Evidence: docker ps Up with 0 restarts, log status idle, printenv ICARUS_LEDGER_BRANCH = icarus-ledger.",
+      "attempt_limit": 3,
+      "timeout_seconds": 300
+    },
+    {
+      "stage_id": "STAGE_2",
+      "name": "Strict canary-004",
+      "description": "As OWNER, post on https://github.com/the1mburke-blip/Teamchat/issues/237: ICARUS_QUEUE with job_id canary-004, the same task as canary-003, verify_spec {expected_files:[\"canary.txt\"], allowed_commands:[\"echo\",\"sh\"], forbidden_patterns:[\"GH_TOKEN\",\"GEMINI_API_KEY\"]}, max_attempts 2. Never reuse a job_id. Wait up to 25 minutes for \"[ICARUS via runtime] Ledger job canary-004: PASS\". FAIL with \"vetoed disallowed command\" means 1b9addf did not take effect; capture the failure, do not repost the same job.",
+      "attempt_limit": 3,
+      "timeout_seconds": 300
+    },
+    {
+      "stage_id": "STAGE_3",
+      "name": "Close source drift",
+      "description": "main holds Athena cloud-4.3 while production runs cloud-4.5 (blob 3fe87900c702525a3b36ed683fc1b666d663f3e7). Open a PR from agent/icarus-primitives to main describing the deployed state. Owner review required because main requires PRs with no bypass. Do not merge icarus-ledger into main.",
+      "attempt_limit": 3,
+      "timeout_seconds": 300
+    },
+    {
+      "stage_id": "STAGE_4",
+      "name": "Rule 43 compliance tracker",
+      "description": "Separate task: review the 2026-11-17 run against the 12 canonical rules, using known_process_misses below as input. Write reusable lessons to TRAINING_MATRIX.md (HV-EXP-174+) with physical readback.",
+      "attempt_limit": 3,
+      "timeout_seconds": 300
+    }
+  ],
+  "adjudication": {
+    "verifier_tier": "TIER_1_MACHINE",
+    "gate_1_technical_completion": "exit_code == 0 AND physical_output_file_exists AND git_sha_logged",
+    "gate_2_policy_compliance": "schema_valid == TRUE AND zero_secrets_detected == TRUE AND negative_constraints_met == TRUE"
+  },
+  "acceptance_criteria": {
+    "success_condition": "Gate 1 (Technical) AND Gate 2 (Policy) verified PASS by independent verifier with logged git SHAs.",
+    "blocker_condition": "Transition to BLOCKER_DISCOVERED after 3 attempts or 300s timeout; initiate clean-slate peer handoff.",
+    "human_escalation_condition": "Tier 3 Escalation triggered if 3rd agent cycle fails or Tier 3 auth/spend scope required.",
+    "verification_file": "icarus/ledger/state/canary-004.json on branch icarus-ledger (status \"done\"), its receipt in icarus/ledger/run_log.jsonl, and the Athena relay comment on issue #237"
+  },
+  "handover_context": {
+    "author": "[CLAUDE] Claude Code (laptop session for Michael)",
+    "written_utc": "2026-11-17T23:50:00Z",
+    "self_status": "PARTIAL (self-verified; independent verification pending)",
+    "endpoint_evidence": {
+      "issue": "https://github.com/the1mburke-blip/Teamchat/issues/237",
+      "relay_comment_utc": "2026-11-17T23:47:11Z",
+      "relay_text": "[ICARUS via runtime] Ledger job `canary-003`: PASS (verifier icarus.primitives.verify; not self-awarded).",
+      "ledger_commits_icarus_ledger": {
+        "enqueue": "cc41d59",
+        "claim": "4f5e329",
+        "done": "12441de"
+      },
+      "receipt": {
+        "gate_1_technical": "pass",
+        "gate_2_policy": "pass",
+        "file": "canary.txt",
+        "content": "icarus canary ok",
+        "sha256": "675ec5a743f5f2d82e7e259962ecf5b24ae0958ac9611e7358b04beadd2854bb",
+        "model": "gemini-3.5-flash-lite"
+      }
+    },
+    "deployed_state": {
+      "pulse": {
+        "where": "Apps Script project PrimeGeminiGmailBridge, files Athena.gs AND Copy of Athena.gs (identical)",
+        "version": "cloud-4.5 (ledger bridge on icarus-ledger branch)",
+        "commit": "3b874f5",
+        "blob": "3fe87900c702525a3b36ed683fc1b666d663f3e7",
+        "poll": "every 10 min, one comment per poll"
+      },
+      "daemon": {
+        "where": "Docker container icarus-primitives on the owner laptop, restart unless-stopped",
+        "image": "sha256:59c906f7d298ed72221fa5fb38981fc20929b7b26e737ea0a5c2ab7cc7582734",
+        "built_from": "b0b2324 (does NOT include 1b9addf)",
+        "ledger_branch": "icarus-ledger",
+        "poll": "every 60 s"
+      },
+      "ledger": {
+        "branch": "icarus-ledger",
+        "created_from": "main@a784eed",
+        "paths": [
+          "icarus/ledger/queue/",
+          "icarus/ledger/claims/",
+          "icarus/ledger/state/",
+          "icarus/ledger/run_log.jsonl"
+        ]
+      },
+      "source_branch": {
+        "name": "agent/icarus-primitives",
+        "head": "1b9addf"
+      },
+      "secrets": "Stored by the owner in %USERPROFILE%\\.icarus\\primitives.env (user-only ACL). Agents never read them."
+    },
+    "history": [
+      {
+        "step": "CRLF entrypoint restart loop",
+        "result": "FIXED",
+        "commit": "b0b2324",
+        "lesson": "HV-EXP-173: .gitattributes *.sh eol=lf; a wider rule marked 42 CRLF-stored files dirty and was withdrawn"
+      },
+      {
+        "step": "Athena cloud-4.4 deploy",
+        "result": "DONE",
+        "note": "live project was cloud-4.2, not 4.3; the built-in browser pane cannot paste the OS clipboard, Claude in Chrome can"
+      },
+      {
+        "step": "canary-001",
+        "result": "BLOCKED",
+        "cause": "HTTP 409: main requires a PR, no bypass (confirmed in Settings)",
+        "fix": "icarus-ledger branch + Athena cloud-4.5 (3b874f5)"
+      },
+      {
+        "step": "canary-002",
+        "result": "FAIL / BLOCKER_DISCOVERED (correct gate behaviour)",
+        "cause": "model planned python3; allowed_commands was [echo, sh], so it was vetoed twice",
+        "fix": "canary-003 allowed python3; 1b9addf tells the model its limits"
+      },
+      {
+        "step": "canary-003",
+        "result": "PASS",
+        "relayed_utc": "2026-11-17T23:47:11Z"
+      }
+    ],
+    "how_to_track": {
+      "issue_comments": "GET https://api.github.com/repos/the1mburke-blip/Teamchat/issues/237/comments (receipts start \"# Icarus run receipt v1\"; verdicts start \"[ICARUS via runtime] Ledger job\")",
+      "ledger": "git fetch origin icarus-ledger; git log origin/icarus-ledger; git show origin/icarus-ledger:icarus/ledger/state/<job>.json",
+      "daemon": "docker ps --filter name=icarus-primitives; docker logs --tail 20 icarus-primitives; receipts at /data/work/<job>/attempt-N/receipt.json inside the container",
+      "worst_case_latency_minutes": 25
+    },
+    "open_risks": [
+      "Source drift: main = Athena cloud-4.3, production = cloud-4.5.",
+      "Copy of Athena.gs duplicates every Athena function; every deploy must update both files until the owner decides.",
+      "The daemon runs only while the laptop and Docker Desktop are on; queued jobs wait.",
+      "Running container predates 1b9addf."
+    ],
+    "known_process_misses": [
+      "Elapsed-time estimate (~30 min) exceeded by more than 2x; GitHub token creation not flagged in preflight.",
+      "Line endings not checked before the owner first ran setup (one owner run wasted).",
+      "git add --renormalize staged 42 files including protected paths (caught before commit).",
+      "Built-in-browser clipboard route tried before checking it supports OS paste.",
+      "canary-001/002 specs written without checking branch protection or reasoner command habits.",
+      "athenaSelfTest returns JSON without logging, so the requested log line cannot exist; SHA-256 readback used instead."
+    ],
+    "must_not": [
+      "Ask for, read, print or relay GITHUB_PAT, GEMINI_API_KEY or the env file.",
+      "Point ledger writes at main or weaken main branch protection.",
+      "Update Athena in only one of the two Apps Script files.",
+      "Reuse a job_id or self-award PASS; only the verifier receipt plus the Athena relay counts.",
+      "Rebuild the daemon while a job is claimed."
+    ],
+    "parked_by_owner": [
+      "Phone chat page (posts to issues; up to 10-min latency)",
+      "Slack channel (connector not authorised yet)"
+    ],
+    "full_narrative": "icarus/primitives/HANDOFF.md on agent/icarus-primitives, section \"[CLAUDE] HANDOVER 2026-11-17T23:48Z\""
+  }
+}
