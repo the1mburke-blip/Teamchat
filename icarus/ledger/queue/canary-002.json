@@ -1,0 +1,23 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Daemon canary (retry on icarus-ledger branch, Athena cloud-4.5)",
+    "objective": "Create a file named canary.txt in the job directory containing the single line: icarus canary ok",
+    "evidence_required": "canary.txt exists",
+    "source_issue": 237
+  },
+  "verify_spec": {
+    "expected_files": [
+      "canary.txt"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY"
+    ]
+  }
+}
