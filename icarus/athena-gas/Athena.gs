@@ -26,7 +26,7 @@
  * Apps Script limits: one execution may run 6 minutes, so cooldowns and budgets are smaller than on Actions.
  */
 
-var ATHENA_VERSION = 'cloud-4.3 (ACT action enforced; delegate capture bounded)';  // shown as "Icarus runtime cloud-3"
+var ATHENA_VERSION = 'cloud-4.4 (ledger bridge: ICARUS_QUEUE + outcome relay)';  // shown as "Icarus runtime cloud-3"
 var GH_API = 'https://api.github.com';
 var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 var OR_BASE = 'https://openrouter.ai/api/v1';
@@ -71,6 +71,7 @@ function athenaPoll() {
     }
     if (props.getProperty('ATHENA_CUTOVER_OBSERVED_V1') !== cutover.proof) return;
     reconcileOnePendingReceipt_(R, props);
+    try { relayLedgerResult_(R, props); } catch (e) { console.log('LEDGER_RELAY_ERROR ' + redact_(R, e && e.message || e)); }
     var t = nextTrigger_(R, props, cutover);
     if (!t) return;
     executeAttempt_(R, props, cutover, {
@@ -132,6 +133,7 @@ function classifyComment_(c) {
   if (TEAM_ASSOC.indexOf(c.author_association) < 0) return null;
   if (String(c.html_url || '').indexOf('/pull/') >= 0) return null;
   if (OWN_OUTPUT.test(body) || body.indexOf('_Receipt: icarus/runs/') >= 0) return null;
+  if (body.indexOf('ICARUS_QUEUE') === 0) return c.author_association === 'OWNER' ? 'queue' : null;
   if (body.indexOf('ICARUS_RUN') === 0) return 'run';
   if (CLAIM_PASS.test(body)) return 'claim';
   if (ADDRESSED.test(body)) return 'addressed';
@@ -1082,6 +1084,7 @@ function executionIntegrity_(R, kind, requiredReads) {
 
 function runAthena_(ev, sourceRevision) {
   var R = newRun_(ev);
+  if (ev.kind === 'queue') return enqueueLedgerJob_(R, ev);
   R.cfg = loadCfg_(R);
   R.usage = usageToday_(R);
   var lines = String(R.raw).split(/\r?\n/), first = lines[0] || '';
@@ -1310,4 +1313,77 @@ function runAthena_(ev, sourceRevision) {
   return { verdict: verdict, payload: text };
 
 
+}
+
+/* ---------- git ledger bridge (icarus/primitives daemon executor) ---------- */
+// The pulse queues code jobs; the Docker daemon (icarus/primitives/daemon.py) claims, executes and has
+// the deterministic verifier grade them in icarus/ledger/. The pulse never grades and never runs code:
+// it writes the immutable queue file and later relays the verifier's recorded outcome to the source issue.
+var LEDGER_DIR = 'icarus/ledger';
+var LEDGER_FINAL = ['done', 'BLOCKER_DISCOVERED'];
+var LEDGER_RELAYED_PREFIX = 'ATHENA_LEDGER_RELAYED_V1|';
+
+/** OWNER comment: "ICARUS_QUEUE" then a JSON object {job_id, task, verify_spec, max_attempts?}. */
+function parseQueueJob_(body) {
+  var s = String(body || '').slice('ICARUS_QUEUE'.length);
+  var fence = /```(?:json)?\s*([\s\S]*?)```/.exec(s);
+  var j;
+  try { j = JSON.parse((fence ? fence[1] : s).trim()); } catch (e) { return { err: 'job JSON did not parse' }; }
+  if (!j || typeof j !== 'object' || Array.isArray(j)) return { err: 'job must be a JSON object' };
+  if (!/^[A-Za-z0-9._-]{1,80}$/.test(String(j.job_id || ''))) return { err: 'job_id must match [A-Za-z0-9._-]{1,80}' };
+  if (!j.task || typeof j.task !== 'object' || Array.isArray(j.task)) return { err: 'task must be an object (a filled delegation template)' };
+  if (!j.verify_spec || typeof j.verify_spec !== 'object' || Array.isArray(j.verify_spec) || !Object.keys(j.verify_spec).length)
+    return { err: 'verify_spec (pass criteria) must be set by the task author at enqueue' };
+  var max = j.max_attempts === undefined ? 3 : j.max_attempts;
+  if (typeof max !== 'number' || max % 1 !== 0 || max < 1 || max > 10) return { err: 'max_attempts must be an integer 1-10' };
+  return { job: { job_id: j.job_id, task: j.task, verify_spec: j.verify_spec, max_attempts: max } };
+}
+
+function enqueueLedgerJob_(R, ev) {
+  var parsed = parseQueueJob_(ev.body);
+  var head = '# Icarus run (ledger enqueue)\n\n';
+  if (parsed.err) return { verdict: 'BLOCKED', payload: head + 'BLOCKED: ' + parsed.err + '. Nothing was queued.' };
+  var job = parsed.job, p = LEDGER_DIR + '/queue/' + job.job_id + '.json';
+  if (!R.gh) return { verdict: 'BLOCKED', payload: head + 'BLOCKED: no GitHub token in this run. Nothing was queued.' };
+  var pre = gh_(R, 'GET', 'contents/' + encPath_(p) + '?ref=' + encodeURIComponent(R.branch));
+  if (pre.code === 200) return { verdict: 'BLOCKED', payload: head + 'BLOCKED: job ' + job.job_id + ' already exists at ' + p + '. Queue files are immutable; use a new job_id.' };
+  if (pre.code !== 404) return { verdict: 'BLOCKED', payload: head + 'BLOCKED: pre-read of ' + p + ' returned HTTP ' + pre.code + '. Nothing was queued.' };
+  var task = JSON.parse(JSON.stringify(job.task));
+  task.source_issue = ev.issue;
+  var content = JSON.stringify({ author: 'owner:' + ev.actor, max_attempts: job.max_attempts, task: task, verify_spec: job.verify_spec }, null, 2);
+  var w = putFile_(R, p, content, 'ledger: enqueue ' + job.job_id + ' (pulse, issue #' + ev.issue + ')');
+  if (w.code !== 201) return { verdict: 'BLOCKED', payload: head + 'BLOCKED: write of ' + p + ' returned HTTP ' + w.code + '. Not queued.' };
+  var back = ghGet_(R, p);
+  var ok = back.code === 200 && back.text === content;
+  var sha = '?'; try { sha = JSON.parse(w.text).commit.sha; } catch (e) { /* ? */ }
+  if (!ok) return { verdict: 'PARTIAL', payload: head + 'PARTIAL: ' + p + ' written (commit ' + sha + ') but readback did not match. Treat as not queued until checked.' };
+  return { verdict: 'PARTIAL', payload: head + 'QUEUED (not executed): job `' + job.job_id + '` at `' + p + '`, commit ' + sha + ', readback OK.\n' +
+    'The daemon executor claims it; only the verifier decides the verdict. The outcome will be relayed here. Nothing has run yet.' };
+}
+
+/** Relay at most one final ledger outcome per poll to the job's source issue. */
+function relayLedgerResult_(R, props) {
+  var list = gh_(R, 'GET', 'contents/' + encPath_(LEDGER_DIR + '/state') + '?ref=' + encodeURIComponent(R.branch));
+  if (list.code !== 200) return;
+  var rows = JSON.parse(list.text);
+  if (!Array.isArray(rows)) return;
+  for (var i = 0; i < rows.length; i++) {
+    var name = String(rows[i].name || '');
+    if (!/\.json$/.test(name)) continue;
+    var id = name.slice(0, -5), key = LEDGER_RELAYED_PREFIX + R.repo.toLowerCase() + '/' + id;
+    if (props.getProperty(key)) continue;
+    var st = ghGet_(R, LEDGER_DIR + '/state/' + name);
+    if (st.code !== 200 || st.text === null) continue;
+    var s = JSON.parse(st.text);
+    if (LEDGER_FINAL.indexOf(s.status) < 0) continue;
+    var q = ghGet_(R, LEDGER_DIR + '/queue/' + name);
+    var issue = 0; try { issue = Number(JSON.parse(q.text).task.source_issue) || 0; } catch (e) { issue = 0; }
+    if (!issue) { storeAndReadBack_(props, key, 'NO_SOURCE_ISSUE'); continue; }
+    var verdict = s.status === 'done' ? 'PASS (verifier icarus.primitives.verify; not self-awarded)' : 'BLOCKED (BLOCKER_DISCOVERED after ' + s.attempts + ' attempts)';
+    var body = '[ICARUS via runtime] Ledger job `' + id + '`: ' + verdict + '.\nAttempts: ' + s.attempts +
+      '. Evidence: `' + LEDGER_DIR + '/state/' + name + '` and the receipt entries in `' + LEDGER_DIR + '/run_log.jsonl`.';
+    var post = gh_(R, 'POST', 'issues/' + issue + '/comments', { body: body });
+    if (post.code === 201) storeAndReadBack_(props, key, String(JSON.parse(post.text).id));
+    return;
+  }
 }
