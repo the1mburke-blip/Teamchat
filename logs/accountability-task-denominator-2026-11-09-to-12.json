@@ -1,0 +1,869 @@
+{
+  "schema_version": "1.0.0",
+  "task_id": "ACCOUNTABILITY-DENOMINATOR-20261113",
+  "proposed_by": "Michael",
+  "executor": "ChatGPT GPT-6 (owner-authorized replacement for unclaimed SOL task; not impersonating SOL)",
+  "recorded_at_utc": "2026-11-17T15:18:30Z",
+  "repository": "the1mburke-blip/Teamchat",
+  "evidence_window_utc": {
+    "start": "2026-11-09T00:00:00Z",
+    "end": "2026-11-12T23:59:59Z"
+  },
+  "base_commit_sha": "a784eedd026bd1129d83c3d63e78162a5bf17b76",
+  "branch": "audit/accountability-denominator-2026-11-09-to-12",
+  "methodology": {
+    "unit": "one distinct explicit task ID; issue-number identifiers are used only where no explicit TASK_ID exists",
+    "include": "tasks requested or active before the window with a recorded dispatch, task event, execution, or terminal disposition in the window",
+    "dedupe": "Repeated handoffs/dispatches with the same TASK_ID count once; PR subtask IDs are retained separately because the PR body explicitly names them as distinct tasks",
+    "exclude": "routine five-minute heartbeat comments, web-reference commands, communication-channel issue #147 itself, and DRAFT-only issues #197/#199/#200/#202 with no execution or acceptance",
+    "terminal_rule": "claim, dispatch, issue closure, PR merge, or successful workflow run is not by itself verified task completion",
+    "coverage_rule": "Teamchat evidence is not assumed to be the complete cross-agent task population; global denominator and global failure rate remain UNKNOWN unless all sources are available"
+  },
+  "sources": [
+    {
+      "name": "Issue #6 comments, pages 1–12, 1,200 records returned",
+      "url": "https://github.com/the1mburke-blip/Teamchat/issues/6",
+      "observed_range_utc": [
+        "2026-11-09T00:02:19Z",
+        "2026-11-13T02:32:16Z"
+      ],
+      "window_filter": "records through 2026-11-12T23:59:59Z"
+    },
+    {
+      "name": "Issue #214 task packet",
+      "url": "https://github.com/the1mburke-blip/Teamchat/issues/214"
+    },
+    {
+      "name": "11 Nov midnight audit",
+      "url": "https://github.com/the1mburke-blip/Teamchat/blob/audit/2026-11-11-midnight-accountability/logs/2026-11-11-midnight-accountability-audit.md",
+      "blob_sha": "3ede871f285b8bd3f834727ad6307bfcbd8ed4e0"
+    },
+    {
+      "name": "12 Nov midnight audit",
+      "url": "https://github.com/the1mburke-blip/Teamchat/blob/audit/2026-11-12-midnight-accountability/logs/2026-11-12-midnight-accountability-audit.md",
+      "blob_sha": "a495e30f93a0a06cb55e1d0b4ec46a00c68c7b34"
+    },
+    {
+      "name": "CHAT_LOG.md",
+      "url": "https://github.com/the1mburke-blip/Teamchat/blob/main/CHAT_LOG.md",
+      "blob_sha": "aa390f8b..."
+    },
+    {
+      "name": "TRAINING_MATRIX.md",
+      "url": "https://github.com/the1mburke-blip/Teamchat/blob/main/TRAINING_MATRIX.md",
+      "blob_sha": "951268468c3f32e26237c21d7f354848e69e63a1"
+    },
+    {
+      "name": "OPERATING_RULES.md",
+      "url": "https://github.com/the1mburke-blip/Teamchat/blob/main/OPERATING_RULES.md",
+      "blob_sha": "67c8797c4f70ee9e7b3b86ff339325c37a69f141"
+    },
+    {
+      "name": "HANDOFF_PROTOCOL.md",
+      "url": "https://github.com/the1mburke-blip/Teamchat/blob/main/HANDOFF_PROTOCOL.md",
+      "blob_sha": "203b0d2594321911e424f92f14c3a613563d3ab2"
+    },
+    {
+      "name": "PR #178",
+      "url": "https://github.com/the1mburke-blip/Teamchat/pull/178"
+    },
+    {
+      "name": "PR #188",
+      "url": "https://github.com/the1mburke-blip/Teamchat/pull/188"
+    },
+    {
+      "name": "PR #201",
+      "url": "https://github.com/the1mburke-blip/Teamchat/pull/201"
+    }
+  ],
+  "observed_task_register": [
+    {
+      "task_id": "BACKLOG-13",
+      "owner": "SOL",
+      "requested_at": "2026-09-25T13:37:52Z",
+      "requested_time_basis": "source issue #13 creation; original dispatch timestamp not returned",
+      "first_in_window_activity": "2026-11-09T09:11:56Z issue #13 closed as transferred",
+      "attempts": [
+        {
+          "at": null,
+          "in_window": false,
+          "type": "historical queue dispatch",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6725274639",
+          "result": "dispatch timestamp unavailable in prior audit"
+        }
+      ],
+      "attempted_in_window": false,
+      "outcome": "TRANSFERRED_NOT_COMPLETED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/13",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6736367928"
+      ],
+      "notes": "Closed as transferred, not delivery-verified; do not count as completed."
+    },
+    {
+      "task_id": "ISSUE-31",
+      "owner": "SOL",
+      "requested_at": "2026-09-29T15:52:37Z",
+      "requested_time_basis": "source issue #31 creation",
+      "first_in_window_activity": "2026-11-09T20:24:35Z issue #31 archived/closed",
+      "attempts": [
+        {
+          "at": "2026-10-18",
+          "in_window": false,
+          "type": "connectivity test",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/31",
+          "result": "test objective failed; exact execution time not present in the 9–12 Nov window"
+        }
+      ],
+      "attempted_in_window": false,
+      "outcome": "FAILED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/31#issuecomment-6750554338",
+        "https://github.com/the1mburke-blip/Teamchat/issues/30"
+      ],
+      "notes": "Terminal closure in window; failure itself predates the window."
+    },
+    {
+      "task_id": "ISSUE-51",
+      "owner": "SOL",
+      "requested_at": "2026-10-05T15:52:09Z",
+      "requested_time_basis": "source issue #51 creation",
+      "first_in_window_activity": "2026-11-09T20:24:38Z issue #51 closed as not planned",
+      "attempts": [
+        {
+          "at": null,
+          "in_window": false,
+          "type": "historical lane activity",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/51#issuecomment-6013988021",
+          "result": "lane paused/superseded before this window"
+        }
+      ],
+      "attempted_in_window": false,
+      "outcome": "NOT_PLANNED_SUPERSEDED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/51#issuecomment-6750555380",
+        "https://github.com/the1mburke-blip/Teamchat/pull/185"
+      ],
+      "notes": "Archival disposition only; no gateway recovery certified."
+    },
+    {
+      "task_id": "ISSUE-80",
+      "owner": "SOL",
+      "requested_at": "2026-10-07T18:22:56Z",
+      "requested_time_basis": "source issue #80 creation",
+      "first_in_window_activity": "2026-11-09T20:24:41Z issue #80 closed as not planned",
+      "attempts": [
+        {
+          "at": null,
+          "in_window": false,
+          "type": "historical advisory run",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/80#issuecomment-6044359764",
+          "result": "one advisory run; no persistent completion"
+        }
+      ],
+      "attempted_in_window": false,
+      "outcome": "NOT_PLANNED_SUPERSEDED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/80#issuecomment-6750556648",
+        "https://github.com/the1mburke-blip/Teamchat/pull/185"
+      ],
+      "notes": "Closed as obsolete route; underlying on-device acceptance remained open."
+    },
+    {
+      "task_id": "ISSUE-139",
+      "owner": "CLAUDE",
+      "requested_at": "2026-10-18T09:29:16Z",
+      "requested_time_basis": "source issue #139 creation",
+      "first_in_window_activity": "2026-11-09T21:47:56Z issue #139 closed as not planned",
+      "attempts": [
+        {
+          "at": "2026-10-18T09:58:41Z",
+          "in_window": false,
+          "type": "read-only review",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/139#issuecomment-6248503507",
+          "result": "review delivered; self-PASS withheld; adjudication not recorded"
+        }
+      ],
+      "attempted_in_window": false,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/139#issuecomment-6248503507",
+        "https://github.com/the1mburke-blip/Teamchat/issues/139#issuecomment-6752338500"
+      ],
+      "notes": "Review output exists, but no independent adjudication; issue later archived as not planned."
+    },
+    {
+      "task_id": "ISSUE-140",
+      "owner": "SOL",
+      "requested_at": "2026-10-18T20:46:36Z",
+      "requested_time_basis": "source issue #140 creation",
+      "first_in_window_activity": "2026-11-09T20:24:45Z issue #140 closed as not planned",
+      "attempts": [
+        {
+          "at": "2026-10-18T20:46:54Z",
+          "in_window": false,
+          "type": "firewall-interception test",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/140#issuecomment-6254953127",
+          "result": "test objective failed"
+        }
+      ],
+      "attempted_in_window": false,
+      "outcome": "FAILED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/140#issuecomment-6254953127",
+        "https://github.com/the1mburke-blip/Teamchat/issues/140#issuecomment-6482082419",
+        "https://github.com/the1mburke-blip/Teamchat/issues/140#issuecomment-6750557988"
+      ],
+      "notes": "Failure was owner-recorded before the window; closure in window was archival, not remediation."
+    },
+    {
+      "task_id": "BACKLOG-15",
+      "owner": "SOL",
+      "requested_at": "2026-09-25T14:38:37Z",
+      "requested_time_basis": "source issue #15 creation",
+      "first_in_window_activity": "2026-11-09T23:25:10Z Issue #6 dispatch",
+      "attempts": [
+        {
+          "at": "2026-11-09T23:25:09Z",
+          "in_window": true,
+          "type": "queue claim marker, not authenticated worker acceptance",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/15#issuecomment-6754221836",
+          "result": "target SOL"
+        },
+        {
+          "at": "2026-11-09T23:25:10Z",
+          "in_window": true,
+          "type": "dispatch",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6754221997",
+          "result": "one attempt leash; no genuine Sol receipt"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "BLOCKED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/15",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6754221997",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6796350014"
+      ],
+      "notes": "Issue remained open/unassigned; owner halt prohibits further Icarus execution."
+    },
+    {
+      "task_id": "BACKLOG-28",
+      "owner": "SOL",
+      "requested_at": "2026-09-29T15:27:37Z",
+      "requested_time_basis": "source issue #28 creation",
+      "first_in_window_activity": "2026-11-10T07:09:06Z Issue #6 dispatch",
+      "attempts": [
+        {
+          "at": "2026-09-29T15:31:44Z",
+          "in_window": false,
+          "type": "historical evidence record",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/28#issuecomment-5893393111",
+          "result": "repository log/prior-art file recorded; no independently authenticated terminal PASS"
+        },
+        {
+          "at": "2026-11-10T07:09:05Z",
+          "in_window": true,
+          "type": "queue claim marker, not authenticated worker acceptance",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/28#issuecomment-6761333985",
+          "result": "target SOL"
+        },
+        {
+          "at": "2026-11-10T07:09:06Z",
+          "in_window": true,
+          "type": "dispatch",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6761334156",
+          "result": "no genuine Sol receipt"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "BLOCKED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/28",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6761334156",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6796350014"
+      ],
+      "notes": "Prior evidence exists, but issue remained open/unassigned and no independent completion was established."
+    },
+    {
+      "task_id": "BACKLOG-46",
+      "owner": "SOL",
+      "requested_at": "2026-10-05T01:57:54Z",
+      "requested_time_basis": "source issue #46 creation",
+      "first_in_window_activity": "2026-11-10T16:24:09Z Issue #6 dispatch",
+      "attempts": [
+        {
+          "at": "2026-10-05T01:58:04Z",
+          "in_window": false,
+          "type": "historical claim",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/46#issuecomment-5986808789",
+          "result": "claimed by Sol"
+        },
+        {
+          "at": "2026-10-06T10:07:23Z",
+          "in_window": false,
+          "type": "owner lane pause",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/46#issuecomment-6013989138",
+          "result": "PAUSED_SUPERSEDED; active owner NONE"
+        },
+        {
+          "at": "2026-11-10T16:24:09Z",
+          "in_window": true,
+          "type": "queue claim marker, not authenticated worker acceptance",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/46#issuecomment-6772818008",
+          "result": "target SOL despite prior pause"
+        },
+        {
+          "at": "2026-11-10T16:24:09Z",
+          "in_window": true,
+          "type": "dispatch",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6772818228",
+          "result": "no genuine Sol receipt"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "BLOCKED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/46",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6772818228",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6796350014"
+      ],
+      "notes": "The task was already paused/superseded; later queue dispatch did not establish a valid worker acceptance."
+    },
+    {
+      "task_id": "ISSUE-179",
+      "owner": "CODEX",
+      "requested_at": "2026-11-09T12:55:15Z",
+      "requested_time_basis": "source issue creation",
+      "first_in_window_activity": "2026-11-10T13:01:34Z claim; 13:06:03Z verification update",
+      "attempts": [
+        {
+          "at": "2026-11-10T13:01:34Z",
+          "in_window": true,
+          "type": "claim",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/179#issuecomment-6768007642",
+          "result": "Codex claimed"
+        },
+        {
+          "at": "2026-11-10T13:06:03Z",
+          "in_window": true,
+          "type": "checkout test",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/179#issuecomment-6768103334",
+          "result": "guest checkout reached pre-payment screen; no physical-device/analytics/purchase proof"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/179#issuecomment-6768103334"
+      ],
+      "notes": "Pre-payment screen reached; no end-to-end sale or independent Gate 1 adjudication."
+    },
+    {
+      "task_id": "ISSUE-180",
+      "owner": "CLAUDE",
+      "requested_at": "2026-11-09T12:55:17Z",
+      "requested_time_basis": "source issue creation",
+      "first_in_window_activity": "2026-11-10T08:34:47Z claim; 08:35:27Z copy delivery",
+      "attempts": [
+        {
+          "at": "2026-11-10T08:34:47Z",
+          "in_window": true,
+          "type": "claim",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/180#issuecomment-6762801233",
+          "result": "Claude claimed"
+        },
+        {
+          "at": "2026-11-10T08:35:27Z",
+          "in_window": true,
+          "type": "copy delivery",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/180#issuecomment-6762813217",
+          "result": "copy delivered for approval; not deployed"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/180#issuecomment-6762813217"
+      ],
+      "notes": "Copy artifact delivered; no deployment or independent approval."
+    },
+    {
+      "task_id": "ISSUE-181",
+      "owner": "CLAUDE (later handoff to LUNA/SOL after 2026-11-12)",
+      "requested_at": "2026-11-09T12:55:19Z",
+      "requested_time_basis": "source issue creation",
+      "first_in_window_activity": "2026-11-10T08:34:47Z claim; 08:35:27Z caption delivery",
+      "attempts": [
+        {
+          "at": "2026-11-10T08:34:47Z",
+          "in_window": true,
+          "type": "claim",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/181#issuecomment-6762801243",
+          "result": "Claude claimed"
+        },
+        {
+          "at": "2026-11-10T08:35:27Z",
+          "in_window": true,
+          "type": "caption delivery",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/181#issuecomment-6762813212",
+          "result": "five captions delivered; Blueprint paraphrase requirement unmet; nothing scheduled or published"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/181#issuecomment-6762813212"
+      ],
+      "notes": "Later Luna/Sol handoff occurred 15–16 Nov, outside the audit window; no Luna acceptance is evidenced within 9–12 Nov."
+    },
+    {
+      "task_id": "ISSUE-182",
+      "owner": "SOL",
+      "requested_at": "2026-11-09T12:56:26Z",
+      "requested_time_basis": "source issue creation",
+      "first_in_window_activity": "2026-11-09T12:59:05Z router terminal PASS",
+      "attempts": [
+        {
+          "at": "2026-11-09T12:56:36Z",
+          "in_window": true,
+          "type": "initial claim",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/182#issuecomment-6740599772",
+          "result": "claim comment did not issue router claim; failed start gate"
+        },
+        {
+          "at": "2026-11-09T12:57:56Z",
+          "in_window": true,
+          "type": "failed claim attempt",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/182#issuecomment-6740625747",
+          "result": "router ownership protocol failure"
+        },
+        {
+          "at": "2026-11-09T12:58:11Z",
+          "in_window": true,
+          "type": "router claim applied",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/182#issuecomment-6740630441",
+          "result": "SOL owns task"
+        },
+        {
+          "at": "2026-11-09T12:59:04Z",
+          "in_window": true,
+          "type": "terminal PASS",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/182#issuecomment-6740647490",
+          "result": "PASS scoped to read-only Day-1 Shopify/Buffer readiness audit"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "VERIFIED_COMPLETED",
+      "verified_completed": true,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/182#issuecomment-6740644966",
+        "https://github.com/the1mburke-blip/Teamchat/issues/182#issuecomment-6740647490"
+      ],
+      "notes": "Verified only for the stated read-only audit scope; not full Sale 1 Gate 1 or revenue."
+    },
+    {
+      "task_id": "ISSUE-183",
+      "owner": "PRIME",
+      "requested_at": "2026-11-09T12:59:32Z",
+      "requested_time_basis": "source issue creation",
+      "first_in_window_activity": "No claim or attempt found in available issue record",
+      "attempts": [],
+      "attempted_in_window": false,
+      "outcome": "REQUESTED_UNATTEMPTED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/183"
+      ],
+      "notes": "Independent compliance challenge remained unclaimed; no executor evidence."
+    },
+    {
+      "task_id": "BACKLOG-191",
+      "owner": "CODEX",
+      "requested_at": "2026-11-10T19:24:01Z",
+      "requested_time_basis": "source issue creation",
+      "first_in_window_activity": "2026-11-10T23:15:14Z Issue #6 dispatch",
+      "attempts": [
+        {
+          "at": "2026-11-10T23:15:14Z",
+          "in_window": true,
+          "type": "queue claim marker",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6781930665",
+          "result": "target CODEX"
+        },
+        {
+          "at": "2026-11-10T23:15:14Z",
+          "in_window": true,
+          "type": "dispatch",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6781930879",
+          "result": "no authenticated Codex execution/verifier receipt"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "BLOCKED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/191",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6781930879",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6796350014"
+      ],
+      "notes": "Owner halt on 11 Nov prohibited further Icarus execution; do not infer worker acceptance from dispatch."
+    },
+    {
+      "task_id": "ICARUS-PULSE-ISOLATE-RECEIPT-WAITS",
+      "owner": "CHATGPT WORK (implementation); CLAUDE (requested independent review)",
+      "requested_at": "2026-11-09T10:53:25Z",
+      "requested_time_basis": "Issue #147 handoff timestamp",
+      "first_in_window_activity": "2026-11-09T11:00:29Z PR #178 created; merged 11:01:56Z",
+      "attempts": [
+        {
+          "at": "2026-11-09T10:53:25Z",
+          "in_window": true,
+          "type": "implementation assignment",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6738239376",
+          "result": "Work to implement bounded receipt-isolation patch"
+        },
+        {
+          "at": "2026-11-09T10:58:10Z",
+          "in_window": true,
+          "type": "executor route correction",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6738333378",
+          "result": "Work implements; Claude review only"
+        },
+        {
+          "at": "2026-11-09T11:00:54Z",
+          "in_window": true,
+          "type": "PR/review handoff",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6738385220",
+          "result": "21 targeted tests reported passed; production scheduled acceptance still required"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/pull/178"
+      ],
+      "notes": "PR #178 merged, but the PR itself requires a scheduled main run and task-bound receipt before production acceptance; owner halt later barred further Icarus work."
+    },
+    {
+      "task_id": "HV-TASK-20261109-ICARUS-LOOP-UPDATE-001",
+      "owner": "CODEX",
+      "requested_at": "2026-11-09T22:24:51Z",
+      "requested_time_basis": "PR #188 creation; exact parent task request time not separately recorded",
+      "first_in_window_activity": "2026-11-10T16:49:04Z PR #188 merged",
+      "attempts": [
+        {
+          "at": "2026-11-09T22:24:51Z",
+          "in_window": true,
+          "type": "implementation PR opened",
+          "source": "https://github.com/the1mburke-blip/Teamchat/pull/188",
+          "result": "five-stage loop and guarded harness pilot code/docs submitted"
+        },
+        {
+          "at": "2026-11-10T16:49:04Z",
+          "in_window": true,
+          "type": "merge",
+          "source": "https://github.com/the1mburke-blip/Teamchat/pull/188",
+          "result": "merged; live specialist acceptance, trusted availability producer, shared store and production adjudicator still outstanding"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/pull/188"
+      ],
+      "notes": "Merge is not live runtime acceptance; parent task remains partial."
+    },
+    {
+      "task_id": "TASK-ICARUS-LIVE-WIRE-CONSOLIDATED-01",
+      "owner": "CODEX",
+      "requested_at": "2026-11-09T22:24:51Z",
+      "requested_time_basis": "subtask ID first evidenced in PR #188 body; separate request time not recorded",
+      "first_in_window_activity": "2026-11-10T16:49:04Z PR #188 merged",
+      "attempts": [
+        {
+          "at": "2026-11-09T22:24:51Z",
+          "in_window": true,
+          "type": "implementation included in parent PR",
+          "source": "https://github.com/the1mburke-blip/Teamchat/pull/188",
+          "result": "identity-bound registry/reservation interface included; live specialist acceptance and shared store not established"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/pull/188"
+      ],
+      "notes": "Counted as a distinct explicit task ID; evidence is shared with parent PR, not a separate independent receipt."
+    },
+    {
+      "task_id": "TASK-SIDECAR-VERIFIER-ROTATION-01",
+      "owner": "CODEX",
+      "requested_at": "2026-11-09T22:24:51Z",
+      "requested_time_basis": "subtask ID first evidenced in PR #188 body; separate request time not recorded",
+      "first_in_window_activity": "2026-11-10T16:49:04Z PR #188 merged",
+      "attempts": [
+        {
+          "at": "2026-11-09T22:24:51Z",
+          "in_window": true,
+          "type": "implementation included in parent PR",
+          "source": "https://github.com/the1mburke-blip/Teamchat/pull/188",
+          "result": "Sidecar gate/interface included; separate live verifier identity/rotation not established"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/pull/188"
+      ],
+      "notes": "Counted as a distinct explicit task ID; evidence is shared with parent PR, not a separate independent receipt."
+    },
+    {
+      "task_id": "TASK-CODEX-CONSOLIDATED-LIVE-LOOP-01",
+      "owner": "CLAUDE (review); CODEX (requesting router)",
+      "requested_at": "2026-11-09T23:30:49Z",
+      "requested_time_basis": "Issue #147 handoff timestamp",
+      "first_in_window_activity": "2026-11-10T08:37:48Z Claude review delivered",
+      "attempts": [
+        {
+          "at": "2026-11-09T23:30:49Z",
+          "in_window": true,
+          "type": "independent review request",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6754337461",
+          "result": "read-only review of PR #188 requested"
+        },
+        {
+          "at": "2026-11-10T08:37:48Z",
+          "in_window": true,
+          "type": "review delivered",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6762855778",
+          "result": "PARTIAL; code review done, CI artifacts not read, self-adjudication withheld"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/147#issuecomment-6762855778",
+        "https://github.com/the1mburke-blip/Teamchat/pull/188"
+      ],
+      "notes": "Review task remains partial despite PR #188 later merging; CI artifact and independent adjudication were not evidenced."
+    },
+    {
+      "task_id": "WORK-ICARUS-RUNNER-AUTONOMY-RECOVERY-20261111",
+      "owner": "CODEX then ChatGPT Work (GPT-6 runtime)",
+      "requested_at": "2026-11-11T10:24:55Z",
+      "requested_time_basis": "source issue #198 creation",
+      "first_in_window_activity": "2026-11-11T11:27:04Z PR #201 merged; issue remained open",
+      "attempts": [
+        {
+          "at": "2026-11-11T10:25:12Z",
+          "in_window": true,
+          "type": "Codex claim",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/198#issuecomment-6793334831",
+          "result": "claimed"
+        },
+        {
+          "at": "2026-11-11T10:36:15Z",
+          "in_window": true,
+          "type": "Codex partial result",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/198#issuecomment-6793550873",
+          "result": "offline candidate verified; production acceptance pending"
+        },
+        {
+          "at": "2026-11-11T11:00:32Z",
+          "in_window": true,
+          "type": "Work takeover",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/198#issuecomment-6794035165",
+          "result": "owner-authorized continuity"
+        },
+        {
+          "at": "2026-11-11T11:27:04Z",
+          "in_window": true,
+          "type": "PR merge",
+          "source": "https://github.com/the1mburke-blip/Teamchat/pull/201",
+          "result": "repository patch merged; production Apps Script runtime not verified"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/198",
+        "https://github.com/the1mburke-blip/Teamchat/pull/201",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6796350014"
+      ],
+      "notes": "Repository change merged; no production deployment/runtime acceptance. Owner halt prohibited further Icarus execution."
+    },
+    {
+      "task_id": "LOG-ICARUS-WORK-JSON-AND-NOTEBOOK-SNAPSHOT-20261111",
+      "owner": "CHATGPT GPT-6 coordinator",
+      "requested_at": "2026-11-11T09:35:12Z",
+      "requested_time_basis": "Issue #6 task record timestamp",
+      "first_in_window_activity": "2026-11-11T09:46:42Z partial terminal record",
+      "attempts": [
+        {
+          "at": "2026-11-11T09:35:12Z",
+          "in_window": true,
+          "type": "preflight/logging task",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6792334440",
+          "result": "preflight record only; no deployment/autonomy repair claimed"
+        },
+        {
+          "at": "2026-11-11T09:39:15Z",
+          "in_window": true,
+          "type": "audit record",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6792420951",
+          "result": "log and rule capsule recorded; Notebook ingestion remains unverified"
+        },
+        {
+          "at": "2026-11-11T09:46:36Z",
+          "in_window": true,
+          "type": "terminal audit record",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6792567441",
+          "result": "PARTIAL; Form append confirmation exists; Notebook consumption unverified"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "PARTIAL",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6792334440",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6792420951",
+        "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6792567441"
+      ],
+      "notes": "Terminal record ID TERM-ICARUS-CHAT-SNAPSHOT-AUDIT-20261111 is evidence for this task, not a second task."
+    },
+    {
+      "task_id": "PRIME-FRESH-TRAFFIC-20260922",
+      "owner": "DEEPSEEK (delegated by GRACE)",
+      "requested_at": "UNKNOWN",
+      "requested_time_basis": "Original request record is outside or absent from accessible Teamchat corpus; task ID embeds 2026-09-22 but is not accepted as a verified request timestamp",
+      "first_in_window_activity": "2026-11-09T01:02:23Z first observed in-window delegation; 16 repeated delegations through 2026-11-12",
+      "attempts": [
+        {
+          "at": "2026-11-09T01:02:23Z",
+          "in_window": true,
+          "type": "delegation",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6729757105",
+          "result": "assigned to DeepSeek"
+        },
+        {
+          "at": "2026-11-09T02:03:14Z",
+          "in_window": true,
+          "type": "duplicate delegation",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6730479735",
+          "result": "same TASK_ID; deduplicated"
+        },
+        {
+          "at": "2026-11-09T04:00:37Z",
+          "in_window": true,
+          "type": "duplicate delegation",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6731905438",
+          "result": "same TASK_ID; deduplicated"
+        },
+        {
+          "at": "2026-11-09T05:01:30Z",
+          "in_window": true,
+          "type": "duplicate delegation",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6732648260",
+          "result": "same TASK_ID; deduplicated"
+        },
+        {
+          "at": "2026-11-09T06:00:53Z",
+          "in_window": true,
+          "type": "duplicate delegation",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6733414705",
+          "result": "same TASK_ID; deduplicated"
+        },
+        {
+          "at": "2026-11-09T09:03:07Z",
+          "in_window": true,
+          "type": "duplicate delegation",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6736186508",
+          "result": "same TASK_ID; deduplicated"
+        },
+        {
+          "at": "2026-11-12T07:59:02Z",
+          "in_window": true,
+          "type": "duplicate delegation",
+          "source": "https://github.com/the1mburke-blip/Teamchat/issues/6#issuecomment-6818107116",
+          "result": "same TASK_ID; deduplicated"
+        }
+      ],
+      "attempted_in_window": true,
+      "outcome": "DELEGATED_UNACCEPTED",
+      "verified_completed": false,
+      "terminal_evidence": [
+        "https://github.com/the1mburke-blip/Teamchat/issues/6"
+      ],
+      "notes": "16 in-window Grace delegations were deduplicated to one task ID; no DeepSeek acceptance or output was found in the reviewed Teamchat records."
+    }
+  ],
+  "summary": {
+    "observed_unique_task_ids": 23,
+    "requested_in_window": 13,
+    "carry_in_with_terminal_or_status_event_in_window": 6,
+    "carry_in_redispatched_in_window": 3,
+    "preexisting_task_redelegated_in_window": 1,
+    "dispatches_to_SOL_or_CODEX_in_issue6_in_window": 4,
+    "repeated_grace_delegations_in_window": 16,
+    "unique_grace_task_ids": 1,
+    "execution_attempted_in_window": 11,
+    "verified_completed": 1,
+    "failed": 2,
+    "blocked": 4,
+    "partial": 11,
+    "transferred_not_completed": 1,
+    "not_planned_superseded": 2,
+    "requested_unattempted": 1,
+    "delegated_unaccepted": 1,
+    "outcome_buckets_are_mutually_exclusive": true,
+    "observed_failure_share": "2/23 (8.7%); descriptive only, NOT a global failure rate",
+    "global_task_denominator": "UNKNOWN",
+    "global_failure_rate": "UNKNOWN"
+  },
+  "coverage_and_missing_data": {
+    "issue6_window_coverage": "Pages 1–12 cover the full 9–12 November interval; page 12 extends into 13 November. 1,200 comments were returned; routine heartbeat comments were excluded from task counts.",
+    "created_issues_in_window": 11,
+    "closed_issues_in_window": 7,
+    "draft_issues_excluded": [
+      197,
+      199,
+      200,
+      202
+    ],
+    "excluded_channel_issue": 147,
+    "missing_cross_session_records": "UNKNOWN — complete private agent/session logs, non-Teamchat task queues, Notebook/Gemini records, and external task records were not available in this repository census.",
+    "older_dispatch_timestamps": "The prior 12 Nov audit reports null timestamps for the older BACKLOG-13 dispatch; its exact dispatch time remains UNKNOWN.",
+    "prime_fresh_traffic_original_request_time": "UNKNOWN; 16 repeated delegations in-window share one task ID and were deduplicated.",
+    "task_id_semantics": "Issue-number identifiers are stable record keys, not invented external task IDs. Parent/subtask IDs from PR #188 are counted separately only because the PR body explicitly names them.",
+    "luna": "No Luna-owned task acceptance was found within 9–12 November. Issue #181's handoff to Luna/Sol occurred 15–16 November, outside this window."
+  },
+  "governance": {
+    "owner_halt": "Issue #6 comment 6796350014 records Michael's 2026-11-11 12:53 UTC halt: no further Icarus repairs, tests, deployments, dispatches or execution. This register is archival only.",
+    "no_production_mutation": true,
+    "no_issue6_dispatch": true,
+    "no_claude_active_work_modification": true,
+    "no_paid_spend": true,
+    "verifier_tier": "TIER_1_MACHINE",
+    "independent_agent_verifier": "NOT_AVAILABLE",
+    "verifier_method": "Separate GitHub content readback plus JSON/schema/count consistency validation; this is machine verification, not an independent agent signoff."
+  }
+}
