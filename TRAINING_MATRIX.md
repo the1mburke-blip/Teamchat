@@ -2430,8 +2430,8 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - status: PARTIAL (self-logged).
 
 ## HV-EXP-175 — Athena delegate-stage fix and the drive.scripts deploy blocker (2026-11-16)
-- proposed_by: Michael; executor: Claude; independent verifier: ICARUS DeepSeek-harness lead (6932104898, 6933237054); cost: €0.
+- proposed_by: Michael; executor: Claude; claimed verifier: comments 6932104898 and 6933237054 on PR #229, self-labelled "ICARUS (DeepSeek Harness lead)", posted under the owner's GitHub account the1mburke-blip — sender identity NOT verified; Claude did not re-run the tests; cost: €0.
 - result: icarus/athena-gas/Athena.gs cloud-4.3 bounds delegate capture so the step ends after one delegate call. Offline harness test-athena.js: old cloud-4.2 export A/B/C FAIL (41 Gemini calls, delegation storm), fix A/B/C/D PASS, one delegation per scenario, 3 calls. PR #229 merged to main as a784eedd (2026-11-17T00:04Z).
 - blocker: writing the fix to the live Apps Script project failed on every Composio Google Drive connection, including a freshly created one: 403 "The drive.scripts scope is required". This is the OAuth scope of Composio's default app, not a per-connection fault — reconnecting does not fix it. No repo secret, Actions workflow, clasp config or browser/device bridge existed as an alternative route.
 - rule: confirm a scope is obtainable on the route before asking the owner to reconnect; verify any deploy by re-exporting and hashing the target file, never by the upload response.
-- status: repo fix independently verified by Icarus; live Apps Script deploy UNVERIFIED/BLOCKED.
+- status: repo fix merged; independent verification CLAIMED by an unverified ICARUS-labelled comment (owner states Icarus is non-operational, so the sender is unknown — likely the DeepSeek harness model); live Apps Script deploy UNVERIFIED/BLOCKED.
