@@ -16,13 +16,27 @@ verify_spec shape:
      "sha256": {"out.txt": "<hex>"},               # optional
      "require_git_sha": false,                      # optional
      "allowed_commands": ["python3", "echo"],       # optional allowlist
-     "forbidden_patterns": ["DROP TABLE"]}          # optional
+     "forbidden_patterns": ["DROP TABLE"],          # optional
+     "harness": {                                   # optional: existing evidence gate
+        "command": ["python3", "check.py"],         #   run by icarus/harness/runner.py
+        "readback": {"type": "file_hash", "path": "out.txt", "expected_hash": "<hex>"},
+        "cost_tier": "LOW", "owner_preauthorized": true}}
+
+When "harness" is present, Gate 1 also requires icarus/harness/runner.py to
+exit 0 with verdict PASS for that packet (cwd = job dir). The packet's
+owner_preauthorized must be set by the task author; the executor cannot.
 """
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 VERIFIER_ID = "icarus.primitives.verify/v1"
 
@@ -44,7 +58,32 @@ def _scan_secrets(text: str) -> bool:
     return any(p.search(text) for p in SECRET_PATTERNS)
 
 
-def verify(job_dir: str | Path, spec: dict, execution: dict) -> dict:
+def harness_gate(job_dir: Path, task_id: str, h: dict) -> dict:
+    """Run the repo's existing evidence gate on a packet built from the spec."""
+    packet = {"task_id": task_id, "decision_changing": True,
+              "owner_preauthorized": h.get("owner_preauthorized") is True,
+              "cost_tier": h.get("cost_tier", "LOW"),
+              "command": h["command"], "readback": h["readback"]}
+    pkt = job_dir.parent / f"{job_dir.name}.harness-packet.json"
+    pkt.write_text(json.dumps(packet), encoding="utf-8")
+    env = {**os.environ, "PYTHONPATH": str(REPO_ROOT)}
+    try:
+        r = subprocess.run([sys.executable, "-m", "icarus.harness.runner", str(pkt)],
+                           cwd=job_dir, capture_output=True, text=True, timeout=360, env=env)
+    except subprocess.TimeoutExpired:
+        return {"exit_code": None, "verdict": "FAIL", "detail": "harness timeout"}
+    verdict = "FAIL"
+    try:
+        out = json.loads(r.stdout.strip().splitlines()[-1]) if r.stdout.strip() else {}
+        if r.returncode == 0 and out.get("verdict") == "PASS":
+            verdict = "PASS"
+    except (ValueError, IndexError):
+        pass
+    return {"exit_code": r.returncode, "verdict": verdict,
+            "detail": (r.stderr or r.stdout)[-2000:]}
+
+
+def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job") -> dict:
     """execution = {"plan_valid": bool, "commands": [{"argv": [...], "exit_code": int,
     "stdout": str, "stderr": str}], "git_sha": str|None, "error": str|None}"""
     job_dir = Path(job_dir)
@@ -67,6 +106,11 @@ def verify(job_dir: str | Path, spec: dict, execution: dict) -> dict:
             g1.append(f"sha256 mismatch: {rel}")
     if spec.get("require_git_sha") and not execution.get("git_sha"):
         g1.append("git SHA not logged")
+    harness = None
+    if spec.get("harness") and not g1:
+        harness = harness_gate(job_dir, task_id, spec["harness"])
+        if harness["verdict"] != "PASS":
+            g1.append(f"harness gate exit {harness['exit_code']}")
 
     # ---- Gate 2: policy
     if not execution.get("plan_valid"):
@@ -107,4 +151,5 @@ def verify(job_dir: str | Path, spec: dict, execution: dict) -> dict:
         "gate_2_policy": {"pass": not g2, "reasons": g2},
         "files_sha256": files,
         "git_sha": execution.get("git_sha"),
+        "harness": harness,
     }

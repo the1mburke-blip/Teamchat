@@ -105,7 +105,7 @@ def run_once(root: str | Path, reasoner, runner_id: str, lease_seconds: int = 60
         record = execute(job, plan, job_dir)
         if plan_error:
             record["error"] = plan_error
-        receipt = verify(job_dir, job["verify_spec"], record)
+        receipt = verify(job_dir, job["verify_spec"], record, task_id=job["id"])
         (job_dir / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
         status = ledger.settle(job["id"], runner_id, receipt)
         return {"status": status, "job": job["id"], "receipt": receipt}

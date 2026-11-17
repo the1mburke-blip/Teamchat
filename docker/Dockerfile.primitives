@@ -1,0 +1,35 @@
+# Icarus daemon executor (icarus/primitives). Separate from the root Dockerfile,
+# which is left untouched. Standard library + git only.
+#
+# Build:  docker build -f docker/Dockerfile.primitives -t icarus-primitives .
+# Run:    docker run -d --name icarus-primitives --restart unless-stopped \
+#           --env-file .env.primitives \
+#           -v icarus-ledger:/data/ledger -v icarus-work:/data/work \
+#           --cap-drop ALL --security-opt no-new-privileges:true \
+#           icarus-primitives
+#
+# .env.primitives (never committed):
+#   GH_TOKEN=...                      # push access to the ledger branch
+#   TARGET_REPO=the1mburke-blip/Teamchat
+#   ICARUS_LEDGER_BRANCH=main
+#   ICARUS_REASONER_URL=...           # any OpenAI-compatible endpoint
+#   ICARUS_REASONER_MODEL=...
+#   ICARUS_RUNNER_ID=laptop-daemon
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    ICARUS_LEDGER_CLONE=/data/ledger ICARUS_WORK_DIR=/data/work
+
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 1000 app \
+    && mkdir -p /data/ledger /data/work && chown -R app:app /data
+
+WORKDIR /app
+COPY icarus/__init__.py ./icarus/__init__.py
+COPY icarus/primitives/ ./icarus/primitives/
+COPY icarus/harness/ ./icarus/harness/
+COPY dsh/ ./dsh/
+COPY docker/primitives-entrypoint.sh ./entrypoint.sh
+USER app
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
