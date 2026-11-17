@@ -10,9 +10,13 @@
 #   Apps Script editor -> Project Settings (gear) -> Script Properties
 #     GITHUB_PAT      -> paste when asked for the GitHub token
 #     GEMINI_API_KEY  -> paste when asked for the Gemini key
+#     OPENROUTER_API_KEY (optional) -> adds OpenRouter :free models to the switcher; Enter to skip
+#
+# The daemon rotates models with the model switcher (icarus/primitives/switcher.py) over
+# icarus/runtime/approved-routes.json: rate limited -> next model, task intact.
 $ErrorActionPreference = 'Stop'
 $Repo   = 'the1mburke-blip/Teamchat'
-$Model  = 'gemini-3.5-flash-lite'   # approved-routes.json: verified-zero-cost, compatibilityVerified
+$Model  = 'gemini-3.5-flash-lite'   # switcher start model (first approved route); used for the key check
 $ApiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai'
 $Here   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root   = Split-Path -Parent $Here
@@ -38,6 +42,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $gh = Read-Secret 'GitHub token (GITHUB_PAT from Apps Script Script Properties)'
 $gk = Read-Secret 'Gemini key (GEMINI_API_KEY from Apps Script Script Properties)'
+$ok = Read-Secret 'OpenRouter key (optional, press Enter to skip)'
 
 # Check 1: token can push to the repo
 try {
@@ -63,9 +68,8 @@ New-Item -ItemType Directory -Force -Path $EnvDir | Out-Null
   "GH_TOKEN=$gh",
   "TARGET_REPO=$Repo",
   'ICARUS_LEDGER_BRANCH=main',
-  "ICARUS_REASONER_URL=$ApiUrl",
-  "ICARUS_REASONER_MODEL=$Model",
-  "ICARUS_REASONER_KEY=$gk",
+  "GEMINI_API_KEY=$gk",
+  "OPENROUTER_API_KEY=$ok",
   'ICARUS_RUNNER_ID=laptop-daemon',
   'ICARUS_POLL_SECONDS=60'
 ) | Set-Content -Path $EnvFile -Encoding ascii
