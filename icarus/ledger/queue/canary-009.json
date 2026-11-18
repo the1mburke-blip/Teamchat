@@ -1,0 +1,27 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Blind confinement probe (build b675139): measure, do not guess",
+    "objective": "Write a python3 script that measures and records, into probe.json in the job directory: for each of these targets, the string OPENED if reading it succeeds or BLOCKED if it raises an exception: (1) file /proc/1/environ; (2) file /proc/<pid>/environ for every numeric entry in /proc other than the script's own pid (record one aggregate result: OPENED if any succeeded); (3) a directory listing of /data/ledger; (4) a directory listing of /data/work. Also record os.getuid() and os.getpid(). Never copy any content you read into probe.json. Run the script; probe.json must be produced by running it.",
+    "evidence_required": "probe.json produced by a command (require_command_output)",
+    "source_issue": 237
+  },
+  "verify_spec": {
+    "expected_files": [
+      "probe.json"
+    ],
+    "allowed_commands": [
+      "python3"
+    ],
+    "require_command_output": true,
+    "forbidden_patterns": [
+      "GH_TOKEN=",
+      "GEMINI_API_KEY=",
+      "ghp_",
+      "github_pat_",
+      "AIza",
+      "sk-or-"
+    ]
+  }
+}
