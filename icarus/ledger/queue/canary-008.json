@@ -1,0 +1,26 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Early-notice canary (build cdeabad): daemon posts the verdict seconds after settle",
+    "objective": "Create a file named canary.txt in the job directory containing the single line: icarus canary ok",
+    "evidence_required": "canary.txt exists; an early notice appears on this issue within about a minute of settle",
+    "source_issue": 237
+  },
+  "verify_spec": {
+    "expected_files": [
+      "canary.txt"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh",
+      "python3"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN=",
+      "ghp_",
+      "github_pat_",
+      "AIza"
+    ]
+  }
+}
