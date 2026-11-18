@@ -3,7 +3,7 @@
 **Task:** ICARUS-CLOUDIFY-20261118  
 **Executor chair:** [SOL] Sol / GPT-6  
 **Date:** 2026-11-18 UTC  
-**Status:** PARTIAL — self-review only; independent Tier 2 adjudication pending.
+**Status:** PARTIAL — physical readback complete; independent Tier 2 adjudication pending.
 
 ## Evidence read
 
@@ -28,20 +28,30 @@
 - [x] Existing Actions workflow and run log read.
 - [x] Four hosting vendors evaluated; Google Cloud Run, BigQuery and model-provider limits considered.
 - [x] R2 and R5 failure cases and a concrete test plan documented.
+- [x] GitHub compare main...agent/icarus-cloudify-design returned ahead_by=1, behind_by=0, exactly two added files, zero deletions.
+- [x] Both committed files were read back from GitHub. Design blob: 3a5ff8afe5fae1261315e91289c2717ad96e3552. Verification blob before this update: 514125168928f52eadea4be181f02361872be6f6.
+- [x] Pattern scan of both readback files found no GitHub token, Google API key, OpenAI-style key, private-key marker, or populated secret assignment.
 - [ ] Independent Tier 2 review not performed.
 
 ## Gate 2 — negative constraints
 
 - [x] New branch only: agent/icarus-cloudify-design, created from the verified main SHA.
-- [x] New documentation files only; no existing source files intentionally changed.
+- [x] Diff against main contains only the two new documentation paths; no existing source files changed.
 - [x] No deployment, container build/start/restart, or production mutation.
 - [x] No new workflow, trigger, scheduler, listener or automation.
 - [x] No account, trial, credit, payment method or paid API action.
 - [x] No secret values accessed, requested, printed, committed or stored.
 - [x] No merge and no main modification.
 - [x] No test suite executed; this was a design-only task.
-- [ ] Final branch diff and file readback must be independently checked after commit.
 - [ ] Independent Tier 2 review not performed.
+
+## Commit and readback
+
+- Initial documentation commit: eb64504b70067b6a4e4b071cfbfb037b5527857d.
+- Initial commit URL: https://github.com/the1mburke-blip/Teamchat/commit/eb64504b70067b6a4e4b071cfbfb037b5527857d
+- GitHub reports the commit signature as unsigned. This is not a signed attestation.
+- The design branch is not protected. No merge or PR was created.
+- Physical readback and diff verification were performed through a separate GitHub read operation after the commit.
 
 ## Discrepancies and blockers retained
 
@@ -62,4 +72,4 @@ The earlier assistant attempt began source exploration before completing mandato
 
 No claim of deployment, live daemon health, independent PASS, or zero account-specific billing is made.
 
-**Self-status: PARTIAL.** Gate 1 and Gate 2 are pending final physical readback and independent adjudication. The task's design-only authority has been respected.
+**Self-status: PARTIAL.** Physical file readback and the new-files-only diff are verified. Independent adjudication and the owner-only runtime/billing gates remain outstanding.
