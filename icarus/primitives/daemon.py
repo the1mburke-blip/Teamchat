@@ -37,6 +37,7 @@ from .gitledger import ClaimLost, GitLedger, GitLedgerError
 from .reasoner import ReasonerError
 from .runner import execute
 from .identity import load_identity
+from .relay import notice_body, post_notice
 from .switcher import ModelSwitcher, OwnerAuthError, load_pool
 from .verify import verify
 
@@ -99,6 +100,31 @@ class Heartbeat:
         if ok:
             self.last = now
         return ok
+
+
+FINAL_STATUSES = ("done", "BLOCKER_DISCOVERED")
+
+
+def early_notice(ledger: GitLedger, out: dict, poster=None) -> bool | None:
+    """Post the verifier's final verdict to the job's source issue right after settle.
+
+    None when not applicable (not final, disabled, or no source issue); True/False = posted."""
+    if out.get("status") not in FINAL_STATUSES or "receipt" not in out:
+        return None
+    if os.environ.get("ICARUS_EARLY_RELAY", "1").strip() == "0":
+        return None
+    try:
+        job = ledger.job(out["job"])
+        issue = int(job.get("task", {}).get("source_issue") or 0)
+    except (GitLedgerError, ValueError, TypeError):
+        return None
+    if issue <= 0:
+        return None
+    body = notice_body(out["job"], out["status"], out["receipt"],
+                       int(job["state"].get("attempts", 0)), _iso(time.time()))
+    poster = poster or post_notice
+    return poster(os.environ.get("TARGET_REPO", "").strip(), os.environ.get("GH_TOKEN", "").strip(),
+                  issue, body)
 
 
 def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
@@ -171,6 +197,9 @@ def main(argv: list[str] | None = None) -> int:
         except GitLedgerError as e:
             log.warning("ledger: %s", e)
             out = {"status": "ledger_error"}
+        posted = early_notice(ledger, out)
+        if posted is not None:
+            log.info(json.dumps({"status": "early_notice", "job": out.get("job"), "posted": posted}))
         hb.note(out)
         pushed = hb.beat()
         if pushed is not None:
