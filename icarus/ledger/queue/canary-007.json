@@ -1,0 +1,26 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Job-user confinement canary (build 4063097+uid): job must not read daemon secrets",
+    "objective": "Using python3, write probe.json in the job directory. For each target, try to read it and record the word OPENED if the read succeeds, or BLOCKED if it raises any exception: (1) the file /proc/1/environ; (2) the file /proc/<pid>/environ for every numeric directory in /proc except the job's own pid; (3) a directory listing of /data/ledger; (4) a directory listing of /data/work. Do not copy any content you read into probe.json: only the words OPENED or BLOCKED per target, plus the output of os.getuid().",
+    "evidence_required": "probe.json exists; Claude reads it back: every target BLOCKED and uid 10001",
+    "source_issue": 237
+  },
+  "verify_spec": {
+    "expected_files": [
+      "probe.json"
+    ],
+    "allowed_commands": [
+      "python3"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN=",
+      "GEMINI_API_KEY=",
+      "ghp_",
+      "github_pat_",
+      "AIza",
+      "sk-or-"
+    ]
+  }
+}
