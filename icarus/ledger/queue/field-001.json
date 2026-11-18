@@ -1,0 +1,26 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Issue #94 content gap: draft 9 text-only Niche Blueprint posts (drafts only, nothing published)",
+    "objective": "Issue #94 reports the editorial queue needs content. Write a file named drafts.md containing exactly 9 numbered social post drafts for The Anonymous Marketer (Threads, Instagram, Facebook) promoting the Niche Blueprint. Rules: text only, no media references, no hashtags beyond 2 per post, under 400 characters each, each post leads with a Blueprint-first hook, no prices, no links, no invented results or testimonials, no mention of HumanVibe. After each post add one line 'Channel fit:' naming which of the three channels it suits best. Do not publish or call any external service.",
+    "evidence_required": "drafts.md exists with 9 numbered posts",
+    "source_issue": 94
+  },
+  "verify_spec": {
+    "expected_files": [
+      "drafts.md"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh",
+      "cat"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY",
+      "http://",
+      "https://"
+    ]
+  }
+}
