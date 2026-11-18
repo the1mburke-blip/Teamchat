@@ -1,0 +1,13 @@
+{
+  "_comment": "Fail-closed ingress policy. A packet whose authority_scope or assigned_executor is not listed here is rejected before claim. Missing or unreadable policy rejects every packet.",
+  "allowed_authority_scopes": [
+    "REPOSITORY_BRANCH_ONLY",
+    "BOUNDED_CLAUDE_REPAIR_OF_EXTERNAL_EXECUTION_RUNNER_FAIL_CLOSED_INGRESS_AND_INDEPENDENT_COMPLETION_GATE"
+  ],
+  "allowed_executors": [
+    "icarus-harness-gate-v3 (GitHub Actions)",
+    "task_runner (unattended CLI)",
+    "unittest"
+  ],
+  "max_packet_bytes": 200000
+}
