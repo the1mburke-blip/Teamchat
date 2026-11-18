@@ -13,6 +13,8 @@ Env:
     ICARUS_RUNNER_ID      name in claims/receipts (default: daemon)
     ICARUS_POLL_SECONDS   idle sleep (default: 60)
     ICARUS_LEASE_SECONDS  claim lease (default: 21600 = 6 h; model rotation can run long)
+    ICARUS_HEARTBEAT_SECONDS  liveness beacon interval on the ledger branch (default: 1800; 0 = off)
+    ICARUS_BUILD_SHA      source commit of this image, reported in the heartbeat (default: unknown)
     GEMINI_API_KEY        Google models (AI Plus subscription) for the model switcher
     OPENROUTER_API_KEY    optional; OpenRouter :free routes join the pool when set
     Pool order/eligibility: <clone>/icarus/runtime/approved-routes.json (see switcher.py)
@@ -51,6 +53,52 @@ def model_task(job: dict) -> dict:
     limits["note"] = ("Use only allowed_commands as argv[0] (or no commands at all). Files listed in "
                       "'files' are written for you, so creating a file needs no command.")
     return {**job["task"], "limits": limits}
+
+
+def _iso(t: float) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
+
+
+class Heartbeat:
+    """Liveness beacon written to icarus/ledger/heartbeat/<runner>.json on the ledger branch.
+
+    Lets other agents see when the laptop runner is offline instead of guessing from an
+    empty queue. It proves only that the loop was alive at `utc`; it is never job evidence.
+    A failed push is retried on the next loop pass; a beacon error never stops the daemon."""
+
+    def __init__(self, ledger: GitLedger, runner_id: str, interval: int, clock=time.time):
+        self.ledger, self.runner_id, self.interval, self.clock = ledger, runner_id, interval, clock
+        self.started = clock()
+        self.last: float | None = None
+        self.settled = 0
+        self.last_status = "starting"
+
+    def note(self, out: dict) -> None:
+        self.last_status = out.get("status", "unknown")
+        if "receipt" in out and out.get("status") != "claim_lost":
+            self.settled += 1
+
+    def due(self) -> bool:
+        return self.interval > 0 and (self.last is None or self.clock() - self.last >= self.interval)
+
+    def beat(self) -> bool | None:
+        """None when not due; True when pushed; False when the push failed (retried next pass)."""
+        if not self.due():
+            return None
+        now = self.clock()
+        payload = {"utc": _iso(now), "started_utc": _iso(self.started),
+                   "last_status": self.last_status, "jobs_settled_since_start": self.settled,
+                   "interval_seconds": self.interval,
+                   "build": os.environ.get("ICARUS_BUILD_SHA", "").strip() or "unknown",
+                   "note": "liveness only; job evidence is icarus/ledger/state and run_log.jsonl"}
+        try:
+            ok = self.ledger.heartbeat(self.runner_id, payload)
+        except GitLedgerError as e:
+            log.warning("heartbeat: %s", e)
+            ok = False
+        if ok:
+            self.last = now
+        return ok
 
 
 def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
@@ -110,6 +158,7 @@ def main(argv: list[str] | None = None) -> int:
     runner_id = os.environ.get("ICARUS_RUNNER_ID", "daemon")
     poll = int(os.environ.get("ICARUS_POLL_SECONDS", "60"))
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    hb = Heartbeat(ledger, runner_id, 0 if a.once else int(os.environ.get("ICARUS_HEARTBEAT_SECONDS", "1800")))
     while True:
         try:
             out = cycle(ledger, reasoner, runner_id, work, lease)
@@ -122,6 +171,10 @@ def main(argv: list[str] | None = None) -> int:
         except GitLedgerError as e:
             log.warning("ledger: %s", e)
             out = {"status": "ledger_error"}
+        hb.note(out)
+        pushed = hb.beat()
+        if pushed is not None:
+            log.info(json.dumps({"status": "heartbeat", "pushed": pushed}))
         if a.once:
             return 0 if out["status"] in ("idle", "done", "queued", "claim_lost") else 1
         time.sleep(poll if out["status"] in ("idle", "ledger_error") else 1)
