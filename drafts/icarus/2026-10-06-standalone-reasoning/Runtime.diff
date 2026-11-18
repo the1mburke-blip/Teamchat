@@ -1,0 +1,28 @@
+diff --git a/drafts/icarus/2026-10-06-standalone-reasoning/live-source/Runtime.gs b/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Runtime.gs
+index e7d0c8d..cabf165 100644
+--- a/drafts/icarus/2026-10-06-standalone-reasoning/live-source/Runtime.gs
++++ b/drafts/icarus/2026-10-06-standalone-reasoning/candidate/Runtime.gs
+@@ -107,3 +107,23 @@ function resumePendingTasks_() {
+     }
+   });
+ }
++
++function scheduleTaskAdvance_() {
++  const handler = 'resumePendingTasksSoon_';
++  const exists = ScriptApp.getProjectTriggers().some(function(t) {
++    return t.getHandlerFunction() === handler;
++  });
++  if (exists) return;
++  ScriptApp.newTrigger(handler).timeBased().after(1000).create();
++}
++
++function resumePendingTasksSoon_() {
++  try {
++    resumePendingTasks_();
++  } finally {
++    ScriptApp.getProjectTriggers().forEach(function(t) {
++      if (t.getHandlerFunction() === 'resumePendingTasksSoon_') ScriptApp.deleteTrigger(t);
++    });
++  }
++}
++
