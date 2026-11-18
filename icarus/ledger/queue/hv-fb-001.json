@@ -1,0 +1,23 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Real task: 3 Facebook posts for The Anonymous Marketer (Niche Blueprint)",
+    "objective": "Create a file named posts.md in the job directory containing exactly 3 Facebook posts for the brand The Anonymous Marketer, which sells the Niche Blueprint (a guide to building a niche online business without showing your face). Order: POST 1 = PAIN (a specific, recognisable problem: having knowledge or an idea but no product structure behind it). POST 2 = VALUE (paraphrase one usable tip: before publishing anything, check it with four questions - can a reader get the point in two minutes, is it specific to one audience, does it give a real usable win, does it sound natural read aloud). POST 3 = PRODUCT (introduce the Niche Blueprint as the step-by-step framework for this; CTA must be 'link in bio'). Each post: hook line, 3-6 short lines, ends with a question. Rules: no URLs, no sales/revenue/traffic/follower numbers, no testimonials, no hype words (game changer, revolutionary, ultimate, unleash, life-changing), gender-neutral wording, direct conversational tone. Label each post with a heading: ## POST 1 PAIN, ## POST 2 VALUE, ## POST 3 PRODUCT.",
+    "evidence_required": "posts.md exists with 3 labelled posts",
+    "source_issue": 237
+  },
+  "verify_spec": {
+    "expected_files": [
+      "posts.md"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY"
+    ]
+  }
+}
