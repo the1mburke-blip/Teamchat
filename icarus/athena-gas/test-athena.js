@@ -26,7 +26,7 @@ function fmt(d, f) {
 }
 
 function makeEnv(scenario) {
-  const props = { GITHUB_PAT: SECRET, GEMINI_API_KEY: GKEY, ATHENA_CUTOVER_V1: JSON.stringify(config),
+  const props = { ATHENA_SELF_QUEUE_V1: 'off', /* self-queue has its own suite: test-selfqueue.js */ GITHUB_PAT: SECRET, GEMINI_API_KEY: GKEY, ATHENA_CUTOVER_V1: JSON.stringify(config),
     [QUARANTINE]: 'QUARANTINED_UNCERTAIN', [PROOF]: proof(config) };
   const writes = {}, posted = [], remoteReceipts = [], geminiCalls = [], requests = [];
   const logs = [];

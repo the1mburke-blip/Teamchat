@@ -127,7 +127,7 @@ const owner = { author_association: 'OWNER', html_url: 'https://github.com/x/y/i
   assert.ok(refs.length >= 1);
   for (const x of refs) assert.strictEqual(x.ref, 'icarus-ledger', JSON.stringify(x));
   assert.strictEqual(R.branch, 'main');
-  assert.ok(/cloud-4\.5/.test(ctx.ATHENA_VERSION));
+  assert.ok(/cloud-4\.[56]/.test(ctx.ATHENA_VERSION));
 }
 
 console.log('test-ledger: all assertions passed');

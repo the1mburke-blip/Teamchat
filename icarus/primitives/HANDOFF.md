@@ -140,3 +140,27 @@ Nothing blocking. The loop is proven once. Open items are in §6.
 - Point ledger writes at `main` or weaken `main` protection.
 - Edit `Athena.gs` in only one of the two Apps Script files.
 - Self-award PASS: only the verifier receipt plus the Athena relay counts.
+
+---
+
+## [CLAUDE] ENTRY 2026-11-18: self-queue (cloud-4.6), STAGE_3/4 closed to owner merge
+
+Author: Claude (chat session). Status: **PARTIAL** (self-verified; independent verification pending). Append-only.
+
+- **Self-queue (gap: Icarus originates his own jobs).** `Athena.gs` cloud-4.6 adds `selfQueueTick_`: on an idle poll,
+  at most once per 2 h and only when no ledger job is unfinished, Icarus reads the open board (receipt logs, rooms,
+  tests and PRs excluded), picks one sandbox-safe item with the approved EUR 0 model, and writes
+  `icarus/ledger/queue/auto-<UTC>-<issue>.json` on `icarus-ledger` with `author: icarus:pulse-self-queue`.
+  The pulse sets the pass criteria (expected_files, allowed_commands echo/sh/cat/mkdir/python3, secret patterns
+  forbidden); the daemon executes; the verifier grades; the existing relay posts the verdict to the picked item.
+  An announcement comment (prefix `[ICARUS via runtime]`, cannot retrigger) goes on the item. Kill switch:
+  script property `ATHENA_SELF_QUEUE_V1=off`. No new trigger: runs inside the existing 10-minute `athenaPoll`.
+- Tests: `icarus/athena-gas/test-selfqueue.js` (6 scenarios) and `tests/test_primitives_selfqueue_bridge.py`
+  (daemon ledger loads the self-queued file). Existing Apps Script suites set the kill switch so they keep testing
+  comment replay only. Full suite: 299 passed, 30 subtests.
+- **STAGE_3:** PR #239 (agent/icarus-primitives -> main) open; merge is owner-only (main requires reviewed PRs).
+- **STAGE_4:** HV-EXP-174..178 in TRAINING_MATRIX.md; 12-rule tracker
+  `logs/2026-11-17-icarus-ledger-loop-rule43-compliance.md` (7/12 PASS, R1/R2/R7 FAIL, R4/R10 UNVERIFIED; reviewer not independent).
+- **Pin change:** branch head is no longer `1b9addf`. Daemon code is unchanged since `1b9addf`; a rebuild may check out
+  this branch head. Only `Athena.gs` (production pulse) changed and needs deploying to both Apps Script files.
+
