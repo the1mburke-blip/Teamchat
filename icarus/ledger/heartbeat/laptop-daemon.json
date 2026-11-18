@@ -5,6 +5,6 @@
   "last_status": "idle",
   "note": "liveness only; job evidence is icarus/ledger/state and run_log.jsonl",
   "runner": "laptop-daemon",
-  "started_utc": "2026-11-18T22:04:51Z",
-  "utc": "2026-11-18T22:04:52Z"
+  "started_utc": "2026-11-18T22:32:23Z",
+  "utc": "2026-11-18T22:32:23Z"
 }
