@@ -19,6 +19,7 @@ Safety:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -54,7 +55,10 @@ def _git_sha() -> str | None:
 
 
 def execute(job: dict, plan: dict | None, job_dir: Path) -> dict:
-    record = {"plan_valid": plan is not None, "commands": [], "git_sha": None, "error": None}
+    # plan_files: {relative path: sha256} of files the model wrote directly through the plan, so
+    # the verifier can tell model-typed content from output a command actually produced.
+    record = {"plan_valid": plan is not None, "commands": [], "plan_files": {}, "git_sha": None,
+              "error": None}
     if plan is None:
         record["error"] = "no valid plan"
         return record
@@ -67,6 +71,8 @@ def execute(job: dict, plan: dict | None, job_dir: Path) -> dict:
             p = _safe_path(job_dir, f["path"])
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(f["content"], encoding="utf-8")
+            rel = p.relative_to(job_dir.resolve()).as_posix()
+            record["plan_files"][rel] = hashlib.sha256(p.read_bytes()).hexdigest()
         hand_over(job_dir)
         for argv in plan["commands"]:
             try:

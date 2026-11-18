@@ -51,8 +51,14 @@ def model_task(job: dict) -> dict:
     limits = {"expected_files": spec.get("expected_files", [])}
     if spec.get("allowed_commands") is not None:
         limits["allowed_commands"] = spec["allowed_commands"]
-    limits["note"] = ("Use only allowed_commands as argv[0] (or no commands at all). Files listed in "
-                      "'files' are written for you, so creating a file needs no command.")
+    if spec.get("require_command_output"):
+        limits["require_command_output"] = True
+        limits["note"] = ("Use only allowed_commands as argv[0]. The expected_files must be PRODUCED BY "
+                          "RUNNING a command (e.g. write a script in 'files', then run it); a file you "
+                          "type directly into 'files' does not count and fails verification.")
+    else:
+        limits["note"] = ("Use only allowed_commands as argv[0] (or no commands at all). Files listed in "
+                          "'files' are written for you, so creating a file needs no command.")
     return {**job["task"], "limits": limits}
 
 

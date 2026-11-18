@@ -113,6 +113,18 @@ def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job
             g1.append(f"sha256 mismatch: {rel}")
     if spec.get("require_git_sha") and not execution.get("git_sha"):
         g1.append("git SHA not logged")
+    if spec.get("require_command_output"):
+        # The expected outputs must be produced by a command that actually ran, not typed into
+        # the plan by the model (a model can otherwise "pass" by writing the answer itself).
+        ran = [c for c in execution.get("commands", []) if c.get("exit_code") == 0]
+        if not ran:
+            g1.append("require_command_output: no command ran successfully")
+        plan_files = execution.get("plan_files", {})
+        for rel in spec.get("expected_files", []):
+            p = job_dir / rel
+            if rel in plan_files and p.is_file() and _sha256(p) == plan_files[rel]:
+                g1.append(f"require_command_output: {rel} was written by the model's plan, "
+                          "not produced by a command")
     harness = None
     if spec.get("harness") and not g1:
         harness = harness_gate(job_dir, task_id, spec["harness"])
@@ -157,6 +169,13 @@ def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job
         "gate_1_technical": {"pass": not g1, "reasons": g1},
         "gate_2_policy": {"pass": not g2, "reasons": g2},
         "files_sha256": files,
+        # What actually ran, so a receipt shows tool use instead of implying it. Output is
+        # hashed, not copied, so job output never lands in the (public) ledger.
+        "commands": [{"argv0": Path((c.get("argv") or [""])[0]).name, "argc": len(c.get("argv") or []),
+                      "exit_code": c.get("exit_code"),
+                      "stdout_sha256": hashlib.sha256((c.get("stdout") or "").encode()).hexdigest()}
+                     for c in execution.get("commands", [])],
+        "plan_files": sorted(execution.get("plan_files", {})),
         "git_sha": execution.get("git_sha"),
         "harness": harness,
     }
