@@ -1,0 +1,84 @@
+{
+  "attempt_started_at": "2026-11-18T12:07:18Z",
+  "attempts": 1,
+  "claim_id": "e8c18659b0a65fef",
+  "ended_at": "2026-11-18T12:07:18Z",
+  "exit_status": 0,
+  "gate_verdict": {
+    "checks": {
+      "attempts_within_cap": true,
+      "every_stage_exit_zero": true,
+      "execution_receipt_in_ledger": true,
+      "gate_1_passed": true,
+      "gate_2_passed": true,
+      "git_sha_recorded": true,
+      "ledger_chain_valid": true,
+      "negative_constraints_hold": true,
+      "outputs_exist_and_rehash": true,
+      "packet_hash_matches_state": true,
+      "receipt_git_sha_matches": true,
+      "receipt_hash_matches_state": true,
+      "receipt_status_pass": true,
+      "recorded_exit_status_zero": true,
+      "schema_valid": true,
+      "zero_secrets_in_log": true,
+      "zero_secrets_in_outputs": true,
+      "zero_secrets_in_packet": true
+    },
+    "errors": [],
+    "ok": true
+  },
+  "history": [
+    {
+      "from": "DISCOVERED",
+      "note": "schema, authority, scope, constraints, secrets passed",
+      "to": "VALIDATED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "VALIDATED",
+      "note": "claimed by task_runner@e2b.local:6158",
+      "to": "CLAIMED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "CLAIMED",
+      "note": "attempt 1/3",
+      "to": "EXECUTING",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "EXECUTING",
+      "note": "independent completion gate",
+      "to": "VERIFYING",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "VERIFYING",
+      "note": "all gate checks passed",
+      "to": "COMPLETE",
+      "ts": "2026-11-18T12:07:18Z"
+    }
+  ],
+  "lease_expires_epoch": 1795003968.5751662,
+  "lease_pid": null,
+  "log_path": "state/logs/CANARY-RUNNER-001.attempt1.log",
+  "outputs": [
+    {
+      "path": "icarus/runs/artifacts/runner_canary/out.json",
+      "sha256": "0c6a3d277cad2dc3ac20d8748ee2ee92c846ed6825383b2e02cb4e0dc206125d"
+    }
+  ],
+  "owner": "task_runner@e2b.local:6158",
+  "packet_file": "a_canary.json",
+  "packet_path": "processed/a_canary__20261118T120718Z-4441edba__COMPLETE.json",
+  "packet_sha256": "e1e0df822c7e17b471f5323b58f3e534df652c1d64c4db03b22475a8c6ab0c61",
+  "receipt_hash": "946b16ac3d7465b96af89d688175d6d348602bff62cd45237e9e805fd81035d5",
+  "receipt_status": "PASS",
+  "run_id": "20261118T120718Z-4441edba",
+  "source_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+  "started_at": "2026-11-18T12:07:18Z",
+  "state": "COMPLETE",
+  "task_id": "CANARY-RUNNER-001",
+  "terminal_receipt_hash": "26b1938bd6bbba5305524e9c52cbb15e9de12cfc74a96fa27e422c6a8b9838cd"
+}

@@ -1,0 +1,74 @@
+{
+  "receipt": {
+    "schema": "icarus/receipt.v3",
+    "run_id": "20261118T120718Z-e1c2b504",
+    "task_id": "CANARY-RUNNER-RECOVER",
+    "packet_file": "d_recover.json",
+    "packet_sha256": "16998af9f8cc4890c36c26266c2e34eb9549f1fd50179f353000f06d7cc7d4ff",
+    "started_at": "2026-11-18T12:07:18Z",
+    "finished_at": "2026-11-18T12:07:19Z",
+    "status": "PASS",
+    "verifier_tier": "TIER_1_MACHINE",
+    "signed": false,
+    "gate_1_technical": {
+      "exit_code_zero": true,
+      "physical_output_files_exist": true,
+      "git_sha_logged": true,
+      "git_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+      "passed": true
+    },
+    "gate_2_policy": {
+      "schema_valid": true,
+      "schema_errors": [],
+      "zero_secrets_detected": true,
+      "secret_pattern_hits": 0,
+      "negative_constraints_met": true,
+      "negative_constraint_violations": [],
+      "command_scope_ok": true,
+      "command_scope_violations": [],
+      "passed": true
+    },
+    "pre_execution": {
+      "ledger_ok": true,
+      "ledger_errors": []
+    },
+    "stages": [
+      {
+        "stage_id": "S1",
+        "name": "s1",
+        "ok": true,
+        "attempt_limit": 3,
+        "attempts": [
+          {
+            "attempt": 1,
+            "exit_code": 0,
+            "timed_out": false,
+            "duration_s": 0.018,
+            "missing_outputs": [],
+            "stdout_tail": "",
+            "stderr_tail": "",
+            "secret_hits": 0
+          }
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "icarus/runs/artifacts/runner_canary/recovered.json",
+        "sha256": "6bc0da1f42f96fc37b8bd7ed20ba57606d2a0da5cda2b135c7854fbdc985b8a3",
+        "bytes": 12
+      }
+    ],
+    "git_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+    "prev_receipt_hash": "c8ebeb1285a7547479de785a3f9b8e142b15d1b70d9ce2a2de7710c052c6a51f",
+    "receipt_hash": "8220708b661eb76481d052e21ea059e08b0c84f544b7c15f0197261630b2f087"
+  },
+  "readback": {
+    "ledger_line_found": true,
+    "receipt_hash_matches": true,
+    "artifacts_rehashed_ok": true,
+    "ledger_verify_ok": true,
+    "ledger_lines": 8,
+    "head_check": "OK"
+  }
+}

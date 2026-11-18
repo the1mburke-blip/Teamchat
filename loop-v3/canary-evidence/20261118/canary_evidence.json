@@ -1,0 +1,247 @@
+{
+  "A_positive": [
+    0,
+    {
+      "recovered": [],
+      "processed": [
+        {
+          "task_id": "CANARY-RUNNER-001",
+          "state": "COMPLETE"
+        }
+      ]
+    }
+  ],
+  "B_malformed": [
+    1,
+    {
+      "recovered": [],
+      "processed": [
+        {
+          "task_id": "REJECTED-b8e9800a18d0",
+          "state": "REJECTED"
+        },
+        {
+          "task_id": "REJECTED-be302461cda2",
+          "state": "REJECTED"
+        }
+      ]
+    }
+  ],
+  "C_failing": [
+    1,
+    {
+      "recovered": [],
+      "processed": [
+        {
+          "task_id": "CANARY-RUNNER-FAIL",
+          "state": "FAILED"
+        }
+      ]
+    }
+  ],
+  "D_after_kill": {
+    "state": "EXECUTING",
+    "attempts": 1,
+    "packet_still_queued": true
+  },
+  "D_restart": [
+    0,
+    {
+      "recovered": [
+        "CANARY-RUNNER-RECOVER"
+      ],
+      "processed": [
+        {
+          "task_id": "CANARY-RUNNER-RECOVER",
+          "state": "COMPLETE"
+        }
+      ]
+    }
+  ],
+  "audit_exit": 0,
+  "audit": {
+    "ok": true,
+    "complete_states": 2,
+    "results": {
+      "CANARY-RUNNER-001": {
+        "ok": true,
+        "checks": {
+          "attempts_within_cap": true,
+          "recorded_exit_status_zero": true,
+          "git_sha_recorded": true,
+          "packet_hash_matches_state": true,
+          "schema_valid": true,
+          "zero_secrets_in_packet": true,
+          "ledger_chain_valid": true,
+          "execution_receipt_in_ledger": true,
+          "receipt_hash_matches_state": true,
+          "receipt_status_pass": true,
+          "gate_1_passed": true,
+          "gate_2_passed": true,
+          "receipt_git_sha_matches": true,
+          "every_stage_exit_zero": true,
+          "outputs_exist_and_rehash": true,
+          "zero_secrets_in_outputs": true,
+          "negative_constraints_hold": true,
+          "zero_secrets_in_log": true
+        },
+        "errors": []
+      },
+      "CANARY-RUNNER-RECOVER": {
+        "ok": true,
+        "checks": {
+          "attempts_within_cap": true,
+          "recorded_exit_status_zero": true,
+          "git_sha_recorded": true,
+          "packet_hash_matches_state": true,
+          "schema_valid": true,
+          "zero_secrets_in_packet": true,
+          "ledger_chain_valid": true,
+          "execution_receipt_in_ledger": true,
+          "receipt_hash_matches_state": true,
+          "receipt_status_pass": true,
+          "gate_1_passed": true,
+          "gate_2_passed": true,
+          "receipt_git_sha_matches": true,
+          "every_stage_exit_zero": true,
+          "outputs_exist_and_rehash": true,
+          "zero_secrets_in_outputs": true,
+          "negative_constraints_hold": true,
+          "zero_secrets_in_log": true
+        },
+        "errors": []
+      }
+    }
+  },
+  "ledger_verify_exit": 0,
+  "ledger_verify": {
+    "ok": true,
+    "lines": 9,
+    "head_hash": "87b4065460d2375860d57d238a5d7ebaf4beff0b3a40324f7926bde9bda5cb43",
+    "head_check": "OK"
+  },
+  "states": {
+    "CANARY-RUNNER-001": {
+      "state": "COMPLETE",
+      "attempts": 1,
+      "exit_status": 0,
+      "owner": "task_runner@e2b.local:6158",
+      "started_at": "2026-11-18T12:07:18Z",
+      "ended_at": "2026-11-18T12:07:18Z",
+      "source_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+      "run_id": "20261118T120718Z-4441edba",
+      "receipt_hash": "946b16ac3d7465b96af89d688175d6d348602bff62cd45237e9e805fd81035d5",
+      "terminal_receipt_hash": "26b1938bd6bbba5305524e9c52cbb15e9de12cfc74a96fa27e422c6a8b9838cd",
+      "log_path": "state/logs/CANARY-RUNNER-001.attempt1.log",
+      "outputs": [
+        {
+          "path": "icarus/runs/artifacts/runner_canary/out.json",
+          "sha256": "0c6a3d277cad2dc3ac20d8748ee2ee92c846ed6825383b2e02cb4e0dc206125d"
+        }
+      ],
+      "rejection_errors": null,
+      "history": [
+        "VALIDATED",
+        "CLAIMED",
+        "EXECUTING",
+        "VERIFYING",
+        "COMPLETE"
+      ]
+    },
+    "CANARY-RUNNER-FAIL": {
+      "state": "FAILED",
+      "attempts": 1,
+      "exit_status": 7,
+      "owner": "task_runner@e2b.local:6179",
+      "started_at": "2026-11-18T12:07:18Z",
+      "ended_at": "2026-11-18T12:07:18Z",
+      "source_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+      "run_id": "20261118T120718Z-9400e82a",
+      "receipt_hash": "c8ebeb1285a7547479de785a3f9b8e142b15d1b70d9ce2a2de7710c052c6a51f",
+      "terminal_receipt_hash": null,
+      "log_path": "state/logs/CANARY-RUNNER-FAIL.attempt1.log",
+      "outputs": [],
+      "rejection_errors": null,
+      "history": [
+        "VALIDATED",
+        "CLAIMED",
+        "EXECUTING",
+        "FAILED"
+      ]
+    },
+    "CANARY-RUNNER-RECOVER": {
+      "state": "COMPLETE",
+      "attempts": 2,
+      "exit_status": 0,
+      "owner": "task_runner@e2b.local:6193",
+      "started_at": "2026-11-18T12:07:18Z",
+      "ended_at": "2026-11-18T12:07:19Z",
+      "source_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+      "run_id": "20261118T120718Z-e1c2b504",
+      "receipt_hash": "8220708b661eb76481d052e21ea059e08b0c84f544b7c15f0197261630b2f087",
+      "terminal_receipt_hash": "87b4065460d2375860d57d238a5d7ebaf4beff0b3a40324f7926bde9bda5cb43",
+      "log_path": "state/logs/CANARY-RUNNER-RECOVER.attempt2.log",
+      "outputs": [
+        {
+          "path": "icarus/runs/artifacts/runner_canary/recovered.json",
+          "sha256": "6bc0da1f42f96fc37b8bd7ed20ba57606d2a0da5cda2b135c7854fbdc985b8a3"
+        }
+      ],
+      "rejection_errors": null,
+      "history": [
+        "VALIDATED",
+        "CLAIMED",
+        "EXECUTING",
+        "INTERRUPTED",
+        "CLAIMED",
+        "EXECUTING",
+        "VERIFYING",
+        "COMPLETE"
+      ]
+    },
+    "REJECTED-b8e9800a18d0": {
+      "state": "REJECTED",
+      "attempts": 0,
+      "exit_status": null,
+      "owner": null,
+      "started_at": null,
+      "ended_at": "2026-11-18T12:07:18Z",
+      "source_sha": null,
+      "run_id": "20261118T120718Z-REJ-b8e9800a",
+      "receipt_hash": null,
+      "terminal_receipt_hash": null,
+      "log_path": null,
+      "outputs": null,
+      "rejection_errors": [
+        "authority_scope missing (authority is never inferred)"
+      ],
+      "history": [
+        "REJECTED"
+      ]
+    },
+    "REJECTED-be302461cda2": {
+      "state": "REJECTED",
+      "attempts": 0,
+      "exit_status": null,
+      "owner": null,
+      "started_at": null,
+      "ended_at": "2026-11-18T12:07:18Z",
+      "source_sha": null,
+      "run_id": "20261118T120718Z-REJ-be302461",
+      "receipt_hash": null,
+      "terminal_receipt_hash": null,
+      "log_path": null,
+      "outputs": null,
+      "rejection_errors": [
+        "packet is not valid JSON"
+      ],
+      "history": [
+        "REJECTED"
+      ]
+    }
+  },
+  "outputs_sha256": {
+    "icarus/runs/artifacts/runner_canary/out.json": "0c6a3d277cad2dc3ac20d8748ee2ee92c846ed6825383b2e02cb4e0dc206125d",
+    "icarus/runs/artifacts/runner_canary/recovered.json": "6bc0da1f42f96fc37b8bd7ed20ba57606d2a0da5cda2b135c7854fbdc985b8a3"
+  }
+}

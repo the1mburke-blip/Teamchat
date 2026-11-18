@@ -1,0 +1,102 @@
+{
+  "attempt_started_at": "2026-11-18T12:07:18Z",
+  "attempts": 2,
+  "claim_id": "21f0e4af86b3b73d",
+  "ended_at": "2026-11-18T12:07:19Z",
+  "exit_status": 0,
+  "gate_verdict": {
+    "checks": {
+      "attempts_within_cap": true,
+      "every_stage_exit_zero": true,
+      "execution_receipt_in_ledger": true,
+      "gate_1_passed": true,
+      "gate_2_passed": true,
+      "git_sha_recorded": true,
+      "ledger_chain_valid": true,
+      "negative_constraints_hold": true,
+      "outputs_exist_and_rehash": true,
+      "packet_hash_matches_state": true,
+      "receipt_git_sha_matches": true,
+      "receipt_hash_matches_state": true,
+      "receipt_status_pass": true,
+      "recorded_exit_status_zero": true,
+      "schema_valid": true,
+      "zero_secrets_in_log": true,
+      "zero_secrets_in_outputs": true,
+      "zero_secrets_in_packet": true
+    },
+    "errors": [],
+    "ok": true
+  },
+  "history": [
+    {
+      "from": "DISCOVERED",
+      "note": "schema, authority, scope, constraints, secrets passed",
+      "to": "VALIDATED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "VALIDATED",
+      "note": "claimed by task_runner@e2b.local:6188",
+      "to": "CLAIMED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "CLAIMED",
+      "note": "attempt 1/3",
+      "to": "EXECUTING",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "EXECUTING",
+      "note": "runner pid 6188 gone or lease expired; attempt 1 counted",
+      "to": "INTERRUPTED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "INTERRUPTED",
+      "note": "claimed by task_runner@e2b.local:6193",
+      "to": "CLAIMED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "CLAIMED",
+      "note": "attempt 2/3",
+      "to": "EXECUTING",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "EXECUTING",
+      "note": "independent completion gate",
+      "to": "VERIFYING",
+      "ts": "2026-11-18T12:07:19Z"
+    },
+    {
+      "from": "VERIFYING",
+      "note": "all gate checks passed",
+      "to": "COMPLETE",
+      "ts": "2026-11-18T12:07:19Z"
+    }
+  ],
+  "lease_expires_epoch": 1795003968.9806726,
+  "lease_pid": null,
+  "log_path": "state/logs/CANARY-RUNNER-RECOVER.attempt2.log",
+  "outputs": [
+    {
+      "path": "icarus/runs/artifacts/runner_canary/recovered.json",
+      "sha256": "6bc0da1f42f96fc37b8bd7ed20ba57606d2a0da5cda2b135c7854fbdc985b8a3"
+    }
+  ],
+  "owner": "task_runner@e2b.local:6193",
+  "packet_file": "d_recover.json",
+  "packet_path": "processed/d_recover__20261118T120718Z-e1c2b504__COMPLETE.json",
+  "packet_sha256": "16998af9f8cc4890c36c26266c2e34eb9549f1fd50179f353000f06d7cc7d4ff",
+  "receipt_hash": "8220708b661eb76481d052e21ea059e08b0c84f544b7c15f0197261630b2f087",
+  "receipt_status": "PASS",
+  "run_id": "20261118T120718Z-e1c2b504",
+  "source_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+  "started_at": "2026-11-18T12:07:18Z",
+  "state": "COMPLETE",
+  "task_id": "CANARY-RUNNER-RECOVER",
+  "terminal_receipt_hash": "87b4065460d2375860d57d238a5d7ebaf4beff0b3a40324f7926bde9bda5cb43"
+}

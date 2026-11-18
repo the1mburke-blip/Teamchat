@@ -1,0 +1,48 @@
+{
+  "attempt_started_at": "2026-11-18T12:07:18Z",
+  "attempts": 1,
+  "claim_id": "64c17c1490c48003",
+  "ended_at": "2026-11-18T12:07:18Z",
+  "exit_status": 7,
+  "history": [
+    {
+      "from": "DISCOVERED",
+      "note": "schema, authority, scope, constraints, secrets passed",
+      "to": "VALIDATED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "VALIDATED",
+      "note": "claimed by task_runner@e2b.local:6179",
+      "to": "CLAIMED",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "CLAIMED",
+      "note": "attempt 1/3",
+      "to": "EXECUTING",
+      "ts": "2026-11-18T12:07:18Z"
+    },
+    {
+      "from": "EXECUTING",
+      "note": "execution failed Gate 1; no blind retry",
+      "to": "FAILED",
+      "ts": "2026-11-18T12:07:18Z"
+    }
+  ],
+  "lease_expires_epoch": 1795003968.7781563,
+  "lease_pid": null,
+  "log_path": "state/logs/CANARY-RUNNER-FAIL.attempt1.log",
+  "outputs": [],
+  "owner": "task_runner@e2b.local:6179",
+  "packet_file": "c_fail.json",
+  "packet_path": "processed/c_fail__20261118T120718Z-9400e82a__FAILED.json",
+  "packet_sha256": "d3a0a2a5631ee222662f3ff0488a8212362ba5433f24dbc3f6cadf83706b9263",
+  "receipt_hash": "c8ebeb1285a7547479de785a3f9b8e142b15d1b70d9ce2a2de7710c052c6a51f",
+  "receipt_status": "FAIL",
+  "run_id": "20261118T120718Z-9400e82a",
+  "source_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+  "started_at": "2026-11-18T12:07:18Z",
+  "state": "FAILED",
+  "task_id": "CANARY-RUNNER-FAIL"
+}

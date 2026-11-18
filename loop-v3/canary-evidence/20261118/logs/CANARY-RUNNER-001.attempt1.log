@@ -1,0 +1,74 @@
+{
+  "receipt": {
+    "schema": "icarus/receipt.v3",
+    "run_id": "20261118T120718Z-4441edba",
+    "task_id": "CANARY-RUNNER-001",
+    "packet_file": "a_canary.json",
+    "packet_sha256": "e1e0df822c7e17b471f5323b58f3e534df652c1d64c4db03b22475a8c6ab0c61",
+    "started_at": "2026-11-18T12:07:18Z",
+    "finished_at": "2026-11-18T12:07:18Z",
+    "status": "PASS",
+    "verifier_tier": "TIER_1_MACHINE",
+    "signed": false,
+    "gate_1_technical": {
+      "exit_code_zero": true,
+      "physical_output_files_exist": true,
+      "git_sha_logged": true,
+      "git_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+      "passed": true
+    },
+    "gate_2_policy": {
+      "schema_valid": true,
+      "schema_errors": [],
+      "zero_secrets_detected": true,
+      "secret_pattern_hits": 0,
+      "negative_constraints_met": true,
+      "negative_constraint_violations": [],
+      "command_scope_ok": true,
+      "command_scope_violations": [],
+      "passed": true
+    },
+    "pre_execution": {
+      "ledger_ok": true,
+      "ledger_errors": []
+    },
+    "stages": [
+      {
+        "stage_id": "S1",
+        "name": "s1",
+        "ok": true,
+        "attempt_limit": 3,
+        "attempts": [
+          {
+            "attempt": 1,
+            "exit_code": 0,
+            "timed_out": false,
+            "duration_s": 0.019,
+            "missing_outputs": [],
+            "stdout_tail": "",
+            "stderr_tail": "",
+            "secret_hits": 0
+          }
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "icarus/runs/artifacts/runner_canary/out.json",
+        "sha256": "0c6a3d277cad2dc3ac20d8748ee2ee92c846ed6825383b2e02cb4e0dc206125d",
+        "bytes": 59
+      }
+    ],
+    "git_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+    "prev_receipt_hash": "119fc636f55b1c9e612211db30338431dcfe55e211050201e034c6d169b16266",
+    "receipt_hash": "946b16ac3d7465b96af89d688175d6d348602bff62cd45237e9e805fd81035d5"
+  },
+  "readback": {
+    "ledger_line_found": true,
+    "receipt_hash_matches": true,
+    "artifacts_rehashed_ok": true,
+    "ledger_verify_ok": true,
+    "ledger_lines": 3,
+    "head_check": "OK"
+  }
+}

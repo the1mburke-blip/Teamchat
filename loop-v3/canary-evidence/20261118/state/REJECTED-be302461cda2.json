@@ -1,0 +1,24 @@
+{
+  "attempts": 0,
+  "ended_at": "2026-11-18T12:07:18Z",
+  "exit_status": null,
+  "history": [
+    {
+      "from": "DISCOVERED",
+      "note": "ingress rejected",
+      "to": "REJECTED",
+      "ts": "2026-11-18T12:07:18Z"
+    }
+  ],
+  "owner": null,
+  "packet_file": "b2_notjson.json",
+  "packet_sha256": "be302461cda285db3ed2d45fb767b23e08ca8808b35a638009937df22b332d73",
+  "rejection_errors": [
+    "packet is not valid JSON"
+  ],
+  "rejection_receipt_hash": "abd1e412295b4187aabd1c1d697c0dc768dd425904fa4da94ea162a9e5efcf0f",
+  "run_id": "20261118T120718Z-REJ-be302461",
+  "started_at": null,
+  "state": "REJECTED",
+  "task_id": "REJECTED-be302461cda2"
+}

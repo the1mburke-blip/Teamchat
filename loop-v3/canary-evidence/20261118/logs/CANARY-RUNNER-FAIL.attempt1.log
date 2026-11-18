@@ -1,0 +1,83 @@
+{
+  "receipt": {
+    "schema": "icarus/receipt.v3",
+    "run_id": "20261118T120718Z-9400e82a",
+    "task_id": "CANARY-RUNNER-FAIL",
+    "packet_file": "c_fail.json",
+    "packet_sha256": "d3a0a2a5631ee222662f3ff0488a8212362ba5433f24dbc3f6cadf83706b9263",
+    "started_at": "2026-11-18T12:07:18Z",
+    "finished_at": "2026-11-18T12:07:18Z",
+    "status": "FAIL",
+    "verifier_tier": "TIER_1_MACHINE",
+    "signed": false,
+    "gate_1_technical": {
+      "exit_code_zero": false,
+      "physical_output_files_exist": false,
+      "git_sha_logged": true,
+      "git_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+      "passed": false
+    },
+    "gate_2_policy": {
+      "schema_valid": true,
+      "schema_errors": [],
+      "zero_secrets_detected": true,
+      "secret_pattern_hits": 0,
+      "negative_constraints_met": true,
+      "negative_constraint_violations": [],
+      "command_scope_ok": true,
+      "command_scope_violations": [],
+      "passed": true
+    },
+    "pre_execution": {
+      "ledger_ok": true,
+      "ledger_errors": []
+    },
+    "stages": [
+      {
+        "stage_id": "S1",
+        "name": "s1",
+        "ok": false,
+        "attempt_limit": 3,
+        "attempts": [
+          {
+            "attempt": 1,
+            "exit_code": 7,
+            "timed_out": false,
+            "duration_s": 0.012,
+            "missing_outputs": [
+              "icarus/runs/artifacts/runner_canary/never.json"
+            ],
+            "stdout_tail": "",
+            "stderr_tail": "",
+            "secret_hits": 0
+          },
+          {
+            "attempt": 2,
+            "exit_code": 7,
+            "timed_out": false,
+            "duration_s": 0.011,
+            "missing_outputs": [
+              "icarus/runs/artifacts/runner_canary/never.json"
+            ],
+            "stdout_tail": "",
+            "stderr_tail": "",
+            "secret_hits": 0,
+            "stopped": "identical failure signature; blind retry prohibited"
+          }
+        ]
+      }
+    ],
+    "artifacts": [],
+    "git_sha": "b6d739731ec73880846a22d7db79b3d5442b6406",
+    "prev_receipt_hash": "abd1e412295b4187aabd1c1d697c0dc768dd425904fa4da94ea162a9e5efcf0f",
+    "receipt_hash": "c8ebeb1285a7547479de785a3f9b8e142b15d1b70d9ce2a2de7710c052c6a51f"
+  },
+  "readback": {
+    "ledger_line_found": true,
+    "receipt_hash_matches": true,
+    "artifacts_rehashed_ok": true,
+    "ledger_verify_ok": true,
+    "ledger_lines": 7,
+    "head_check": "OK"
+  }
+}

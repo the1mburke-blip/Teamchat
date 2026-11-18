@@ -1,0 +1,24 @@
+{
+  "attempts": 0,
+  "ended_at": "2026-11-18T12:07:18Z",
+  "exit_status": null,
+  "history": [
+    {
+      "from": "DISCOVERED",
+      "note": "ingress rejected",
+      "to": "REJECTED",
+      "ts": "2026-11-18T12:07:18Z"
+    }
+  ],
+  "owner": null,
+  "packet_file": "b1_noauth.json",
+  "packet_sha256": "b8e9800a18d07e1720f8f88b68d2f138078d446a30865708105c9e26145eec56",
+  "rejection_errors": [
+    "authority_scope missing (authority is never inferred)"
+  ],
+  "rejection_receipt_hash": "2ec5e9c65a75170c927168ba0b29bc230cdb9ed5de092e03c891897f9d13753d",
+  "run_id": "20261118T120718Z-REJ-b8e9800a",
+  "started_at": null,
+  "state": "REJECTED",
+  "task_id": "REJECTED-b8e9800a18d0"
+}
