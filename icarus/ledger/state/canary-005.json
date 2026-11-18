@@ -1,0 +1,7 @@
+{
+  "attempts": 0,
+  "claimed_by": "laptop-daemon",
+  "lease_expires": 1795058844.4533756,
+  "max_attempts": 2,
+  "status": "claimed"
+}
