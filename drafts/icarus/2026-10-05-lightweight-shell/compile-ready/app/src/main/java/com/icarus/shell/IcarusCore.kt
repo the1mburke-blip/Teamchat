@@ -1,88 +1,86 @@
-package com.icarus.shell
+package com.aistudio.icarus.appsscript
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-enum class TaskStage {
-    IDLE,
-    SUBMITTING,
-    EXECUTING,
-    VERIFYING,
-    PASS,
-    FAILED,
-    BLOCKED
-}
-
-data class TaskRequest(val problem: String)
+enum class TaskStage { RECOVERY_REQUIRED, IDLE, SUBMITTING, EXECUTING, AWAITING_OWNER, COMPLETE, FAILED, BLOCKED }
 
 data class ProofItem(val label: String, val value: String)
 
-data class TaskResult(
-    val stage: TaskStage,
-    val summary: String,
-    val proof: List<ProofItem> = emptyList()
-)
-
-interface ExecutionGateway {
-    suspend fun submit(request: TaskRequest): TaskResult
-    suspend fun cancel()
-}
-
-class FakeExecutionGateway : ExecutionGateway {
-    override suspend fun submit(request: TaskRequest): TaskResult {
-        delay(300)
-        return TaskResult(
-            stage = TaskStage.VERIFYING,
-            summary = "DEMO: request accepted by local gateway stub",
-            proof = listOf(
-                ProofItem(
-                    label = "DEMO: request",
-                    value = "DEMO: ${request.problem.take(80)}"
-                )
-            )
-        )
-    }
-
-    override suspend fun cancel() = Unit
-}
-
 data class IcarusUiState(
+    val recoveryToken: String = "",
     val problem: String = "",
-    val listening: Boolean = false,
-    val stage: TaskStage = TaskStage.IDLE,
+    val stage: TaskStage = TaskStage.RECOVERY_REQUIRED,
     val result: String = "",
     val proof: List<ProofItem> = emptyList(),
-    val error: String = ""
+    val error: String = "",
+    val runtime: String = ""
 )
 
-class IcarusViewModel(
-    private val executionGateway: ExecutionGateway = FakeExecutionGateway()
-) : ViewModel() {
-    private val _uiState = MutableStateFlow(IcarusUiState())
+class IcarusViewModel(application: Application) : AndroidViewModel(application) {
+    private val store = RecoveryStore(application)
+    private val api = IcarusApiClient(store::endpoint) { RecoveryStore.DEVICE_ID }
+    private val _uiState = MutableStateFlow(
+        IcarusUiState(stage = if (store.token().isBlank()) TaskStage.RECOVERY_REQUIRED else TaskStage.IDLE)
+    )
     val uiState: StateFlow<IcarusUiState> = _uiState.asStateFlow()
 
     fun onProblemChanged(problem: String) {
         _uiState.value = _uiState.value.copy(problem = problem, error = "")
     }
 
-    fun onVoiceToggle() {
-        _uiState.value = _uiState.value.copy(listening = !_uiState.value.listening)
+    fun onRecoveryTokenChanged(value: String) {
+        _uiState.value = _uiState.value.copy(recoveryToken = value, error = "")
+    }
+
+    fun activateRecovery() {
+        val token = _uiState.value.recoveryToken.trim()
+        if (token.length < 24) {
+            _uiState.value = _uiState.value.copy(error = "Enter the recovery token supplied with this build.")
+            return
+        }
+        _uiState.value = _uiState.value.copy(stage = TaskStage.SUBMITTING, error = "")
+        viewModelScope.launch {
+            try {
+                val runtime = api.runtime(token)
+                store.saveToken(token)
+                _uiState.value = _uiState.value.copy(
+                    recoveryToken = "",
+                    stage = TaskStage.IDLE,
+                    runtime = "${runtime.runtimeVersion} / ${runtime.environment}",
+                    result = "Device recovered. Ready for a new task.",
+                    error = ""
+                )
+            } catch (t: Throwable) {
+                _uiState.value = _uiState.value.copy(
+                    stage = TaskStage.RECOVERY_REQUIRED,
+                    error = t.message ?: "Recovery failed"
+                )
+            }
+        }
     }
 
     fun submit() {
         val problem = _uiState.value.problem.trim()
-        if (problem.isEmpty()) {
-            _uiState.value = _uiState.value.copy(error = "Describe the problem first.")
+        val token = store.token()
+        if (token.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                stage = TaskStage.RECOVERY_REQUIRED,
+                error = "Recovery token required."
+            )
+            return
+        }
+        if (problem.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Describe the task first.")
             return
         }
 
         _uiState.value = _uiState.value.copy(
-            listening = false,
             stage = TaskStage.SUBMITTING,
             result = "",
             proof = emptyList(),
@@ -91,35 +89,47 @@ class IcarusViewModel(
 
         viewModelScope.launch {
             try {
-                val result = executionGateway.submit(TaskRequest(problem))
+                val task = api.submit(token, problem)
                 _uiState.value = _uiState.value.copy(
-                    stage = result.stage,
-                    result = result.summary,
-                    proof = result.proof
+                    stage = mapStage(task.status),
+                    result = task.resultText.ifBlank { task.evidence.ifBlank { task.status } },
+                    proof = listOf(
+                        ProofItem("Task", task.taskId),
+                        ProofItem("Backend status", task.status),
+                        ProofItem("Evidence", task.evidence)
+                    ).filter { it.value.isNotBlank() },
+                    error = ""
                 )
             } catch (t: Throwable) {
                 _uiState.value = _uiState.value.copy(
                     stage = TaskStage.FAILED,
-                    error = t.message ?: "Execution failed."
+                    error = t.message ?: "Execution failed"
                 )
             }
         }
     }
 
-    fun cancel() {
-        viewModelScope.launch {
-            executionGateway.cancel()
-            _uiState.value = _uiState.value.copy(
-                listening = false,
-                stage = TaskStage.IDLE,
-                result = "DEMO: task cancelled locally",
-                proof = emptyList(),
-                error = ""
-            )
-        }
+    fun resetUi() {
+        _uiState.value = _uiState.value.copy(
+            problem = "",
+            stage = TaskStage.IDLE,
+            result = "",
+            proof = emptyList(),
+            error = ""
+        )
     }
 
-    fun newTask() {
-        _uiState.value = IcarusUiState()
+    fun forgetRecovery() {
+        store.clearToken()
+        _uiState.value = IcarusUiState(stage = TaskStage.RECOVERY_REQUIRED)
+    }
+
+    private fun mapStage(status: String): TaskStage = when (status.uppercase()) {
+        "BLOCKED" -> TaskStage.BLOCKED
+        "FAIL", "FAILED", "PARTIAL" -> TaskStage.FAILED
+        "PASS" -> TaskStage.COMPLETE
+        "WORK_COMPLETE_AWAITING_OWNER_VERIFICATION" -> TaskStage.AWAITING_OWNER
+        "QUEUED", "INSPECTING", "REASONING", "EXECUTING", "VERIFYING", "PENDING_AUTH", "WAITING_REASONING_CAPACITY" -> TaskStage.EXECUTING
+        else -> TaskStage.COMPLETE
     }
 }

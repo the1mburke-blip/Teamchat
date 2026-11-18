@@ -1,12 +1,10 @@
-package com.icarus.shell
+package com.aistudio.icarus.appsscript
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,16 +16,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun IcarusShellScreen(
     state: IcarusUiState,
     onProblemChanged: (String) -> Unit,
-    onVoiceToggle: () -> Unit,
+    onRecoveryTokenChanged: (String) -> Unit,
+    onActivateRecovery: () -> Unit,
     onSubmit: () -> Unit,
-    onCancel: () -> Unit,
-    onNewTask: () -> Unit
+    onReset: () -> Unit,
+    onForgetRecovery: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -37,104 +37,90 @@ fun IcarusShellScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(8.dp))
         Text(
-            text = "ICARUS",
+            "ICARUS",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
-        Text(
-            text = "State a problem. Icarus handles the execution behind this shell.",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Text("Clean recovery build 0.5.0")
 
-        Button(
-            onClick = onVoiceToggle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-        ) {
-            Text(if (state.listening) "Listening…" else "Speak to Icarus")
-        }
+        if (state.stage == TaskStage.RECOVERY_REQUIRED) {
+            Text("One-time recovery", fontWeight = FontWeight.Bold)
+            Text("Enter the recovery token supplied with this APK. No pairing code is required.")
 
-        OutlinedTextField(
-            value = state.problem,
-            onValueChange = onProblemChanged,
-            label = { Text("Text fallback") },
-            placeholder = { Text("Describe the problem") },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 3
-        )
-
-        Button(
-            onClick = onSubmit,
-            enabled = state.stage !in setOf(
-                TaskStage.SUBMITTING,
-                TaskStage.EXECUTING,
-                TaskStage.VERIFYING
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Submit")
-        }
-
-        Text(
-            text = "STATUS: ${state.stage.name}",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        if (state.result.isNotBlank()) {
-            Text(
-                text = state.result,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        if (state.proof.isNotEmpty()) {
-            Column(
+            OutlinedTextField(
+                value = state.recoveryToken,
+                onValueChange = onRecoveryTokenChanged,
+                label = { Text("Recovery token") },
+                visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                singleLine = true
+            )
+
+            Button(
+                onClick = onActivateRecovery,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Proof", fontWeight = FontWeight.Bold)
-                state.proof.forEach { proof ->
-                    Text("${proof.label}: ${proof.value}")
+                Text("Recover device")
+            }
+        } else {
+            if (state.runtime.isNotBlank()) Text("Runtime: ${state.runtime}")
+
+            OutlinedTextField(
+                value = state.problem,
+                onValueChange = onProblemChanged,
+                label = { Text("Task") },
+                placeholder = { Text("What should Icarus do?") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3
+            )
+
+            Button(
+                onClick = onSubmit,
+                enabled = state.stage !in setOf(TaskStage.SUBMITTING, TaskStage.EXECUTING),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (state.stage == TaskStage.SUBMITTING) "Submitting…" else "Submit")
+            }
+
+            Text(
+                "STATUS: ${state.stage.name}",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            if (state.result.isNotBlank()) {
+                Text(state.result, modifier = Modifier.fillMaxWidth())
+            }
+
+            if (state.proof.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("Evidence", fontWeight = FontWeight.Bold)
+                    state.proof.forEach { Text("${it.label}: ${it.value}") }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(onClick = onReset, modifier = Modifier.weight(1f)) {
+                    Text("New task")
+                }
+                Button(onClick = onForgetRecovery, modifier = Modifier.weight(1f)) {
+                    Text("Reset device")
                 }
             }
         }
 
         if (state.error.isNotBlank()) {
             Text(
-                text = state.error,
+                state.error,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.fillMaxWidth()
             )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (state.stage in setOf(
-                    TaskStage.SUBMITTING,
-                    TaskStage.EXECUTING,
-                    TaskStage.VERIFYING
-                )
-            ) {
-                Button(onClick = onCancel, modifier = Modifier.weight(1f)) {
-                    Text("Cancel")
-                }
-            }
-
-            if (state.stage in setOf(
-                    TaskStage.PASS,
-                    TaskStage.FAILED,
-                    TaskStage.BLOCKED
-                )
-            ) {
-                Button(onClick = onNewTask, modifier = Modifier.weight(1f)) {
-                    Text("New Task")
-                }
-            }
         }
     }
 }
