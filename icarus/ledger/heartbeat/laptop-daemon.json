@@ -1,10 +1,10 @@
 {
-  "build": "cd994e1",
+  "build": "dd5c36c",
   "interval_seconds": 1800,
   "jobs_settled_since_start": 0,
   "last_status": "idle",
   "note": "liveness only; job evidence is icarus/ledger/state and run_log.jsonl",
   "runner": "laptop-daemon",
-  "started_utc": "2026-11-18T21:53:50Z",
-  "utc": "2026-11-18T21:53:50Z"
+  "started_utc": "2026-11-18T22:04:51Z",
+  "utc": "2026-11-18T22:04:52Z"
 }
