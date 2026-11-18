@@ -1,0 +1,23 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Daemon canary, strict spec (proves 1b9addf: model sees job limits)",
+    "objective": "Create a file named canary.txt in the job directory containing the single line: icarus canary ok",
+    "evidence_required": "canary.txt exists",
+    "source_issue": 237
+  },
+  "verify_spec": {
+    "expected_files": [
+      "canary.txt"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY"
+    ]
+  }
+}
