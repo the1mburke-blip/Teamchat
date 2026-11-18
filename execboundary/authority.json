@@ -1,0 +1,4 @@
+{
+  "authorized_principals": ["Michael"],
+  "note": "Principals whose packets may be executed. Trust boundary: the inbox directory is owner-controlled; this list does not authenticate a packet's author."
+}
