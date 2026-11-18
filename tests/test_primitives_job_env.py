@@ -56,6 +56,38 @@ def test_harness_command_cannot_see_daemon_credentials(tmp_path, monkeypatch):
         assert k not in json.loads(dumped) and v not in dumped, k
 
 
+def test_job_argv_unchanged_without_job_uid(monkeypatch):
+    from icarus.primitives.jobenv import job_argv
+    monkeypatch.delenv("ICARUS_JOB_UID", raising=False)
+    assert job_argv(["python3", "x.py"]) == ["python3", "x.py"]
+
+
+def test_job_argv_wraps_with_setpriv_when_root(monkeypatch):
+    import os
+    from icarus.primitives import jobenv
+    monkeypatch.setenv("ICARUS_JOB_UID", "10001")
+    monkeypatch.setattr(os, "geteuid", lambda: 0, raising=False)
+    assert jobenv.job_argv(["python3", "x.py"]) == [
+        "setpriv", "--reuid=10001", "--regid=10001", "--clear-groups", "--", "python3", "x.py"]
+
+
+def test_job_uid_set_but_not_root_fails_closed(tmp_path, monkeypatch):
+    import os
+    from icarus.primitives import jobenv
+    monkeypatch.setenv("ICARUS_JOB_UID", "10001")
+    monkeypatch.setattr(os, "geteuid", lambda: 1000, raising=False)
+    try:
+        jobenv.job_argv(["python3"])
+        raise AssertionError("must refuse to run job code as the daemon user")
+    except jobenv.JobUidError:
+        pass
+    job = {"verify_spec": {"allowed_commands": [Path(sys.executable).name]}}
+    plan = {"files": [{"path": "a.py", "content": "open('ran','w').write('1')"}],
+            "commands": [[sys.executable, "a.py"]]}
+    rec = execute(job, plan, tmp_path)
+    assert "not root" in rec["error"] and not (tmp_path / "ran").exists()
+
+
 def test_job_env_is_an_allowlist(tmp_path, monkeypatch):
     monkeypatch.setenv("SOMETHING_NEW_SECRET", "s")
     env = job_env(tmp_path)

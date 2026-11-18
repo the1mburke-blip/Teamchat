@@ -5,7 +5,8 @@
 # Run:    docker run -d --name icarus-primitives --restart unless-stopped \
 #           --env-file .env.primitives \
 #           -v icarus-ledger:/data/ledger -v icarus-work:/data/work \
-#           --cap-drop ALL --security-opt no-new-privileges:true \
+#           --cap-drop ALL --cap-add SETUID --cap-add SETGID --cap-add CHOWN \
+#           --cap-add DAC_OVERRIDE --cap-add FOWNER --security-opt no-new-privileges:true \
 #           icarus-primitives
 #
 # .env.primitives (never committed):
@@ -18,12 +19,16 @@
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
-    ICARUS_LEDGER_CLONE=/data/ledger ICARUS_WORK_DIR=/data/work
+    ICARUS_LEDGER_CLONE=/data/ledger ICARUS_WORK_DIR=/data/work ICARUS_JOB_UID=10001
 
+# Daemon runs as root but with only these capabilities (run with --cap-drop ALL and
+# --cap-add SETUID --cap-add SETGID --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER).
+# Job commands run as jobrunner (uid 10001) via setpriv; see icarus/primitives/jobenv.py.
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 1000 app \
-    && mkdir -p /data/ledger /data/work && chown -R app:app /data
+    && useradd --system --no-create-home --uid 10001 --user-group --shell /usr/sbin/nologin jobrunner \
+    && mkdir -p /data/ledger /data/work
 
 WORKDIR /app
 COPY icarus/__init__.py ./icarus/__init__.py
@@ -31,5 +36,4 @@ COPY icarus/primitives/ ./icarus/primitives/
 COPY icarus/harness/ ./icarus/harness/
 COPY dsh/ ./dsh/
 COPY docker/primitives-entrypoint.sh ./entrypoint.sh
-USER app
 ENTRYPOINT ["sh", "/app/entrypoint.sh"]

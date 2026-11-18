@@ -32,7 +32,7 @@ import hashlib
 import json
 import os
 
-from .jobenv import job_env
+from .jobenv import JobUidError, hand_over, job_argv, job_env
 import re
 import subprocess
 import sys
@@ -71,10 +71,14 @@ def harness_gate(job_dir: Path, task_id: str, h: dict) -> dict:
     # The harness runs the job author's command with this env: never the daemon's credentials.
     env = {**job_env(job_dir), "PYTHONPATH": str(REPO_ROOT)}
     try:
-        r = subprocess.run([sys.executable, "-m", "icarus.harness.runner", str(pkt)],
-                           cwd=job_dir, capture_output=True, text=True, timeout=360, env=env)
+        hand_over(job_dir)
+        hand_over(pkt)
+        argv = job_argv([sys.executable, "-m", "icarus.harness.runner", str(pkt)])
+        r = subprocess.run(argv, cwd=job_dir, capture_output=True, text=True, timeout=360, env=env)
     except subprocess.TimeoutExpired:
         return {"exit_code": None, "verdict": "FAIL", "detail": "harness timeout"}
+    except JobUidError as e:
+        return {"exit_code": None, "verdict": "FAIL", "detail": str(e)}
     verdict = "FAIL"
     try:
         out = json.loads(r.stdout.strip().splitlines()[-1]) if r.stdout.strip() else {}

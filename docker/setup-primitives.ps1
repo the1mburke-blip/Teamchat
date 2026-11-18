@@ -67,7 +67,7 @@ New-Item -ItemType Directory -Force -Path $EnvDir | Out-Null
 @(
   "GH_TOKEN=$gh",
   "TARGET_REPO=$Repo",
-  'ICARUS_LEDGER_BRANCH=main',
+  'ICARUS_LEDGER_BRANCH=icarus-ledger',   # main requires PRs; the ledger has its own branch
   "GEMINI_API_KEY=$gk",
   "OPENROUTER_API_KEY=$ok",
   'ICARUS_RUNNER_ID=laptop-daemon',
@@ -82,7 +82,9 @@ if ($LASTEXITCODE -ne 0) { Write-Host 'FAIL: docker build failed'; exit 1 }
 docker rm -f icarus-primitives *> $null
 docker run -d --name icarus-primitives --restart unless-stopped --env-file $EnvFile `
   -v icarus-ledger:/data/ledger -v icarus-work:/data/work `
-  --cap-drop ALL --security-opt no-new-privileges:true icarus-primitives | Out-Null
+  -e ICARUS_BUILD_SHA=$(git -C $Root rev-parse --short HEAD) `
+  --cap-drop ALL --cap-add SETUID --cap-add SETGID --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER `
+  --security-opt no-new-privileges:true icarus-primitives | Out-Null
 if ($LASTEXITCODE -ne 0) { Write-Host 'FAIL: docker run failed'; exit 1 }
 
 Start-Sleep -Seconds 20

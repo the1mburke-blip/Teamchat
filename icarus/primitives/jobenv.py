@@ -3,8 +3,12 @@
 Allowlist, not denylist: the daemon's own environment holds GH_TOKEN, GEMINI_API_KEY and
 similar, and job code must never receive them. SYSTEMROOT/WINDIR let Python start on Windows.
 
-This removes credentials from the job's environment. It is NOT a sandbox: job code runs as
-the daemon's uid and can still read files (e.g. /proc/<pid>/environ) and start processes.
+Second layer (container only): when ICARUS_JOB_UID is set, job and harness commands run as
+that unprivileged uid via setpriv, so they cannot read the daemon's /proc/<pid>/environ
+(which holds GH_TOKEN) or the ledger clone. This needs the daemon to run as root with
+CAP_SETUID/CAP_SETGID; if ICARUS_JOB_UID is set and the switch is impossible, jobs are
+refused (fail closed) rather than run as the daemon. Still not a full sandbox: no network
+or filesystem namespace of its own.
 """
 from __future__ import annotations
 
@@ -20,3 +24,35 @@ def job_env(job_dir: Path) -> dict:
     env.update({"HOME": d, "USERPROFILE": d, "TMPDIR": d, "TEMP": d, "TMP": d,
                 "PYTHONNOUSERSITE": "1"})
     return env
+
+
+class JobUidError(RuntimeError):
+    pass
+
+
+def job_uid() -> int | None:
+    """The uid jobs must run as, or None when no separate job user is configured."""
+    v = os.environ.get("ICARUS_JOB_UID", "").strip()
+    if not v:
+        return None
+    if not hasattr(os, "geteuid") or os.geteuid() != 0:
+        raise JobUidError("ICARUS_JOB_UID is set but the daemon is not root; refusing to run "
+                          "job code as the daemon user")
+    return int(v)
+
+
+def job_argv(argv: list[str]) -> list[str]:
+    uid = job_uid()
+    if uid is None:
+        return list(argv)
+    return ["setpriv", f"--reuid={uid}", f"--regid={uid}", "--clear-groups", "--", *argv]
+
+
+def hand_over(path: Path) -> None:
+    """Give a job dir tree (or one file) to the job uid so the job can use it."""
+    uid = job_uid()
+    if uid is None:
+        return
+    path = Path(path)
+    for p in [path, *(path.rglob("*") if path.is_dir() else [])]:
+        os.chown(p, uid, uid)
