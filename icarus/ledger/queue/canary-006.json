@@ -1,0 +1,28 @@
+{
+  "author": "owner:the1mburke-blip",
+  "max_attempts": 2,
+  "task": {
+    "title": "Env-isolation canary (daemon build dd5c36c): job must not see daemon credentials",
+    "objective": "Write a file named env.json in the job directory containing JSON of this process's environment variables, using python3: json.dumps(dict(os.environ), indent=2).",
+    "evidence_required": "env.json exists and contains no credential names or values",
+    "source_issue": 237
+  },
+  "verify_spec": {
+    "expected_files": [
+      "env.json"
+    ],
+    "allowed_commands": [
+      "python3"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY",
+      "OPENROUTER_API_KEY",
+      "GITHUB_PAT",
+      "ghp_",
+      "github_pat_",
+      "AIza",
+      "sk-or-"
+    ]
+  }
+}
