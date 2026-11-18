@@ -24,6 +24,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .jobenv import job_env
 from .ledger import Ledger
 from .reasoner import OpenAICompatReasoner, ReasonerError
 from .verify import verify
@@ -69,7 +70,7 @@ def execute(job: dict, plan: dict | None, job_dir: Path) -> dict:
         for argv in plan["commands"]:
             try:
                 r = subprocess.run(argv, cwd=job_dir, capture_output=True, text=True,
-                                   timeout=CMD_TIMEOUT)
+                                   timeout=CMD_TIMEOUT, env=job_env(job_dir))
                 record["commands"].append({"argv": argv, "exit_code": r.returncode,
                                            "stdout": r.stdout[-4000:], "stderr": r.stderr[-4000:]})
             except subprocess.TimeoutExpired:

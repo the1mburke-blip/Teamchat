@@ -31,6 +31,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+
+from .jobenv import job_env
 import re
 import subprocess
 import sys
@@ -66,7 +68,8 @@ def harness_gate(job_dir: Path, task_id: str, h: dict) -> dict:
               "command": h["command"], "readback": h["readback"]}
     pkt = job_dir.parent / f"{job_dir.name}.harness-packet.json"
     pkt.write_text(json.dumps(packet), encoding="utf-8")
-    env = {**os.environ, "PYTHONPATH": str(REPO_ROOT)}
+    # The harness runs the job author's command with this env: never the daemon's credentials.
+    env = {**job_env(job_dir), "PYTHONPATH": str(REPO_ROOT)}
     try:
         r = subprocess.run([sys.executable, "-m", "icarus.harness.runner", str(pkt)],
                            cwd=job_dir, capture_output=True, text=True, timeout=360, env=env)
