@@ -66,7 +66,9 @@ def harness_gate(job_dir: Path, task_id: str, h: dict) -> dict:
               "command": h["command"], "readback": h["readback"]}
     pkt = job_dir.parent / f"{job_dir.name}.harness-packet.json"
     pkt.write_text(json.dumps(packet), encoding="utf-8")
-    env = {**os.environ, "PYTHONPATH": str(REPO_ROOT)}
+    # The harness command runs in a job dir the model wrote into: give it no daemon secrets.
+    env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(job_dir),
+           "LANG": "C.UTF-8", "PYTHONPATH": str(REPO_ROOT)}
     try:
         r = subprocess.run([sys.executable, "-m", "icarus.harness.runner", str(pkt)],
                            cwd=job_dir, capture_output=True, text=True, timeout=360, env=env)

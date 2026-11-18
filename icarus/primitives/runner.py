@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -29,6 +30,27 @@ from .reasoner import OpenAICompatReasoner, ReasonerError
 from .verify import verify
 
 CMD_TIMEOUT = 300
+DEFAULT_SANDBOX_IMAGE = "python:3.12-slim"
+
+
+def _child_env(job_dir: Path) -> dict:
+    """Model-planned commands never inherit the daemon's environment (tokens, keys)."""
+    return {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(job_dir), "LANG": "C.UTF-8"}
+
+
+def _sandboxed(argv: list[str], job_dir: Path) -> tuple[list[str], Path | None]:
+    """ICARUS_SANDBOX=docker: run the command in a throwaway container with no network,
+    no credentials, a read-only root and only the job dir mounted (cloud worker)."""
+    if os.environ.get("ICARUS_SANDBOX", "").strip().lower() != "docker":
+        return argv, job_dir
+    uid = f"{os.getuid()}:{os.getgid()}" if hasattr(os, "getuid") else "65534:65534"
+    return (["docker", "run", "--rm", "--network", "none", "--read-only",
+             "--tmpfs", "/tmp:rw,size=64m", "--cap-drop", "ALL",
+             "--security-opt", "no-new-privileges:true", "--pids-limit", "128",
+             "--memory", "512m", "--cpus", "1", "-u", uid,
+             "-e", "HOME=/job", "-e", "LANG=C.UTF-8",
+             "-v", f"{job_dir.resolve()}:/job:rw", "-w", "/job",
+             os.environ.get("ICARUS_SANDBOX_IMAGE", DEFAULT_SANDBOX_IMAGE), *argv], None)
 
 
 def _safe_path(job_dir: Path, rel: str) -> Path:
@@ -68,8 +90,10 @@ def execute(job: dict, plan: dict | None, job_dir: Path) -> dict:
             p.write_text(f["content"], encoding="utf-8")
         for argv in plan["commands"]:
             try:
-                r = subprocess.run(argv, cwd=job_dir, capture_output=True, text=True,
-                                   timeout=CMD_TIMEOUT)
+                run_argv, cwd = _sandboxed(argv, job_dir)
+                r = subprocess.run(run_argv, cwd=cwd, capture_output=True, text=True,
+                                   timeout=CMD_TIMEOUT,
+                                   env=_child_env(job_dir) if cwd is not None else None)
                 record["commands"].append({"argv": argv, "exit_code": r.returncode,
                                            "stdout": r.stdout[-4000:], "stderr": r.stderr[-4000:]})
             except subprocess.TimeoutExpired:

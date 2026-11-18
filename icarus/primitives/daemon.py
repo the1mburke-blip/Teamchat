@@ -13,6 +13,10 @@ Env:
     ICARUS_RUNNER_ID      name in claims/receipts (default: daemon)
     ICARUS_POLL_SECONDS   idle sleep (default: 60)
     ICARUS_LEASE_SECONDS  claim lease (default: 21600 = 6 h; model rotation can run long)
+    ICARUS_HOST           "any" (laptop, default) or "cloud": cloud skips laptop-only jobs
+    ICARUS_MAX_POOL_BREAKS  give up after N full pool exhaustions (default 0 = never);
+                          the cloud worker sets this so a job ends well inside its lease
+    ICARUS_SANDBOX        "docker": each planned command runs in a no-network container
     GEMINI_API_KEY        Google models (AI Plus subscription) for the model switcher
     OPENROUTER_API_KEY    optional; OpenRouter :free routes join the pool when set
     Pool order/eligibility: <clone>/icarus/runtime/approved-routes.json (see switcher.py)
@@ -31,7 +35,7 @@ import sys
 import time
 from pathlib import Path
 
-from .gitledger import ClaimLost, GitLedger, GitLedgerError
+from .gitledger import BLOCKED, ClaimLost, GitLedger, GitLedgerError
 from .reasoner import ReasonerError
 from .runner import execute
 from .identity import load_identity
@@ -54,9 +58,9 @@ def model_task(job: dict) -> dict:
 
 
 def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
-          lease_seconds: int = 21600) -> dict:
+          lease_seconds: int = 21600, host: str = "any") -> dict:
     try:
-        job = ledger.claim(runner_id, lease_seconds)
+        job = ledger.claim(runner_id, lease_seconds, host=host)
     except ClaimLost as e:
         return {"status": "claim_lost", "job": str(e)}
     if job is None:
@@ -87,6 +91,8 @@ def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Icarus daemon executor")
     ap.add_argument("--once", action="store_true")
+    ap.add_argument("--drain", type=int, default=0, metavar="N",
+                    help="run up to N cycles, stop early when idle (cloud worker)")
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     clone = os.environ.get("ICARUS_LEDGER_CLONE", "").strip()
@@ -104,7 +110,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"OWNER ASSISTANCE REQUIRED — set GEMINI_API_KEY for the model switcher\n"
               f"Evidence: {e}", file=sys.stderr)
         return 3
-    reasoner = ModelSwitcher(pool, identity=lambda: load_identity(clone))
+    reasoner = ModelSwitcher(pool, identity=lambda: load_identity(clone),
+                             max_pool_breaks=int(os.environ.get("ICARUS_MAX_POOL_BREAKS", "0")))
+    host = os.environ.get("ICARUS_HOST", "any").strip() or "any"
+    cycles = 0
     lease = int(os.environ.get("ICARUS_LEASE_SECONDS", "21600"))
     work = Path(os.environ.get("ICARUS_WORK_DIR", "/tmp/icarus-work"))
     runner_id = os.environ.get("ICARUS_RUNNER_ID", "daemon")
@@ -112,7 +121,8 @@ def main(argv: list[str] | None = None) -> int:
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     while True:
         try:
-            out = cycle(ledger, reasoner, runner_id, work, lease)
+            out = cycle(ledger, reasoner, runner_id, work, lease, host)
+            cycles += 1
             log.info(json.dumps({k: v for k, v in out.items() if k != "receipt"}
                                 | ({"verdict": out["receipt"]["verdict"]} if "receipt" in out else {})))
         except OwnerAuthError as e:
@@ -122,8 +132,13 @@ def main(argv: list[str] | None = None) -> int:
         except GitLedgerError as e:
             log.warning("ledger: %s", e)
             out = {"status": "ledger_error"}
+        ok = out["status"] in ("idle", "done", "queued", "claim_lost", BLOCKED)
         if a.once:
-            return 0 if out["status"] in ("idle", "done", "queued", "claim_lost") else 1
+            return 0 if ok else 1
+        if a.drain:
+            if out["status"] in ("idle", "ledger_error") or cycles >= a.drain:
+                return 0 if ok else 1
+            continue
         time.sleep(poll if out["status"] in ("idle", "ledger_error") else 1)
 
 

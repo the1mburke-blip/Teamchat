@@ -138,14 +138,17 @@ class GitLedger:
             self.sync()
             raise GitLedgerError("enqueue push rejected; re-synced, nothing queued")
 
-    def claim(self, runner_id: str, lease_seconds: int = 900) -> dict | None:
-        """Claim one claimable job. Returns None when idle; raises ClaimLost on a race."""
+    def claim(self, runner_id: str, lease_seconds: int = 900, host: str = "any") -> dict | None:
+        """Claim one claimable job. Returns None when idle; raises ClaimLost on a race.
+        host="cloud" skips jobs whose queue file sets "execution_target": "laptop-only"."""
         self.sync()
         now = time.time()
         for job_id in self.job_ids():
             j = self.job(job_id)
             s = j["state"]
             if s["status"] in FINAL:
+                continue
+            if host == "cloud" and j.get("execution_target") == "laptop-only":
                 continue
             if s["status"] == CLAIMED and s.get("lease_expires", 0) > now:
                 continue
