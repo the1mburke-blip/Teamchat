@@ -99,6 +99,18 @@ class GitLedger:
     def head(self) -> str:
         return self._git("rev-parse", "HEAD").stdout.strip()
 
+    def record_tool_call(self, job_id: str, runner_id: str, event: dict, tries: int = 3) -> None:
+        """Persist each sanitized external-tool event in the hash-chained ledger."""
+        if not isinstance(event, dict) or not event.get("tool_slug") or not event.get("status"):
+            raise GitLedgerError("tool event requires tool_slug and status")
+        for _ in range(tries):
+            self.sync()
+            chain_append(self.log_path, {"type": "tool_call", "job": job_id,
+                                         "runner": runner_id, "event": event})
+            if self._commit_push([self.log_path], "ledger: record external tool call"):
+                return
+        raise GitLedgerError(f"tool event for {job_id} not pushed after {tries} fresh re-syncs")
+
     # ---- reads -------------------------------------------------------------
     def _read(self, kind: str, job_id: str) -> dict | None:
         p = self.base / kind / f"{job_id}.json"
