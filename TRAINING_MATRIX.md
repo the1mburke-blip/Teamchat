@@ -2415,7 +2415,7 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - rule: a scheduled wake or CLAIM is not work completion. Authorized eligible workers must do the real assigned task in the same run, verify physical output, retain canonical receipt and independent adjudication. Never substitute sandbox/repository staging. Midnight audit stays read-only.
 - status: CONFIGURED; current scheduled pickup, completed task outcomes, and matching Gemini Notebook ingestion UNVERIFIED. See logs/2026-11-13-scheduled-real-results-loop.md.
 
-## HV-EXP-173 — Windows checkout breaks Linux container entrypoints (2026-11-17)
+## HV-EXP-184 — Windows checkout breaks Linux container entrypoints (2026-11-17)
 - proposed_by: Michael (approved commit); recorded by: Claude Code; cost: €0.
 - failure: icarus-primitives restart-looped with `/app/entrypoint.sh: 4: set: Illegal option -`. Git on Windows (`core.autocrlf=true`, no `.gitattributes`) checked out `docker/primitives-entrypoint.sh` with CRLF; sh read `set -eu\r`. Secrets and setup checks were fine. One owner script run was spent on it.
 - fix: LF-normalised the container files, rebuilt, and ran with the existing env file (never read). Result: `Up`, 0 restarts, log `{"status": "idle"}`. Durable fix: `.gitattributes` forces LF for `*.sh` only. A wider rule (`*.py`, `Dockerfile*`) was tried and withdrawn before push: some of those blobs are stored with CRLF, so the rule marked 42 files (including protected `icarus/core` and `icarus/runtime`) modified on every checkout and blocked the rebase.
@@ -2423,32 +2423,32 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - what not to retry: re-running the setup script or re-entering keys does not fix a CRLF entrypoint.
 - status: PARTIAL (self-verified by the executor; independent verification pending).
 
-## HV-EXP-174 — Preflight names every owner-only setup step and a realistic time (2026-11-17 run, Rule 43 review)
+## HV-EXP-185 — Preflight names every owner-only setup step and a realistic time (2026-11-17 run, Rule 43 review)
 - proposed_by: Michael (handover STAGE_4); executor: Claude (chat session); cost: €0. Input: HANDOVER-2026-11-17.json known_process_misses.
 - rule checked: template v3 rule_1 (pre-execution route lock).
 - miss: the ~30 min estimate ran over 2x; creating the GitHub token was an owner-only step that preflight never listed.
 - reusable principle: preflight lists every credential, token or env file the owner must create, before the first action, with the time it will really take.
 - status: PARTIAL (self-verified; independent verification pending).
 
-## HV-EXP-175 — Write job specs against the real gates, not assumptions (2026-11-17 run)
+## HV-EXP-186 — Write job specs against the real gates, not assumptions (2026-11-17 run)
 - rule checked: rule_1 route lock, rule_6 negative constraints.
 - miss: canary-001 hit HTTP 409 because main requires a PR with no bypass; canary-002 was vetoed twice because the model planned python3 while allowed_commands was [echo, sh].
 - reusable principle: before writing a verify_spec, read the target branch protection and state the allowed commands to the model inside the job (fixed in 1b9addf). A veto is correct gate behaviour, not a defect to work around.
 - status: PARTIAL (self-verified; independent verification pending).
 
-## HV-EXP-176 — Check a tool or command's scope before using it (2026-11-17 run)
+## HV-EXP-187 — Check a tool or command's scope before using it (2026-11-17 run)
 - rule checked: rule_1 route lock, rule_6 negative constraints.
 - miss: the built-in browser pane was tried for a clipboard paste it cannot do (Claude in Chrome can); `git add --renormalize` staged 42 files including protected icarus/core and icarus/runtime (caught before commit); line endings were not checked before the owner's first setup run (one owner run wasted).
 - reusable principle: confirm the capability first, scope git operations to the exact paths intended, and run `git ls-files --eol` on everything a Dockerfile copies before an owner builds.
 - status: PARTIAL (self-verified; independent verification pending).
 
-## HV-EXP-177 — Read back an artifact that actually exists (2026-11-17 run)
+## HV-EXP-188 — Read back an artifact that actually exists (2026-11-17 run)
 - rule checked: rule_5 evidence and physical readback.
 - miss: the readback asked for a log line from athenaSelfTest, which returns JSON without logging, so the line could never exist; SHA-256 comparison of the deployed file was used instead.
 - reusable principle: before naming a readback, confirm the artifact is produced; prefer content hashes of the deployed file.
 - status: PARTIAL (self-verified; independent verification pending).
 
-## HV-EXP-178 — An authored canary proves the executor, not autonomy (2026-11-18)
+## HV-EXP-189 — An authored canary proves the executor, not autonomy (2026-11-18)
 - proposed_by: Michael; recorded by Claude; cost: €0.
 - rule checked: rule_5 (no evidence = no claim), rule_3 (no self-grading of progress).
 - miss: Claude presented canary-004, a job Claude wrote and queued, as loop progress toward autonomy; misread the pulse's enqueue receipt ("EXECUTION_PARTIAL", "QUEUED (not executed)") as a partial run; and listed laptop dependence as a blocker although the agreed design is that the pulse queues all day and the laptop executor drains the queue when on. Owner called this model deception.
