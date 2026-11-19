@@ -162,3 +162,16 @@ def test_identity_read_from_main_while_ledger_on_other_branch(tmp_path, remote):
     git(tmp_path, "clone", "--quiet", "-b", "icarus-ledger", str(remote), str(c))
     text = load_identity(c)
     assert "NEW MAIN IDENTITY" in text  # memory edits on main reach the daemon
+
+
+def test_tool_call_events_are_durable_and_hash_chained(tmp_path, remote):
+    a = clone(tmp_path, remote, "a")
+    a.enqueue("j1", {"objective": "x"}, SPEC, "owner")
+    a.record_tool_call("j1", "gha-1", {"tool_slug": "BUFFER_CREATE_POST_DRAFT",
+                                          "kind": "action", "status": "started",
+                                          "arguments_sha256": "abc"})
+    reader = clone(tmp_path, remote, "reader")
+    assert chain_ok(reader.log_path)
+    events = [json.loads(line) for line in reader.log_path.read_text().splitlines()]
+    assert any(e.get("type") == "tool_call" and e.get("job") == "j1"
+               and e["event"].get("tool_slug") == "BUFFER_CREATE_POST_DRAFT" for e in events)
