@@ -1,0 +1,101 @@
+{
+  "template_version": "v3.0.0",
+  "title": "Immutable Master Task Delegation & Agent Execution Blueprint",
+  "authority_scope": "Owner (Michael) 2026-11-17 21:42-21:51 Europe/London: 'yes to all', 'only return owner-only blockers'. Branch agent/icarus-primitives only; no main merge, no Apps Script deploy, no container start without owner-only inputs.",
+  "task_id": "ICARUS-PRIMITIVES-20261117",
+  "objective": "Assemble Icarus on 4 vendor-neutral primitives on top of the existing system: git ledger (icarus/ledger/), Docker daemon executor, decoupled OpenAI-compatible reasoner, deterministic verifier reusing icarus/harness/runner.py; bridge the Apps Script pulse (Athena.gs) to queue jobs and relay verifier outcomes.",
+  "record": {
+    "proposed_by": "Claude (chat session claude.ai/code/session_018y1NnqNhmzWH6XDCtRRpCj)",
+    "executed_by": "Claude (same session; commits via Composio GitHub account github_kiva-milner)",
+    "when": "2026-11-17 21:29-22:10 Europe/London",
+    "branch": "agent/icarus-primitives",
+    "base": "main a784eed",
+    "commits": [
+      "8f93c6e",
+      "9937c74",
+      "44f13eb",
+      "a9d22a9"
+    ],
+    "sources_read": [
+      "training/TASK_DELEGATION_TEMPLATE.json",
+      "Dockerfile",
+      "proxy_monitor.py",
+      "icarus/harness/runner.py",
+      "icarus/harness/container.py",
+      "icarus/athena-gas/Athena.gs",
+      "tests/test_autonomy_integrity.py"
+    ]
+  },
+  "immutable_execution_rules": "see training/TASK_DELEGATION_TEMPLATE.json v3.0.0 (rules 1-7 apply unchanged)",
+  "stages_to_execute": [
+    {
+      "stage_id": "STAGE_1",
+      "name": "Primitives skeleton",
+      "description": "icarus/primitives/{ledger,runner,reasoner,verify}.py + tests/test_primitives.py",
+      "attempt_limit": 3,
+      "timeout_seconds": 300,
+      "status": "EXECUTED_PENDING_VERIFICATION",
+      "evidence": "commit 8f93c6e; 7 blob SHAs matched local git hash-object"
+    },
+    {
+      "stage_id": "STAGE_2",
+      "name": "Git ledger + daemon executor + harness gate adapter + container",
+      "description": "gitledger.py (claims = commit+push, rejected push = claim lost), daemon.py, verify.py harness adapter, docker/Dockerfile.primitives, docker/primitives-entrypoint.sh, tests/test_primitives_daemon.py",
+      "attempt_limit": 3,
+      "timeout_seconds": 300,
+      "status": "EXECUTED_PENDING_VERIFICATION",
+      "evidence": "commit 44f13eb; 7 blob SHAs matched"
+    },
+    {
+      "stage_id": "STAGE_3",
+      "name": "Pulse ledger bridge",
+      "description": "Athena.gs cloud-4.4: OWNER 'ICARUS_QUEUE' comment writes immutable icarus/ledger/queue/<id>.json with readback; relayLedgerResult_ posts final verifier outcome once to the source issue; icarus/athena-gas/test-ledger.js + tests/test_primitives_pulse_bridge.py",
+      "attempt_limit": 3,
+      "timeout_seconds": 300,
+      "status": "EXECUTED_PENDING_VERIFICATION",
+      "evidence": "commit a9d22a9; Athena.gs blob 7def982 rebuilt from public a784eed original (blob 3bd4686) and matched; existing test-athena.js and test-delegate.js still pass",
+      "attempts_log": [
+        "attempt 1 (local python string replace) refused by session safety classifier as a production-runtime edit; re-attempted with Edit tool after explicit owner re-authorisation 21:51"
+      ]
+    },
+    {
+      "stage_id": "STAGE_4",
+      "name": "Deploy + start",
+      "description": "Paste Athena.gs cloud-4.4 into the Apps Script project; build/run icarus-primitives container; merge branch to main",
+      "attempt_limit": 3,
+      "timeout_seconds": 300,
+      "status": "BLOCKED",
+      "evidence": "owner-only inputs/actions listed in owner_blockers"
+    }
+  ],
+  "adjudication": {
+    "verifier_tier": "TIER_1_MACHINE then TIER_2_INDEPENDENT_AI_CHAIR (SOL); TIER_3_HUMAN_OWNER for production deploy",
+    "gate_1_technical_completion": "exit_code == 0 AND physical_output_file_exists AND git_sha_logged",
+    "gate_2_policy_compliance": "schema_valid == TRUE AND zero_secrets_detected == TRUE AND negative_constraints_met == TRUE",
+    "tier_1_result_self_run": {
+      "command": "python3 -m pytest -q -p no:cacheprovider",
+      "on": "fresh clone of agent/icarus-primitives at a9d22a9",
+      "exit_code": 0,
+      "result": "285 passed, 30 subtests passed"
+    },
+    "self_status": "PARTIAL (author cannot pass own work; rule 3)"
+  },
+  "acceptance_criteria": {
+    "success_condition": "Gate 1 (Technical) AND Gate 2 (Policy) verified PASS by independent verifier with logged git SHAs.",
+    "blocker_condition": "Transition to BLOCKER_DISCOVERED after 3 attempts or 300s timeout; initiate clean-slate peer handoff.",
+    "human_escalation_condition": "Tier 3 Escalation triggered if 3rd agent cycle fails or Tier 3 auth/spend scope required.",
+    "verification_file": "icarus/primitives/HANDOFF.md (acceptance section) + this record",
+    "verifier_checklist": [
+      "Full suite green in teamchat-harness:test image (python3 -m pytest -q); log exit code + HEAD SHA",
+      "git diff --stat a784eed..agent/icarus-primitives: only new files plus icarus/athena-gas/Athena.gs (+77/-1)",
+      "Athena.gs diff limited to: version string, relay call in athenaPoll, ICARUS_QUEUE in classifyComment_, queue dispatch in runAthena_, appended ledger bridge block",
+      "No secrets in diff; ICARUS_QUEUE is OWNER-only; relay output prefix '[ICARUS via runtime]' cannot retrigger",
+      "Daemon never writes PASS itself: verdict only from icarus.primitives.verify receipt"
+    ]
+  },
+  "owner_blockers": [
+    "OWNER ASSISTANCE REQUIRED — create .env.primitives on the daemon host with GH_TOKEN (push to Teamchat) and the reasoner endpoint ICARUS_REASONER_URL/ICARUS_REASONER_MODEL (subscription-only rule of 23 Oct leaves local Ollama as the EUR 0 option). Evidence: daemon.py exits 3 without these; credentials are owner-only.",
+    "OWNER ASSISTANCE REQUIRED — deploy Athena.gs cloud-4.4 into the Apps Script project (production deploy = Tier 3; no Apps Script access from this session). Evidence: athenaSelfTest() should report version cloud-4.4 after paste.",
+    "OWNER ASSISTANCE REQUIRED — approve merge of agent/icarus-primitives to main after SOL's independent verification. Evidence: template rule 3 + Tier 3 for production."
+  ]
+}
