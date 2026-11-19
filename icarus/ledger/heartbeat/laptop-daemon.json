@@ -6,5 +6,5 @@
   "note": "liveness only; job evidence is icarus/ledger/state and run_log.jsonl",
   "runner": "laptop-daemon",
   "started_utc": "2026-11-18T23:11:11Z",
-  "utc": "2026-11-19T01:43:22Z"
+  "utc": "2026-11-19T02:13:40Z"
 }
