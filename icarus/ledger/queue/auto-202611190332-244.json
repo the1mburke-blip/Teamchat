@@ -1,0 +1,31 @@
+{
+  "author": "icarus:pulse-self-queue",
+  "max_attempts": 2,
+  "task": {
+    "title": "Draft the Icarus daemon operator checklist (markdown file)",
+    "objective": "Create one markdown file named operator-checklist.md containing a numbered checklist (10-15 items) for a person operating the Icarus laptop daemon: checking the container is up (docker ps), reading last log lines (docker logs --tail 20 icarus-primitives), checking heartbeat file icarus/ledger/heartbeat/laptop-daemon.json on branch icarus-ledger, and checking the watchdog log in %USERPROFILE%.",
+    "evidence_required": "operator-checklist.md exist in the job directory",
+    "source_issue": 244,
+    "originated_by": "icarus (pulse self-queue, no human or agent comment)",
+    "reason": "The issue explicitly requests a standalone markdown file deliverable operator-checklist.md which I can fully draft and output in the sandbox without network or credentials."
+  },
+  "verify_spec": {
+    "expected_files": [
+      "operator-checklist.md"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh",
+      "cat",
+      "mkdir",
+      "python3"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY",
+      "GITHUB_PAT",
+      "OPENROUTER_API_KEY",
+      "ghp_"
+    ]
+  }
+}
