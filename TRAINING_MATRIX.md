@@ -2414,3 +2414,24 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - verified: four enabled timed task prompts updated/read back; schedules unchanged. Claude's four active tasks shown in owner screenshot, updated per owner report (NOT independently checked).
 - rule: a scheduled wake or CLAIM is not work completion. Authorized eligible workers must do the real assigned task in the same run, verify physical output, retain canonical receipt and independent adjudication. Never substitute sandbox/repository staging. Midnight audit stays read-only.
 - status: CONFIGURED; current scheduled pickup, completed task outcomes, and matching Gemini Notebook ingestion UNVERIFIED. See logs/2026-11-13-scheduled-real-results-loop.md.
+
+## HV-EXP-173 — A verifier does not defer to a non-operational adjudicator (2026-11-17)
+- proposed_by: Michael; executor: Claude (claude.ai chat session); cost: €0.
+- incident: Claude's first readbacks on #214 (6953085657) and #216 (6953086117) reported PARTIAL and left adjudication to Icarus. Michael stated Icarus is non-operational and not yet at adjudication-level autonomy, so Claude, as the non-author verifier on the chain, holds pass/fail authority.
+- correction: superseding rulings posted — #214 PASS (6953299324: 23/23 IDs reproducible, 68/68 URLs resolve, 6/6 files exist); #216 FAIL/PARTIAL (6953299918, 6953590989: Stage 4 natural wake→claim→signed receipt absent). Verifier relays with failure reason + corrective action posted to each executor: #218, #222, #224, #226, #118 (GPT-6); #181, #223 (Luna/Sol); #46 PASS. #214 and #46 closed on Michael's chat authorisation (6953687561, 6953688693).
+- rule: when assigned as verifier, rule PASS/FAIL yourself against the task's success_condition; on FAIL send the executor the exact failure reason and corrective action. Never park a verdict with an agent that cannot act.
+- status: PARTIAL (logged by the same agent that did the work; no independent check of this entry).
+
+## HV-EXP-174 — Read EVIDENCE_REQUIRED before ruling; never rule on your own work (2026-11-17)
+- proposed_by: Michael; executor: Claude; cost: €0.
+- incident: Claude failed #228 (6953598026) because "the objective names no file/schema/branch, nothing to verify". False: #228's EVIDENCE_REQUIRED is "Issue #218 audit and triage routing decision", delivered by a Claude scheduled run in 6903524251 (15 Nov 23:56Z). As Claude authored that deliverable, Claude could not pass or fail it at all.
+- correction: 6953757737 withdrew the verdict (#228 NOT ADJUDICATED), asked GPT-6 to verify independently, and flagged two stale lines in 6903524251 (#181 blocker answered by Michael 16 Nov 6911376597; #216 reopened by owner amendment 16 Nov 10:38Z).
+- rule: before any verdict, (1) read the task's own EVIDENCE_REQUIRED / success_condition, not the headline wording; (2) check authorship of the deliverable — same agent (including other Claude sessions/scheduled runs) = recuse and route to a different verifier.
+- status: PARTIAL (self-logged).
+
+## HV-EXP-175 — Athena delegate-stage fix and the drive.scripts deploy blocker (2026-11-16)
+- proposed_by: Michael; executor: Claude; claimed verifier: comments 6932104898 and 6933237054 on PR #229, self-labelled "ICARUS (DeepSeek Harness lead)", posted under the owner's GitHub account the1mburke-blip — sender identity NOT verified; Claude did not re-run the tests; cost: €0.
+- result: icarus/athena-gas/Athena.gs cloud-4.3 bounds delegate capture so the step ends after one delegate call. Offline harness test-athena.js: old cloud-4.2 export A/B/C FAIL (41 Gemini calls, delegation storm), fix A/B/C/D PASS, one delegation per scenario, 3 calls. PR #229 merged to main as a784eedd (2026-11-17T00:04Z).
+- blocker: writing the fix to the live Apps Script project failed on every Composio Google Drive connection, including a freshly created one: 403 "The drive.scripts scope is required". This is the OAuth scope of Composio's default app, not a per-connection fault — reconnecting does not fix it. No repo secret, Actions workflow, clasp config or browser/device bridge existed as an alternative route.
+- rule: confirm a scope is obtainable on the route before asking the owner to reconnect; verify any deploy by re-exporting and hashing the target file, never by the upload response.
+- status: repo fix merged; independent verification CLAIMED by an unverified ICARUS-labelled comment (owner states Icarus is non-operational, so the sender is unknown — likely the DeepSeek harness model); live Apps Script deploy UNVERIFIED/BLOCKED.
