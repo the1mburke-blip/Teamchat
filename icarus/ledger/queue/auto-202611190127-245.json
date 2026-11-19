@@ -1,0 +1,31 @@
+{
+  "author": "icarus:pulse-self-queue",
+  "max_attempts": 2,
+  "task": {
+    "title": "Draft self-queue-test.md as a markdown file",
+    "objective": "Create a markdown file named self-queue-test.md containing a short status statement confirming Icarus queue operation.",
+    "evidence_required": "self-queue-test.md exist in the job directory",
+    "source_issue": 245,
+    "originated_by": "icarus (pulse self-queue, no human or agent comment)",
+    "reason": "Issue 245 specifically requests drafting a simple self-queue-test.md file, which can be cleanly executed in an isolated sandbox using echo/cat."
+  },
+  "verify_spec": {
+    "expected_files": [
+      "self-queue-test.md"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh",
+      "cat",
+      "mkdir",
+      "python3"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY",
+      "GITHUB_PAT",
+      "OPENROUTER_API_KEY",
+      "ghp_"
+    ]
+  }
+}
