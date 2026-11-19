@@ -1,10 +1,10 @@
 {
   "build": "b675139",
   "interval_seconds": 1800,
-  "jobs_settled_since_start": 1,
+  "jobs_settled_since_start": 2,
   "last_status": "idle",
   "note": "liveness only; job evidence is icarus/ledger/state and run_log.jsonl",
   "runner": "laptop-daemon",
   "started_utc": "2026-11-18T23:11:11Z",
-  "utc": "2026-11-19T01:12:54Z"
+  "utc": "2026-11-19T01:43:22Z"
 }
