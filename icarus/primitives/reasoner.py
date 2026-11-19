@@ -12,6 +12,7 @@ llama.cpp server, vLLM, or a hosted provider) - swap by env vars:
 Plan contract (what the model must return):
     {"commands": [["argv0", "arg1", ...], ...],
      "files":    [{"path": "relative/path", "content": "..."}, ...],
+     "tool_calls": [{"tool_slug": "allowed action", "arguments": {...}}, ...],
      "notes":    "optional free text"}
 """
 from __future__ import annotations
@@ -24,7 +25,9 @@ import urllib.request
 SYSTEM_PROMPT = (
     "You plan one job. Reply with a single JSON object only, keys: "
     '"commands" (list of argv lists, no shell), "files" (list of '
-    '{"path","content"} with relative paths), "notes" (string). No prose.'
+    '{"path","content"} with relative paths), "tool_calls" (list of '
+    '{"tool_slug","arguments"} only from task.limits.allowed_tools), '
+    '"notes" (string). No prose. Never publish or send.'
 )
 
 
@@ -49,6 +52,7 @@ def parse_plan(text: str) -> dict:
         raise ReasonerError("plan must be a JSON object")
     plan.setdefault("commands", [])
     plan.setdefault("files", [])
+    plan.setdefault("tool_calls", [])
     if not isinstance(plan["commands"], list) or not all(
         isinstance(c, list) and c and all(isinstance(a, str) for a in c)
         for c in plan["commands"]
@@ -59,6 +63,11 @@ def parse_plan(text: str) -> dict:
         and isinstance(f.get("content"), str) for f in plan["files"]
     ):
         raise ReasonerError("files must be a list of {path, content} strings")
+    if not isinstance(plan["tool_calls"], list) or not all(
+        isinstance(c, dict) and isinstance(c.get("tool_slug"), str)
+        and isinstance(c.get("arguments", {}), dict) for c in plan["tool_calls"]
+    ):
+        raise ReasonerError("tool_calls must be a list of {tool_slug, arguments} objects")
     return plan
 
 
