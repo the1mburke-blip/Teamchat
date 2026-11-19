@@ -85,7 +85,8 @@ def harness_gate(job_dir: Path, task_id: str, h: dict) -> dict:
             "detail": (r.stderr or r.stdout)[-2000:]}
 
 
-def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job") -> dict:
+def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job",
+           tool_desk=None, planned_tools: list | None = None) -> dict:
     """execution = {"plan_valid": bool, "commands": [{"argv": [...], "exit_code": int,
     "stdout": str, "stderr": str}], "git_sha": str|None, "error": str|None}"""
     job_dir = Path(job_dir)
@@ -113,6 +114,23 @@ def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job
         harness = harness_gate(job_dir, task_id, spec["harness"])
         if harness["verdict"] != "PASS":
             g1.append(f"harness gate exit {harness['exit_code']}")
+
+    # External actions are verified by a separate readback through the tool desk.
+    tool_readback = None
+    if planned_tools:
+        if execution.get("tool_error"):
+            g1.append(f"tool execution error: {execution['tool_error']}")
+        elif tool_desk is None:
+            g1.append("tool desk unavailable for independent readback")
+        else:
+            try:
+                tool_readback = tool_desk.verify_calls(
+                    planned_tools, execution.get("tool_calls", []), spec, job_dir)
+                if not tool_readback.get("pass"):
+                    g1.append("external tool readback failed")
+            except Exception as e:
+                tool_readback = {"pass": False, "reasons": [type(e).__name__]}
+                g1.append(f"external tool readback error: {type(e).__name__}")
 
     # ---- Gate 2: policy
     if not execution.get("plan_valid"):
@@ -154,4 +172,5 @@ def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job
         "files_sha256": files,
         "git_sha": execution.get("git_sha"),
         "harness": harness,
+        "tool_readback": tool_readback,
     }
