@@ -26,9 +26,9 @@ function fmt(d, f) {
 }
 
 function makeEnv(scenario) {
-  const props = { GITHUB_PAT: SECRET, GEMINI_API_KEY: GKEY, ATHENA_CUTOVER_V1: JSON.stringify(config),
+  const props = { GITHUB_PAT: SECRET, GEMINI_API_KEY: GKEY, ATHENA_CUTOVER_V1: JSON.stringify(config), ATHENA_PROPOSAL_PULSE_ENABLED_V1: 'false',
     [QUARANTINE]: 'QUARANTINED_UNCERTAIN', [PROOF]: proof(config) };
-  const writes = {}, posted = [], remoteReceipts = [], geminiCalls = [], requests = [];
+  const writes = {}, posted = [], remoteReceipts = [], geminiCalls = [], requests = [], createdIssues = [];
   const logs = [];
   let locked = false;
   const blob = (x) => {
@@ -93,10 +93,21 @@ function makeEnv(scenario) {
       if (scenario.receiptListError && scenario.receiptListError()) return res(503, {});
       return pageOf(remoteReceipts.filter((c) => c.issue_url === GH + '/issues/' + issue), rest);
     }
-    if (/^issues\/\d+$/.test(rest)) return res(200, { number: Number(rest.split('/')[1]), title: 'Test issue', body: 'body', state: 'open', comments: 0 });
+    if (/^issues\/\d+$/.test(rest)) {
+      const number = Number(rest.split('/')[1]);
+      return res(200, createdIssues.find((x) => x.number === number) || { number, title: 'Test issue', body: 'body', state: 'open', comments: 0, assignees: [] });
+    }
     if (rest.startsWith('issues?') && m === 'post') return res(201, { number: 999, html_url: 'https://github.com/i/999' });
-    if (rest.startsWith('issues?')) return res(200, [{ number: 120, title: 'Phone loop', state: 'open', comments: 3 }]);
-    if (rest === 'issues' && m === 'post') { posted.push({ newIssue: body.title }); return res(201, { number: 999, html_url: 'https://github.com/i/999' }); }
+    if (rest.startsWith('issues?')) {
+      const rows = rest.includes('state=all') ? (scenario.issuesAll || scenario.issues || [{ number: 120, title: 'Phone loop', state: 'open', comments: 3 }])
+        : (scenario.issues || [{ number: 120, title: 'Phone loop', state: 'open', comments: 3 }]);
+      return res(200, rows);
+    }
+    if (rest === 'issues' && m === 'post') {
+      const number = 999 + createdIssues.length;
+      const issue = { number, html_url: 'https://github.com/i/' + number, title: body.title, body: body.body, state: 'open', comments: 0, assignees: [] };
+      createdIssues.push(issue); posted.push({ newIssue: body.title }); return res(201, issue);
+    }
     return res(404, 'no stub for ' + rest);
   } };
   const ctx = {
@@ -115,7 +126,7 @@ function makeEnv(scenario) {
   };
   vm.createContext(ctx);
   vm.runInContext(SRC, ctx, { filename: 'Athena.gs' });
-  return { ctx, props, writes, posted, remoteReceipts, geminiCalls, requests, logs };
+  return { ctx, props, writes, posted, remoteReceipts, geminiCalls, requests, createdIssues, logs };
 }
 
 let failures = 0;
@@ -504,6 +515,120 @@ test('runtime budget exhaustion prevents fallback request', () => {
   env.ctx.athenaPoll();
   assert.strictEqual(env.geminiCalls.length, 1);
   assert(receiptOf(env).includes('call budget exhausted'));
+});
+
+
+test('idle proposal pulse creates one review-only proposal after real reads and issue readback', () => {
+  const proposalArgs = { title: 'Draft a Niche Blueprint starter checklist',
+    objective: 'Create a concise starter checklist that helps a new reader apply the Niche Blueprint.',
+    rationale: 'The goal file requires evidence-backed organic work and the latest run records show no current proposal.',
+    evidence: ['icarus/goal.md', 'STATUS.md', 'icarus/memory/current-state.md'],
+    expected_outcome: 'A reusable checklist draft that can be reviewed before any distribution.',
+    next_step: 'Prepare the checklist as an unpublished draft after owner approval.', cost: 'EUR 0' };
+  const env = makeEnv({ comments: [], issues: [], gemini: (n) => n === 1
+    ? { answer: '', tool: { name: 'propose', args: proposalArgs } }
+    : { answer: 'Created one owner-review proposal.', tool: null, unverified_claims: [], needs_owner: false, owner_reason: '', lesson: '' } });
+  const result = env.ctx.runAthena_({ id: 'proposal-e2e', actor: 'schedule', issue: 0, kind: 'proposal',
+    body: 'ICARUS_RUN Create one evidence-backed, zero-cost owner-review proposal for selling the Niche Blueprint V2. Read the goal and latest results, then call propose exactly once. Do not execute the proposed work.\nVERIFY_FILE: icarus/goal.md\nVERIFY_FILE: STATUS.md\nVERIFY_FILE: icarus/memory/current-state.md' }, 'f'.repeat(40));
+  assert.strictEqual(result.verdict, 'PASS', result.payload.slice(-1800));
+  assert.strictEqual(env.createdIssues.length, 1);
+  const issue = env.createdIssues[0];
+  assert(issue.title.startsWith('[PROPOSAL]'));
+  assert(issue.body.includes('Status: PROPOSED'));
+  assert(issue.body.includes('NOT QUEUED FOR EXECUTION'));
+  assert(issue.body.includes('Veto this proposal by closing the issue'));
+  assert.strictEqual(issue.assignees.length, 0);
+  assert(env.requests.some((r) => r.method === 'get' && r.rest === 'issues/999'), 'proposal issue was not read back');
+  assert.strictEqual(Object.keys(env.writes).length, 0, 'proposal created a repository write');
+  assert(result.payload.includes('idle goal proposal pulse'));
+});
+
+test('proposal tool rejects nonzero spend, live actions, and off-goal work', () => {
+  const base = { title: 'Draft a Niche Blueprint starter checklist', objective: 'Create a Niche Blueprint starter checklist for new readers.',
+    rationale: 'The goal file supports a verified, organic draft and no spend.', evidence: ['icarus/goal.md'],
+    expected_outcome: 'A reviewable unpublished checklist.', next_step: 'Prepare an unpublished draft.', cost: 'EUR 0' };
+  const env = makeEnv({ comments: [], issues: [] });
+  const R = env.ctx.newRun_({ id: 'proposal-test', actor: 'schedule', issue: 0, kind: 'proposal' });
+  R.cfg = env.ctx.loadCfg_(R); R.kind = 'proposal'; R.cfg.tools = env.ctx.LOOP_READ.concat(['propose']);
+  assert(env.ctx.tPropose_(R, Object.assign({}, base, { cost: 'EUR 1' })).startsWith('DENIED:'));
+  assert(env.ctx.tPropose_(R, Object.assign({}, base, { next_step: 'Publish to Instagram now.' })).startsWith('DENIED:'));
+  assert(env.ctx.tPropose_(R, Object.assign({}, base, { title: 'Draft a generic checklist', objective: 'Create a generic checklist for any business.' })).startsWith('DENIED:'));
+  assert.strictEqual(env.createdIssues.length, 0);
+});
+
+test('proposal tool refuses while a delegated task or proposal is already open', () => {
+  const args = { title: 'Draft a Niche Blueprint starter checklist', objective: 'Create a Niche Blueprint starter checklist for new readers.',
+    rationale: 'The goal file supports a verified, organic draft and no spend.', evidence: ['icarus/goal.md'],
+    expected_outcome: 'A reviewable unpublished checklist.', next_step: 'Prepare an unpublished draft.', cost: 'EUR 0' };
+  for (const issue of [
+    { number: 71, title: '[T1] [REQUESTED] Existing task', state: 'open' },
+    { number: 72, title: '[PROPOSAL] Existing proposal', state: 'open' }
+  ]) {
+    const env = makeEnv({ comments: [], issues: [issue] });
+    const R = env.ctx.newRun_({ id: 'proposal-test', actor: 'schedule', issue: 0, kind: 'proposal' });
+    R.cfg = env.ctx.loadCfg_(R); R.kind = 'proposal'; R.cfg.tools = env.ctx.LOOP_READ.concat(['propose']);
+    assert(env.ctx.tPropose_(R, args).startsWith('DENIED:'));
+    assert.strictEqual(env.createdIssues.length, 0);
+  }
+});
+
+test('proposal pulse respects idle state, source availability and two-hour cooldown', () => {
+  const env = makeEnv({ comments: [], issues: [] });
+  env.props.ATHENA_PROPOSAL_PULSE_ENABLED_V1 = 'true';
+  const R = env.ctx.newRun_({ id: 'poll', actor: 'poll' });
+  const props = env.ctx.PropertiesService.getScriptProperties();
+  const cutover = { sourceRevision: 'f'.repeat(40), hourlyReceiptIssue: 42 };
+  let captured = null;
+  env.ctx.ghGet_ = () => ({ code: 200, text: '# Goal\nNiche Blueprint V2\nSpend ceiling EUR 0' });
+  env.ctx.gh_ = () => ({ code: 200, text: '[]' });
+  env.ctx.executeAttempt_ = (_R, _props, _cutover, ev) => { captured = ev; };
+  env.ctx.proposeIfIdle_(R, props, cutover);
+  assert(captured && captured.kind === 'proposal' && captured.actor === 'schedule');
+  assert(captured.body.includes('VERIFY_FILE: icarus/goal.md'));
+  assert(env.props.ATHENA_PROPOSAL_LAST_AT_V1);
+  captured = null;
+  env.ctx.proposeIfIdle_(R, props, cutover);
+  assert.strictEqual(captured, null, 'cooldown did not suppress a second proposal');
+});
+
+test('proposal pulse does not run while a task or proposal is open or goal is unavailable', () => {
+  for (const rows of [
+    [{ number: 81, title: '[T1] [REQUESTED] Existing task', state: 'open' }],
+    [{ number: 82, title: '[PROPOSAL] Existing proposal', state: 'open' }]
+  ]) {
+    const env = makeEnv({ comments: [], issues: rows });
+    env.props.ATHENA_PROPOSAL_PULSE_ENABLED_V1 = 'true';
+    const R = env.ctx.newRun_({ id: 'poll', actor: 'poll' });
+    const props = env.ctx.PropertiesService.getScriptProperties();
+    let calls = 0;
+    env.ctx.ghGet_ = () => ({ code: 200, text: '# Goal\nNiche Blueprint V2\nSpend ceiling EUR 0' });
+    env.ctx.gh_ = () => ({ code: 200, text: JSON.stringify(rows) });
+    env.ctx.executeAttempt_ = () => { calls++; };
+    env.ctx.proposeIfIdle_(R, props, { sourceRevision: 'f'.repeat(40), hourlyReceiptIssue: 42 });
+    assert.strictEqual(calls, 0);
+  }
+  const missing = makeEnv({ comments: [], issues: [] });
+  missing.props.ATHENA_PROPOSAL_PULSE_ENABLED_V1 = 'true';
+  const R = missing.ctx.newRun_({ id: 'poll', actor: 'poll' });
+  let calls = 0;
+  missing.ctx.ghGet_ = () => ({ code: 404, text: null });
+  missing.ctx.gh_ = () => ({ code: 200, text: '[]' });
+  missing.ctx.executeAttempt_ = () => { calls++; };
+  missing.ctx.proposeIfIdle_(R, missing.ctx.PropertiesService.getScriptProperties(), { sourceRevision: 'f'.repeat(40), hourlyReceiptIssue: 42 });
+  assert.strictEqual(calls, 0);
+});
+
+test('poll invokes proposal pulse only when no owner command is waiting', () => {
+  const idle = makeEnv({ comments: [], gemini: () => ({ answer: 'unused', tool: null }) });
+  idle.props.ATHENA_PROPOSAL_PULSE_ENABLED_V1 = 'true';
+  let calls = 0; idle.ctx.proposeIfIdle_ = () => { calls++; };
+  idle.ctx.athenaPoll();
+  assert.strictEqual(calls, 1);
+  const busy = makeEnv({ comments: ownerComment('ICARUS_RUN read STATUS.md\nloop: off\nVERIFY_FILE: STATUS.md'), gemini: () => ({ answer: 'done', tool: null }) });
+  busy.props.ATHENA_PROPOSAL_PULSE_ENABLED_V1 = 'true';
+  let busyCalls = 0; busy.ctx.proposeIfIdle_ = () => { busyCalls++; };
+  busy.ctx.athenaPoll();
+  assert.strictEqual(busyCalls, 0);
 });
 
 console.log(failures ? failures + ' FAILED' : 'all passed');
