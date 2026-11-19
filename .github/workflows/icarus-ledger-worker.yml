@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25          # hard stop, inside the 30-minute lease
     env:
-      CODE_SHA: 506c21dcb75ef122067b23b4f7c862578c7c07ea     # pinned worker source (agent/icarus-cloud-worker)
+      CODE_SHA: ec8ff1b9d4df10272b9ea5bab24dea90deb225d3     # pinned worker source (agent/icarus-cloud-worker)
     steps:
       - name: Worker source (pinned SHA)
         uses: actions/checkout@v4
@@ -45,6 +45,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          COMPOSIO_API_KEY: ${{ secrets.COMPOSIO_API_KEY }}
           PYTHONPATH: ${{ github.workspace }}/code
           ICARUS_LEDGER_CLONE: ${{ github.workspace }}/ledger
           ICARUS_LEDGER_BRANCH: icarus-ledger
