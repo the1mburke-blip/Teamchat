@@ -19,6 +19,7 @@ Env:
     ICARUS_SANDBOX        "docker": each planned command runs in a no-network container
     GEMINI_API_KEY        Google models (AI Plus subscription) for the model switcher
     OPENROUTER_API_KEY    optional; OpenRouter :free routes join the pool when set
+    COMPOSIO_API_KEY      required only for job-authorized external tool calls
     Pool order/eligibility: <clone>/icarus/runtime/approved-routes.json (see switcher.py)
 
 Run:  python3 -m icarus.primitives.daemon            (loop)
@@ -41,6 +42,7 @@ from .runner import execute
 from .identity import load_identity
 from .switcher import ModelSwitcher, OwnerAuthError, load_pool
 from .verify import verify
+from .tool_desk import ToolDesk, ToolDeskError, model_tool_contract
 
 log = logging.getLogger("icarus.daemon")
 
@@ -52,6 +54,9 @@ def model_task(job: dict) -> dict:
     limits = {"expected_files": spec.get("expected_files", [])}
     if spec.get("allowed_commands") is not None:
         limits["allowed_commands"] = spec["allowed_commands"]
+    allowed_tools = model_tool_contract(spec)
+    if allowed_tools:
+        limits["allowed_tools"] = allowed_tools
     limits["note"] = ("Use only allowed_commands as argv[0] (or no commands at all). Files listed in "
                       "'files' are written for you, so creating a file needs no command.")
     return {**job["task"], "limits": limits}
@@ -65,6 +70,7 @@ def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
         return {"status": "claim_lost", "job": str(e)}
     if job is None:
         return {"status": "idle"}
+    head_at_claim = ledger.head()
     attempt = job["state"]["attempts"] + 1
     job_dir = work_dir / job["id"] / f"attempt-{attempt}"
     job_dir.mkdir(parents=True, exist_ok=True)
@@ -77,9 +83,19 @@ def cycle(ledger: GitLedger, reasoner, runner_id: str, work_dir: Path,
     record = execute(job, plan, job_dir)
     if plan_error:
         record["error"] = plan_error
-    receipt = verify(job_dir, job["verify_spec"], record, task_id=job["id"])
+    planned_tools = plan.get("tool_calls", []) if plan else []
+    desk = None
+    if planned_tools:
+        desk = ToolDesk(event_logger=lambda event: ledger.record_tool_call(job["id"], runner_id, event))
+        try:
+            record["tool_calls"] = desk.execute_calls(planned_tools, job["verify_spec"], job_dir)
+        except ToolDeskError as e:
+            record["tool_error"] = str(e)
+            record["tool_calls"] = list(desk.receipts)
+    receipt = verify(job_dir, job["verify_spec"], record, task_id=job["id"],
+                     tool_desk=desk, planned_tools=planned_tools)
     receipt["models"] = list(getattr(reasoner, "trace", []))
-    receipt["ledger_head_at_claim"] = ledger.head()
+    receipt["ledger_head_at_claim"] = head_at_claim
     (job_dir / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
     try:
         status = ledger.settle(job["id"], runner_id, receipt)
