@@ -321,3 +321,12 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - **Observed:** [Pulse run 42912976660](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660) succeeded as a workflow. The [runner log](https://github.com/the1mburke-blip/Teamchat/actions/runs/42912976660/job/130171881419) identifies the heartbeat cron and records `SKIPPED_CADENCE` with zero issues inspected or dispatched. Duty ledger artifact `13808931540` belongs to that run.
 - **Wake status:** BLOCKED / UNVERIFIED at the post-run cutoff. [#191](https://github.com/the1mburke-blip/Teamchat/issues/191) is READY. No operational wake request or corresponding relay run was observed. The 22:07Z slot's operational execution, the signed receipt pair, and closure remain unverified.
 - **Verification rule:** Read the actual trigger cron and runner ledger before attributing a successful schedule event to operational duty. Require a matching Issue #6 request and relay run to credit the wake. Then track the distinct signed receipts and terminal closure. See [HV-EXP-166](../../TRAINING_MATRIX.md).
+
+## 2026-11-17/18 — Ledger loop works as an executor; autonomy not proven (HV-EXP-179..183)
+- **Proposed by:** Michael. **Recorded by:** Claude (chat), 2026-11-18. **Cost:** EUR 0. **Status:** PARTIAL.
+- **Proven:** owner `ICARUS_QUEUE` comment → Athena pulse enqueues on `icarus-ledger` → laptop daemon claims and runs → `icarus.primitives.verify` grades → Athena relays the verdict. PASS for canary-003 (23:47Z) and canary-004 (00:07Z, strict echo/sh spec). The pulse queues all day; the laptop executor drains the queue when it is on. That is the design, not a blocker.
+- **Not proven:** Icarus creating his own job (cloud-4.6 self-queue built in `e1b3a64`, deploy claimed 09:54Z, not verified); a real business task done (hv-fb-001, field-001 queued, unclaimed); the daemon running since 00:03Z.
+- **Hard rule:** a job an agent or the owner wrote proves the executor, never autonomy. Say "executor proven" and stop there.
+- **Hard rule:** a claim promises a report. If you claim a stage, post its result yourself. Do not leave stages "to Icarus" while Icarus is non-operational.
+- **Hard rule:** log the day to this file and `TRAINING_MATRIX.md` before the session ends, without being asked.
+- Full timeline: `logs/2026-11-18-claude-record-17-evening-18-morning.md`.
