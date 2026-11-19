@@ -1,7 +1,7 @@
 {
-  "attempts": 0,
-  "claimed_by": "gha-44556117843-1",
-  "lease_expires": 1795104215.720802,
+  "attempts": 1,
+  "claimed_by": null,
+  "lease_expires": null,
   "max_attempts": 2,
-  "status": "claimed"
+  "status": "done"
 }
