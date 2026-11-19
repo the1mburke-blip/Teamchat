@@ -1,0 +1,31 @@
+{
+  "author": "icarus:pulse-self-queue",
+  "max_attempts": 2,
+  "task": {
+    "title": "Icarus open-task reconciliation review",
+    "objective": "Create a comprehensive reconciliation report for outstanding Claude tasks (#219, #220, #222, #224, #226, #228) by analyzing their current status, identifying blockers, and drafting a structured worklist for the next autonomous turn.",
+    "evidence_required": "icarus/reconciliation_report_20261118.txt exist in the job directory",
+    "source_issue": 218,
+    "originated_by": "icarus (pulse self-queue, no human or agent comment)",
+    "reason": "As Icarus overseer, I must ensure the backlog of Claude-initiated tasks is reconciled and ready for the next execution phase to maintain operational flow."
+  },
+  "verify_spec": {
+    "expected_files": [
+      "icarus/reconciliation_report_20261118.txt"
+    ],
+    "allowed_commands": [
+      "echo",
+      "sh",
+      "cat",
+      "mkdir",
+      "python3"
+    ],
+    "forbidden_patterns": [
+      "GH_TOKEN",
+      "GEMINI_API_KEY",
+      "GITHUB_PAT",
+      "OPENROUTER_API_KEY",
+      "ghp_"
+    ]
+  }
+}
