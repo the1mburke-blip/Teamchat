@@ -1,0 +1,57 @@
+# Icarus cloud executor (ICARUS-CLOUDIFY-20261118, route 1 of docs/ICARUS-CLOUDIFY-DESIGN-2026-11-18.md).
+# Push-triggered copy lives on icarus-ledger; this scheduled copy must also be on main because
+# GitHub Actions schedule events only run from the default branch. Every 30 minutes it drains
+# queued retries even when no new ledger push arrives. Pushes made by this job use GITHUB_TOKEN,
+# which by GitHub design does not start another run, so it cannot loop.
+# Cost: GitHub-hosted standard runners are free for public repositories.
+# Kill switch: disable this workflow in the Actions tab, or delete this file from icarus-ledger.
+name: icarus-ledger-worker
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  push:
+    branches: [icarus-ledger]
+    paths: ["icarus/ledger/queue/**", ".github/workflows/icarus-ledger-worker.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: icarus-ledger-worker
+  cancel-in-progress: false
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25          # hard stop, inside the 30-minute lease
+    env:
+      CODE_SHA: 506c21dcb75ef122067b23b4f7c862578c7c07ea     # pinned worker source (agent/icarus-cloud-worker)
+    steps:
+      - name: Worker source (pinned SHA)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CODE_SHA }}
+          path: code
+          persist-credentials: false
+      - name: Ledger clone (icarus-ledger) + main for Icarus memory
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global credential.helper '!f() { echo username=x-access-token; echo "password=${GH_TOKEN}"; }; f'
+          git clone --quiet --depth 50 --branch icarus-ledger "https://github.com/${GITHUB_REPOSITORY}.git" ledger
+          git -C ledger fetch --quiet --depth 1 origin main
+      - name: Sandbox image
+        run: docker pull --quiet python:3.12-slim
+      - name: Drain queue (one job per cycle, max 5)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}/code
+          ICARUS_LEDGER_CLONE: ${{ github.workspace }}/ledger
+          ICARUS_LEDGER_BRANCH: icarus-ledger
+          ICARUS_WORK_DIR: ${{ runner.temp }}/icarus-work
+          ICARUS_RUNNER_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+          ICARUS_HOST: cloud
+          ICARUS_SANDBOX: docker
+          ICARUS_LEASE_SECONDS: "1800"
+          ICARUS_MAX_POOL_BREAKS: "2"
+        run: python3 -m icarus.primitives.daemon --drain 5
