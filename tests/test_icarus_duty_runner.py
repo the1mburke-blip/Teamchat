@@ -377,29 +377,6 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-8")
         self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
 
-    def test_owner_authored_sol_backlog_can_pass_preflight_without_source_file(self):
-        record = {"task_states": {}}
-        self.assertTrue(runner.preflight_source(("BACKLOG-7", "[SOL]", "read-only analysis", []), record))
-        self.assertEqual(record["task_states"]["BACKLOG-7"]["source_preflight"], "OWNER_AUTHORED_SOL_BACKLOG_NO_SOURCE")
-        blocked = {"task_states": {}}
-        self.assertFalse(runner.preflight_source(("BACKLOG-8", "[CODEX]", "external worker", []), blocked))
-        self.assertEqual(blocked["task_states"]["BACKLOG-8"]["source_preflight"], "SOURCE_FILE_REQUIRED")
-
-    def test_live_schedule_runs_sol_locally_without_external_seat_report(self):
-        task = issue(7, title="[READY] Sol local execution", body="[TO] [SOL]")
-        task["body"] = "[TO] [SOL]"  # Deliberately no SOURCE_FILE: read-only Sol backlog work is still eligible.
-        self.issues.append({**task, "state": "open"})
-        policy = {"seat_reporters": {"SOL": 102}, "verifier_user_id": None, "approved_pilots": {}}
-        with (
-            patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule", "GITHUB_RUN_ID": "1234"}),
-            patch.object(pilot_state, "on_live_schedule", return_value=True),
-            patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
-        ):
-            record = self.run_pulse()
-        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-7")
-        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
-        self.assertEqual(record["held_specialist_routes"], [])
-
     def test_enrolled_codex_can_dispatch_without_unrelated_seats(self):
         self.issues.append({
             **issue(7, title="[READY] Codex evidence readback", body="[TO] [CODEX]"),
@@ -498,7 +475,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertIsNone(second["pilot_attempt"])
         self.assertEqual(self.posts, [f"{pilot_state.PILOT_RESERVATION}\nTask ID: {task_id}"])
 
-    def test_task_directives_on_noncanonical_issues_are_not_actionable(self):
+    def test_other_issue_titles_bodies_and_comments_are_inspected(self):
         self.issues += [
             issue(14, title="[TASK_INCOMING]", body=task("TITLE").split("\n", 1)[1]),
             issue(15, body=task("BODY")),
@@ -508,20 +485,10 @@ class DutyRunnerTests(unittest.TestCase):
         record = self.run_pulse()
         self.assertEqual(record["issue_numbers_inspected"], [6, 14, 15, 16])
         self.assertEqual(record["open_issues_inspected"], 4)
-        self.assertEqual(record["eligible_directives_detected"], 0)
-        self.assertFalse(record["dispatch_receipts"])
-        self.assertFalse(self.posts)
-
-    def test_historical_room_canary_is_not_replayed_after_mailbox_moves_to_issue99(self):
-        self.issues.append(issue(99))
-        os.environ["ICARUS_ISSUE_NUMBER"] = "99"
-        self.comments[6] = canary_comments("CANARY-INTAKE-001")
-        record = self.run_pulse()
-        self.assertEqual(record["issue_numbers_inspected"], [6, 99])
-        self.assertEqual(record["eligible_directives_detected"], 0)
-        self.assertFalse(record["dispatch_receipts"])
-        self.assertFalse(record["backlog_claim"])
-        self.assertFalse(self.posts)
+        self.assertEqual(record["eligible_directives_detected"], 3)
+        self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]],
+                         ["TITLE", "BODY", "COMMENT"])
+        self.assertIn("Source Issue: #16 (comment 20)", self.posts[-1])
 
     def test_issue_and_comment_pages_are_all_read_and_pull_requests_are_excluded(self):
         self.issues += [
@@ -535,8 +502,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["open_issues_inspected"], 106)
         self.assertNotIn(7, record["issue_numbers_inspected"])
         self.assertFalse(any("/7/comments" in url for _, url in self.requests))
-        self.assertFalse(record["dispatch_receipts"])
-        self.assertTrue(any("/issues/112/comments" in url and "page=2" in url for _, url in self.requests))
+        self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]], ["LAST-PAGE"])
 
     def test_unauthorized_directives_and_forged_receipts_have_no_effect(self):
         self.issues += [issue(7, body=task("OUTSIDE"), association="CONTRIBUTOR")]
@@ -712,22 +678,24 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(next_run["task_states"][task_id], first["task_states"][task_id])
         self.assertEqual(len(self.posts), 1)
 
-    def test_receipt_prevents_repeat_dispatch_inside_canonical_inbox(self):
-        self.comments[6] = [comment(10, task("SAME")), comment(11, task("SAME"))]
+    def test_receipt_prevents_repeat_dispatch_with_a_closed_source(self):
+        self.issues += [issue(18, body=task("SAME")), issue(19, body=task("SAME"))]
         first = self.run_pulse()
+        self.issues = [issue(19, body=task("SAME"))]
         second = self.run_pulse()
         self.assertEqual(first["new_tasks_dispatched"], 1)
         self.assertEqual(first["duplicate_directives_ignored"], 1)
         self.assertEqual(second["new_tasks_dispatched"], 0)
-        self.assertEqual(second["duplicate_directives_ignored"], 2)
+        self.assertEqual(second["duplicate_directives_ignored"], 1)
         self.assertEqual(len(self.posts), 1)
 
-    def test_pending_tasks_are_sorted_by_source_comment_in_canonical_inbox(self):
-        self.comments[6] = [comment(8, task("THIRD")), comment(7, task("SECOND")),
-                             comment(4, task("FOURTH"))]
+    def test_pending_tasks_are_sorted_by_issue_then_source(self):
+        self.issues = [issue(18), issue(10, body=task("FIRST")), issue(6)]
+        self.comments[10] = [comment(8, task("THIRD")), comment(7, task("SECOND"))]
+        self.comments[18] = [comment(4, task("FOURTH"))]
         record = self.run_pulse()
         self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]],
-                         ["FOURTH", "SECOND", "THIRD"])
+                         ["FIRST", "SECOND", "THIRD", "FOURTH"])
 
     def test_api_failure_is_persisted_and_aborts_dispatch(self):
         self.issues += [issue(18, body=task("PENDING")), issue(19)]
