@@ -512,6 +512,10 @@ def preflight_source(task, record):
         state.update(status="PREFLIGHT_VERIFIED", source_preflight="ECHO_CANARY")
         return True
 
+    if not source_files and task_id.startswith("BACKLOG-") and chair == "[SOL]":
+        state.update(status="PREFLIGHT_VERIFIED", source_preflight="OWNER_AUTHORED_SOL_BACKLOG_NO_SOURCE")
+        return True
+
     error = "SOURCE_FILE_REQUIRED"
     if len(source_files) == 1 and source_files[0]:
         source = source_files[0]
@@ -712,6 +716,9 @@ def monitor_issues(repo, mailbox, token, record):
         pending.extend(inspect_directives(issue, sorted(comments, key=lambda c: c["id"]), record))
         record["issue_numbers_inspected"].append(number)
         if scheduled and number != mailbox and (candidate := backlog_candidate(issue)):
+            if candidate[2] == "[SOL]" and issue.get("author_association") != "OWNER":
+                record["authorization_rejections"] += 1
+                continue
             task_id = f"BACKLOG-{number}"
             if (task_id not in dispatched and number not in dispatched_sources
                     and not pilot_state.reserved(outbox_comments, task_id)
