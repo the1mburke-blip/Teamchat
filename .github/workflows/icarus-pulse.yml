@@ -100,7 +100,14 @@ jobs:
         startsWith(github.event.comment.body, '[ICARUS SUPERVISORY DIRECTIVE] ') ||
         github.event.comment.body == '[ICARUS SUPERVISORY DIRECTIVE]' ||
         startsWith(github.event.comment.body, '[SOL] ') ||
-        github.event.comment.body == '[SOL]'
+        github.event.comment.body == '[SOL]' ||
+        startsWith(github.event.comment.body, '**ICARUS_RUN ') ||
+        github.event.comment.body == '**ICARUS_RUN**' ||
+        startsWith(github.event.comment.body, '**[ICARUS SUPERVISORY DIRECTIVE] ') ||
+        github.event.comment.body == '**[ICARUS SUPERVISORY DIRECTIVE]**' ||
+        startsWith(github.event.comment.body, '**[SOL] ') ||
+        startsWith(github.event.comment.body, '**[SOL]** ') ||
+        github.event.comment.body == '**[SOL]**'
       )
     runs-on: ubuntu-latest
     timeout-minutes: 55
