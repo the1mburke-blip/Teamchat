@@ -190,7 +190,7 @@ def adjudicate_canaries(repo, mailbox, comments, dispatches, outbox_url, token, 
                 continue
             claim, claim_fields = claims[int(claim_id)]
             if (result["task id"] != task_id or result.get("worker result") != "ECHO_COMPLETE"
-                    or result.get("executor") != "ChatGPT Work" or result.get("echo") != ECHO_DIRECTIVE
+                    or result.get("executor") != "ChatGPT" or result.get("echo") != ECHO_DIRECTIVE
                     or result.get("owner intake") != link + str(intake["id"])
                     or result.get("icarus dispatch") != link + str(dispatch["id"])
                     or claim_fields["task id"] != task_id
@@ -591,11 +591,22 @@ def dispatch_task(outbox_url, token, origin, task, mailbox, record):
         body += f"\nSource Issue: #{origin['issue_number']}"
         if origin["source_comment_id"] is not None:
             body += f" (comment {origin['source_comment_id']})"
-    comment_id = post_comment(outbox_url, token, body)
+    dispatch_url = outbox_url
+    if task_id.startswith("CANARY-INTAKE-") and origin["issue_number"] != mailbox:
+        parsed = urllib.parse.urlsplit(outbox_url)
+        path = re.sub(r"/issues/\d+/comments$", f"/issues/{origin['issue_number']}/comments", parsed.path)
+        if path == parsed.path:
+            raise ValueError("Cannot derive task-local canary outbox URL")
+        dispatch_url = parsed._replace(path=path).geturl()
+    comment_id = post_comment(dispatch_url, token, body)
     state.update(status="WAITING_FOR_RECEIPT", dispatch_comment_id=comment_id)
-    record["dispatch_receipts"].append({
+    dispatch_receipt = {
         **origin, "task_id": task_id, "delegated_to": chair, "dispatch_comment_id": comment_id,
-    })
+    }
+    if dispatch_url != outbox_url:
+        state["outbox_issue_number"] = origin["issue_number"]
+        dispatch_receipt["outbox_issue_number"] = origin["issue_number"]
+    record["dispatch_receipts"].append(dispatch_receipt)
 
 
 def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_url, outbox_url, token, record):
@@ -680,6 +691,7 @@ def monitor_issues(repo, mailbox, token, record):
     }
     pending = []
     candidates = []
+    issue_comments_by_number = {mailbox: outbox_comments}
     scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
     live_schedule = pilot_state.on_live_schedule(repo)
     task_states = record["task_states"]
@@ -709,6 +721,8 @@ def monitor_issues(repo, mailbox, token, record):
             comments = []
         else:
             comments = fetch_pages(f"{issues_url}/{number}/comments", token)
+        issue_comments_by_number[number] = comments
+        dispatched.update(packet["task id"] for _, packet in comment_packets(comments, DISPATCH_HEADER))
         pending.extend(inspect_directives(issue, sorted(comments, key=lambda c: c["id"]), record))
         record["issue_numbers_inspected"].append(number)
         if scheduled and number != mailbox and (candidate := backlog_candidate(issue)):
@@ -742,12 +756,45 @@ def monitor_issues(repo, mailbox, token, record):
                 continue
         dispatch_task(outbox_url, token, origin, task, mailbox, record)
         record["loop_state"] = "DISPATCHED"
+    # Echo canaries declared on ordinary task issues keep their dispatch and
+    # receipts in that task's own thread. Issue #6 remains the canonical room;
+    # it is not required to accept more comments for a task-local canary.
+    for number, prior_comments in sorted(issue_comments_by_number.items()):
+        if number == mailbox:
+            continue
+        local_intakes = {
+            packet["task id"] for _, packet in comment_packets(prior_comments, TASK_HEADER)
+            if packet["task id"].startswith("CANARY-INTAKE-")
+            and packet.get("target chair") == "[WORK]"
+            and packet.get("directive") == ECHO_DIRECTIVE
+        }
+        if not local_intakes:
+            continue
+        local_url = f"{issues_url}/{number}/comments"
+        local_comments = fetch_pages(local_url, token)
+        local_dispatches = list(comment_packets(local_comments, DISPATCH_HEADER, bot_only=True))
+        for dispatch, packet in local_dispatches:
+            if packet["task id"] in local_intakes:
+                task_states.setdefault(packet["task id"], {}).update(
+                    status="WAITING_FOR_RECEIPT", dispatch_comment_id=dispatch["id"],
+                    target_chair=packet.get("target chair"), outbox_issue_number=number,
+                )
+        record["waiting_canary"].extend(adjudicate_canaries(
+            repo, number, local_comments, local_dispatches, local_url, token, record,
+        ))
+    for receipt in record["adjudication_receipts"]:
+        task_states.setdefault(receipt["task_id"], {}).update(
+            status="ADJUDICATED", adjudication_comment_id=receipt["adjudication_comment_id"],
+        )
+    if record["adjudication_receipts"]:
+        record["loop_state"] = "ADJUDICATED"
+
     if not scheduled:
         return
 
-    record["waiting_canary"] = adjudicate_canaries(
+    record["waiting_canary"].extend(adjudicate_canaries(
         repo, mailbox, outbox_comments, bot_dispatches, outbox_url, token, record,
-    )
+    ))
     adjudicate_backlog(issues_url, mailbox, outbox_comments, bot_dispatches, token, record)
     record["waiting_backlog"] = [
         {"task_id": task_id, "dispatch_comment_id": state["dispatch_comment_id"]}
