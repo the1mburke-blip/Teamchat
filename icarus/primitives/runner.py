@@ -19,11 +19,13 @@ Safety:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
 from pathlib import Path
 
+from .jobenv import JobUidError, hand_over, job_argv, job_env
 from .ledger import Ledger
 from .reasoner import OpenAICompatReasoner, ReasonerError
 from .verify import verify
@@ -53,7 +55,10 @@ def _git_sha() -> str | None:
 
 
 def execute(job: dict, plan: dict | None, job_dir: Path) -> dict:
-    record = {"plan_valid": plan is not None, "commands": [], "git_sha": None, "error": None}
+    # plan_files: {relative path: sha256} of files the model wrote directly through the plan, so
+    # the verifier can tell model-typed content from output a command actually produced.
+    record = {"plan_valid": plan is not None, "commands": [], "plan_files": {}, "git_sha": None,
+              "error": None}
     if plan is None:
         record["error"] = "no valid plan"
         return record
@@ -66,10 +71,13 @@ def execute(job: dict, plan: dict | None, job_dir: Path) -> dict:
             p = _safe_path(job_dir, f["path"])
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(f["content"], encoding="utf-8")
+            rel = p.relative_to(job_dir.resolve()).as_posix()
+            record["plan_files"][rel] = hashlib.sha256(p.read_bytes()).hexdigest()
+        hand_over(job_dir)
         for argv in plan["commands"]:
             try:
-                r = subprocess.run(argv, cwd=job_dir, capture_output=True, text=True,
-                                   timeout=CMD_TIMEOUT)
+                r = subprocess.run(job_argv(argv), cwd=job_dir, capture_output=True, text=True,
+                                   timeout=CMD_TIMEOUT, env=job_env(job_dir))
                 record["commands"].append({"argv": argv, "exit_code": r.returncode,
                                            "stdout": r.stdout[-4000:], "stderr": r.stderr[-4000:]})
             except subprocess.TimeoutExpired:
@@ -82,7 +90,7 @@ def execute(job: dict, plan: dict | None, job_dir: Path) -> dict:
                 break
             if record["commands"][-1]["exit_code"] != 0:
                 break
-    except (ValueError, PermissionError) as e:
+    except (ValueError, PermissionError, JobUidError) as e:
         record["error"] = str(e)
     record["git_sha"] = _git_sha()
     return record

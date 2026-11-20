@@ -7,6 +7,7 @@ Layout under <clone>/icarus/ledger/:
     queue/<job_id>.json   immutable job: task + verify_spec + author (written at enqueue)
     state/<job_id>.json   {status, attempts, max_attempts, claimed_by, lease_expires}
     run_log.jsonl         append-only, hash-chained events and receipts
+    heartbeat/<runner>.json  overwritten liveness beacon (not job evidence, not chained)
 
 Locking: a claim is a commit that rewrites state/<job_id>.json, then a push.
 If the push is rejected (someone else moved the branch), the claim is lost:
@@ -160,6 +161,25 @@ class GitLedger:
                 raise ClaimLost(job_id)
             return self.job(job_id)
         return None
+
+    def heartbeat(self, runner_id: str, payload: dict) -> bool:
+        """Overwrite heartbeat/<runner_id>.json and push it.
+
+        Liveness only: it says the daemon loop was running at that time, never that a job
+        ran or passed (job evidence stays in state/ and run_log.jsonl, which this does not
+        touch). Returns False if the push was rejected; the clone is re-synced and the
+        caller simply tries again later."""
+        if not runner_id or "/" in runner_id or "\\" in runner_id or runner_id.startswith("."):
+            raise GitLedgerError(f"bad runner id for heartbeat: {runner_id!r}")
+        self.sync()
+        hp = self.base / "heartbeat" / f"{runner_id}.json"
+        hp.parent.mkdir(parents=True, exist_ok=True)
+        hp.write_text(json.dumps({**payload, "runner": runner_id}, indent=2, sort_keys=True) + "\n",
+                      encoding="utf-8")
+        if not self._commit_push([hp], f"ledger: heartbeat {runner_id}"):
+            self.sync()
+            return False
+        return True
 
     def settle(self, job_id: str, runner_id: str, receipt: dict, tries: int = 3) -> str:
         if receipt.get("verifier") is None or receipt.get("verdict") not in ("PASS", "FAIL"):

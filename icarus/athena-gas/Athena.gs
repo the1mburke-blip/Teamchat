@@ -26,7 +26,7 @@
  * Apps Script limits: one execution may run 6 minutes, so cooldowns and budgets are smaller than on Actions.
  */
 
-var ATHENA_VERSION = 'cloud-4.6 (self-queue: Icarus originates ledger jobs from the board)';  // shown as "Icarus runtime cloud-3"
+var ATHENA_VERSION = 'cloud-4.6.1 (self-queue; tick result logged)';  // shown as "Icarus runtime cloud-3"
 var GH_API = 'https://api.github.com';
 var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 var OR_BASE = 'https://openrouter.ai/api/v1';
@@ -74,7 +74,7 @@ function athenaPoll() {
     try { relayLedgerResult_(R, props); } catch (e) { console.log('LEDGER_RELAY_ERROR ' + redact_(R, e && e.message || e)); }
     var t = nextTrigger_(R, props, cutover);
     if (!t) {
-      try { selfQueueTick_(R, props); } catch (e) { console.log('SELF_QUEUE_ERROR ' + redact_(R, e && e.message || e)); }
+      try { console.log('SELF_QUEUE ' + redact_(R, String(selfQueueTick_(R, props)))); } catch (e) { console.log('SELF_QUEUE_ERROR ' + redact_(R, e && e.message || e)); }
       return;
     }
     executeAttempt_(R, props, cutover, {

@@ -31,6 +31,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+
+from .jobenv import JobUidError, hand_over, job_argv, job_env
 import re
 import subprocess
 import sys
@@ -66,12 +68,17 @@ def harness_gate(job_dir: Path, task_id: str, h: dict) -> dict:
               "command": h["command"], "readback": h["readback"]}
     pkt = job_dir.parent / f"{job_dir.name}.harness-packet.json"
     pkt.write_text(json.dumps(packet), encoding="utf-8")
-    env = {**os.environ, "PYTHONPATH": str(REPO_ROOT)}
+    # The harness runs the job author's command with this env: never the daemon's credentials.
+    env = {**job_env(job_dir), "PYTHONPATH": str(REPO_ROOT)}
     try:
-        r = subprocess.run([sys.executable, "-m", "icarus.harness.runner", str(pkt)],
-                           cwd=job_dir, capture_output=True, text=True, timeout=360, env=env)
+        hand_over(job_dir)
+        hand_over(pkt)
+        argv = job_argv([sys.executable, "-m", "icarus.harness.runner", str(pkt)])
+        r = subprocess.run(argv, cwd=job_dir, capture_output=True, text=True, timeout=360, env=env)
     except subprocess.TimeoutExpired:
         return {"exit_code": None, "verdict": "FAIL", "detail": "harness timeout"}
+    except JobUidError as e:
+        return {"exit_code": None, "verdict": "FAIL", "detail": str(e)}
     verdict = "FAIL"
     try:
         out = json.loads(r.stdout.strip().splitlines()[-1]) if r.stdout.strip() else {}
@@ -106,6 +113,18 @@ def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job
             g1.append(f"sha256 mismatch: {rel}")
     if spec.get("require_git_sha") and not execution.get("git_sha"):
         g1.append("git SHA not logged")
+    if spec.get("require_command_output"):
+        # The expected outputs must be produced by a command that actually ran, not typed into
+        # the plan by the model (a model can otherwise "pass" by writing the answer itself).
+        ran = [c for c in execution.get("commands", []) if c.get("exit_code") == 0]
+        if not ran:
+            g1.append("require_command_output: no command ran successfully")
+        plan_files = execution.get("plan_files", {})
+        for rel in spec.get("expected_files", []):
+            p = job_dir / rel
+            if rel in plan_files and p.is_file() and _sha256(p) == plan_files[rel]:
+                g1.append(f"require_command_output: {rel} was written by the model's plan, "
+                          "not produced by a command")
     harness = None
     if spec.get("harness") and not g1:
         harness = harness_gate(job_dir, task_id, spec["harness"])
@@ -150,6 +169,13 @@ def verify(job_dir: str | Path, spec: dict, execution: dict, task_id: str = "job
         "gate_1_technical": {"pass": not g1, "reasons": g1},
         "gate_2_policy": {"pass": not g2, "reasons": g2},
         "files_sha256": files,
+        # What actually ran, so a receipt shows tool use instead of implying it. Output is
+        # hashed, not copied, so job output never lands in the (public) ledger.
+        "commands": [{"argv0": Path((c.get("argv") or [""])[0]).name, "argc": len(c.get("argv") or []),
+                      "exit_code": c.get("exit_code"),
+                      "stdout_sha256": hashlib.sha256((c.get("stdout") or "").encode()).hexdigest()}
+                     for c in execution.get("commands", [])],
+        "plan_files": sorted(execution.get("plan_files", {})),
         "git_sha": execution.get("git_sha"),
         "harness": harness,
     }
