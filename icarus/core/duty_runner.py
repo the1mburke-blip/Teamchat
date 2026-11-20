@@ -549,7 +549,7 @@ def preflight_source(task, record):
     return False
 
 
-def inspect_directives(issue, comments, record):
+def inspect_directives(issue, comments, record, *, allow_task_intake=True):
     number = issue["number"]
     sources = [(None, issue), *((comment["id"], comment) for comment in comments)]
     pending = []
@@ -571,10 +571,11 @@ def inspect_directives(issue, comments, record):
         origin = {"issue_number": number, "source_comment_id": comment_id}
         if TASK_HEADER in markers:
             markers.remove(TASK_HEADER)
-            task = parse_task(fields)
-            if task:
-                record["eligible_directives_detected"] += 1
-                pending.append((origin, task))
+            if allow_task_intake:
+                task = parse_task(fields)
+                if task:
+                    record["eligible_directives_detected"] += 1
+                    pending.append((origin, task))
         for marker in sorted(markers):
             record["eligible_directives_detected"] += 1
             record["monitor_only_events"].append({**origin, "marker": marker})
@@ -713,7 +714,10 @@ def monitor_issues(repo, mailbox, token, record):
             comments = []
         else:
             comments = fetch_pages(f"{issues_url}/{number}/comments", token)
-        pending.extend(inspect_directives(issue, sorted(comments, key=lambda c: c["id"]), record))
+        pending.extend(inspect_directives(
+            issue, sorted(comments, key=lambda c: c["id"]), record,
+            allow_task_intake=number == mailbox,
+        ))
         record["issue_numbers_inspected"].append(number)
         if scheduled and number != mailbox and (candidate := backlog_candidate(issue)):
             if candidate[2] == "[SOL]" and issue.get("author_association") != "OWNER":
