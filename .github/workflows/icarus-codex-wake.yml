@@ -42,7 +42,7 @@ jobs:
             ]);
             const created = Date.parse(request.created_at);
             const age = Date.now() - created;
-            const expectedIssue = 'https://api.github.com/repos/' + owner + '/' + repo + '/issues/6';
+            const expectedIssue = 'https://api.github.com/repos/' + owner + '/' + repo + '/issues/8';
             const expectedBody = '[ICARUS CODEX WAKE RELAY REQUEST]\nPulse Run ID: ' + pulse_run_id;
             if (pulse.path !== '.github/workflows/icarus-pulse.yml' || pulse.head_branch !== 'main' ||
                 pulse.event !== 'schedule' || pulse.status !== 'in_progress' ||

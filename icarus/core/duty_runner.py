@@ -32,6 +32,8 @@ TERMINAL_HEADER = "[ICARUS TERMINAL EVIDENCE]"
 TERMINAL_CLOSED_HEADER = "[ICARUS TERMINAL CLOSED]"
 CODEX_WAKE_HEADER = "[ICARUS CODEX WAKE RELAY REQUEST]"
 CODEX_WAKE_WAIT_SECONDS = 180
+WAKE_ISSUE = 8
+TEAMCHAT_WAKE_HEADER = "[TEAMCHAT_WAKE]"
 ECHO_DIRECTIVE = "Echo test for task intake and worker delegation verification."
 MONITOR_ONLY_MARKER = re.compile(
     r"^\s*(\[ICARUS SUPERVISORY DIRECTIVE\]|ICARUS_RUN)(?=\s|$)",
@@ -224,13 +226,16 @@ def load_agent_signers(raw):
     if not isinstance(config, dict) or config.keys() != {"executors", "verifier"}:
         raise ValueError("Invalid ICARUS_DUTY_AGENT_SIGNERS fields")
     executors = config["executors"]
-    if not isinstance(executors, dict) or not executors or not executors.keys() <= CHAIRS:
+    if (not isinstance(executors, dict) or not executors or not executors.keys() <= CHAIRS
+            or "[SOL]" in executors):
         raise ValueError("Invalid ICARUS_DUTY_AGENT_SIGNERS executors")
-    signers = {**executors, VERIFICATION_HEADER: config["verifier"]}
+    # The enrolled verifier key is Sol's identity key. It can verify Codex work
+    # or execute Sol-owned work, with Codex then acting as independent verifier.
+    role_keys = {**executors, "[SOL]": config["verifier"]}
     if any(not isinstance(key, str) or not re.fullmatch(r"[0-9a-f]{64}", key)
-           for key in signers.values()):
+           for key in role_keys.values()):
         raise ValueError("Invalid ICARUS_DUTY_AGENT_SIGNERS public key")
-    signers = {role: bytes.fromhex(key) for role, key in signers.items()}
+    signers = {role: bytes.fromhex(key) for role, key in role_keys.items()}
     if len(set(signers.values())) != len(signers):
         raise ValueError("ICARUS_DUTY_AGENT_SIGNERS requires distinct public keys")
     return signers
@@ -300,9 +305,12 @@ def verified_backlog_results(comments, verifier_id, agent_signers, outbox_url):
             continue
         fingerprints = {}
         if agent_signers:
-            executor_key = agent_signers.get(execution.get("target chair"))
-            verifier_key = agent_signers[VERIFICATION_HEADER]
-            if (not verifies_agent_receipt(outbox_url, EXECUTION_HEADER, execution, executor_key)
+            target_chair = execution.get("target chair")
+            verifier_chair = "[CODEX]" if target_chair == "[SOL]" else "[SOL]"
+            executor_key = agent_signers.get(target_chair)
+            verifier_key = agent_signers.get(verifier_chair)
+            if (not executor_key or not verifier_key
+                    or not verifies_agent_receipt(outbox_url, EXECUTION_HEADER, execution, executor_key)
                     or not verifies_agent_receipt(outbox_url, VERIFICATION_HEADER, proof, verifier_key)):
                 continue
             fingerprints = {
@@ -329,7 +337,7 @@ def post_and_read_comment(issues_url, outbox_url, token, body):
     return comment_id
 
 
-def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record):
+def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record, outbox_issue=None):
     """Consume separate automated execution and verification receipts.
 
     A worker reports the source commit and dispatch ID under EXECUTION_HEADER.
@@ -365,7 +373,8 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
         (packet["task id"], packet.get("dispatch comment id")): comment
         for comment, packet in comment_packets(comments, TERMINAL_HEADER, bot_only=True)
     }
-    outbox_url = f"{issues_url}/{mailbox}/comments"
+    outbox_issue = mailbox if outbox_issue is None else outbox_issue
+    outbox_url = f"{issues_url}/{outbox_issue}/comments"
     for verification, proof, execution, exit_code, expected, observed, fingerprints in verified_backlog_results(
             comments, verifier_id, agent_signers, outbox_url):
         task_id = proof["task id"]
@@ -441,7 +450,7 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
             state["status"] = "CLOSED"
         elif "reissue of" in packet:
             state.update(status="BLOCKED", terminal_blocker="REPAIR_LEASH_EXHAUSTED")
-        elif not reissue_source_matches(packet):
+        elif not reissue_source_matches(packet, current):
             state.update(status="BLOCKED", terminal_blocker="DISPATCH_SOURCE_CHANGED")
         else:
             failure = f"process exited {exit_code}" if exit_code else "artifact digest mismatch"
@@ -467,8 +476,21 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
             detail["blocker"] = state["terminal_blocker"]
 
 
-def reissue_source_matches(packet):
+ISSUE_ANCHOR = re.compile(r"ISSUE#([1-9][0-9]{0,9})")
+
+
+def issue_anchor(issue):
+    """Pin a backlog issue with no declared source file to its exact issue body."""
+    body = (issue.get("body") or "").encode("utf-8")
+    return f"ISSUE#{issue['number']}", hashlib.sha1(b"blob %d\0" % len(body) + body).hexdigest()
+
+
+def reissue_source_matches(packet, current=None):
     task_id = packet["task id"]
+    anchor = ISSUE_ANCHOR.fullmatch(packet["source file"])
+    if anchor:
+        return (current is not None and current.get("number") == int(anchor[1])
+                and issue_anchor(current) == (packet["source file"], packet["source blob"]))
     task = task_id, packet["target chair"], packet["directive"], [packet["source file"]]
     states = {}
     return (preflight_source(task, {"task_states": states})
@@ -577,9 +599,15 @@ def inspect_directives(issue, comments, record):
     return pending
 
 
-def dispatch_task(outbox_url, token, origin, task, mailbox, record):
+def dispatch_task(outbox_url, token, origin, task, mailbox, record, mailbox_full=False):
     task_id, chair, scope, _ = task
     state = record["task_states"][task_id]
+    issue_number = origin["issue_number"]
+    if issue_number == mailbox and mailbox_full:
+        raise RuntimeError(
+            f"Canonical room #{mailbox} has reached GitHub's 2,500-comment cap; "
+            "new actionable tasks must use their own issue thread."
+        )
     scope = scope.replace("\n", "\n    ")
     body = (
         f"{DISPATCH_HEADER}\nTask ID: {task_id}\nTarget Chair: {chair}\n"
@@ -587,39 +615,38 @@ def dispatch_task(outbox_url, token, origin, task, mailbox, record):
     )
     if "source_blob" in state:
         body += f"\nSource File: {state['source_file']}\nSource Blob: {state['source_blob']}"
-    if origin["issue_number"] != mailbox:
-        body += f"\nSource Issue: #{origin['issue_number']}"
+    if issue_number != mailbox:
+        body += f"\nSource Issue: #{issue_number}"
         if origin["source_comment_id"] is not None:
             body += f" (comment {origin['source_comment_id']})"
-    dispatch_url = outbox_url
-    if task_id.startswith("CANARY-INTAKE-") and origin["issue_number"] != mailbox:
-        parsed = urllib.parse.urlsplit(outbox_url)
-        path = re.sub(r"/issues/\d+/comments$", f"/issues/{origin['issue_number']}/comments", parsed.path)
-        if path == parsed.path:
-            raise ValueError("Cannot derive task-local canary outbox URL")
-        dispatch_url = parsed._replace(path=path).geturl()
-    comment_id = post_comment(dispatch_url, token, body)
+    parsed = urllib.parse.urlsplit(outbox_url)
+    repo_path = parsed.path.split("/repos/", 1)[1].split("/issues/", 1)[0]
+    api_root = parsed._replace(path=parsed.path.rsplit("/issues/", 1)[0]).geturl()
+    dispatch_url = f"{api_root}/issues/{issue_number}/comments" if issue_number != mailbox else outbox_url
+    if issue_number != mailbox:
+        body += f"\nReceipt Outbox: https://github.com/{repo_path}/issues/{issue_number}"
+    comment_id = post_and_read_comment(f"{api_root}/issues", dispatch_url, token, body)
     state.update(status="WAITING_FOR_RECEIPT", dispatch_comment_id=comment_id)
     dispatch_receipt = {
         **origin, "task_id": task_id, "delegated_to": chair, "dispatch_comment_id": comment_id,
     }
     if dispatch_url != outbox_url:
-        state["outbox_issue_number"] = origin["issue_number"]
-        dispatch_receipt["outbox_issue_number"] = origin["issue_number"]
+        state["outbox_issue_number"] = issue_number
+        dispatch_receipt["outbox_issue_number"] = issue_number
     record["dispatch_receipts"].append(dispatch_receipt)
 
 
-def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_url, outbox_url, token, record):
+def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_url, wake_url, token, record):
     spec = policy["approved_pilots"].get(task_id)
     if not spec or policy["verifier_user_id"] is None:
         return
     approvals = fetch_pages(f"{issues_url}/141/comments", token)
     now = datetime.datetime.now(datetime.timezone.utc)
-    states, _ = pilot_state.availability(fetch_pages(outbox_url, token), policy["seat_reporters"], now)
+    states, _ = pilot_state.availability(fetch_pages(wake_url, token), policy["seat_reporters"], now)
     if (any(value != "unavailable" for value in states.values())
             or not pilot_state.owner_approved(approvals, task_id, policy_digest, now)):
         return
-    reservation = pilot_state.reserve_attempt(task_id, outbox_url, token, fetch_pages, post_comment)
+    reservation = pilot_state.reserve_attempt(task_id, wake_url, token, fetch_pages, post_comment)
     if reservation is None:
         return
     record["pilot_attempt"] = {"task_id": task_id, "issue_number": number,
@@ -627,7 +654,7 @@ def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_u
                                "verifier_user_id": policy["verifier_user_id"],
                                "source_commit": os.environ["GITHUB_SHA"]}
     approvals = fetch_pages(f"{issues_url}/141/comments", token)
-    current_reports = fetch_pages(outbox_url, token)
+    current_reports = fetch_pages(wake_url, token)
     now = datetime.datetime.now(datetime.timezone.utc)
     states, expiries = pilot_state.availability(current_reports, policy["seat_reporters"], now)
     if (any(value != "unavailable" for value in states.values())
@@ -638,11 +665,11 @@ def run_pilot_if_approved(task_id, number, seat, policy, policy_digest, issues_u
     record["loop_state"] = "WAITING_FOR_INDEPENDENT_VERIFIER"
 
 
-def refresh_codex_availability(repo, outbox_url, token, actor, run_id, record):
+def refresh_codex_availability(repo, wake_url, token, actor, run_id, record):
     if (wake := record.get("codex_wake")) is not None:
         return wake["availability"]
     requested_at = datetime.datetime.now(datetime.timezone.utc)
-    wake_id = post_comment(outbox_url, token, f"{CODEX_WAKE_HEADER}\nPulse Run ID: {run_id}")
+    wake_id = post_and_read_comment(f"https://api.github.com/repos/{repo}/issues", wake_url, token, f"{CODEX_WAKE_HEADER}\nPulse Run ID: {run_id}")
     wake = {"request_comment_id": wake_id, "availability": "unknown"}
     record["codex_wake"] = wake
     relay_url = f"https://api.github.com/repos/{repo}/actions/workflows/icarus-codex-wake.yml/dispatches"
@@ -659,7 +686,7 @@ def refresh_codex_availability(repo, outbox_url, token, actor, run_id, record):
     deadline = time.monotonic() + CODEX_WAKE_WAIT_SECONDS
     while time.monotonic() < deadline:
         replies = [
-            row for row in fetch_pages(f"{outbox_url}?{query}", token)
+            row for row in fetch_pages(f"{wake_url}?{query}", token)
             if row["id"] > wake_id and pilot_state.actor_id(row) == actor
             and pilot_state.fields(row, pilot_state.SEAT_REPORT).get("Seat") == "CODEX"
         ]
@@ -673,18 +700,156 @@ def refresh_codex_availability(repo, outbox_url, token, actor, run_id, record):
     return wake["availability"]
 
 
+def ensure_task_wake(repo, issue_number, packet, wake_url, wake_comments, issues_url, token):
+    task_id = packet["task id"]
+    marker = f"TASK_ID: {task_id}"
+    for comment in wake_comments:
+        body = comment.get("body") or ""
+        if body.startswith(TEAMCHAT_WAKE_HEADER) and marker in body:
+            return comment["id"]
+    target = str(packet.get("target chair", "")).strip("[]")
+    title = " ".join(str(packet.get("directive", task_id)).split())[:120]
+    url = f"https://github.com/{repo}/issues/{issue_number}"
+    body = (
+        f"{TEAMCHAT_WAKE_HEADER} NEW_TASK #{issue_number}\nTARGET: {target}\n"
+        f"TITLE: {task_id} — {title}\nURL: {url}\n{marker}\nRECEIPT_OUTBOX: #{issue_number}"
+    )
+    comment_id = post_and_read_comment(issues_url, wake_url, token, body)
+    wake_comments.append({"id": comment_id, "body": body})
+    return comment_id
+
+
+def migrate_legacy_backlog_dispatches(repo, issues_url, mailbox, legacy_dispatches,
+                                      outbox_comments, issue_comments_by_number, token, record):
+    """Move stale, unreceipted mailbox dispatches to their source issue threads."""
+    legacy_receipt_ids = {}
+    for header in (EXECUTION_HEADER, VERIFICATION_HEADER, TERMINAL_HEADER):
+        for receipt, packet in comment_packets(outbox_comments, header):
+            legacy_receipt_ids.setdefault(packet["task id"], []).append(receipt["id"])
+    completed_task_ids = {
+        packet["task id"]
+        for header in (ADJUDICATION_HEADER, TERMINAL_CLOSED_HEADER)
+        for _, packet in comment_packets(outbox_comments, header, bot_only=True)
+    }
+    migrated = set()
+    for dispatch, packet in sorted(legacy_dispatches, key=lambda entry: entry[0]["id"]):
+        task_id = packet["task id"]
+        match = re.fullmatch(r"BACKLOG-([1-9][0-9]{0,9})", task_id)
+        if not match or task_id in completed_task_ids:
+            continue
+        issue_number = int(match[1])
+        if issue_number in {mailbox, WAKE_ISSUE} or issue_number not in issue_comments_by_number:
+            continue
+        source = re.fullmatch(rf"#{issue_number} \(comment ([1-9][0-9]{{0,19}})\)",
+                               packet.get("source issue", ""))
+        if not source:
+            continue
+        comments = issue_comments_by_number[issue_number]
+        local_dispatches = list(comment_packets(comments, DISPATCH_HEADER, bot_only=True))
+        if any(existing["task id"] == task_id for _, existing in local_dispatches):
+            continue
+        if any(existing["task id"] == task_id for header in (EXECUTION_HEADER, VERIFICATION_HEADER)
+               for _, existing in comment_packets(comments, header)):
+            continue
+        claim_id = int(source[1])
+        claim = next((row for row, fields in comment_packets(comments, CLAIM_HEADER, bot_only=True)
+                      if row["id"] == claim_id and fields.get("task id") == task_id
+                      and fields.get("target chair") == packet.get("target chair")), None)
+        if claim is None:
+            continue
+        source_file = packet.get("source file", "")
+        source_blob = packet.get("source blob", "")
+        if bool(source_file) != bool(source_blob):
+            source_status = "DISPATCH_SOURCE_INCOMPLETE"
+            source_matches = False
+        elif source_file:
+            anchor = ISSUE_ANCHOR.fullmatch(source_file)
+            if anchor:
+                current_source, _ = call_github_api(f"{issues_url}/{issue_number}", token)
+                source_matches = issue_anchor(current_source) == (source_file, source_blob)
+                source_status = "VERIFIED" if source_matches else "DISPATCH_SOURCE_CHANGED"
+            else:
+                source_record = {"task_states": {}}
+                source_task = (task_id, packet.get("target chair"), packet.get("directive"), [source_file])
+                source_matches = (preflight_source(source_task, source_record)
+                                  and source_record["task_states"][task_id].get("source_blob") == source_blob)
+                source_status = ("VERIFIED" if source_matches else
+                                 source_record["task_states"].get(task_id, {}).get("source_preflight", "DISPATCH_SOURCE_CHANGED"))
+        else:
+            current_source, _ = call_github_api(f"{issues_url}/{issue_number}", token)
+            source_file, source_blob = issue_anchor(current_source)
+            source_status = "ISSUE_BODY_PINNED"
+            source_matches = True
+        if not source_matches:
+            record["legacy_dispatch_migrations_blocked"].append({
+                "task_id": task_id, "source_issue_number": issue_number,
+                "legacy_dispatch_comment_id": dispatch["id"], "blocker": source_status,
+            })
+            record["task_states"].setdefault(task_id, {}).update(
+                status="BLOCKED", terminal_blocker=source_status, source_preflight=source_status,
+            )
+            continue
+        local_url = f"{issues_url}/{issue_number}/comments"
+        body = (dispatch.get("body") or "").rstrip() + (
+            f"\nReceipt Outbox: https://github.com/{repo}/issues/{issue_number}"
+            f"\nSupersedes: #{mailbox} comment {dispatch['id']}"
+        )
+        if not packet.get("source file") and not packet.get("source blob"):
+            body += f"\nSource File: {source_file}\nSource Blob: {source_blob}"
+        if task_id in legacy_receipt_ids:
+            receipt_ids = ", ".join(str(value) for value in sorted(legacy_receipt_ids[task_id]))
+            body += (
+                f"\nLegacy Receipts on #{mailbox}: {receipt_ids}"
+                "\nReceipt Rebind Required: true"
+                "\nReissue required signed receipts against this task-local dispatch; "
+                "do not repeat work already completed and evidenced by the legacy receipts."
+            )
+        local_id = post_and_read_comment(issues_url, local_url, token, body)
+        migrated.add(task_id)
+        record["legacy_dispatch_migrations"].append({
+            "task_id": task_id, "source_issue_number": issue_number,
+            "legacy_dispatch_comment_id": dispatch["id"], "local_dispatch_comment_id": local_id,
+            "outbox_issue_number": issue_number,
+        })
+        record["dispatch_receipts"].append({
+            "task_id": task_id, "issue_number": issue_number, "source_comment_id": claim_id,
+            "delegated_to": packet["target chair"], "dispatch_comment_id": local_id,
+            "outbox_issue_number": issue_number, "supersedes_dispatch_comment_id": dispatch["id"],
+        })
+        record["task_states"].setdefault(task_id, {}).update(
+            status="WAITING_FOR_RECEIPT", dispatch_comment_id=local_id,
+            target_chair=packet.get("target chair"), outbox_issue_number=issue_number,
+            legacy_dispatch_comment_id=dispatch["id"], source_file=source_file,
+            source_blob=source_blob, source_preflight=source_status,
+        )
+    return migrated
+
+
 def monitor_issues(repo, mailbox, token, record):
     issues_url = f"https://api.github.com/repos/{repo}/issues"
     outbox_url = f"{issues_url}/{mailbox}/comments"
+    # Issue #6 remains the canonical room; PR #8 is the existing wake/availability relay.
+    # Task dispatches and signed receipts use each task's own issue thread.
+    wake_url = f"{issues_url}/{WAKE_ISSUE}/comments"
     issues = fetch_pages(f"{issues_url}?state=open&sort=created&direction=asc", token)
     open_issues = {issue["number"]: issue for issue in issues if "pull_request" not in issue}
     outbox_comments = fetch_pages(outbox_url, token)
+    wake_comments = fetch_pages(wake_url, token)
+    mailbox_full = len(outbox_comments) >= 2500
+    record["wake_issue_number"] = WAKE_ISSUE
+    record["canonical_mailbox_comments"] = len(outbox_comments)
     policy, policy_digest = pilot_state.load_policy()
     reporters = policy["seat_reporters"]
     registry_ready = set(reporters) == pilot_state.SEATS
     dispatch_packets = [packet for _, packet in comment_packets(outbox_comments, DISPATCH_HEADER)]
     bot_dispatches = list(comment_packets(outbox_comments, DISPATCH_HEADER, bot_only=True))
     dispatched = {packet["task id"] for packet in dispatch_packets}
+    for wake_comment in wake_comments:
+        wake_body = wake_comment.get("body") or ""
+        if wake_body.startswith(TEAMCHAT_WAKE_HEADER):
+            task_marker = re.search(r"^TASK_ID: ([^\r\n]+)$", wake_body, re.MULTILINE)
+            if task_marker:
+                dispatched.add(task_marker[1].strip())
     dispatched_sources = {
         int(source[1]) for packet in dispatch_packets
         if (source := re.match(r"^#(\d+)(?:\s|$)", packet.get("source issue", "")))
@@ -725,10 +890,10 @@ def monitor_issues(repo, mailbox, token, record):
         dispatched.update(packet["task id"] for _, packet in comment_packets(comments, DISPATCH_HEADER))
         pending.extend(inspect_directives(issue, sorted(comments, key=lambda c: c["id"]), record))
         record["issue_numbers_inspected"].append(number)
-        if scheduled and number != mailbox and (candidate := backlog_candidate(issue)):
+        if scheduled and number not in {mailbox, WAKE_ISSUE} and (candidate := backlog_candidate(issue)):
             task_id = f"BACKLOG-{number}"
             if (task_id not in dispatched and number not in dispatched_sources
-                    and not pilot_state.reserved(outbox_comments, task_id)
+                    and not pilot_state.reserved(wake_comments, task_id)
                     and (candidate[2] in LEGACY_CHAIRS or candidate[2].strip("[]") in reporters)):
                 claim = next((comment for comment, packet in comment_packets(comments, CLAIM_HEADER, bot_only=True)
                               if packet["task id"] == task_id
@@ -748,40 +913,94 @@ def monitor_issues(repo, mailbox, token, record):
         chair = task[1]
         seat = chair.strip("[]")
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
-            reports = fetch_pages(outbox_url, token)
+            reports = wake_comments
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
             if states[seat] != "available":
                 record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
                                                          "availability": states[seat]})
                 continue
-        dispatch_task(outbox_url, token, origin, task, mailbox, record)
+        dispatch_task(outbox_url, token, origin, task, mailbox, record, mailbox_full=mailbox_full)
         record["loop_state"] = "DISPATCHED"
-    # Echo canaries declared on ordinary task issues keep their dispatch and
-    # receipts in that task's own thread. Issue #6 remains the canonical room;
-    # it is not required to accept more comments for a task-local canary.
-    for number, prior_comments in sorted(issue_comments_by_number.items()):
-        if number == mailbox:
-            continue
+    # All task-specific dispatches and receipts live on their source issue thread.
+    migrated_task_ids = migrate_legacy_backlog_dispatches(
+        repo, issues_url, mailbox, bot_dispatches, outbox_comments,
+        issue_comments_by_number, token, record,
+    )
+    local_issue_numbers = {
+        number for number, comments in issue_comments_by_number.items()
+        if number not in {mailbox, WAKE_ISSUE} and (
+            list(comment_packets(comments, DISPATCH_HEADER, bot_only=True))
+            or list(comment_packets(comments, TASK_HEADER))
+        )
+    }
+    local_issue_numbers.update(
+        receipt["issue_number"] for receipt in record["dispatch_receipts"]
+        if receipt.get("issue_number") not in {mailbox, WAKE_ISSUE}
+    )
+    # The wake log is the durable index for task threads, including closed issues
+    # whose terminal adjudication may need to resume after an ambiguous API response.
+    for wake_comment in wake_comments:
+        wake_body = wake_comment.get("body") or ""
+        if wake_body.startswith(TEAMCHAT_WAKE_HEADER):
+            match = re.search(r"NEW_TASK #(\d+)", wake_body)
+            if match and int(match[1]) not in {mailbox, WAKE_ISSUE}:
+                local_issue_numbers.add(int(match[1]))
+    for number in sorted(local_issue_numbers):
+        local_url = f"{issues_url}/{number}/comments"
+        local_comments = fetch_pages(local_url, token)
+        local_dispatches = list(comment_packets(local_comments, DISPATCH_HEADER, bot_only=True))
+        finished = {
+            packet["task id"]
+            for header in (ADJUDICATION_HEADER, TERMINAL_CLOSED_HEADER)
+            for _, packet in comment_packets(local_comments, header, bot_only=True)
+        }
+        for dispatch, packet in local_dispatches:
+            task_id = packet["task id"]
+            task_state = task_states.setdefault(task_id, {})
+            task_state.update(
+                status="ADJUDICATED" if task_id in finished else "WAITING_FOR_RECEIPT",
+                dispatch_comment_id=dispatch["id"], target_chair=packet.get("target chair"),
+                outbox_issue_number=number,
+            )
+            if packet.get("source file") and packet.get("source blob"):
+                task_state.update(source_file=packet["source file"], source_blob=packet["source blob"])
+                anchor = ISSUE_ANCHOR.fullmatch(packet["source file"])
+                if anchor:
+                    current_source, _ = call_github_api(f"{issues_url}/{number}", token)
+                    task_state["source_preflight"] = (
+                        "VERIFIED" if issue_anchor(current_source) == (packet["source file"], packet["source blob"])
+                        else "DISPATCH_SOURCE_CHANGED"
+                    )
+                else:
+                    source_record = {"task_states": {}}
+                    source_task = (task_id, packet.get("target chair"), packet.get("directive"),
+                                   [packet["source file"]])
+                    if preflight_source(source_task, source_record):
+                        task_state["source_preflight"] = "VERIFIED"
+                    else:
+                        task_state["source_preflight"] = source_record["task_states"][task_id]["source_preflight"]
+            if task_id not in finished:
+                task_states[task_id]["wake_comment_id"] = ensure_task_wake(
+                    repo, number, packet, wake_url, wake_comments, issues_url, token,
+                )
         local_intakes = {
-            packet["task id"] for _, packet in comment_packets(prior_comments, TASK_HEADER)
+            packet["task id"] for _, packet in comment_packets(local_comments, TASK_HEADER)
             if packet["task id"].startswith("CANARY-INTAKE-")
             and packet.get("target chair") == "[WORK]"
             and packet.get("directive") == ECHO_DIRECTIVE
         }
-        if not local_intakes:
-            continue
-        local_url = f"{issues_url}/{number}/comments"
-        local_comments = fetch_pages(local_url, token)
-        local_dispatches = list(comment_packets(local_comments, DISPATCH_HEADER, bot_only=True))
-        for dispatch, packet in local_dispatches:
-            if packet["task id"] in local_intakes:
-                task_states.setdefault(packet["task id"], {}).update(
-                    status="WAITING_FOR_RECEIPT", dispatch_comment_id=dispatch["id"],
-                    target_chair=packet.get("target chair"), outbox_issue_number=number,
-                )
-        record["waiting_canary"].extend(adjudicate_canaries(
-            repo, number, local_comments, local_dispatches, local_url, token, record,
-        ))
+        if local_intakes:
+            record["waiting_canary"].extend(adjudicate_canaries(
+                repo, number, local_comments, local_dispatches, local_url, token, record,
+            ))
+        if any(re.fullmatch(r"BACKLOG-[0-9]+", packet["task id"])
+               for _, packet in local_dispatches):
+            adjudicate_backlog(
+                issues_url, mailbox, local_comments, local_dispatches, token, record,
+                outbox_issue=number,
+            )
+    # Legacy dispatches remain adjudicable only when they have not been migrated.
+    legacy_remaining = [entry for entry in bot_dispatches if entry[1]["task id"] not in migrated_task_ids]
     for receipt in record["adjudication_receipts"]:
         task_states.setdefault(receipt["task_id"], {}).update(
             status="ADJUDICATED", adjudication_comment_id=receipt["adjudication_comment_id"],
@@ -795,7 +1014,7 @@ def monitor_issues(repo, mailbox, token, record):
     record["waiting_canary"].extend(adjudicate_canaries(
         repo, mailbox, outbox_comments, bot_dispatches, outbox_url, token, record,
     ))
-    adjudicate_backlog(issues_url, mailbox, outbox_comments, bot_dispatches, token, record)
+    adjudicate_backlog(issues_url, mailbox, outbox_comments, legacy_remaining, token, record)
     record["waiting_backlog"] = [
         {"task_id": task_id, "dispatch_comment_id": state["dispatch_comment_id"]}
         for task_id, state in task_states.items()
@@ -826,17 +1045,27 @@ def monitor_issues(repo, mailbox, token, record):
             continue
         scope = f"{fresh[3]}. Read the canonical scope and evidence gates in https://github.com/{repo}/issues/{number}."
         sources = re.findall(r"^\[SOURCE_FILE\][ \t]*([^\r\n]*)", current.get("body") or "", re.I | re.M)
-        task = (task_id, chair, scope, [source.strip() for source in sources])
-        if not preflight_source(task, record):
-            continue
+        if sources:
+            task = (task_id, chair, scope, [source.strip() for source in sources])
+            if not preflight_source(task, record):
+                continue
+        else:
+            # Pin the issue body itself when no source file was declared.
+            anchor, blob = issue_anchor(current)
+            task = (task_id, chair, scope, [anchor])
+            task_states[task_id] = {
+                "target_chair": chair, "status": "PREFLIGHT_VERIFIED",
+                "source_preflight": "ISSUE_BODY_PINNED", "source_file": anchor,
+                "source_blob": blob,
+            }
         seat = chair.strip("[]")
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
-            reports = fetch_pages(outbox_url, token)
+            reports = wake_comments
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
             run_id = os.getenv("GITHUB_RUN_ID", "")
             if seat == "CODEX" and live_schedule and re.fullmatch(r"[1-9][0-9]{0,19}", run_id):
                 states[seat] = refresh_codex_availability(
-                    repo, outbox_url, token, reporters[seat], run_id, record,
+                    repo, wake_url, token, reporters[seat], run_id, record,
                 )
                 refreshed, _ = call_github_api(f"{issues_url}/{number}", token)
                 if backlog_candidate(refreshed) != candidate or refreshed.get("body") != current.get("body"):
@@ -847,7 +1076,7 @@ def monitor_issues(repo, mailbox, token, record):
                 record["loop_state"] = "WAITING_FOR_SPECIALIST"
                 if claim is None and live_schedule and all(value == "unavailable" for value in states.values()):
                     run_pilot_if_approved(task_id, number, seat, policy, policy_digest,
-                                          issues_url, outbox_url, token, record)
+                                          issues_url, wake_url, token, record)
                 break
         claim_id = claim["id"] if claim else post_comment(f"{issues_url}/{number}/comments", token, (
             f"{CLAIM_HEADER}\nTask ID: {task_id}\nTarget Chair: {chair}\n"
@@ -856,7 +1085,7 @@ def monitor_issues(repo, mailbox, token, record):
         record["backlog_claim"] = {"issue_number": number, "claim_comment_id": claim_id}
         task_states[task_id]["status"] = "CLAIMED"
         dispatch_task(outbox_url, token, {"issue_number": number, "source_comment_id": claim_id},
-                      task, mailbox, record)
+                      task, mailbox, record, mailbox_full=mailbox_full)
         record["loop_state"] = "DISPATCHED"
         break
 
@@ -896,6 +1125,8 @@ def main():
         "authorization_rejections": 0,
         "monitor_only_events": [],
         "dispatch_receipts": [],
+        "legacy_dispatch_migrations": [],
+        "legacy_dispatch_migrations_blocked": [],
         "adjudication_receipts": [],
         "terminal_receipts": [],
         "waiting_canary": [],
