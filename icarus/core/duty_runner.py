@@ -512,10 +512,6 @@ def preflight_source(task, record):
         state.update(status="PREFLIGHT_VERIFIED", source_preflight="ECHO_CANARY")
         return True
 
-    if not source_files and task_id.startswith("BACKLOG-") and chair == "[SOL]":
-        state.update(status="PREFLIGHT_VERIFIED", source_preflight="OWNER_AUTHORED_SOL_BACKLOG_NO_SOURCE")
-        return True
-
     error = "SOURCE_FILE_REQUIRED"
     if len(source_files) == 1 and source_files[0]:
         source = source_files[0]
@@ -549,7 +545,7 @@ def preflight_source(task, record):
     return False
 
 
-def inspect_directives(issue, comments, record, *, allow_task_intake=True):
+def inspect_directives(issue, comments, record):
     number = issue["number"]
     sources = [(None, issue), *((comment["id"], comment) for comment in comments)]
     pending = []
@@ -571,11 +567,10 @@ def inspect_directives(issue, comments, record, *, allow_task_intake=True):
         origin = {"issue_number": number, "source_comment_id": comment_id}
         if TASK_HEADER in markers:
             markers.remove(TASK_HEADER)
-            if allow_task_intake:
-                task = parse_task(fields)
-                if task:
-                    record["eligible_directives_detected"] += 1
-                    pending.append((origin, task))
+            task = parse_task(fields)
+            if task:
+                record["eligible_directives_detected"] += 1
+                pending.append((origin, task))
         for marker in sorted(markers):
             record["eligible_directives_detected"] += 1
             record["monitor_only_events"].append({**origin, "marker": marker})
@@ -714,15 +709,9 @@ def monitor_issues(repo, mailbox, token, record):
             comments = []
         else:
             comments = fetch_pages(f"{issues_url}/{number}/comments", token)
-        pending.extend(inspect_directives(
-            issue, sorted(comments, key=lambda c: c["id"]), record,
-            allow_task_intake=number == mailbox,
-        ))
+        pending.extend(inspect_directives(issue, sorted(comments, key=lambda c: c["id"]), record))
         record["issue_numbers_inspected"].append(number)
         if scheduled and number != mailbox and (candidate := backlog_candidate(issue)):
-            if candidate[2] == "[SOL]" and issue.get("author_association") != "OWNER":
-                record["authorization_rejections"] += 1
-                continue
             task_id = f"BACKLOG-{number}"
             if (task_id not in dispatched and number not in dispatched_sources
                     and not pilot_state.reserved(outbox_comments, task_id)
