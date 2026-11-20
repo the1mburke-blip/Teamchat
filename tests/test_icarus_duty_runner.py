@@ -377,6 +377,29 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-8")
         self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
 
+    def test_owner_authored_sol_backlog_can_pass_preflight_without_source_file(self):
+        record = {"task_states": {}}
+        self.assertTrue(runner.preflight_source(("BACKLOG-7", "[SOL]", "read-only analysis", []), record))
+        self.assertEqual(record["task_states"]["BACKLOG-7"]["source_preflight"], "OWNER_AUTHORED_SOL_BACKLOG_NO_SOURCE")
+        blocked = {"task_states": {}}
+        self.assertFalse(runner.preflight_source(("BACKLOG-8", "[CODEX]", "external worker", []), blocked))
+        self.assertEqual(blocked["task_states"]["BACKLOG-8"]["source_preflight"], "SOURCE_FILE_REQUIRED")
+
+    def test_live_schedule_runs_sol_locally_without_external_seat_report(self):
+        task = issue(7, title="[READY] Sol local execution", body="[TO] [SOL]")
+        task["body"] = "[TO] [SOL]"  # Deliberately no SOURCE_FILE: read-only Sol backlog work is still eligible.
+        self.issues.append({**task, "state": "open"})
+        policy = {"seat_reporters": {"SOL": 102}, "verifier_user_id": None, "approved_pilots": {}}
+        with (
+            patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule", "GITHUB_RUN_ID": "1234"}),
+            patch.object(pilot_state, "on_live_schedule", return_value=True),
+            patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
+        ):
+            record = self.run_pulse()
+        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-7")
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
+        self.assertEqual(record["held_specialist_routes"], [])
+
     def test_enrolled_codex_can_dispatch_without_unrelated_seats(self):
         self.issues.append({
             **issue(7, title="[READY] Codex evidence readback", body="[TO] [CODEX]"),
