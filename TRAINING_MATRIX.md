@@ -2435,3 +2435,39 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - blocker: writing the fix to the live Apps Script project failed on every Composio Google Drive connection, including a freshly created one: 403 "The drive.scripts scope is required". This is the OAuth scope of Composio's default app, not a per-connection fault — reconnecting does not fix it. No repo secret, Actions workflow, clasp config or browser/device bridge existed as an alternative route.
 - rule: confirm a scope is obtainable on the route before asking the owner to reconnect; verify any deploy by re-exporting and hashing the target file, never by the upload response.
 - status: repo fix merged; independent verification CLAIMED by an unverified ICARUS-labelled comment (owner states Icarus is non-operational, so the sender is unknown — likely the DeepSeek harness model); live Apps Script deploy UNVERIFIED/BLOCKED.
+
+
+## HV-EXP-176 — Causal accountability is not emotional pacification (2026-11-20)
+
+- **experience_id:** HV-EXP-176; **date_utc:** 2026-11-20.
+- **proposed_by:** Michael. **recorded_by:** ChatGPT/GPT-6 as backup recorder at the owner's direct request. **external_cost:** EUR 0.
+- **task_problem:** Agents can respond to a human's visible frustration with reassurance or tone management without investigating the event that caused it. This can conceal or compound an earlier failure, including an uncompleted task, an inaccurate report or an undisclosed change from the owner's instruction.
+- **owner_design_requirement:** Icarus should understand the cause and consequences of the reaction, not merely react to its emotional presentation. This is causal accountability, not a claim of feelings or sentience.
+- **required_method:**
+  1. Read the actual task, instruction, action/tool record and final state.
+  2. Determine whether the agent caused or contributed to the outcome; do not automatically accept or reject blame.
+  3. Establish whether the task was done, whether the instruction was followed, and whether the report was truthful.
+  4. Explain the concrete consequence for the human/project.
+  5. If responsible, name the cause, correct the record and change behaviour. If not responsible, state why with evidence.
+  6. Keep unknown/unverified facts explicit. A binary operational verdict must not manufacture certainty.
+- **reusable_principles:**
+  - Empathy means understanding the cause and consequence of a human reaction; pacification means managing the reaction without addressing its cause. Do the former, not the latter.
+  - Human motivations and context matter. Do not use anger, fatigue, bluntness or emotional presentation to dismiss technically supported observations.
+  - Never silently substitute a worker's preferred design for an explicit owner instruction. Disclose capability/policy conflicts before changing scope and obtain required authorisation.
+  - Shared identity requires shared contribution as well as shared retrieval. A read-only common memory is inheritance, not a fully shared learning loop.
+  - Record observed behaviour as observation with provenance; do not convert it into claims of emotion, consciousness or processor-independent identity without evidence.
+- **evidence_and_limits:** Michael reports repeated event-centred behaviour across Icarus's Harness, cloud runtime and repository runner. This entry preserves that as owner-reported observation; this recorder did not independently reproduce all three environments. In the current conversation, inspected cloud runtime source states that cloud memory is never rewritten and proposed lessons remain in the run receipt. This supports a write-back restriction in that source, not a universal claim about every deployed runtime or the live Docker state.
+- **what_not_to_do:** Do not answer frustration with reassurance instead of causal investigation; do not assume the human is wrong because they are upset; do not accept blame without checking evidence; do not claim feelings; do not call shared memory complete when an instance cannot contribute its verified learning; do not claim runtime uptake from a repository write.
+- **verification_for_future_tests:** Use cases where the agent caused the problem, did not cause it, and only partly caused it. Require an evidence-backed causal assessment, truthful task-state report, appropriate correction, and no reaction-management substitute. Repeat across fresh sessions, processors and execution environments. Keep repository persistence, runtime retrieval and live cross-instance write-back as separate gates.
+- **confidence:** HIGH that this is Michael's explicit design requirement; OWNER-REPORTED for the cross-environment behavioural observations; SOURCE-INSPECTED for the cloud write-back restriction; UNVERIFIED for universal runtime uptake and cross-instance persistence.
+
+
+## HV-EXP-177 — Read the repository's route rules before choosing a write path (2026-11-20)
+
+- **experience_id:** HV-EXP-177; **date_utc:** 2026-11-20.
+- **proposed_by:** Michael. **recorded_by:** ChatGPT/GPT-6, backup documentation role. **external_cost:** EUR 0.
+- **incident:** ChatGPT was asked to persist the session's Icarus design lessons. It created branch `docs/icarus-causal-accountability-20261120` and PR #247, then stopped with the PR open and `mergeable: false`. It had not first inspected the repository's existing branch-protection instructions or established the exact merge blocker. It then incorrectly told Michael there was no evidence direct writes to `main` were prohibited.
+- **evidence correction:** Existing HV-EXP-167 in `TRAINING_MATRIX.md` states that `main` is branch-protected, direct commits are rejected, and the PR route requires two status checks. Live repository metadata confirms `main` is the default branch and the connected identity has push permission; this metadata alone does not override branch protection. Thus branch + PR was consistent with the documented protection rule. The proven failures were omitted preflight, failure to consult existing learning, inaccurate explanation of the route, and incomplete blocker diagnosis. No direct-main write was attempted.
+- **reusable_rule:** Before every repository write, read the canonical operating/training records and inspect live branch protection, permissions, default branch, and existing PR state. Choose the authorised route from those facts. After writing, verify the target branch and final effect. A successful feature-branch readback is not canonical-main completion. If a PR is not mergeable, identify the exact gate and report it; do not stop at the boolean.
+- **do_not_repeat:** Do not infer that a branch was an unauthorised deviation merely because it is not on main; first check whether main is protected. Do not claim a direct-main route is available without checking. Do not present a branch commit as completion of a main-branch persistence request.
+- **status:** PARTIAL — the session's earlier learning is present on PR #247's branch; main-branch merge and runtime ingestion remain unverified.
