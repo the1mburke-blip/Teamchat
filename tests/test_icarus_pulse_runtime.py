@@ -23,6 +23,10 @@ class PulseRuntimeTests(unittest.TestCase):
              "MULTI-AGENT INTERACTION AUDIT — REQUESTED BY MICHAEL\nMODEL: gemini-3.1-flash-lite"),
             ("[sol] Review this\nVERIFY_URL: https://github.com/example/Teamchat",
              "Review this\nVERIFY_URL: https://github.com/example/Teamchat"),
+            ("**[SOL] MULTI-AGENT INTERACTION AUDIT — REQUESTED BY MICHAEL**\nMODEL: gemini-3.1-flash-lite",
+             "MULTI-AGENT INTERACTION AUDIT — REQUESTED BY MICHAEL\nMODEL: gemini-3.1-flash-lite"),
+            ("**[SOL]** Review this\nVERIFY_FILE: STATUS.md",
+             "Review this\nVERIFY_FILE: STATUS.md"),
         ]
         for raw, expected in cases:
             with self.subTest(raw=raw):

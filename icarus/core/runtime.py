@@ -959,12 +959,16 @@ def normalize_owner_command(body):
     if not lines:
         return None
     match = re.match(
-        r"^\s*(?:ICARUS_RUN|\[ICARUS SUPERVISORY DIRECTIVE\]|\[SOL\])(?=\s|$)",
+        r"^\s*(?P<open_bold>\*\*)?(?:ICARUS_RUN|\[ICARUS SUPERVISORY DIRECTIVE\]|\[SOL\])"
+        r"(?P<close_bold>\*\*)?(?=\s|$)",
         lines[0], re.IGNORECASE,
     )
     if not match:
         return None
-    lines[0] = lines[0][match.end():].lstrip()
+    remainder = lines[0][match.end():]
+    if match.group("open_bold") and not match.group("close_bold"):
+        remainder = re.sub(r"\*\*\s*$", "", remainder)
+    lines[0] = remainder.lstrip()
     return "\n".join(lines).strip()
 
 
