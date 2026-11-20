@@ -441,7 +441,7 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
             state["status"] = "CLOSED"
         elif "reissue of" in packet:
             state.update(status="BLOCKED", terminal_blocker="REPAIR_LEASH_EXHAUSTED")
-        elif not reissue_source_matches(packet):
+        elif not reissue_source_matches(packet, current):
             state.update(status="BLOCKED", terminal_blocker="DISPATCH_SOURCE_CHANGED")
         else:
             failure = f"process exited {exit_code}" if exit_code else "artifact digest mismatch"
@@ -467,8 +467,25 @@ def adjudicate_backlog(issues_url, mailbox, comments, dispatches, token, record)
             detail["blocker"] = state["terminal_blocker"]
 
 
-def reissue_source_matches(packet):
+ISSUE_ANCHOR = re.compile(r"ISSUE#([1-9][0-9]{0,9})")
+
+
+def issue_anchor(issue):
+    """Pin a backlog issue that names no [SOURCE_FILE] to its own body.
+
+    The blob is the git blob SHA-1 of the issue body, so any edit to the
+    canonical scope after dispatch is detected exactly like a source-file edit.
+    """
+    body = (issue.get("body") or "").encode("utf-8")
+    return f"ISSUE#{issue['number']}", hashlib.sha1(b"blob %d\0" % len(body) + body).hexdigest()
+
+
+def reissue_source_matches(packet, current=None):
     task_id = packet["task id"]
+    anchor = ISSUE_ANCHOR.fullmatch(packet["source file"])
+    if anchor:
+        return (current is not None and current.get("number") == int(anchor[1])
+                and issue_anchor(current) == (packet["source file"], packet["source blob"]))
     task = task_id, packet["target chair"], packet["directive"], [packet["source file"]]
     states = {}
     return (preflight_source(task, {"task_states": states})
@@ -826,9 +843,18 @@ def monitor_issues(repo, mailbox, token, record):
             continue
         scope = f"{fresh[3]}. Read the canonical scope and evidence gates in https://github.com/{repo}/issues/{number}."
         sources = re.findall(r"^\[SOURCE_FILE\][ \t]*([^\r\n]*)", current.get("body") or "", re.I | re.M)
-        task = (task_id, chair, scope, [source.strip() for source in sources])
-        if not preflight_source(task, record):
-            continue
+        if sources:
+            task = (task_id, chair, scope, [source.strip() for source in sources])
+            if not preflight_source(task, record):
+                continue
+        else:
+            # Backlog issues carry their scope in the issue itself. Without a
+            # declared file, pin the exact issue body instead of blocking forever.
+            anchor, blob = issue_anchor(current)
+            task = (task_id, chair, scope, [anchor])
+            task_states[task_id] = {"target_chair": chair, "status": "PREFLIGHT_VERIFIED",
+                                    "source_preflight": "ISSUE_BODY_PINNED",
+                                    "source_file": anchor, "source_blob": blob}
         seat = chair.strip("[]")
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = fetch_pages(outbox_url, token)
