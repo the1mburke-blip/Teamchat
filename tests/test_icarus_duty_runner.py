@@ -646,13 +646,52 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertIsNone(record["backlog_claim"])
         self.assertEqual(record["dispatch_receipts"][0]["task_id"], "OVERRIDE")
 
+    def test_echo_canary_uses_task_issue_when_canonical_mailbox_is_full(self):
+        task_id = "CANARY-INTAKE-259"
+        self.issues.append(issue(259))
+        self.comments[259] = [comment(
+            10,
+            f"[TASK_INCOMING]\nTask ID: {task_id}\nTarget Chair: [WORK]\n"
+            f"Directive: {runner.ECHO_DIRECTIVE}",
+        )]
+
+        first = self.run_pulse()
+        dispatch = first["dispatch_receipts"][0]
+        self.assertEqual(dispatch["task_id"], task_id)
+        self.assertEqual(dispatch["outbox_issue_number"], 259)
+        self.assertEqual(self.comments[259][-1]["body"].splitlines()[0], runner.DISPATCH_HEADER)
+        self.assertFalse(self.comments.get(6, []))
+        self.assertEqual(first["waiting_canary"], [{
+            "task_id": task_id, "dispatch_comment_id": dispatch["dispatch_comment_id"],
+        }])
+
+        link = "https://github.com/example/Teamchat/issues/259#issuecomment-"
+        dispatch_id = dispatch["dispatch_comment_id"]
+        claim_id = dispatch_id + 1
+        receipt_id = dispatch_id + 2
+        self.comments[259].extend([
+            comment(claim_id, f"[WORK] CLAIMED\nTask ID: {task_id}\nDispatch: {link}{dispatch_id}"),
+            comment(
+                receipt_id,
+                f"[WORK] EXECUTION RECEIPT\nTask ID: {task_id}\nExecutor: ChatGPT\n"
+                f"Worker Result: ECHO_COMPLETE\nEcho: {runner.ECHO_DIRECTIVE}\n"
+                f"Owner Intake: {link}10\nIcarus Dispatch: {link}{dispatch_id}\n"
+                f"Work Claim: {link}{claim_id}",
+            ),
+        ])
+        second = self.run_pulse()
+        self.assertEqual(second["loop_state"], "ADJUDICATED")
+        self.assertEqual(second["task_states"][task_id]["status"], "ADJUDICATED")
+        self.assertEqual(second["adjudication_receipts"][0]["work_receipt_comment_id"], receipt_id)
+        self.assertTrue(self.comments[259][-1]["body"].startswith(runner.ADJUDICATION_HEADER))
+
     def test_canary_waits_for_authorized_echo_then_adjudicates_once(self):
         task_id = "CANARY-INTAKE-001"
         link = "https://github.com/example/Teamchat/issues/6#issuecomment-"
         directive = runner.ECHO_DIRECTIVE
         self.comments[6] = canary_comments(task_id)
         receipt = (
-            f"[WORK] EXECUTION RECEIPT\nTask ID: {task_id}\nExecutor: ChatGPT Work\n"
+            f"[WORK] EXECUTION RECEIPT\nTask ID: {task_id}\nExecutor: ChatGPT\n"
             f"Worker result: ECHO_COMPLETE\nEcho: {directive}\nOwner intake: {link}10\n"
             f"Icarus dispatch: {link}11\nWork claim: {link}12"
         )
