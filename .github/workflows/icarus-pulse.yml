@@ -95,12 +95,12 @@ jobs:
       github.event.comment.user.id == 324897963 &&
       github.event.comment.author_association == 'OWNER' &&
       (
-        startsWith(toUpper(github.event.comment.body), 'ICARUS_RUN ') ||
-        toUpper(github.event.comment.body) == 'ICARUS_RUN' ||
-        startsWith(toUpper(github.event.comment.body), '[ICARUS SUPERVISORY DIRECTIVE] ') ||
-        toUpper(github.event.comment.body) == '[ICARUS SUPERVISORY DIRECTIVE]' ||
-        startsWith(toUpper(github.event.comment.body), '[SOL] ') ||
-        toUpper(github.event.comment.body) == '[SOL]'
+        startsWith(github.event.comment.body, 'ICARUS_RUN ') ||
+        github.event.comment.body == 'ICARUS_RUN' ||
+        startsWith(github.event.comment.body, '[ICARUS SUPERVISORY DIRECTIVE] ') ||
+        github.event.comment.body == '[ICARUS SUPERVISORY DIRECTIVE]' ||
+        startsWith(github.event.comment.body, '[SOL] ') ||
+        github.event.comment.body == '[SOL]'
       )
     runs-on: ubuntu-latest
     timeout-minutes: 55

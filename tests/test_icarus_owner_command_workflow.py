@@ -9,6 +9,7 @@ class IcarusOwnerCommandWorkflowTests(unittest.TestCase):
         self.assertIn("github.event.issue.number == 99", workflow)
         self.assertIn("github.event.comment.user.id == 324897963", workflow)
         self.assertIn("github.event.comment.author_association == 'OWNER'", workflow)
+        self.assertNotIn("toUpper(", workflow)
         self.assertIn("'[SOL] '", workflow)
         self.assertIn("'ICARUS_RUN '", workflow)
         self.assertIn("python3 -m icarus.core.runtime", workflow)
