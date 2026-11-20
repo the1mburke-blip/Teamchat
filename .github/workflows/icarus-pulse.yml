@@ -208,6 +208,9 @@ jobs:
             });
             core.setOutput('receipt_comment_id', String(posted.data.id));
             core.info(`Posted receipt ${posted.data.id} for source comment ${sourceCommentId}.`);
+            if (!persistence.startsWith('Persistent receipt: icarus/runs/')) {
+              core.setFailed('Receipt posted, but repository archive readback was not verified.');
+            }
 
   sidecar-verifier:
     if: github.event_name == 'schedule' && github.ref == 'refs/heads/main' && vars.ICARUS_SIDECAR_ENABLED == 'true'
