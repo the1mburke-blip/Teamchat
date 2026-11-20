@@ -25,8 +25,9 @@ jobs:
       ICARUS_PULSE_DUTY_SCHEDULE: '7 0-22/2 1-30 * *'
     permissions:
       actions: write
-      contents: read
+      contents: write
       issues: write
+      pull-requests: write
 
     steps:
       - name: Checkout Repository
@@ -64,16 +65,105 @@ jobs:
           if-no-files-found: error
           retention-days: 31
 
-      - name: Execute ICARUS Pulse reasoning
+      - name: Prepare isolated Sol execution branch
+        id: pulse_branch
         if: steps.pulse_reservation.outputs.artifact-id != ''
-        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          branch="icarus/sol-pulse-${GITHUB_RUN_ID}"
+          git fetch origin main
+          git switch --create "$branch" origin/main
+          git push origin "$branch"
+          echo "ICARUS_EXECUTION_BRANCH=$branch" >> "$GITHUB_ENV"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Execute ICARUS Sol work
+        id: pulse_infer
+        if: steps.pulse_reservation.outputs.artifact-id != '' && steps.pulse_branch.outputs.branch != ''
+        timeout-minutes: 4
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           COMMENT_ID: pulse-${{ github.run_id }}
           COMMENT_ACTOR: schedule
           PULSE_RESERVATION_ID: ${{ steps.pulse_reservation.outputs.artifact-id }}
+          ICARUS_EXECUTION_BRANCH: ${{ steps.pulse_branch.outputs.branch }}
         run: python3 -m icarus.core.runtime --pulse-infer
+
+      - name: Open draft PR for Sol changes
+        id: pulse_pr
+        if: always() && steps.pulse_branch.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TASK_ISSUE: ${{ steps.pulse_quota.outputs.issue }}
+          EXECUTION_BRANCH: ${{ steps.pulse_branch.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git fetch origin "$EXECUTION_BRANCH:refs/remotes/origin/$EXECUTION_BRANCH"
+          if git diff --quiet "origin/main...origin/$EXECUTION_BRANCH"; then
+            echo "No repository changes were produced; no PR opened."
+            git push origin --delete "$EXECUTION_BRANCH"
+            echo "url=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          url="$(gh pr create --draft --base main --head "$EXECUTION_BRANCH" \
+            --title "Sol autonomous work — issue #${TASK_ISSUE}" \
+            --body "Scheduled Sol execution for owner-authored issue #${TASK_ISSUE}. Draft only: no auto-merge or production deployment. Evidence is attached to workflow run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Independent verification remains pending.")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Persist Sol execution receipt to Issue 99
+        if: always() && steps.pulse_quota.outputs.issue != ''
+        uses: actions/github-script@v7
+        env:
+          TASK_ISSUE: ${{ steps.pulse_quota.outputs.issue }}
+          EXECUTION_BRANCH: ${{ steps.pulse_branch.outputs.branch }}
+          PULL_REQUEST_URL: ${{ steps.pulse_pr.outputs.url }}
+          WORKER_OUTCOME: ${{ steps.pulse_infer.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const issue_number = 99;
+            const runId = String(context.runId);
+            const marker = '<!-- icarus-pulse-worker:' + runId + ' -->';
+            const prior = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            if (prior.some(row => (row.body || '').includes(marker))) return;
+            const outcome = process.env.WORKER_OUTCOME || 'not-run';
+            const branch = process.env.EXECUTION_BRANCH || 'not-created';
+            const pr = process.env.PULL_REQUEST_URL || 'none';
+            const status = outcome === 'success' ? 'MODEL_RESPONSE_RETURNED' : 'MODEL_DID_NOT_RETURN_RESPONSE';
+            let workOutput = '(no model report file produced)';
+            if (fs.existsSync('icarus/runs')) {
+              const reportName = fs.readdirSync('icarus/runs').find(name => name.endsWith('-pulse-' + runId + '.md'));
+              if (reportName) {
+                const report = fs.readFileSync('icarus/runs/' + reportName, 'utf8');
+                const outputStart = report.indexOf('## Model output (UNVERIFIED)');
+                workOutput = outputStart >= 0 ? report.slice(outputStart, outputStart + 3500) : report.slice(0, 3500);
+              }
+            }
+            const body = [
+              marker,
+              '[ICARUS AUTONOMOUS WORK RECEIPT]',
+              `Pulse Run ID: ${runId}`,
+              'Task Issue: #' + process.env.TASK_ISSUE,
+              'Executor: Sol local scheduled worker; Gemini 3.5 Flash-Lite approved zero-cost route',
+              `Execution Step: ${status}`,
+              'Execution Branch: ' + branch,
+              'Draft Pull Request: ' + pr,
+              'Evidence: https://github.com/' + owner + '/' + repo + '/actions/runs/' + runId,
+              'Work Output (UNVERIFIED):',
+              workOutput,
+              'Independent Verification: PENDING — this receipt is not a terminal PASS.',
+            ].join('\n');
+            const { data: comment } = await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            const { data: readback } = await github.rest.issues.getComment({ owner, repo, comment_id: comment.id });
+            if (readback.id !== comment.id || readback.body !== body || readback.issue_url !== 'https://api.github.com/repos/' + owner + '/' + repo + '/issues/' + issue_number) {
+              throw new Error('Sol execution receipt failed exact readback');
+            }
+            core.info('Sol execution receipt ' + comment.html_url + ' verified.');
 
       - name: Persist Execution Evidence
         if: always()
