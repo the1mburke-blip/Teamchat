@@ -14,7 +14,7 @@ on:
     types: [created]
 
 concurrency:
-  group: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && format('harness-gate-{0}', github.ref) || 'icarus-issue-6-intake' }}
+  group: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && format('harness-gate-{0}', github.ref) || 'icarus-issue-99-intake' }}
   cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
 
 jobs:

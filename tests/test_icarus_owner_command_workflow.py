@@ -15,6 +15,7 @@ class IcarusOwnerCommandWorkflowTests(unittest.TestCase):
         self.assertIn("github.rest.issues.createComment", workflow)
         self.assertIn("github.rest.repos.getContent", workflow)
         self.assertIn('ICARUS_ISSUE_NUMBER: "99"', workflow)
+        self.assertIn("icarus-issue-99-intake", workflow)
 
 
 if __name__ == "__main__":
