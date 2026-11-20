@@ -15,6 +15,10 @@ class IcarusOwnerCommandWorkflowTests(unittest.TestCase):
         self.assertIn("python3 -m icarus.core.runtime", workflow)
         self.assertIn("github.rest.issues.createComment", workflow)
         self.assertIn("github.rest.repos.getContent", workflow)
+        self.assertIn("const receiptBranch = 'icarus-runs';", workflow)
+        self.assertIn("RECEIPT_ARTIFACT_URL", workflow)
+        self.assertIn("core.setFailed", workflow)
+        self.assertLess(workflow.index("Archive owner command receipt"), workflow.index("Persist and post owner command receipt"))
         self.assertIn('ICARUS_ISSUE_NUMBER: "99"', workflow)
         self.assertIn("icarus-issue-99-intake", workflow)
 
