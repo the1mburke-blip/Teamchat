@@ -10,6 +10,8 @@ on:
     branches: [main, staging]
   pull_request:
     branches: [main, staging]
+  issues:
+    types: [opened]
   issue_comment:
     types: [created]
 
@@ -89,25 +91,34 @@ jobs:
 
   icarus-owner-command:
     if: >-
-      github.event_name == 'issue_comment' &&
-      github.event.action == 'created' &&
-      github.event.issue.pull_request == null &&
-      github.event.comment.user.id == 324897963 &&
-      github.event.comment.author_association == 'OWNER' &&
       (
-        startsWith(github.event.comment.body, 'ICARUS_RUN ') ||
-        github.event.comment.body == 'ICARUS_RUN' ||
-        startsWith(github.event.comment.body, '[ICARUS SUPERVISORY DIRECTIVE] ') ||
-        github.event.comment.body == '[ICARUS SUPERVISORY DIRECTIVE]' ||
-        startsWith(github.event.comment.body, '[SOL] ') ||
-        github.event.comment.body == '[SOL]' ||
-        startsWith(github.event.comment.body, '**ICARUS_RUN ') ||
-        github.event.comment.body == '**ICARUS_RUN**' ||
-        startsWith(github.event.comment.body, '**[ICARUS SUPERVISORY DIRECTIVE] ') ||
-        github.event.comment.body == '**[ICARUS SUPERVISORY DIRECTIVE]**' ||
-        startsWith(github.event.comment.body, '**[SOL] ') ||
-        startsWith(github.event.comment.body, '**[SOL]** ') ||
-        github.event.comment.body == '**[SOL]**'
+        github.event_name == 'issues' &&
+        github.event.action == 'opened' &&
+        github.event.issue.user.id == 324897963 &&
+        github.event.issue.author_association == 'OWNER' &&
+        startsWith(github.event.issue.body, 'ICARUS_RUN')
+      ) ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.action == 'created' &&
+        github.event.issue.pull_request == null &&
+        github.event.comment.user.id == 324897963 &&
+        github.event.comment.author_association == 'OWNER' &&
+        (
+          startsWith(github.event.comment.body, 'ICARUS_RUN ') ||
+          github.event.comment.body == 'ICARUS_RUN' ||
+          startsWith(github.event.comment.body, '[ICARUS SUPERVISORY DIRECTIVE] ') ||
+          github.event.comment.body == '[ICARUS SUPERVISORY DIRECTIVE]' ||
+          startsWith(github.event.comment.body, '[SOL] ') ||
+          github.event.comment.body == '[SOL]' ||
+          startsWith(github.event.comment.body, '**ICARUS_RUN ') ||
+          github.event.comment.body == '**ICARUS_RUN**' ||
+          startsWith(github.event.comment.body, '**[ICARUS SUPERVISORY DIRECTIVE] ') ||
+          github.event.comment.body == '**[ICARUS SUPERVISORY DIRECTIVE]**' ||
+          startsWith(github.event.comment.body, '**[SOL] ') ||
+          startsWith(github.event.comment.body, '**[SOL]** ') ||
+          github.event.comment.body == '**[SOL]**'
+        )
       )
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -128,17 +139,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          COMMENT_BODY: ${{ github.event.comment.body }}
-          COMMENT_ID: ${{ github.event.comment.id }}
-          COMMENT_ACTOR: ${{ github.event.comment.user.login }}
+          COMMENT_BODY: ${{ github.event_name == 'issues' && github.event.issue.body || github.event.comment.body }}
+          COMMENT_ID: ${{ github.event_name == 'issues' && github.event.issue.id || github.event.comment.id }}
+          COMMENT_ACTOR: ${{ github.event_name == 'issues' && github.event.issue.user.login || github.event.comment.user.login }}
         run: python3 -m icarus.core.runtime
       - name: Archive owner command receipt
         id: archive_owner_receipt
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: icarus-owner-run-${{ github.event.comment.id }}
-          path: icarus/runs/*-${{ github.event.comment.id }}.md
+          name: icarus-owner-run-${{ github.event_name == 'issues' && github.event.issue.id || github.event.comment.id }}
+          path: icarus/runs/*-${{ github.event_name == 'issues' && github.event.issue.id || github.event.comment.id }}.md
           if-no-files-found: warn
           retention-days: 30
       - name: Persist owner command receipt
@@ -149,7 +160,7 @@ jobs:
             const fs = require('fs');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const sourceCommentId = String(context.payload.comment.id);
+            const sourceCommentId = String(context.payload.comment?.id ?? context.payload.issue.id);
             const receiptDir = 'icarus/runs';
             const filename = fs.existsSync(receiptDir)
               ? fs.readdirSync(receiptDir).find(name => name.endsWith(`-${sourceCommentId}.md`))
