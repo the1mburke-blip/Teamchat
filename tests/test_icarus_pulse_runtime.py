@@ -15,6 +15,20 @@ class PulseRuntimeTests(unittest.TestCase):
     def test_legacy_runtime_module_reexports_packaged_implementation(self):
         self.assertIs(legacy_runtime.main, runtime.main)
 
+    def test_owner_command_prefixes_are_normalized_without_losing_task_fields(self):
+        cases = [
+            ("ICARUS_RUN Review the board\nVERIFY_FILE: STATUS.md", "Review the board\nVERIFY_FILE: STATUS.md"),
+            ("[ICARUS SUPERVISORY DIRECTIVE] Inspect the agents", "Inspect the agents"),
+            ("[SOL] MULTI-AGENT INTERACTION AUDIT — REQUESTED BY MICHAEL\nMODEL: gemini-3.1-flash-lite",
+             "MULTI-AGENT INTERACTION AUDIT — REQUESTED BY MICHAEL\nMODEL: gemini-3.1-flash-lite"),
+            ("[sol] Review this\nVERIFY_URL: https://github.com/example/Teamchat",
+             "Review this\nVERIFY_URL: https://github.com/example/Teamchat"),
+        ]
+        for raw, expected in cases:
+            with self.subTest(raw=raw):
+                self.assertEqual(runtime.normalize_owner_command(raw), expected)
+        self.assertIsNone(runtime.normalize_owner_command("ordinary conversation"))
+
     def setUp(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.enterContext(chdir(root))
