@@ -91,7 +91,7 @@ jobs:
     if: >-
       github.event_name == 'issue_comment' &&
       github.event.action == 'created' &&
-      github.event.issue.number == 6 &&
+      github.event.issue.pull_request == null &&
       github.event.comment.user.id == 324897963 &&
       github.event.comment.author_association == 'OWNER' &&
       (
@@ -141,82 +141,52 @@ jobs:
           path: icarus/runs/*-${{ github.event.comment.id }}.md
           if-no-files-found: warn
           retention-days: 30
-      - name: Persist and post owner command receipt
+      - name: Persist owner command receipt
         if: always()
         uses: actions/github-script@v7
-        env:
-          RECEIPT_ARTIFACT_URL: ${{ steps.archive_owner_receipt.outputs.artifact-url }}
         with:
           script: |
             const fs = require('fs');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const issue_number = 6;
             const sourceCommentId = String(context.payload.comment.id);
-            const marker = `<!-- icarus-owner-command:${sourceCommentId} -->`;
-            const prior = await github.paginate(github.rest.issues.listComments, {
-              owner, repo, issue_number, per_page: 100
-            });
-            if (prior.some(row => (row.body || '').includes(marker))) {
-              core.info(`Receipt already exists for source comment ${sourceCommentId}; no duplicate posted.`);
-              return;
-            }
             const receiptDir = 'icarus/runs';
             const filename = fs.existsSync(receiptDir)
               ? fs.readdirSync(receiptDir).find(name => name.endsWith(`-${sourceCommentId}.md`))
               : null;
-            const artifactUrl = process.env.RECEIPT_ARTIFACT_URL || '';
-            let body;
-            let persistence = 'Persistent receipt: NOT VERIFIED';
             if (!filename) {
-              body = [
-                '# Icarus execution failure',
-                '',
-                `The runtime did not produce its expected receipt file. Source comment: ${sourceCommentId}. Workflow run: ${context.runId}.`
-              ].join('\n');
-            } else {
-              const path = `${receiptDir}/${filename}`;
-              const content = fs.readFileSync(path, 'utf8');
-              const receiptBranch = 'icarus-runs';
-              try {
-                let existing;
-                try {
-                  existing = await github.rest.repos.getContent({ owner, repo, path, ref: receiptBranch });
-                } catch (error) {
-                  if (error.status !== 404) throw error;
-                }
-                if (!existing) {
-                  await github.rest.repos.createOrUpdateFileContents({
-                    owner, repo, path,
-                    message: `icarus: persist owner run receipt for comment ${sourceCommentId}`,
-                    content: Buffer.from(content, 'utf8').toString('base64'),
-                    branch: receiptBranch
-                  });
-                } else {
-                  const previous = Buffer.from(existing.data.content, 'base64').toString('utf8');
-                  if (previous !== content) {
-                    throw new Error(`Append-only receipt path already exists with different content: ${path}`);
-                  }
-                }
-                const verified = await github.rest.repos.getContent({ owner, repo, path, ref: receiptBranch });
-                const readback = Buffer.from(verified.data.content, 'base64').toString('utf8');
-                if (readback !== content) throw new Error(`Receipt readback mismatch: ${path}`);
-                persistence = `Persistent receipt: ${path} on ${receiptBranch} (verified blob ${verified.data.sha})`;
-              } catch (error) {
-                persistence = `Persistent receipt: NOT VERIFIED (${error.status || 'error'}: ${error.message})`;
-                core.warning(`Receipt archive write failed: ${error.message}`);
-              }
-              body = content.trim();
+              core.setFailed(`Runtime did not produce the expected receipt for source comment ${sourceCommentId}.`);
+              return;
             }
-            const artifactLine = artifactUrl ? `Run artifact: ${artifactUrl}` : 'Run artifact: NOT VERIFIED';
-            const posted = await github.rest.issues.createComment({
-              owner, repo, issue_number,
-              body: [body, '', persistence, '', artifactLine, '', marker].join('\n')
-            });
-            core.setOutput('receipt_comment_id', String(posted.data.id));
-            core.info(`Posted receipt ${posted.data.id} for source comment ${sourceCommentId}.`);
-            if (!persistence.startsWith('Persistent receipt: icarus/runs/')) {
-              core.setFailed('Receipt posted, but repository archive readback was not verified.');
+            const path = `${receiptDir}/${filename}`;
+            const content = fs.readFileSync(path, 'utf8');
+            const receiptBranch = 'icarus-runs';
+            try {
+              let existing;
+              try {
+                existing = await github.rest.repos.getContent({ owner, repo, path, ref: receiptBranch });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+              if (!existing) {
+                await github.rest.repos.createOrUpdateFileContents({
+                  owner, repo, path,
+                  message: `icarus: persist owner run receipt for comment ${sourceCommentId}`,
+                  content: Buffer.from(content, 'utf8').toString('base64'),
+                  branch: receiptBranch
+                });
+              } else {
+                const previous = Buffer.from(existing.data.content, 'base64').toString('utf8');
+                if (previous !== content) {
+                  throw new Error(`Append-only receipt path already exists with different content: ${path}`);
+                }
+              }
+              const verified = await github.rest.repos.getContent({ owner, repo, path, ref: receiptBranch });
+              const readback = Buffer.from(verified.data.content, 'base64').toString('utf8');
+              if (readback !== content) throw new Error(`Receipt readback mismatch: ${path}`);
+              core.info(`Persistent receipt verified: ${path} on ${receiptBranch} (blob ${verified.data.sha}).`);
+            } catch (error) {
+              core.setFailed(`Receipt archive write/readback failed: ${error.status || 'error'}: ${error.message}`);
             }
 
   sidecar-verifier:
