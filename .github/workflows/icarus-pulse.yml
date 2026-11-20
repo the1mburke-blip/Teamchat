@@ -150,9 +150,11 @@ jobs:
             let body;
             let persistence = 'Persistent receipt: NOT VERIFIED';
             if (!filename) {
-              body = `# Icarus execution failure
-
-The runtime did not produce its expected receipt file. Source comment: ${sourceCommentId}. Workflow run: ${context.runId}.`;
+              body = [
+                '# Icarus execution failure',
+                '',
+                `The runtime did not produce its expected receipt file. Source comment: ${sourceCommentId}. Workflow run: ${context.runId}.`
+              ].join('\n');
             } else {
               const path = `${receiptDir}/${filename}`;
               const content = fs.readFileSync(path, 'utf8');
@@ -183,11 +185,7 @@ The runtime did not produce its expected receipt file. Source comment: ${sourceC
             }
             const posted = await github.rest.issues.createComment({
               owner, repo, issue_number,
-              body: `${body}
-
-${persistence}
-
-${marker}`
+              body: [body, '', persistence, '', marker].join('\n')
             });
             core.setOutput('receipt_comment_id', String(posted.data.id));
             core.info(`Posted receipt ${posted.data.id} for source comment ${sourceCommentId}.`);
