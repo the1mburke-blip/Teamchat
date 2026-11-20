@@ -667,8 +667,8 @@ class DutyRunnerTests(unittest.TestCase):
 
         link = "https://github.com/example/Teamchat/issues/259#issuecomment-"
         dispatch_id = dispatch["dispatch_comment_id"]
-        claim_id = dispatch_id + 1
-        receipt_id = dispatch_id + 2
+        claim_id = dispatch_id + 10
+        receipt_id = dispatch_id + 11
         self.comments[259].extend([
             comment(claim_id, f"[WORK] CLAIMED\nTask ID: {task_id}\nDispatch: {link}{dispatch_id}"),
             comment(
