@@ -498,7 +498,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertIsNone(second["pilot_attempt"])
         self.assertEqual(self.posts, [f"{pilot_state.PILOT_RESERVATION}\nTask ID: {task_id}"])
 
-    def test_other_issue_titles_bodies_and_comments_are_inspected(self):
+    def test_task_directives_on_noncanonical_issues_are_not_actionable(self):
         self.issues += [
             issue(14, title="[TASK_INCOMING]", body=task("TITLE").split("\n", 1)[1]),
             issue(15, body=task("BODY")),
@@ -508,10 +508,20 @@ class DutyRunnerTests(unittest.TestCase):
         record = self.run_pulse()
         self.assertEqual(record["issue_numbers_inspected"], [6, 14, 15, 16])
         self.assertEqual(record["open_issues_inspected"], 4)
-        self.assertEqual(record["eligible_directives_detected"], 3)
-        self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]],
-                         ["TITLE", "BODY", "COMMENT"])
-        self.assertIn("Source Issue: #16 (comment 20)", self.posts[-1])
+        self.assertEqual(record["eligible_directives_detected"], 0)
+        self.assertFalse(record["dispatch_receipts"])
+        self.assertFalse(self.posts)
+
+    def test_historical_room_canary_is_not_replayed_after_mailbox_moves_to_issue99(self):
+        self.issues.append(issue(99))
+        os.environ["ICARUS_ISSUE_NUMBER"] = "99"
+        self.comments[6] = canary_comments("CANARY-INTAKE-001")
+        record = self.run_pulse()
+        self.assertEqual(record["issue_numbers_inspected"], [6, 99])
+        self.assertEqual(record["eligible_directives_detected"], 0)
+        self.assertFalse(record["dispatch_receipts"])
+        self.assertFalse(record["backlog_claim"])
+        self.assertFalse(self.posts)
 
     def test_issue_and_comment_pages_are_all_read_and_pull_requests_are_excluded(self):
         self.issues += [
@@ -525,7 +535,8 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["open_issues_inspected"], 106)
         self.assertNotIn(7, record["issue_numbers_inspected"])
         self.assertFalse(any("/7/comments" in url for _, url in self.requests))
-        self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]], ["LAST-PAGE"])
+        self.assertFalse(record["dispatch_receipts"])
+        self.assertTrue(any("/issues/112/comments" in url and "page=2" in url for _, url in self.requests))
 
     def test_unauthorized_directives_and_forged_receipts_have_no_effect(self):
         self.issues += [issue(7, body=task("OUTSIDE"), association="CONTRIBUTOR")]
@@ -701,24 +712,22 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(next_run["task_states"][task_id], first["task_states"][task_id])
         self.assertEqual(len(self.posts), 1)
 
-    def test_receipt_prevents_repeat_dispatch_with_a_closed_source(self):
-        self.issues += [issue(18, body=task("SAME")), issue(19, body=task("SAME"))]
+    def test_receipt_prevents_repeat_dispatch_inside_canonical_inbox(self):
+        self.comments[6] = [comment(10, task("SAME")), comment(11, task("SAME"))]
         first = self.run_pulse()
-        self.issues = [issue(19, body=task("SAME"))]
         second = self.run_pulse()
         self.assertEqual(first["new_tasks_dispatched"], 1)
         self.assertEqual(first["duplicate_directives_ignored"], 1)
         self.assertEqual(second["new_tasks_dispatched"], 0)
-        self.assertEqual(second["duplicate_directives_ignored"], 1)
+        self.assertEqual(second["duplicate_directives_ignored"], 2)
         self.assertEqual(len(self.posts), 1)
 
-    def test_pending_tasks_are_sorted_by_issue_then_source(self):
-        self.issues = [issue(18), issue(10, body=task("FIRST")), issue(6)]
-        self.comments[10] = [comment(8, task("THIRD")), comment(7, task("SECOND"))]
-        self.comments[18] = [comment(4, task("FOURTH"))]
+    def test_pending_tasks_are_sorted_by_source_comment_in_canonical_inbox(self):
+        self.comments[6] = [comment(8, task("THIRD")), comment(7, task("SECOND")),
+                             comment(4, task("FOURTH"))]
         record = self.run_pulse()
         self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]],
-                         ["FIRST", "SECOND", "THIRD", "FOURTH"])
+                         ["FOURTH", "SECOND", "THIRD"])
 
     def test_api_failure_is_persisted_and_aborts_dispatch(self):
         self.issues += [issue(18, body=task("PENDING")), issue(19)]
