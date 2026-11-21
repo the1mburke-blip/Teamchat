@@ -32,9 +32,7 @@ TERMINAL_HEADER = "[ICARUS TERMINAL EVIDENCE]"
 TERMINAL_CLOSED_HEADER = "[ICARUS TERMINAL CLOSED]"
 CODEX_WAKE_HEADER = "[ICARUS CODEX WAKE RELAY REQUEST]"
 CODEX_WAKE_WAIT_SECONDS = 180
-WAKE_ISSUE = 99
-LEGACY_WAKE_ISSUE = 8
-LEGACY_MAILBOX_ISSUE = 6
+WAKE_ISSUE = 8
 TEAMCHAT_WAKE_HEADER = "[TEAMCHAT_WAKE]"
 ECHO_DIRECTIVE = "Echo test for task intake and worker delegation verification."
 MONITOR_ONLY_MARKER = re.compile(
@@ -740,7 +738,7 @@ def migrate_legacy_backlog_dispatches(repo, issues_url, mailbox, legacy_dispatch
         if not match or task_id in completed_task_ids:
             continue
         issue_number = int(match[1])
-        if issue_number in {mailbox, WAKE_ISSUE, LEGACY_MAILBOX_ISSUE} or issue_number not in issue_comments_by_number:
+        if issue_number in {mailbox, WAKE_ISSUE} or issue_number not in issue_comments_by_number:
             continue
         source = re.fullmatch(rf"#{issue_number} \(comment ([1-9][0-9]{{0,19}})\)",
                                packet.get("source issue", ""))
@@ -830,20 +828,13 @@ def migrate_legacy_backlog_dispatches(repo, issues_url, mailbox, legacy_dispatch
 def monitor_issues(repo, mailbox, token, record):
     issues_url = f"https://api.github.com/repos/{repo}/issues"
     outbox_url = f"{issues_url}/{mailbox}/comments"
-    # Issue #99 is the canonical mailbox and wake relay. Issue #6 and PR #8 are
-    # read-only legacy sources; never reinterpret old Issue #6 directives as new work.
+    # Issue #6 remains the canonical room; PR #8 is the existing wake/availability relay.
+    # Task dispatches and signed receipts use each task's own issue thread.
     wake_url = f"{issues_url}/{WAKE_ISSUE}/comments"
     issues = fetch_pages(f"{issues_url}?state=open&sort=created&direction=asc", token)
-    open_issues = {issue["number"]: issue for issue in issues
-                   if "pull_request" not in issue and issue["number"] != LEGACY_MAILBOX_ISSUE}
+    open_issues = {issue["number"]: issue for issue in issues if "pull_request" not in issue}
     outbox_comments = fetch_pages(outbox_url, token)
     wake_comments = fetch_pages(wake_url, token)
-    legacy_outbox_comments = (fetch_pages(f"{issues_url}/{LEGACY_MAILBOX_ISSUE}/comments", token)
-                              if mailbox != LEGACY_MAILBOX_ISSUE else [])
-    legacy_wake_comments = (fetch_pages(f"{issues_url}/{LEGACY_WAKE_ISSUE}/comments", token)
-                            if WAKE_ISSUE != LEGACY_WAKE_ISSUE else [])
-    availability_comments = legacy_wake_comments + wake_comments
-    legacy_dispatches = list(comment_packets(legacy_outbox_comments, DISPATCH_HEADER, bot_only=True))
     mailbox_full = len(outbox_comments) >= 2500
     record["wake_issue_number"] = WAKE_ISSUE
     record["canonical_mailbox_comments"] = len(outbox_comments)
@@ -853,7 +844,7 @@ def monitor_issues(repo, mailbox, token, record):
     dispatch_packets = [packet for _, packet in comment_packets(outbox_comments, DISPATCH_HEADER)]
     bot_dispatches = list(comment_packets(outbox_comments, DISPATCH_HEADER, bot_only=True))
     dispatched = {packet["task id"] for packet in dispatch_packets}
-    for wake_comment in availability_comments:
+    for wake_comment in wake_comments:
         wake_body = wake_comment.get("body") or ""
         if wake_body.startswith(TEAMCHAT_WAKE_HEADER):
             task_marker = re.search(r"^TASK_ID: ([^\r\n]+)$", wake_body, re.MULTILINE)
@@ -922,7 +913,7 @@ def monitor_issues(repo, mailbox, token, record):
         chair = task[1]
         seat = chair.strip("[]")
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
-            reports = availability_comments
+            reports = wake_comments
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
             if states[seat] != "available":
                 record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
@@ -935,14 +926,6 @@ def monitor_issues(repo, mailbox, token, record):
         repo, issues_url, mailbox, bot_dispatches, outbox_comments,
         issue_comments_by_number, token, record,
     )
-    if legacy_dispatches:
-        migrated_task_ids.update(migrate_legacy_backlog_dispatches(
-            repo, issues_url, LEGACY_MAILBOX_ISSUE, legacy_dispatches, legacy_outbox_comments,
-            issue_comments_by_number, token, record,
-        ))
-    record["waiting_canary"].extend(adjudicate_canaries(
-        repo, LEGACY_MAILBOX_ISSUE, legacy_outbox_comments, legacy_dispatches, outbox_url, token, record,
-    ))
     local_issue_numbers = {
         number for number, comments in issue_comments_by_number.items()
         if number not in {mailbox, WAKE_ISSUE} and (
@@ -952,15 +935,15 @@ def monitor_issues(repo, mailbox, token, record):
     }
     local_issue_numbers.update(
         receipt["issue_number"] for receipt in record["dispatch_receipts"]
-        if receipt.get("issue_number") not in {mailbox, WAKE_ISSUE, LEGACY_MAILBOX_ISSUE}
+        if receipt.get("issue_number") not in {mailbox, WAKE_ISSUE}
     )
     # The wake log is the durable index for task threads, including closed issues
     # whose terminal adjudication may need to resume after an ambiguous API response.
-    for wake_comment in availability_comments:
+    for wake_comment in wake_comments:
         wake_body = wake_comment.get("body") or ""
         if wake_body.startswith(TEAMCHAT_WAKE_HEADER):
             match = re.search(r"NEW_TASK #(\d+)", wake_body)
-            if match and int(match[1]) not in {mailbox, WAKE_ISSUE, LEGACY_MAILBOX_ISSUE}:
+            if match and int(match[1]) not in {mailbox, WAKE_ISSUE}:
                 local_issue_numbers.add(int(match[1]))
     for number in sorted(local_issue_numbers):
         local_url = f"{issues_url}/{number}/comments"
