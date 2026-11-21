@@ -114,7 +114,7 @@ class DutyRunnerTests(unittest.TestCase):
                 row = comment(next_comment_id, f"{pilot_state.SEAT_REPORT}\nSeat: CODEX\nAvailability: {state}")
                 row.update(created_at="2026-11-08T14:07:00Z", updated_at="2026-11-08T14:07:00Z")
                 row["user"]["id"] = user_id
-                self.comments.setdefault(8, []).append(row)
+                self.comments.setdefault(99, []).append(row)
             return {}, ""
         if path == "/repos/example/Teamchat/issues":
             self.assertEqual(parse_qs(urlsplit(url).query)["state"], ["open"])
@@ -134,7 +134,7 @@ class DutyRunnerTests(unittest.TestCase):
             number = int(path.split("/")[-2])
             rows = self.comments.setdefault(number, [])
         if method == "POST":
-            if number == 8:
+            if number == 99:
                 self.wake_posts.append(payload["body"])
             else:
                 self.posts.append(payload["body"])
@@ -148,7 +148,7 @@ class DutyRunnerTests(unittest.TestCase):
             receipt["user"]["id"] = pilot_state.PULSE_ACTOR_ID
             receipt["issue_url"] = f"https://api.github.com{path.removesuffix('/comments')}"
             rows.append(receipt)
-            if number != 8:
+            if number != 99:
                 for issue_row in self.issues:
                     if issue_row["number"] == number:
                         issue_row["comments"] = issue_row.get("comments", 0) + 1
