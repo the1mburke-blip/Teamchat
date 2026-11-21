@@ -134,7 +134,8 @@ class DutyRunnerTests(unittest.TestCase):
             number = int(path.split("/")[-2])
             rows = self.comments.setdefault(number, [])
         if method == "POST":
-            if number == 99 and payload["body"].startswith(runner.TEAMCHAT_WAKE_HEADER):
+            if number == 99 and payload["body"].startswith((
+                    runner.TEAMCHAT_WAKE_HEADER, runner.CODEX_WAKE_HEADER, pilot_state.PILOT_RESERVATION)):
                 self.wake_posts.append(payload["body"])
             else:
                 self.posts.append(payload["body"])
