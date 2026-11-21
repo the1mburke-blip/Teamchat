@@ -945,14 +945,14 @@ def monitor_issues(repo, mailbox, token, record):
     ))
     local_issue_numbers = {
         number for number, comments in issue_comments_by_number.items()
-        if number not in {mailbox, WAKE_ISSUE, LEGACY_MAILBOX_ISSUE} and (
+        if number not in {mailbox, WAKE_ISSUE} and (
             list(comment_packets(comments, DISPATCH_HEADER, bot_only=True))
             or list(comment_packets(comments, TASK_HEADER))
         )
     }
     local_issue_numbers.update(
         receipt["issue_number"] for receipt in record["dispatch_receipts"]
-        if receipt.get("issue_number") not in {mailbox, WAKE_ISSUE}
+        if receipt.get("issue_number") not in {mailbox, WAKE_ISSUE, LEGACY_MAILBOX_ISSUE}
     )
     # The wake log is the durable index for task threads, including closed issues
     # whose terminal adjudication may need to resume after an ambiguous API response.
