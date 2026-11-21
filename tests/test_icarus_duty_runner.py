@@ -68,7 +68,7 @@ class DutyRunnerTests(unittest.TestCase):
         cls.repo = repo
 
     def setUp(self):
-        self.issues = [issue(6)]
+        self.issues = [issue(99)]
         self.comments = {}
         self.requests = []
         self.posts = []
@@ -84,7 +84,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.enterContext(patch.dict(os.environ, {
             "GITHUB_TOKEN": "test-token",
             "GITHUB_REPOSITORY": "example/Teamchat",
-            "ICARUS_ISSUE_NUMBER": "6",
+            "ICARUS_ISSUE_NUMBER": "99",
             "GITHUB_EVENT_NAME": "workflow_dispatch",
             "ICARUS_PULSE_DUTY_SCHEDULE": DUTY_SCHEDULE,
             "ICARUS_PULSE_TRIGGER_SCHEDULE": DUTY_SCHEDULE,
@@ -197,11 +197,11 @@ class DutyRunnerTests(unittest.TestCase):
             "verdict": "PASS", "reason": "NO_TASK_ACTION_REQUIRED",
             "required_task_tool_calls": 0, "exit_code": 0,
         })
-        self.assertEqual(record["issue_numbers_inspected"], [6])
+        self.assertEqual(record["issue_numbers_inspected"], [99])
         self.assertEqual(self.posts, [])
 
     def test_blocked_source_preflight_does_not_emit_an_idle_pass(self):
-        self.comments[6] = [comment(10, task("BLOCKED", source="missing.py"))]
+        self.comments[99] = [comment(10, task("BLOCKED", source="missing.py"))]
         record = self.run_pulse()
         self.assertEqual(record["task_states"]["BLOCKED"]["status"], "PREFLIGHT_BLOCKED")
         self.assertNotIn("idle_receipt", record)
@@ -355,7 +355,6 @@ class DutyRunnerTests(unittest.TestCase):
 
     def test_legacy_unreceipted_backlog_dispatch_migrates_to_task_issue_and_wakes(self):
         os.environ["GITHUB_EVENT_NAME"] = "workflow_dispatch"
-        os.environ["ICARUS_ISSUE_NUMBER"] = "99"
         claim = comment(700, f"{runner.CLAIM_HEADER}\nTask ID: BACKLOG-15\nTarget Chair: [SOL]")
         claim.update(user={"id": 41898282, "type": "Bot", "login": "github-actions[bot]"})
         self.comments[15] = [claim]
@@ -427,8 +426,8 @@ class DutyRunnerTests(unittest.TestCase):
 
 
     def test_saturated_canonical_room_refuses_new_task_writes(self):
-        self.comments[6] = [comment(i, "Archived canonical-room history") for i in range(1, 2501)]
-        self.comments[6][-1] = comment(2500, (
+        self.comments[99] = [comment(i, "Archived canonical-room history") for i in range(1, 2501)]
+        self.comments[99][-1] = comment(2500, (
             f"{runner.TASK_HEADER}\nTask ID: CANARY-INTAKE-2500\n"
             "Target Chair: [WORK]\nDirective: " + runner.ECHO_DIRECTIVE
         ))
@@ -437,7 +436,7 @@ class DutyRunnerTests(unittest.TestCase):
         row = self.run_pulse(expected_exit=1)
 
         self.assertIn("reached GitHub's 2,500-comment cap", row["first_processing_error"])
-        self.assertEqual(len(self.comments[6]), 2500)
+        self.assertEqual(len(self.comments[99]), 2500)
         self.assertEqual(row["dispatch_receipts"], [])
 
 
@@ -523,9 +522,9 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(self.run_pulse()["terminal_receipts"][0]["status"], "CLOSED")
         self.assertEqual(sum(method == "PATCH" for method, _ in self.requests), 1)
 
-    def test_issue_six_dispatch_includes_verified_source(self):
+    def test_issue_99_dispatch_includes_verified_source(self):
         os.environ["ICARUS_PULSE_TRIGGER_SCHEDULE"] = ""
-        self.comments[6] = [comment(10, task("LEGACY"))]
+        self.comments[99] = [comment(10, task("LEGACY"))]
         record = self.run_pulse(at=datetime(2026, 12, 31, 15, 7, tzinfo=timezone.utc))
         self.assertEqual(record["new_tasks_dispatched"], 1)
         self.assertEqual(record["dispatch_receipts"][0]["source_comment_id"], 10)
@@ -538,7 +537,7 @@ class DutyRunnerTests(unittest.TestCase):
 
     def test_named_specialists_receive_their_own_task_packets(self):
         chairs = ("[CODEX]", "[SOL]", "[LUNA]", "[GRACE]")
-        self.comments[6] = [
+        self.comments[99] = [
             comment(10 + i, task(f"SPECIALIST-{i}").replace("[WORK]", chair))
             for i, chair in enumerate(chairs)
         ]
@@ -557,10 +556,10 @@ class DutyRunnerTests(unittest.TestCase):
             row = comment(30 + i, f"{pilot_state.SEAT_REPORT}\nSeat: {seat}\nAvailability: {state}")
             row.update(created_at=at, updated_at=at)
             row["user"]["id"] = uid
-            self.comments.setdefault(8, []).append(row)
+            self.comments.setdefault(99, []).append(row)
 
     def test_unknown_specialist_holds_before_dispatch(self):
-        self.comments[6] = [comment(10, task("HOLD").replace("[WORK]", "[CODEX]"))]
+        self.comments[99] = [comment(10, task("HOLD").replace("[WORK]", "[CODEX]"))]
         self.assertEqual(self.run_pulse()["held_specialist_routes"], [
             {"task_id": "HOLD", "target_chair": "[CODEX]", "availability": "unknown"},
         ])
@@ -683,7 +682,7 @@ class DutyRunnerTests(unittest.TestCase):
         ]
         self.comments[16] = [comment(20, task("COMMENT"))]
         record = self.run_pulse()
-        self.assertEqual(record["issue_numbers_inspected"], [6, 14, 15, 16])
+        self.assertEqual(record["issue_numbers_inspected"], [99, 14, 15, 16])
         self.assertEqual(record["open_issues_inspected"], 4)
         self.assertEqual(record["eligible_directives_detected"], 3)
         self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]],
@@ -706,7 +705,7 @@ class DutyRunnerTests(unittest.TestCase):
 
     def test_unauthorized_directives_and_forged_receipts_have_no_effect(self):
         self.issues += [issue(7, body=task("OUTSIDE"), association="CONTRIBUTOR")]
-        self.comments[6] = [
+        self.comments[99] = [
             comment(1, "[ICARUS DISPATCH]\nTask ID: AUTHORIZED", association="NONE"),
             comment(2, task("AUTHORIZED"), association="COLLABORATOR"),
         ]
@@ -768,7 +767,7 @@ class DutyRunnerTests(unittest.TestCase):
 
     def test_pending_canary_does_not_block_authorized_backlog(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
-        self.comments[6] = canary_comments("CANARY-INTAKE-001")
+        self.comments[99] = canary_comments("CANARY-INTAKE-001")
         self.issues += [
             {**issue(7, title="[P0] [READY] Untrusted", association="CONTRIBUTOR"), "state": "open"},
             {**issue(18, title="[READY] Authorized"), "state": "open"},
@@ -813,7 +812,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertIn(f"Source Blob: {blob}", self.comments[18][-1]["body"])
 
     def test_invalid_directive_sources_are_isolated_and_valid_dispatch_is_durable(self):
-        self.comments[6] = [
+        self.comments[99] = [
             comment(10, task("MISSING", None)),
             comment(11, task("TRAVERSAL", "../harness-runner.py")),
             comment(12, task("AMBIGUOUS") + "\nSource File: icarus/core/duty_runner.py"),
@@ -846,7 +845,7 @@ class DutyRunnerTests(unittest.TestCase):
     def test_manual_override_preempts_scheduled_backlog(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         self.issues.append({**issue(7, title="[READY] Backlog"), "state": "open"})
-        self.comments[6] = [comment(10, task("OVERRIDE"))]
+        self.comments[99] = [comment(10, task("OVERRIDE"))]
         record = self.run_pulse()
         self.assertIsNone(record["backlog_claim"])
         self.assertEqual(record["dispatch_receipts"][0]["task_id"], "OVERRIDE")
@@ -865,7 +864,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(dispatch["task_id"], task_id)
         self.assertEqual(dispatch["outbox_issue_number"], 259)
         self.assertEqual(self.comments[259][-1]["body"].splitlines()[0], runner.DISPATCH_HEADER)
-        self.assertFalse(self.comments.get(6, []))
+        self.assertFalse(self.comments.get(99, []))
         self.assertEqual(first["waiting_canary"], [{
             "task_id": task_id, "dispatch_comment_id": dispatch["dispatch_comment_id"],
         }])
@@ -894,20 +893,20 @@ class DutyRunnerTests(unittest.TestCase):
         task_id = "CANARY-INTAKE-001"
         link = "https://github.com/example/Teamchat/issues/6#issuecomment-"
         directive = runner.ECHO_DIRECTIVE
-        self.comments[6] = canary_comments(task_id)
+        self.comments[99] = canary_comments(task_id)
         receipt = (
             f"[WORK] EXECUTION RECEIPT\nTask ID: {task_id}\nExecutor: ChatGPT\n"
             f"Worker result: ECHO_COMPLETE\nEcho: {directive}\nOwner intake: {link}10\n"
             f"Icarus dispatch: {link}11\nWork claim: {link}12"
         )
-        self.comments[6].append(comment(13, receipt, association="CONTRIBUTOR"))
+        self.comments[99].append(comment(13, receipt, association="CONTRIBUTOR"))
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         pending = self.run_pulse()
         self.assertEqual(pending["loop_state"], "IDLE_SELECT")
         self.assertEqual(pending["task_states"][task_id]["status"], "WAITING_FOR_RECEIPT")
         self.assertEqual(pending["waiting_canary"], [{"task_id": task_id, "dispatch_comment_id": 11}])
         self.assertFalse(self.posts)
-        self.comments[6].append(comment(14, receipt))
+        self.comments[99].append(comment(14, receipt))
         os.environ["GITHUB_EVENT_NAME"] = "workflow_dispatch"
         self.assertFalse(self.run_pulse()["adjudication_receipts"])
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
