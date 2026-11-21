@@ -945,7 +945,7 @@ def monitor_issues(repo, mailbox, token, record):
     ))
     local_issue_numbers = {
         number for number, comments in issue_comments_by_number.items()
-        if number not in {mailbox, WAKE_ISSUE} and (
+        if number not in {mailbox, WAKE_ISSUE, LEGACY_MAILBOX_ISSUE} and (
             list(comment_packets(comments, DISPATCH_HEADER, bot_only=True))
             or list(comment_packets(comments, TASK_HEADER))
         )
@@ -960,7 +960,7 @@ def monitor_issues(repo, mailbox, token, record):
         wake_body = wake_comment.get("body") or ""
         if wake_body.startswith(TEAMCHAT_WAKE_HEADER):
             match = re.search(r"NEW_TASK #(\d+)", wake_body)
-            if match and int(match[1]) not in {mailbox, WAKE_ISSUE}:
+            if match and int(match[1]) not in {mailbox, WAKE_ISSUE, LEGACY_MAILBOX_ISSUE}:
                 local_issue_numbers.add(int(match[1]))
     for number in sorted(local_issue_numbers):
         local_url = f"{issues_url}/{number}/comments"
