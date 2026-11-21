@@ -8,7 +8,7 @@ After tasks/chats, append useful durable lessons with dates, provenance, evidenc
 
 The lowercase repository memory.md is the source-controlled compact shared summary. Local native MEMORY.md, lesson journals and skills are working copies; current-state.md and learned.md are source-controlled operational and learning records. Offline or inaccessible repository writes stay explicitly pending locally until an authorized write/readback occurs. Automatic phone/PC cross-save is not yet implemented. Repository storage alone does not prove a runtime has refreshed its context.
 
-Latest reconciled operational state: [21 November 2026 — Icarus autonomous duty recovery and daily evidence](current-state.md); concise shared summary: [memory.md](memory.md); reusable learning: [learned.md](learned.md); cross-training: [HV-EXP-176](../../TRAINING_MATRIX.md). These are source-controlled documentation updates, not proof of live runtime uptake.
+Latest reconciled operational state: [21 November 2026 — Icarus autonomous duty recovery and daily evidence](memory.md); the earlier current-state.md remains a historical handoff; reusable learning: [learned.md](learned.md); cross-training: [HV-EXP-176](../../TRAINING_MATRIX.md). These are source-controlled documentation updates, not proof of live runtime uptake.
 
 Historical checkpoint (not present operating state): [13 October 2026 — Tether and learning](../checkpoints/2026-10-13-tether-and-learning/HANDOFF.md).
 
