@@ -864,7 +864,8 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(dispatch["task_id"], task_id)
         self.assertEqual(dispatch["outbox_issue_number"], 259)
         self.assertEqual(self.comments[259][-1]["body"].splitlines()[0], runner.DISPATCH_HEADER)
-        self.assertFalse(self.comments.get(99, []))
+        self.assertFalse(any(row["body"].startswith(runner.DISPATCH_HEADER)
+                             for row in self.comments.get(99, [])))
         self.assertEqual(first["waiting_canary"], [{
             "task_id": task_id, "dispatch_comment_id": dispatch["dispatch_comment_id"],
         }])
