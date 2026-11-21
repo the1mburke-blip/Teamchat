@@ -355,6 +355,7 @@ class DutyRunnerTests(unittest.TestCase):
 
     def test_legacy_unreceipted_backlog_dispatch_migrates_to_task_issue_and_wakes(self):
         os.environ["GITHUB_EVENT_NAME"] = "workflow_dispatch"
+        os.environ["ICARUS_ISSUE_NUMBER"] = "99"
         claim = comment(700, f"{runner.CLAIM_HEADER}\nTask ID: BACKLOG-15\nTarget Chair: [SOL]")
         claim.update(user={"id": 41898282, "type": "Bot", "login": "github-actions[bot]"})
         self.comments[15] = [claim]
@@ -931,6 +932,22 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(second["new_tasks_dispatched"], 0)
         self.assertEqual(second["duplicate_directives_ignored"], 1)
         self.assertEqual(len(self.posts), 1)
+
+    def test_legacy_mailbox_is_read_only_and_not_replayed(self):
+        self.issues = [issue(6)]
+        self.comments[6] = [comment(700, task("HISTORICAL-DIRECTIVE"))]
+        os.environ["ICARUS_ISSUE_NUMBER"] = "99"
+
+        row = self.run_pulse()
+
+        self.assertEqual(row["wake_issue_number"], 99)
+        self.assertNotIn(6, row["issue_numbers_inspected"])
+        self.assertEqual(row["eligible_directives_detected"], 0)
+        self.assertEqual(row["new_tasks_dispatched"], 0)
+        self.assertFalse(any(method == "POST" and "/issues/8/comments" in url
+                             for method, url in self.requests))
+        self.assertTrue(any(method == "GET" and "/issues/99/comments" in url
+                            for method, url in self.requests))
 
     def test_pending_tasks_are_sorted_by_issue_then_source(self):
         self.issues = [issue(18), issue(10, body=task("FIRST")), issue(6)]
