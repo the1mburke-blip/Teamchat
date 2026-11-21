@@ -12,6 +12,35 @@ from icarus.runtime import icarus_run as legacy_runtime
 
 
 class PulseRuntimeTests(unittest.TestCase):
+    def test_loop_off_restricts_owner_command_to_read_only_tools(self):
+        cfg = dict(runtime.CFG)
+        cfg.update({
+            "tools": ["read_file", "read_issue", "list_issues", "write_file", "delegate", "comment_issue", "close_issue"],
+            "maxToolCalls": 2, "maxApiCallsPerRun": 12, "dailyRunCap": 10,
+            "maxRuntimeSeconds": 120, "writeBack": False,
+        })
+        answer = {"answer": "READ_ONLY_PATH_REACHED", "tool": None,
+                  "unverified_claims": [], "needs_owner": False, "owner_reason": "", "lesson": ""}
+        with patch.multiple(
+            runtime,
+            RAW="ICARUS_RUN LOOP: off\nRead issue #259 and report its adjudication marker. Do not write or delegate.",
+            KEY="test-key", GH_TOKEN="", REPO="", CID="77", ACTOR="owner", CFG=cfg,
+            PROVIDER={"test-model": "google"}, USAGE={}, LOG=[], SKIPPED=[], RECALLED=[],
+            BLOCKER_RECALLS={"n": 0}, DELEGATED=[], DELEG_KEYS={}, LOOP_ON={"v": False},
+        ), patch.object(runtime, "approved", return_value=(["test-model"], "")), \
+             patch.object(runtime, "usage_today", return_value={}), \
+             patch.object(runtime, "thread_context", return_value=(0, "")), \
+             patch.object(runtime, "run_step", return_value=(answer, "test-model", "", False)) as step, \
+             redirect_stdout(io.StringIO()):
+            runtime.main()
+
+        self.assertEqual(step.call_count, 1)
+        self.assertEqual(step.call_args.args[7], runtime.LOOP_READ)
+        self.assertFalse({"write_file", "delete_file", "delegate", "comment_issue", "close_issue"}
+                         & step.call_args.args[7])
+        self.assertFalse(runtime.LOOP_ON["v"])
+
+
     def test_legacy_runtime_module_reexports_packaged_implementation(self):
         self.assertIs(legacy_runtime.main, runtime.main)
 

@@ -1046,6 +1046,9 @@ def main(pulse_issue=None):
             hint = ("\n\nOWNER-NAMED EVIDENCE FILES (read_file these; the runtime also checks them itself): " + ", ".join(gpaths)) if gpaths else ""
             steps = [task + hint]
             step_tools = None
+            if pulse_issue is None and loop_off:
+                # LOOP: off disables the autonomous planner and also denies every write/delegate tool.
+                step_tools = [LOOP_READ]
             if pulse_issue is None and ACTOR != "schedule" and not plan_flag and not loop_off:
                 steps = list(LOOP_STEPS)
                 plan_steps = steps

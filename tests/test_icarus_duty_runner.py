@@ -72,8 +72,11 @@ class DutyRunnerTests(unittest.TestCase):
         self.comments = {}
         self.requests = []
         self.posts = []
+        self.wake_posts = []
         self.relay_dispatches = []
+        self.codex_wake_reports = []
         self.fail_request = None
+        self.fail_request_body = None
         self.ambiguous_patch = False
         temp = self.enterContext(tempfile.TemporaryDirectory())
         self.ledger = Path(temp, "RUN_LOG.jsonl")
@@ -97,11 +100,21 @@ class DutyRunnerTests(unittest.TestCase):
     def github(self, url, token, method="GET", payload=None):
         path = urlsplit(url).path
         self.requests.append((method, url))
-        if (method, path) == self.fail_request:
+        if ((method, path) == self.fail_request
+                and (self.fail_request_body is None
+                     or (payload or {}).get("body", "").startswith(self.fail_request_body))):
             raise RuntimeError(f"{method} {path}: HTTP 503")
         if path == "/repos/example/Teamchat/actions/workflows/icarus-codex-wake.yml/dispatches":
             self.assertEqual(method, "POST")
             self.relay_dispatches.append(payload)
+            for user_id, state in self.codex_wake_reports:
+                next_comment_id = max(
+                    [10000] + [row["id"] for batch in self.comments.values() for row in batch]
+                ) + 1
+                row = comment(next_comment_id, f"{pilot_state.SEAT_REPORT}\nSeat: CODEX\nAvailability: {state}")
+                row.update(created_at="2026-11-08T14:07:00Z", updated_at="2026-11-08T14:07:00Z")
+                row["user"]["id"] = user_id
+                self.comments.setdefault(8, []).append(row)
             return {}, ""
         if path == "/repos/example/Teamchat/issues":
             self.assertEqual(parse_qs(urlsplit(url).query)["state"], ["open"])
@@ -121,14 +134,25 @@ class DutyRunnerTests(unittest.TestCase):
             number = int(path.split("/")[-2])
             rows = self.comments.setdefault(number, [])
         if method == "POST":
-            self.posts.append(payload["body"])
+            if number == 8:
+                self.wake_posts.append(payload["body"])
+            else:
+                self.posts.append(payload["body"])
+            next_comment_id = max(
+                [10000] + [row["id"] for batch in self.comments.values() for row in batch]
+            ) + 1
             receipt = comment(
-                10000 + len(self.posts), payload["body"],
+                next_comment_id, payload["body"],
                 association="NONE", author="github-actions[bot]",
             )
             receipt["user"]["id"] = pilot_state.PULSE_ACTOR_ID
             receipt["issue_url"] = f"https://api.github.com{path.removesuffix('/comments')}"
             rows.append(receipt)
+            if number != 8:
+                for issue_row in self.issues:
+                    if issue_row["number"] == number:
+                        issue_row["comments"] = issue_row.get("comments", 0) + 1
+                        break
             return receipt, ""
         query = parse_qs(urlsplit(url).query)
         size = int(query["per_page"][0])
@@ -197,7 +221,7 @@ class DutyRunnerTests(unittest.TestCase):
             "Scope Verified: true\nIncremental Spend EUR: 0"
         ))
         proof.update(stamps, user={"id": verifier_id, "type": "Bot", "login": "verifier[bot]"})
-        self.comments[6].extend([worker, proof])
+        self.comments.setdefault(number, []).extend([worker, proof])
 
     def start_backlog(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
@@ -238,13 +262,191 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertNotIn("idle_receipt", row)
         self.assertEqual(self.issues[-1]["state"], "open")
 
+    def test_sol_executor_uses_codex_as_independent_verifier(self):
+        directory = self.ledger.parent
+        keys = {}
+        for role in ("codex", "sol"):
+            private = directory / f"{role}.pem"
+            subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(private)], check=True)
+            der = subprocess.check_output(["openssl", "pkey", "-in", str(private), "-pubout", "-outform", "DER"])
+            self.assertEqual(der[:-32].hex(), "302a300506032b6570032100")
+            keys[role] = der[-32:]
+        config = {"executors": {"[CODEX]": keys["codex"].hex()}, "verifier": keys["sol"].hex()}
+        signers = runner.load_agent_signers(json.dumps(config))
+        outbox = "https://api.github.com/repos/example/Teamchat/issues/9/comments"
+        binding = "Task ID: BACKLOG-9\nDispatch Comment ID: 700\nGit Commit SHA: " + "c" * 40
+        worker = comment(701, f"{runner.EXECUTION_HEADER}\n{binding}\nTarget Chair: [SOL]")
+        stamps = dict(created_at="2026-11-10T14:00:00Z", updated_at="2026-11-10T14:00:00Z")
+        worker.update(stamps, user={"id": 101, "type": "Bot", "login": "sol[bot]"})
+        proof = comment(702, (
+            f"{runner.VERIFICATION_HEADER}\n{binding}\nExecution Comment ID: 701\n"
+            f"Exit Code: 0\nExpected SHA256: {'a' * 64}\nObserved SHA256: {'a' * 64}\n"
+            "Scope Verified: true\nIncremental Spend EUR: 0"
+        ))
+        proof.update(stamps, user={"id": 102, "type": "Bot", "login": "codex[bot]"})
+        for row, header, role in ((worker, runner.EXECUTION_HEADER, "sol"),
+                                  (proof, runner.VERIFICATION_HEADER, "codex")):
+            _, packet = next(runner.comment_packets([row], header))
+            message = directory / f"{role}-signed-input"
+            message.write_bytes(runner.agent_receipt_message(outbox, header, packet))
+            signature = subprocess.check_output([
+                "openssl", "pkeyutl", "-sign", "-rawin", "-inkey", str(directory / f"{role}.pem"),
+                "-in", str(message),
+            ])
+            row["body"] += "\nAgent Signature: " + signature.hex()
+        results = list(runner.verified_backlog_results([worker, proof], "102", signers, outbox))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0][2]["target chair"], "[SOL]")
+        self.assertEqual(results[0][6]["executor_sha"], hashlib.sha256(keys["sol"]).hexdigest())
+        self.assertEqual(results[0][6]["verifier_sha"], hashlib.sha256(keys["codex"]).hexdigest())
+
+
+    def pinned_backlog(self, body="[TO] [WORK]\nScope: reconcile the open items."):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        os.environ["ICARUS_DUTY_VERIFIER_USER_ID"] = "102"
+        self.issues.append({**issue(9, title="[P0] [REQUESTED] No declared file", body=body),
+                            "state": "open"})
+        record = self.run_pulse()
+        return record, body
+
+    def test_backlog_without_source_file_is_pinned_to_issue_body_and_dispatched(self):
+        record, body = self.pinned_backlog()
+        raw = body.encode("utf-8")
+        blob = hashlib.sha1(b"blob %d\0" % len(raw) + raw).hexdigest()
+        state = record["task_states"]["BACKLOG-9"]
+        self.assertEqual(record["loop_state"], "DISPATCHED")
+        self.assertEqual(record["backlog_claim"]["issue_number"], 9)
+        self.assertEqual((state["status"], state["source_preflight"], state["source_file"], state["source_blob"]),
+                         ("WAITING_FOR_RECEIPT", "ISSUE_BODY_PINNED", "ISSUE#9", blob))
+        self.assertIn(f"Source File: ISSUE#9\nSource Blob: {blob}", self.comments[9][-1]["body"])
+        self.assertTrue(any(row["body"].startswith(runner.CLAIM_HEADER) for row in self.comments[9]))
+        again = self.run_pulse()
+        self.assertEqual(again["task_states"]["BACKLOG-9"]["source_preflight"], "VERIFIED")
+        self.assertIsNone(again["backlog_claim"])
+        self.assertEqual(len(self.comments[9]), 2)
+
+    def test_pinned_backlog_reissues_when_issue_unchanged(self):
+        record, _ = self.pinned_backlog()
+        dispatch = record["dispatch_receipts"][0]["dispatch_comment_id"]
+        self.terminal_proof(9, dispatch, observed="b" * 64)
+        failed = self.run_pulse()["terminal_receipts"][0]
+        self.assertEqual((failed["verdict"], failed["status"]), ("FAIL", "WAITING_FOR_RECEIPT"))
+        self.assertIn("Reissue Of:", self.comments[9][-1]["body"])
+
+    def test_pinned_backlog_edited_after_dispatch_blocks_reissue(self):
+        record, _ = self.pinned_backlog()
+        dispatch = record["dispatch_receipts"][0]["dispatch_comment_id"]
+        self.issues[-1]["body"] += "\nScope widened after dispatch."
+        self.terminal_proof(9, dispatch, observed="b" * 64)
+        failed = self.run_pulse()["terminal_receipts"][0]
+        self.assertEqual((failed["verdict"], failed["status"], failed["blocker"]),
+                         ("FAIL", "BLOCKED", "DISPATCH_SOURCE_CHANGED"))
+        self.assertNotIn("Reissue Of:", self.comments[9][-1]["body"])
+
+    def test_declared_but_untracked_source_file_is_not_pinned(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        self.issues.append({**issue(9, title="[P0] [REQUESTED] Bad file", body="[SOURCE_FILE] absent.py"),
+                            "state": "open"})
+        record = self.run_pulse()
+        self.assertEqual(record["task_states"]["BACKLOG-9"]["source_preflight"], "SOURCE_FILE_NOT_TRACKED")
+        self.assertIsNone(record["backlog_claim"])
+        self.assertFalse(self.comments.get(9))
+
+
+    def test_legacy_unreceipted_backlog_dispatch_migrates_to_task_issue_and_wakes(self):
+        os.environ["GITHUB_EVENT_NAME"] = "workflow_dispatch"
+        claim = comment(700, f"{runner.CLAIM_HEADER}\nTask ID: BACKLOG-15\nTarget Chair: [SOL]")
+        claim.update(user={"id": 41898282, "type": "Bot", "login": "github-actions[bot]"})
+        self.comments[15] = [claim]
+        source_body = "[TO] [SOL]\nScope: continue the already authorised task"
+        self.issues.append({**issue(15, title="[READY] Existing Sol task", body=source_body),
+                            "state": "open", "comments": 1})
+        legacy = comment(701, (
+            f"{runner.DISPATCH_HEADER}\nTask ID: BACKLOG-15\nTarget Chair: [SOL]\n"
+            "Directive: Resume the already authorised task without changing its scope\n"
+            "Source Issue: #15 (comment 700)"
+        ))
+        legacy.update(user={"id": 41898282, "type": "Bot", "login": "github-actions[bot]"})
+        self.comments.setdefault(6, []).append(legacy)
+        partial_receipt = comment(702, f"{runner.EXECUTION_HEADER}\nTask ID: BACKLOG-15\nDispatch Comment ID: 701\nTarget Chair: [SOL]")
+        partial_receipt.update(user={"id": 101, "type": "Bot", "login": "sol[bot]"})
+        self.comments[6].append(partial_receipt)
+        self.issues[0]["comments"] = 2
+
+        row = self.run_pulse()
+
+        self.assertEqual(row["legacy_dispatch_migrations"], [{
+            "task_id": "BACKLOG-15", "source_issue_number": 15,
+            "legacy_dispatch_comment_id": 701, "local_dispatch_comment_id": 10001,
+            "outbox_issue_number": 15,
+        }])
+        self.assertIn("Receipt Outbox: https://github.com/example/Teamchat/issues/15", self.comments[15][-1]["body"])
+        self.assertIn("Supersedes: #6 comment 701", self.comments[15][-1]["body"])
+        expected_anchor, expected_body_blob = runner.issue_anchor(self.issues[-1])
+        self.assertEqual(expected_anchor, "ISSUE#15")
+        self.assertIn(f"Source File: ISSUE#15\nSource Blob: {expected_body_blob}", self.comments[15][-1]["body"])
+        self.assertIn("Legacy Receipts on #6: 702", self.comments[15][-1]["body"])
+        self.assertIn("Receipt Rebind Required: true", self.comments[15][-1]["body"])
+        self.assertEqual(len(self.comments.get(6, [])), 2)
+        self.assertTrue(any("TASK_ID: BACKLOG-15" in body for body in self.wake_posts))
+        self.assertEqual(row["task_states"]["BACKLOG-15"]["outbox_issue_number"], 15)
+        self.assertEqual(row["task_states"]["BACKLOG-15"]["status"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(row["task_states"]["BACKLOG-15"]["source_preflight"], "VERIFIED")
+
+    def test_legacy_dispatch_with_changed_issue_body_is_blocked_not_migrated(self):
+        os.environ["GITHUB_EVENT_NAME"] = "workflow_dispatch"
+        old_body = "[TO] [SOL]\nScope: original task"
+        current_body = old_body + "\nScope widened after the original dispatch."
+        claim = comment(700, f"{runner.CLAIM_HEADER}\nTask ID: BACKLOG-15\nTarget Chair: [SOL]")
+        claim.update(user={"id": 41898282, "type": "Bot", "login": "github-actions[bot]"})
+        self.comments[15] = [claim]
+        self.issues.append({**issue(15, title="[READY] Existing Sol task", body=current_body),
+                            "state": "open", "comments": 1})
+        raw = old_body.encode("utf-8")
+        old_blob = hashlib.sha1(b"blob %d\0" % len(raw) + raw).hexdigest()
+        legacy = comment(701, (
+            f"{runner.DISPATCH_HEADER}\nTask ID: BACKLOG-15\nTarget Chair: [SOL]\n"
+            "Directive: Resume the original task\nSource Issue: #15 (comment 700)\n"
+            f"Source File: ISSUE#15\nSource Blob: {old_blob}"
+        ))
+        legacy.update(user={"id": 41898282, "type": "Bot", "login": "github-actions[bot]"})
+        self.comments.setdefault(6, []).append(legacy)
+        self.issues[0]["comments"] = 1
+
+        row = self.run_pulse()
+
+        self.assertEqual(row["legacy_dispatch_migrations"], [])
+        self.assertEqual(row["legacy_dispatch_migrations_blocked"], [{
+            "task_id": "BACKLOG-15", "source_issue_number": 15,
+            "legacy_dispatch_comment_id": 701, "blocker": "DISPATCH_SOURCE_CHANGED",
+        }])
+        self.assertEqual(row["task_states"]["BACKLOG-15"]["status"], "BLOCKED")
+        self.assertEqual(len(self.comments[15]), 1)
+        self.assertEqual(self.wake_posts, [])
+
+
+    def test_saturated_canonical_room_refuses_new_task_writes(self):
+        self.comments[6] = [comment(i, "Archived canonical-room history") for i in range(1, 2501)]
+        self.comments[6][-1] = comment(2500, (
+            f"{runner.TASK_HEADER}\nTask ID: CANARY-INTAKE-2500\n"
+            "Target Chair: [WORK]\nDirective: " + runner.ECHO_DIRECTIVE
+        ))
+        self.issues[0]["comments"] = 2500
+
+        row = self.run_pulse(expected_exit=1)
+
+        self.assertIn("reached GitHub's 2,500-comment cap", row["first_processing_error"])
+        self.assertEqual(len(self.comments[6]), 2500)
+        self.assertEqual(row["dispatch_receipts"], [])
+
+
     def test_same_github_account_requires_two_distinct_task_bound_signatures(self):
         dispatch = self.start_backlog()
         self.terminal_proof(9, dispatch, worker_id=102)
-        worker, verifier = self.comments[6][-2:]
+        worker, verifier = self.comments[9][-2:]
         for receipt in (worker, verifier):
             receipt["user"] = {"id": 102, "type": "User", "login": "maintainer"}
-        outbox = "https://api.github.com/repos/example/Teamchat/issues/6/comments"
+        outbox = "https://api.github.com/repos/example/Teamchat/issues/9/comments"
         directory = self.ledger.parent
 
         keys = {}
@@ -279,7 +481,7 @@ class DutyRunnerTests(unittest.TestCase):
         for mode, body in (
             ("unsigned", unsigned),
             ("self-signed", sign(verifier, runner.VERIFICATION_HEADER, "executor")),
-            ("different mailbox", sign(verifier, runner.VERIFICATION_HEADER, "verifier", outbox.replace("/6/", "/7/"))),
+            ("different mailbox", sign(verifier, runner.VERIFICATION_HEADER, "verifier", outbox.replace("/9/", "/7/"))),
             ("tampered", sign(verifier, runner.VERIFICATION_HEADER, "verifier").replace(
                 "Observed SHA256: " + "a" * 64, "Observed SHA256: " + "b" * 64)),
         ):
@@ -354,7 +556,7 @@ class DutyRunnerTests(unittest.TestCase):
             row = comment(30 + i, f"{pilot_state.SEAT_REPORT}\nSeat: {seat}\nAvailability: {state}")
             row.update(created_at=at, updated_at=at)
             row["user"]["id"] = uid
-            self.comments.setdefault(6, []).append(row)
+            self.comments.setdefault(8, []).append(row)
 
     def test_unknown_specialist_holds_before_dispatch(self):
         self.comments[6] = [comment(10, task("HOLD").replace("[WORK]", "[CODEX]"))]
@@ -366,7 +568,7 @@ class DutyRunnerTests(unittest.TestCase):
     def test_empty_registry_keeps_legacy_backlog_route(self):
         self.issues += [
             {**issue(7, title="[P0] [READY] Unenrolled", body="[TO] [CODEX]"), "state": "open"},
-            {**issue(8, title="[READY] Existing Sol route", body="[TO] [SOL]"), "state": "open"},
+            {**issue(18, title="[READY] Existing Sol route", body="[TO] [SOL]"), "state": "open"},
         ]
         policy = {"seat_reporters": {}, "verifier_user_id": None, "approved_pilots": {}}
         with (
@@ -374,7 +576,7 @@ class DutyRunnerTests(unittest.TestCase):
             patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
         ):
             record = self.run_pulse()
-        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-8")
+        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-18")
         self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
 
     def test_enrolled_codex_can_dispatch_without_unrelated_seats(self):
@@ -400,10 +602,7 @@ class DutyRunnerTests(unittest.TestCase):
         })
         reporters = {"CODEX": 101}
         self.add_seat_reports(reporters, "available")
-        self.add_seat_reports({"CODEX": 999}, "available", at="2026-11-08T14:07:00Z")
-        self.comments[6][-1]["id"] = 10003
-        self.add_seat_reports(reporters, "available", at="2026-11-08T14:07:00Z")
-        self.comments[6][-1]["id"] = 10002
+        self.codex_wake_reports = [(999, "available"), (101, "available")]
         policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
         with (
             patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule", "GITHUB_RUN_ID": "1234"}),
@@ -411,12 +610,12 @@ class DutyRunnerTests(unittest.TestCase):
             patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
         ):
             record = self.run_pulse()
-        self.assertEqual(self.posts[0], f"{runner.CODEX_WAKE_HEADER}\nPulse Run ID: 1234")
+        self.assertEqual(self.wake_posts[0], f"{runner.CODEX_WAKE_HEADER}\nPulse Run ID: 1234")
         self.assertEqual(self.relay_dispatches, [{
             "ref": "main", "inputs": {"pulse_run_id": "1234", "request_comment_id": "10001"},
         }])
         self.assertEqual(record["codex_wake"], {
-            "request_comment_id": 10001, "availability": "available", "response_comment_id": 10002,
+            "request_comment_id": 10001, "availability": "available", "response_comment_id": 10003,
         })
         self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-7")
 
@@ -430,7 +629,7 @@ class DutyRunnerTests(unittest.TestCase):
             patch.object(runner.time, "sleep"),
         ):
             state = runner.refresh_codex_availability(
-                "example/Teamchat", f"{issues_url}/6/comments", "test-token", 101, "1234", record,
+                "example/Teamchat", f"{issues_url}/8/comments", "test-token", 101, "1234", record,
             )
         self.assertEqual(state, "unknown")
         self.assertEqual(record["codex_wake"], {"request_comment_id": 10001, "availability": "unknown"})
@@ -438,7 +637,7 @@ class DutyRunnerTests(unittest.TestCase):
     def test_codex_wake_dispatch_failure_cannot_reuse_a_report(self):
         self.add_seat_reports({"CODEX": 101}, "available", at="2026-11-08T14:07:00Z")
         self.fail_request = ("POST", "/repos/example/Teamchat/actions/workflows/icarus-codex-wake.yml/dispatches")
-        outbox = "https://api.github.com/repos/example/Teamchat/issues/6/comments"
+        outbox = "https://api.github.com/repos/example/Teamchat/issues/8/comments"
         record = {}
         self.assertEqual(
             runner.refresh_codex_availability("example/Teamchat", outbox, "test-token", 101, "1234", record),
@@ -473,7 +672,7 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(first["pilot_attempt"]["sha256"], expected)
         self.assertEqual((self.ledger.parent / "proof.bin").read_bytes(), source_bytes)
         self.assertIsNone(second["pilot_attempt"])
-        self.assertEqual(self.posts, [f"{pilot_state.PILOT_RESERVATION}\nTask ID: {task_id}"])
+        self.assertEqual(self.wake_posts, [f"{pilot_state.PILOT_RESERVATION}\nTask ID: {task_id}"])
 
     def test_other_issue_titles_bodies_and_comments_are_inspected(self):
         self.issues += [
@@ -531,7 +730,7 @@ class DutyRunnerTests(unittest.TestCase):
     def test_scheduled_pulse_claims_highest_priority_ready_issue_once(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         self.issues += [
-            {**issue(8, title="[READY] Low"), "state": "open", "labels": [{"name": "priority: low"}]},
+            {**issue(18, title="[READY] Low"), "state": "open", "labels": [{"name": "priority: low"}]},
             {**issue(9, title="[P0] [READY] Best"), "state": "open"},
             {**issue(10, title="[P0] [READY] Blocked"), "state": "open",
              "labels": [{"name": "status: blocked"}]},
@@ -544,23 +743,26 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(first["loop_state"], "DISPATCHED")
         self.assertEqual(first["task_states"]["BACKLOG-9"]["status"], "WAITING_FOR_RECEIPT")
         self.assertEqual(first["backlog_claim"]["issue_number"], 9)
-        self.assertTrue(self.comments[9][-1]["body"].startswith(runner.CLAIM_HEADER))
-        self.assertIn("Source Issue: #9 (comment 10001)", self.comments[6][-1]["body"])
+        self.assertTrue(any(row["body"].startswith(runner.CLAIM_HEADER) for row in self.comments[9]))
+        self.assertIn("Source Issue: #9 (comment 10001)", self.comments[9][-1]["body"])
         second = self.run_pulse()
-        self.assertEqual(second["backlog_claim"]["issue_number"], 8)
+        self.assertEqual(second["backlog_claim"]["issue_number"], 18)
         self.assertEqual(second["waiting_backlog"], [
             {"task_id": "BACKLOG-9", "dispatch_comment_id": 10002},
         ])
-        self.assertEqual(set(second["task_states"]), {"BACKLOG-8", "BACKLOG-9"})
+        self.assertEqual(set(second["task_states"]), {"BACKLOG-18", "BACKLOG-9"})
         self.assertEqual(second["task_states"]["BACKLOG-9"]["dispatch_comment_id"], 10002)
-        self.assertEqual(second["task_states"]["BACKLOG-8"]["dispatch_comment_id"], 10004)
+        self.assertEqual(second["task_states"]["BACKLOG-18"]["dispatch_comment_id"], 10005)
         third = self.run_pulse()
         self.assertEqual(third["loop_state"], "IDLE_SELECT")
-        self.assertEqual(third["task_states"], second["task_states"])
+        self.assertEqual(third["task_states"]["BACKLOG-9"]["status"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(third["task_states"]["BACKLOG-18"]["status"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(third["task_states"]["BACKLOG-18"]["outbox_issue_number"], 18)
+        self.assertIn("wake_comment_id", third["task_states"]["BACKLOG-18"])
         self.assertIsNone(third["backlog_claim"])
         self.assertFalse(third["dispatch_receipts"])
-        self.assertEqual(len(self.comments[9]), 1)
-        self.assertEqual(len(self.comments[8]), 1)
+        self.assertEqual(len(self.comments[9]), 2)
+        self.assertEqual(len(self.comments[18]), 2)
         self.assertEqual(len(self.posts), 4)
 
     def test_pending_canary_does_not_block_authorized_backlog(self):
@@ -568,24 +770,24 @@ class DutyRunnerTests(unittest.TestCase):
         self.comments[6] = canary_comments("CANARY-INTAKE-001")
         self.issues += [
             {**issue(7, title="[P0] [READY] Untrusted", association="CONTRIBUTOR"), "state": "open"},
-            {**issue(8, title="[READY] Authorized"), "state": "open"},
+            {**issue(18, title="[READY] Authorized"), "state": "open"},
         ]
         waiting = [{"task_id": "CANARY-INTAKE-001", "dispatch_comment_id": 11}]
 
         first = self.run_pulse()
         self.assertEqual(first["waiting_canary"], waiting)
         self.assertFalse(first["adjudication_receipts"])
-        self.assertEqual(first["backlog_claim"], {"issue_number": 8, "claim_comment_id": 10001})
+        self.assertEqual(first["backlog_claim"], {"issue_number": 18, "claim_comment_id": 10001})
         self.assertEqual(first["dispatch_receipts"], [{
-            "issue_number": 8, "source_comment_id": 10001, "task_id": "BACKLOG-8",
-            "delegated_to": "[WORK]", "dispatch_comment_id": 10002,
+            "issue_number": 18, "source_comment_id": 10001, "task_id": "BACKLOG-18",
+            "delegated_to": "[WORK]", "dispatch_comment_id": 10002, "outbox_issue_number": 18,
         }])
         self.assertEqual(first["task_states"]["CANARY-INTAKE-001"]["status"], "WAITING_FOR_RECEIPT")
 
         second = self.run_pulse()
         self.assertEqual(second["waiting_canary"], waiting)
         self.assertEqual(second["waiting_backlog"], [
-            {"task_id": "BACKLOG-8", "dispatch_comment_id": 10002},
+            {"task_id": "BACKLOG-18", "dispatch_comment_id": 10002},
         ])
         self.assertIsNone(second["backlog_claim"])
         self.assertFalse(second["dispatch_receipts"])
@@ -596,18 +798,18 @@ class DutyRunnerTests(unittest.TestCase):
         self.issues.extend([
             {**issue(7, title="[P0] [READY] Missing file", body="[SOURCE_FILE] absent.py"),
              "state": "open"},
-            {**issue(8, title="[READY] Valid"), "state": "open"},
+            {**issue(18, title="[READY] Valid"), "state": "open"},
         ])
         record = self.run_pulse()
         self.assertEqual(record["task_states"]["BACKLOG-7"]["source_preflight"], "SOURCE_FILE_NOT_TRACKED")
         self.assertEqual(record["task_states"]["BACKLOG-7"]["status"], "PREFLIGHT_BLOCKED")
         self.assertFalse(self.comments.get(7))
-        self.assertEqual(record["task_states"]["BACKLOG-8"]["status"], "WAITING_FOR_RECEIPT")
+        self.assertEqual(record["task_states"]["BACKLOG-18"]["status"], "WAITING_FOR_RECEIPT")
         blob = subprocess.check_output(
             ["git", "rev-parse", "HEAD:harness-runner.py"], cwd=runner.REPO_ROOT, text=True,
         ).strip()
-        self.assertEqual(record["task_states"]["BACKLOG-8"]["source_blob"], blob)
-        self.assertIn(f"Source Blob: {blob}", self.comments[6][-1]["body"])
+        self.assertEqual(record["task_states"]["BACKLOG-18"]["source_blob"], blob)
+        self.assertIn(f"Source Blob: {blob}", self.comments[18][-1]["body"])
 
     def test_invalid_directive_sources_are_isolated_and_valid_dispatch_is_durable(self):
         self.comments[6] = [
@@ -630,12 +832,14 @@ class DutyRunnerTests(unittest.TestCase):
     def test_interrupted_dispatch_resumes_claim_without_reposting(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
         self.issues.append({**issue(7, title="[READY] Recover"), "state": "open"})
-        self.fail_request = ("POST", "/repos/example/Teamchat/issues/6/comments")
+        self.fail_request = ("POST", "/repos/example/Teamchat/issues/7/comments")
+        self.fail_request_body = runner.DISPATCH_HEADER
         self.run_pulse(expected_exit=1)
         self.fail_request = None
+        self.fail_request_body = None
         record = self.run_pulse()
         self.assertEqual(record["backlog_claim"]["claim_comment_id"], 10001)
-        self.assertEqual(len(self.comments[7]), 1)
+        self.assertEqual(len(self.comments[7]), 2)
         self.assertEqual(len(self.posts), 2)
 
     def test_manual_override_preempts_scheduled_backlog(self):
