@@ -134,7 +134,7 @@ class DutyRunnerTests(unittest.TestCase):
             number = int(path.split("/")[-2])
             rows = self.comments.setdefault(number, [])
         if method == "POST":
-            if number == 99:
+            if number == 99 and payload["body"].startswith(runner.TEAMCHAT_WAKE_HEADER):
                 self.wake_posts.append(payload["body"])
             else:
                 self.posts.append(payload["body"])
@@ -148,11 +148,10 @@ class DutyRunnerTests(unittest.TestCase):
             receipt["user"]["id"] = pilot_state.PULSE_ACTOR_ID
             receipt["issue_url"] = f"https://api.github.com{path.removesuffix('/comments')}"
             rows.append(receipt)
-            if number != 99:
-                for issue_row in self.issues:
-                    if issue_row["number"] == number:
-                        issue_row["comments"] = issue_row.get("comments", 0) + 1
-                        break
+            for issue_row in self.issues:
+                if issue_row["number"] == number:
+                    issue_row["comments"] = issue_row.get("comments", 0) + 1
+                    break
             return receipt, ""
         query = parse_qs(urlsplit(url).query)
         size = int(query["per_page"][0])
@@ -682,7 +681,7 @@ class DutyRunnerTests(unittest.TestCase):
         ]
         self.comments[16] = [comment(20, task("COMMENT"))]
         record = self.run_pulse()
-        self.assertEqual(record["issue_numbers_inspected"], [99, 14, 15, 16])
+        self.assertEqual(record["issue_numbers_inspected"], [14, 15, 16, 99])
         self.assertEqual(record["open_issues_inspected"], 4)
         self.assertEqual(record["eligible_directives_detected"], 3)
         self.assertEqual([r["task_id"] for r in record["dispatch_receipts"]],
@@ -963,7 +962,7 @@ class DutyRunnerTests(unittest.TestCase):
         record = self.run_pulse(expected_exit=1)
         self.assertEqual(record["monitoring_result"], "FAILURE")
         self.assertEqual(record["intake_state"], "ERROR")
-        self.assertEqual(record["open_issues_inspected"], 2)
+        self.assertEqual(record["open_issues_inspected"], 1)
         self.assertEqual(record["new_tasks_dispatched"], 0)
         self.assertEqual(record["first_processing_error"],
                          "GET /repos/example/Teamchat/issues/19/comments: HTTP 503")
