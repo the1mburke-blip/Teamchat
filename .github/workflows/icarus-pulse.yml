@@ -1,104 +1,321 @@
 name: ICARUS Pulse & Operational Duty
 
 on:
-  ýÍ¡Õ±è(´É½¸èÜÀ´ÈÈ¼ÈÄ´ÌÀ¨¨ÿô÷W&FöæÂGWG¢Ò7&öã¢srÓ#2ó"Ó3ÿÿÈ
-ÈÈX\X]HÜÛ	ÍÈ
-ÌH
-
-Èÿÿÿ     # Heartbeat on day 31
-  workflow_dispatcý è(ÁÕÍ è(É¹¡Ìèmµ¥¸°ÍÑ¥¹t(ÁÿöÆÅ÷&WVW7C ¢'&æ6W3¢¶ÖâÂ7FvæuÐ¢ÿÿÜÜÝY\Î\\ÎÛÜ[YB\ÜÝYWØÛÛ[Y[ÿÿÿ   types: [created]
+  schedule:
+    - cron: '7 0-22/2 1-30 * *'  # Operational duty
+    - cron: '7 1-23/2 1-30 * *'  # Heartbeat
+    - cron: '7 * 31 * *'         # Heartbeat on day 31
+  workflow_dispatch:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
 
 concurrency:
-  group: ${ýì¡¥Ñ¡Õ¹Ù¹Ñ}¹µôôÁÕÍ ñð¥Ñ¡Õ¹Ùÿ÷EöæÖRÓÒwVÆÅ÷&WVW7Brbbf÷&ÖBv&æW7ÿÿÙØ]K^ÌIËÚ]XYH	ÚXØ\\ËZ\ÜÝYKMZÿÿÿake' }}
-  cancel-in-progress: ${{ github.evenýÑ}¹µôôÁÕÍ ñð¥Ñ¡Õ¹Ù¹Ñ}¹µôôÁÕÿöÅ÷&WVW7Br×Ð ¦¦ö'3 ¢6'W2×VÇ6S ¢cÿÿÙÚ]X][Û[YHOH	ÜØÚY[IÈÚ]Xÿÿÿnt_name == 'workflow_dispatch'
-    runs-on: uýÕ¹ÑÔµ±ÑÍÐ(¹Øè(%IUM}AU1M}UQÿõõ44TETÄS¢srÓ#"ó"Ó3¢¢p¢W&Ö76ÿÿÜÎXÝ[ÛÎÜ]BÛÛ[ÎXÿÿÿ      issues: write
+  group: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && format('harness-gate-{0}', github.ref) || 'icarus-issue-6-intake' }}
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+jobs:
+  icarus-pulse:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      ICARUS_PULSE_DUTY_SCHEDULE: '7 0-22/2 1-30 * *'
+    permissions:
+      actions: write
+      contents: read
+      issues: write
       pull-requests: write
 
     steps:
-      - name:ü¡­½ÕÐIÁ½Í¥Ñ½Éä(ÕÍÌèÑ¥½¹Ì½ÿöV6¶÷WDc@ ¢ÒæÖS¢6WBWFöà¢ÿÿÈ\Ù\ÎXÝ[ÛËÜÙ]\\]ÛBÚ]ÿÿÿ
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
           python-version: '3.12'
 
-      - naýµèáÕÑ%IUL=¸µÕÑäIÕ¹¹È(¹ÿó ¢tDT%õDô´Tã¢G·²6V7&WG2ätDTÿÿÕÒÑS_BPÐTT×ÒTÔÕQWÓSPTÿÿÿ         ICARUS_PULSE_TRIGGER_SCHEDULE: ${{ gý¥Ñ¡Õ¹Ù¹Ð¹Í¡Õ±õô(AÕ±¥ÿó#SS¶W2öæÇâFRWV7WF÷"æBfW&fW"ÿÿÙ\Ù\\]H]]HÙ^\ËPÐTT×ÿÿÿTY_AGENT_SIGNERS: ${{ vars.ICARUS_DUTY_AGENT_ýM%9ILõô(ÉÕ¸èð(ÁåÑ¡½¸ÌÿöÒ6'W2æ6÷&RæGWG÷'VææW  ¢ÒæÖS¢6ÿÿÚÈPÐTTÈ[ÙH[\[ÙH\][Ûÿÿÿ: pulse_quota
-        if: github.event_name =üôÍ¡Õ±¥Ñ¡Õ¹Ù¹Ð¹Í¡Õ±ôô¹Øÿô4%U5õTÅ4UôEUEõ44TETÄP¢Vçc ¢ÿÿÈÒUPÕÒÑS	ÞÈÚ]XÚÙ[_Bÿÿÿ  run: python3 -m icarus.core.runtime --pulseüµÉÍÉÙ((´¹µèAÉÍ¥ÍÐ%IULAÕ±ÍÿöæfW&Væ6R&W6W'fFöà¢C¢VÇ6U÷&W6ÿÿÝ][ÛYÝ\Ë[ÙWÜ][ÝKÝ]]ÿÿÿday != ''
-        uses: actions/upload-artifaýÑØÐ(Ý¥Ñ è(¹µè¥ÉÕÌµÁÿöÇ6R×V÷FÒG·²7FW2çVÇ6U÷V÷Fæ÷WGWG2æFÿÿßB]	ÞÈ[\[\_KÚXØ\\ÿÿÿulse-reservation.json
-          if-no-files-fý½Õ¹èÉÉ½È(ÉÑ¹Ñ¥½¸µåÌèÌÄ((ÿòÒæÖS¢WV7WFR4%U2VÇ6R&V6öææp¢ÿÿÈYÝ\Ë[ÙWÜ\Ù\][ÛÝ]]Ë\ÿÿÿfact-id != ''
-        timeout-minutes: 3
-    ü¹Øè(%Q!U	}Q=-8èíì¥Ñ¡Õ¹ÿöö¶Vâ×Ð¢tTÔäôô´U¢G·²6V7&WÿÿËÑSRSWÐTWÒÑVH_BÓÓSQSÒQÿÿÿe-${{ github.run_id }}
-          COMMENT_ACTOýHèÍ¡Õ±(AU1M}IMIYQ%=9}%èÿ÷·²7FW2çVÇ6U÷&W6W'fFöâæ÷WGWG2æ'Ff7BÿÿÙ_B[]ÛÈ[HXØ\\ËÛÜKÿÿÿime --pulse-infer
+      - name: Execute ICARUS On-Duty Runner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ICARUS_ISSUE_NUMBER: "6"
+          ICARUS_PULSE_TRIGGER_SCHEDULE: ${{ github.event.schedule }}
+          # Public Ed25519 keys only. The executor and verifier keep separate private keys.
+          ICARUS_DUTY_AGENT_SIGNERS: ${{ vars.ICARUS_DUTY_AGENT_SIGNERS }}
+        run: |
+          python3 -m icarus.core.duty_runner
 
-      - name: Persist ExecýÕÑ¥½¸Ù¥¹(¥è±ÝåÌ ¤(ÿ÷6W3¢7Föç2÷WÆöBÖ'Ff7Dc@¢vFÿÿÂ[YNXØ\\ËY]K[YÙ\ÿÿÿ path: |
+      - name: Check ICARUS Pulse inference partition
+        id: pulse_quota
+        if: github.event_name == 'schedule' && github.event.schedule == env.ICARUS_PULSE_DUTY_SCHEDULE
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -m icarus.core.runtime --pulse-reserve
+
+      - name: Persist ICARUS Pulse inference reservation
+        id: pulse_reservation
+        if: steps.pulse_quota.outputs.day != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-pulse-quota-${{ steps.pulse_quota.outputs.day }}
+          path: ${{ runner.temp }}/icarus-pulse-reservation.json
+          if-no-files-found: error
+          retention-days: 31
+
+      - name: Execute ICARUS Pulse reasoning
+        if: steps.pulse_reservation.outputs.artifact-id != ''
+        timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          COMMENT_ID: pulse-${{ github.run_id }}
+          COMMENT_ACTOR: schedule
+          PULSE_RESERVATION_ID: ${{ steps.pulse_reservation.outputs.artifact-id }}
+        run: python3 -m icarus.core.runtime --pulse-infer
+
+      - name: Persist Execution Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-duty-ledger
+          path: |
             icarus_status.json
-     üIU9}1=¹©Í½¹°(¥ÉÕÌµÁ¥±½ÿò×&ööbæ&à¢6'W2÷'Vç2ò¢×VÇ6RÒÿÿÞÈÚ]X[ÚY_KY][[ÛYÿÿÿs: 30
+            RUN_LOG.jsonl
+            icarus-pilot-proof.bin
+            icarus/runs/*-pulse-${{ github.run_id }}.md
+          retention-days: 30
 
   icarus-owner-command:
     if: >-
-   ü (¥Ñ¡Õ¹Ù¹Ñ}¹µôô¥ÍÍÕÌÿð¢vFV"æWfVçBæ7FöâÓÒv÷VæVBrb`ÿÿÈÚ]X][\ÜÝYK\Ù\YOHÌMÿÿÿ3 &&
-        github.event.issue.author_associýÑ¥½¸ôô=]9H(ÍÑÉÑÍ]¥Ñ ¡¥Ñ¡ÕÿòæWfVçBæ77VRæ&öGÂt4%U5õ%Târ¢ÇÀÿÿÈ
-Ú]X][Û[YHOH	Ú\ÜÝYWÿÿÿmment' &&
-        github.event.action == 'creýÑ(¥Ñ¡Õ¹Ù¹Ð¹¥ÍÍÕ¹ÁÕ±±}ÉÅÿöW7BÓÒçVÆÂb`¢vFV"æWfVçBæ6öÖÖVçBÿÿÜÙ\YOHÌMÎMÈ	Ú]X][ÿÿÿomment.author_association == 'OWNER' &&
-     ü (ÍÑÉÑÍ]¥Ñ ¡¥Ñ¡Õ¹Ù¹Ð¹½µµÿ÷Bæ&öGÂt4%U5õ%TârÇÀ¢vFV"æÿÿÙ[ÛÛ[Y[ÙHOH	ÒPÐTT×ÔSÈÿÿÿ startsWith(github.event.comment.body, '[ICARýULMUAIY%M=Id%IQ%Yt¤ñð(¥ÿöV"æWfVçBæ6öÖÖVçBæ&öGÓÒu´4%U25UU%d4ÿÿÖHTPÕUWIÈÝ\ÕÚ]
-Ú]ÿÿÿevent.comment.body, '[SOL] ') ||
-          giýÑ¡Õ¹Ù¹Ð¹½µµ¹Ð¹½äôômM=1tñð(ÿò7F'G5vFvFV"æWfVçBæ6öÖÖVçBæ&öGÂr¢ÿÿÐÐTT×ÔS	ÊHÚ]X][ÛÛ[ÿÿÿt.body == '**ICARUS_RUN**' ||
-          startýÍ]¥Ñ ¡¥Ñ¡Õ¹Ù¹Ð¹½µµ¹Ð¹½ä°¨©m%IULÿõUU%d4õ%D$T5DdUÒrÇÀ¢vFVÿÿÙ][ÛÛ[Y[ÙHOH	ÊÒPÐTTÈÕTTTÓÔÿÿÿDIRECTIVE]**' ||
-          startsWith(github.ýÙ¹Ð¹½µµ¹Ð¹½ä°¨©mM=1t¤ñð(ÿ÷7F'G5vFvFV"æWfVçBæ6öÖÖVçBæ&öGÂr¢¥µ4ÿÿ×J	ÊHÚ]X][ÛÛ[Y[ÿÿÿ == '**[SOL]**'
+      (
+        github.event_name == 'issues' &&
+        github.event.action == 'opened' &&
+        github.event.issue.user.id == 324897963 &&
+        github.event.issue.author_association == 'OWNER' &&
+        startsWith(github.event.issue.body, 'ICARUS_RUN')
+      ) ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.action == 'created' &&
+        github.event.issue.pull_request == null &&
+        github.event.comment.user.id == 324897963 &&
+        github.event.comment.author_association == 'OWNER' &&
+        (
+          startsWith(github.event.comment.body, 'ICARUS_RUN ') ||
+          github.event.comment.body == 'ICARUS_RUN' ||
+          startsWith(github.event.comment.body, '[ICARUS SUPERVISORY DIRECTIVE] ') ||
+          github.event.comment.body == '[ICARUS SUPERVISORY DIRECTIVE]' ||
+          startsWith(github.event.comment.body, '[SOL] ') ||
+          github.event.comment.body == '[SOL]' ||
+          startsWith(github.event.comment.body, '**ICARUS_RUN ') ||
+          github.event.comment.body == '**ICARUS_RUN**' ||
+          startsWith(github.event.comment.body, '**[ICARUS SUPERVISORY DIRECTIVE] ') ||
+          github.event.comment.body == '**[ICARUS SUPERVISORY DIRECTIVE]**' ||
+          startsWith(github.event.comment.body, '**[SOL] ') ||
+          startsWith(github.event.comment.body, '**[SOL]** ') ||
+          github.event.comment.body == '**[SOL]**'
         )
       )
-    runs-onüèÕÕ¹ÑÔµ±ÑÍÐ(Ñ¥µ½ÕÐµµ¥¹ÕÑÌèÔÔ(ÿöW&Ö76öç3 ¢7Föç3¢w&FP¢6öçFÿÿÝÎÜ]B\ÜÝY\ÎÜ]B[\ÿÿÿests: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: read
     steps:
-      - name: Check outüÉÁ½Í¥Ñ½Éä(ÕÍÌèÑ¥½¹Ì½¡­½ÕÑØÿð¢ÒæÖS¢6WBWFöà¢W6W3¢ÿÿÝ[ÛËÜÙ]\\]ÛBÚ]ÿÿÿ python-version: '3.12'
-      - name: Executeü½Ý¹È½µµ¹¥¸%ÉÕÌ(¥è½Ý¹É}ÿöÖÖæ@¢Vçc ¢tDT%õDô´Tã¢ÿÿÞÈÙXÜ]ËÒUPÕÒÑS_BÑSRSWÿÿÿI_KEY: ${{ secrets.GEMINI_API_KEY }}
-        ü=559Q}	=dèíì¥Ñ¡Õ¹Ù¹Ñ}¹µôô¥Íÿ÷VW2rbbvFV"æWfVçBæ77VRæ&öGÇÂvFV"æWÿÿÛÛÛ[Y[ÙH_BÓÓSQSÒQ	ÿÿÿgithub.event_name == 'issues' && github.eventü¹¥ÍÍÕ¹¥ñð¥Ñ¡Õ¹Ù¹Ð¹½µµ¹Ð¹¥õô(ÿò4ôÔÔTåEô5Dõ#¢G·²vFV"æWfVçEöæÖRÓÿÿÉÚ\ÜÝY\ÉÈ	Ú]X][\ÜÝYK\Ù\ÙÚ[ÿÿÿgithub.event.comment.user.login }}
-        ruý¸èÁåÑ¡½¸Ìµ´¥ÉÕÌ¹½É¹ÉÕ¹Ñ¥µ(´¹ÿöS¢&6fR÷væW"6öÖÖæB&V6V@¢CÿÿØ\Ú]WÛÝÛ\ÜXÙZ\Y[Ø^\Ê
-Bÿÿÿ      uses: actions/upload-artifact@v4
-      üÝ¥Ñ è(¹µè¥ÉÕÌµ½Ý¹ÈµÉÕ¸´íìÿövFV"æWfVçEöæÖRÓÒv77VW2rbbvFV"æWfVÿÿË\ÜÝYKYÚ]X][ÛÛ[Y[Y_Bÿÿÿ     path: icarus/runs/*-${{ github.event_namýôô¥ÍÍÕÌ¥Ñ¡Õ¹Ù¹Ð¹¥ÍÍÕ¹¥ñð¥ÿöV"æWfVçBæ6öÖÖVçBæB×ÒæÖ@¢bÖæòÖÿÿÛ\ËYÝ[Ø\][[ÛY^\Îÿÿÿ      - name: Persist owner command receipt
- ü¥è±ÝåÌ ¤(ÕÍÌèÑ¥½¹Ì½¥ÿöV"×67&Dcp¢vF ¢67&ÿÿÈÛÛÝÈH\]Z\J	ÙÉÊNÂÿÿÿ        const owner = context.repo.owner;
-   ü½¹ÍÐÉÁ¼ô½¹ÑáÐ¹ÉÁ¼¹ÉÁ¼ì(ÿò6öç7B6÷W&6T6öÖÖVçDBÒ7G&ær6öçFÿÿÝ^[ØYÛÛ[Y[ËYÏÈÛÛ^^[ØY\ÿÿÿe.id);
-            const receiptDir = 'icarusü½ÉÕ¹Ìì(½¹ÍÐ¥±¹µôÌ¹á¥Íÿ÷57æ2&V6VDF"¢òg2ç&VFFÿÿÞ[ÊXÙZ\\K[
-[YHO[YK[ÕÚ]
-ÿÿÿ${sourceCommentId}.md`))
-              : nullüì(¥ ¥±¹µ¤ì(ÿö6÷&Rç6WDfÆVB'VçFÖRFBæ÷B&öGV6RFRÿÿÞXÝYXÙZ\ÜÛÝ\ÙHÛÛ[Y[	ÜÛÝ\ÙÿÿÿmmentId}.`);
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Execute owner command in Icarus
+        id: owner_command
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          COMMENT_BODY: ${{ github.event_name == 'issues' && github.event.issue.body || github.event.comment.body }}
+          COMMENT_ID: ${{ github.event_name == 'issues' && github.event.issue.id || github.event.comment.id }}
+          COMMENT_ACTOR: ${{ github.event_name == 'issues' && github.event.issue.user.login || github.event.comment.user.login }}
+        run: python3 -m icarus.core.runtime
+      - name: Archive owner command receipt
+        id: archive_owner_receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-owner-run-${{ github.event_name == 'issues' && github.event.issue.id || github.event.comment.id }}
+          path: icarus/runs/*-${{ github.event_name == 'issues' && github.event.issue.id || github.event.comment.id }}.md
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Persist owner command receipt
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sourceCommentId = String(context.payload.comment?.id ?? context.payload.issue.id);
+            const receiptDir = 'icarus/runs';
+            const filename = fs.existsSync(receiptDir)
+              ? fs.readdirSync(receiptDir).find(name => name.endsWith(`-${sourceCommentId}.md`))
+              : null;
+            if (!filename) {
+              core.setFailed(`Runtime did not produce the expected receipt for source comment ${sourceCommentId}.`);
               return;
-          üô(½¹ÍÐÁÑ ôíÉ¥ÁÑ¥Éô¼ÿ÷¶fÆVæÖWÖ°¢6öç7B6öçFVçBÒg2ÿÿÙXY[TÞ[Ê]	Ý]	ÊNÂÛÛÿÿÿreceiptBranch = 'icarus-runs';
-            trýäì(±Ðá¥ÍÑ¥¹ì(ÿòG'°¢W7FærÒvBvFÿÿØ\Ý\ÜËÙ]ÛÛ[
-ÈÝÛ\\Ë]ÿÿÿref: receiptBranch });
-              } catch ü¡ÉÉ½È¤ì(¥¡ÉÉ½È¹ÍÑÑÕÌÿóÒCBF&÷rW'&÷#°¢Ð¢ÿÿÈY
-Y^\Ý[ÊHÂ]ØZ]ÿÿÿithub.rest.repos.createOrUpdateFileContents({ü(½Ý¹È°ÉÁ¼°ÁÑ °(ÿòÖW76vS¢6'W3¢W'67B÷væW"ÿÿÛXÙZ\ÜÛÛ[Y[	ÜÛÝ\ÙPÛÛ[Y[YXÿÿÿ                content: Buffer.from(content,üÕÑà¤¹Ñ½MÑÉ¥¹ ÍØÐ¤°(ÿò'&æ6¢&V6VD'&æ6¢Ò°ÿÿÈH[ÙHÂÛÛÝÿÿÿrevious = Buffer.from(existing.data.content, üÍØÐ¤¹Ñ½MÑÉ¥¹ ÕÑà¤ì(ÿöb&Wf÷W2ÓÒ6öçFVçB°¢ÿÿÝÝÈ]È\Ü\[[ÛHXÙZ\]ÿÿÿeady exists with different content: ${path}`)üì(ô(ô(ÿò6öç7BfW&fVBÒvBvFV"ç&W7Bç&WÿÿËÙ]ÛÛ[
-ÈÝÛ\\Ë]YXÙZÿÿÿBranch });
-              const readback = BufýÈ¹É½´¡ÙÉ¥¥¹Ñ¹½¹Ñ¹Ð°ÍØÐ¤¹Ñ½ÿ÷G&ærwWFcr°¢b&VF&6²ÿÿÈÛÛ[
-HÝÈ]È\ÜXÙZ\XYXÚÿÿÿismatch: ${path}`);
-              core.info(`ýAÉÍ¥ÍÑ¹ÐÉ¥ÁÐÙÉ¥¥èíÁÑ¡ô½¸íÉÿöVD'&æ6Ò&Æö"G·fW&fVBæFFç6Òæ°ÿÿÈHØ]Ú
-\ÜHÂÿÿÿre.setFailed(`Receipt archive write/readback ý¥±èíÉÉ½È¹ÍÑÑÕÌñðÉÉ½ÈôèíÉÉ½È¹ÿöW76vWÖ°¢Ð ¢6FV6"×fW&fWÿÿÂYÚ]X][Û[YHOH	ÜØÚY[IÈ	ÿÿÿithub.ref == 'refs/heads/main' && vars.ICARUSý}M%I}9	1ôôÑÉÕ(ÉÕ¹Ìµ½¸èÕÕ¹ÿ÷RÖÆFW7@¢FÖV÷WBÖÖçWFW3¢P¢Vçf&öæÿÿÛXØ\\Ë\ÚYXØ\\Z\ÜÚ[ÛÎÿÿÿtents: read
+            }
+            const path = `${receiptDir}/${filename}`;
+            const content = fs.readFileSync(path, 'utf8');
+            const receiptBranch = 'icarus-runs';
+            try {
+              let existing;
+              try {
+                existing = await github.rest.repos.getContent({ owner, repo, path, ref: receiptBranch });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+              if (!existing) {
+                await github.rest.repos.createOrUpdateFileContents({
+                  owner, repo, path,
+                  message: `icarus: persist owner run receipt for comment ${sourceCommentId}`,
+                  content: Buffer.from(content, 'utf8').toString('base64'),
+                  branch: receiptBranch
+                });
+              } else {
+                const previous = Buffer.from(existing.data.content, 'base64').toString('utf8');
+                if (previous !== content) {
+                  throw new Error(`Append-only receipt path already exists with different content: ${path}`);
+                }
+              }
+              const verified = await github.rest.repos.getContent({ owner, repo, path, ref: receiptBranch });
+              const readback = Buffer.from(verified.data.content, 'base64').toString('utf8');
+              if (readback !== content) throw new Error(`Receipt readback mismatch: ${path}`);
+              core.info(`Persistent receipt verified: ${path} on ${receiptBranch} (blob ${verified.data.sha}).`);
+            } catch (error) {
+              core.setFailed(`Receipt archive write/readback failed: ${error.status || 'error'}: ${error.message}`);
+            }
+
+  sidecar-verifier:
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main' && vars.ICARUS_SIDECAR_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: icarus-sidecar
+    permissions:
+      contents: read
     steps:
-      - uses: actions/ý¡­½ÕÑØÐ(Ý¥Ñ è(ÁÉÍ¥ÍÐµÿ÷&VFVçFÇ3¢fÇ6P¢ÒW6W3¢7Föç2÷6WGÿÿË\]ÛBÚ]]Û]ÿÿÿsion: '3.12'
-      - name: Verify and submit ýáÐµ¡ÉÙ¥Ü(¹Øè(M%ÿô4%õdU$dU%õDô´Tã¢G·²6V7&WG2å4DT4%õdU$ÿÿÒQTÕÒÑS_B[]ÛÈ[HXØ\\ÿÿÿore.sidecar
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify and submit exact-head review
+        env:
+          SIDECAR_VERIFIER_TOKEN: ${{ secrets.SIDECAR_VERIFIER_TOKEN }}
+        run: python3 -m icarus.core.sidecar
 
   harness:
-    name: ${{ (githubü¹Ù¹Ñ}¹µôôÁÕÍ ñð¥Ñ¡Õ¹Ù¹Ñ}¹µôÿòwVÆÅ÷&WVW7Brbbv&æW72rÇÂv&æW72ÿÿØXÝ]JIÈ_BYÚ]X][Û[YHOH	Üÿÿÿh' || github.event_name == 'pull_request'
-   üÁÉµ¥ÍÍ¥½¹Ìè(½¹Ñ¹ÑÌèÉ(Ñÿööç3¢&V@¢'Vç2Ööã¢V'VçGRÖÆFW7@¢FÿÿÛÝ][Z[]\ÎÝ\ÎH[YNÚÿÿÿk out repository
-        uses: actions/checkoýÕÑØØ(Ý¥Ñ è(Ñ µÁÑ èÀÿð¢ÒæÖS¢'VÆB&æW72ÖvP¢ÿÿÎZ[[Ù][È\ÿÿÿail
-          docker build -t teamchat-harnesýÌéÑÍÐ¸ÈøÄðÑÕ¥±¹±½((´¹µèÿõ'Vâ&æW70¢C¢&æW70¢'VãÿÿßÙ][È\YZ[]ÿÿÿ -m icarus.harness.container 2>&1 | tee harneýÍÌ¹±½((´¹µèAÉ½ÕÁ¡åÍ¥°ÍÑÑÿ÷&VF&6²ÖæfW7@¢c¢7V66W72¢ÿÿÈ[PÐTT×ÒTTÔ×ÓÕUÓÓQN	ÿÿÿ steps.harness.outcome }}
-          ICARUS_SOýUI}M!èíì¥Ñ¡Õ¹Ù¹Ð¹ÁÕ±±}ÉÅÕÍÐ¹¡ÿ÷6ÇÂvFV"ç6×Ð¢4%U5õD4µôÿÿÎIÞÈÚ]X][[Ü\]Y\Ý[X\ÿÿÿgithub.sha }}
-        run: python3 -m icarus.ý¡É¹ÍÌ¹ÉÕ¹¹È´µÝÉ¥Ñµ¤µµ¹¥ÍÐ=5A1Q%=ÿõôÔädU5Bæ§6öà ¢ÒæÖS¢w&FR%TåôÄôrÿÿÜÛÛY[Ø^\Ê
-B[ÿÿÿ    BUILD_OUTCOME: ${{ steps.build.outcome }}ü(!I9MM}=UQ=5èíìÍÑÁÌ¹¡É¹Íÿòæ÷WF6öÖR×Ð¢'Vã¢À¢FöãÿÿËH	ÔIÂ[\ÜÛÛÜË]Xÿÿÿre
-          from datetime import datetime, tý¥µé½¹(É¡¹µ¤è(ÿòÒFÆ"åFæÖR¢&WGÿÿÛXYÝ^
-\ÜÏH\XÙHHY^\Ýÿÿÿ else ""
+    name: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && 'harness' || 'harness (inactive)' }}
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Build harness image
+        id: build
+        run: |
+          set -o pipefail
+          docker build -t teamchat-harness:test . 2>&1 | tee build.log
+
+      - name: Run harness
+        id: harness
+        run: |
+          set -o pipefail
+          python3 -m icarus.harness.container 2>&1 | tee harness.log
+
+      - name: Produce physical state readback manifest
+        if: success()
+        env:
+          ICARUS_HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          ICARUS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          ICARUS_TASK_ID: PR-${{ github.event.pull_request.number || github.sha }}
+        run: python3 -m icarus.harness.runner --write-ci-manifest COMPLETION_MANIFEST.json
+
+      - name: Write RUN_LOG.jsonl
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          from datetime import datetime, timezone
+          def read(name):
+              p = pathlib.Path(name)
+              return p.read_text(errors="replace") if p.exists() else ""
           log = read("harness.log")
-üµÑ ôÉ¹ÍÉ ¡È!I9ML¡AMMñÿôÂ¢WB6öFRÓõÆB²"ÂÆör¢7VÿÿØ\HHK[[
-JÈ
-Î\ÜÙYZ[Yÿÿÿor).*) =+", log)
+          match = re.search(r"HARNESS (PASS|FAIL): exit code (-?\d+)", log)
+          summary = re.findall(r"=+ (.*(?:passed|failed|error).*) =+", log)
           record = {
-       üÑ¥µÍÑµÀèÑÑ¥µ¹¹½Ü¡Ñ¥µé½¹¹ÕÑÿòæ6öf÷&ÖBÀ¢'v÷&¶fÆ÷r#¢÷2ÿÿÛ\ÛÈÒUPÕÓÔÑÕÈKÿÿÿ_id": os.environ["GITHUB_RUN_ID"],
-          üÉÕ¹}ÑÑµÁÐè½Ì¹¹Ù¥É½¹l%Q!U	}IU9}QÿôTÕB%ÒÀ¢&WfVçB#¢÷2æVçf&öå²$ÿÿÕPÑUSÓSQHKYÜËÿÿÿviron["GITHUB_REF"], "sha": os.environ["GITHUý	}M!t°(Õ¥±}½ÕÑ½µè½Ì¹ÿ÷f&öå²$%TÄEôõUD4ôÔR%ÒÀ¢&&æÿÿÜ×ÛÝ]ÛÛYHÜË[\ÛÈTTÔ×ÓÕUÓÓQHKÿÿÿ            "harness_status": match.group(1) ý¥µÑ ±Í9½¹°(¡É¹ÍÍ}ÿöEö6öFR#¢çBÖF6æw&÷W"bÖF6VÇ6RÿÿÛÛK]\ÝÜÝ[[X\HÝ[[X\ÿÿÿ-1] if summary else None,
-              "builý}±½}Ñ¥°èÉ Õ¥±¹±½¤¹ÍÁ±¥Ñ±¥¹Ì ¥lÿóC¥ÒÀ¢&&æW75öÆöu÷FÂ#¢ÆörÿÿÜ][\Ê
-VËNKBÿÿÿlib.Path("RUN_LOG.jsonl").write_text(json.dumýÁÌ¡É½É¤¬q¸¤(ÁÉ¥¹Ð¡©Í½¸¹ÕµÁÿò¶¶W¢&V6÷&E¶¶WÒf÷"¶Wà¢ÿÿÈZ[ÛÝ]ÛÛYH\\Ü×ÛÝ]ÛÛYH\\ÿÿÿexit_code", "pytest_summary")}))
-          PYü((´¹µèUÁ±½Á¡åÍ¥°ÉÕ¸Ù¥¹ÿòc¢Çv2¢W6W3¢7Föç2÷ÿÿÛØYX\YXÝÂÚ]ÿÿÿ: harness-run-log-${{ github.run_id }}-${{ giýÑ¡Õ¹ÉÕ¹}ÑÑµÁÐõô(ÁÑ èð(ÿò%TåôÄôræ§6öæÀ¢4ôÕÄUDôåôÔÿÿÒQTÕÛÛY[ËY[\ËYÝ[\ÿÿÿ
+              "timestamp": datetime.now(timezone.utc).isoformat(),
+              "workflow": os.environ["GITHUB_WORKFLOW"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "event": os.environ["GITHUB_EVENT_NAME"],
+              "ref": os.environ["GITHUB_REF"], "sha": os.environ["GITHUB_SHA"],
+              "build_outcome": os.environ["BUILD_OUTCOME"],
+              "harness_outcome": os.environ["HARNESS_OUTCOME"],
+              "harness_status": match.group(1) if match else None,
+              "harness_exit_code": int(match.group(2)) if match else None,
+              "pytest_summary": summary[-1] if summary else None,
+              "build_log_tail": read("build.log").splitlines()[-40:],
+              "harness_log_tail": log.splitlines()[-80:],
+          }
+          pathlib.Path("RUN_LOG.jsonl").write_text(json.dumps(record) + "\n")
+          print(json.dumps({key: record[key] for key in
+              ("build_outcome", "harness_outcome", "harness_exit_code", "pytest_summary")}))
+          PY
+
+      - name: Upload physical run evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: harness-run-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            RUN_LOG.jsonl
+            COMPLETION_MANIFEST.json
+          if-no-files-found: error
           retention-days: 30
 
-  completion-iý¹ÑÉ¥Ñäè(¹µèíì¡¥Ñ¡Õ¹Ù¹Ñ}¹µôÿòwW6rÇÂvFV"æWfVçEöæÖRÓÒwVÆÅ÷&WVWÿÿÉÊH		ØÛÛ\][ÛZ[YÜ]IÈ	ØÛÛ\][Ûÿÿÿntegrity (inactive)' }}
-    if: github.event_ý¹µôôÁÕÍ ñð¥Ñ¡Õ¹Ù¹Ñ}¹µôôÁÕ±±ÿ÷&WVW7Bp¢W&Ö76öç3 ¢6öçFVçG3¢&ÿÿÙXÝ[ÛÎXY[Ë[ÛX[K[ÿÿÿest
+  completion-integrity:
+    name: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && 'completion-integrity' || 'completion-integrity (inactive)' }}
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      -ü¹µè¡¬½ÕÐÉÁ½Í¥Ñ½Éä(ÕÍÌèÿööç2ö6V6¶÷WDc`¢vF ¢fWÿÿÚY\H[YN[ÜÙHÛÛ\][Ûÿÿÿvidence Integrity
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Enforce Completion Evidence Integrity
         env:
-          ICARýUM}U%Q}	Mèíì¥Ñ¡Õ¹Ù¹Ð¹ÁÕ±±}ÉÅÕÍÐÿö&6Rç6ÇÂvFV"æWfVçBæ&Vf÷&R×Ð¢ÿÿÒPÐTT×ÐUQUÒPQ	ÞÈÚ]X][[Üÿÿÿest.head.sha || github.sha }}
-          GITHUý	}Q=-8èíì¥Ñ¡Õ¹Ñ½­¸õô(ÉÕ¸èÁåÿööã2ÖÒ6'W2æ&æW72ç'VææW"ÒÖVFB×7FFRÿÿÜ]ÿÿÿ
+          ICARUS_AUDIT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          ICARUS_AUDIT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -m icarus.harness.runner --audit-state-writes
