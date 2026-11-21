@@ -6,9 +6,9 @@ Read identity.md and inherited.md for preserved identity/lineage; read learned.m
 
 After tasks/chats, append useful durable lessons with dates, provenance, evidence, uncertainty and corrections through existing authenticated repository tools. Preserve prior history, immutable identity/inherited content and current permissions. Verify GitHub readback before claiming a committed memory. Keep large evidence in dated files and link them from learned.md. No credentials or indiscriminate private transcripts. Recording learning is not model-weight training.
 
-Local learned.md, native MEMORY.md, lesson journals and skills are working copies. Offline or inaccessible repository writes stay explicitly pending locally until an authorized write/readback occurs. Automatic phone/PC cross-save is not yet implemented. Repository storage alone does not prove a runtime has refreshed its context.
+The lowercase repository memory.md is the source-controlled compact shared summary. Local native MEMORY.md, lesson journals and skills are working copies; current-state.md and learned.md are source-controlled operational and learning records. Offline or inaccessible repository writes stay explicitly pending locally until an authorized write/readback occurs. Automatic phone/PC cross-save is not yet implemented. Repository storage alone does not prove a runtime has refreshed its context.
 
-Latest reconciled operational state: [17 October 2026 — current state and outstanding verification](current-state.md), cross-training [HV-EXP-100](../../TRAINING_MATRIX.md) and [dated learning](learned.md). These are documentation/learning updates only; physical phone/PC uptake remains unverified.
+Latest reconciled operational state: [21 November 2026 — Icarus autonomous duty recovery and daily evidence](current-state.md); concise shared summary: [memory.md](memory.md); reusable learning: [learned.md](learned.md); cross-training: [HV-EXP-176](../../TRAINING_MATRIX.md). These are source-controlled documentation updates, not proof of live runtime uptake.
 
 Historical checkpoint (not present operating state): [13 October 2026 — Tether and learning](../checkpoints/2026-10-13-tether-and-learning/HANDOFF.md).
 
