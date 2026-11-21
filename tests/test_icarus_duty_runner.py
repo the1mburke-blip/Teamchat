@@ -48,7 +48,7 @@ def canary_comments(task_id):
                     f"Directive: {runner.ECHO_DIRECTIVE}",
                 association="NONE", author="github-actions[bot]"),
         comment(12, f"[WORK] CLAIMED\nTask ID: {task_id}\n"
-                    "Dispatch: https://github.com/example/Teamchat/issues/6#issuecomment-11"),
+                    "Dispatch: https://github.com/example/Teamchat/issues/99#issuecomment-11"),
     ]
 
 
@@ -692,7 +692,7 @@ class DutyRunnerTests(unittest.TestCase):
     def test_issue_and_comment_pages_are_all_read_and_pull_requests_are_excluded(self):
         self.issues += [
             {**issue(7, body=task("PULL-REQUEST")), "pull_request": {}},
-            *(issue(number) for number in range(8, 113)),
+            *(issue(number) for number in range(8, 114)),
         ]
         self.comments[112] = [comment(i, "") for i in range(1, 101)] + [
             comment(101, task("LAST-PAGE"))
@@ -891,7 +891,7 @@ class DutyRunnerTests(unittest.TestCase):
 
     def test_canary_waits_for_authorized_echo_then_adjudicates_once(self):
         task_id = "CANARY-INTAKE-001"
-        link = "https://github.com/example/Teamchat/issues/6#issuecomment-"
+        link = "https://github.com/example/Teamchat/issues/99#issuecomment-"
         directive = runner.ECHO_DIRECTIVE
         self.comments[99] = canary_comments(task_id)
         receipt = (
