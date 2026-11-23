@@ -893,9 +893,11 @@ def monitor_issues(repo, mailbox, token, record):
     candidates = []
     issue_comments_by_number = {mailbox: outbox_comments}
     scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
-    backlog_scan = os.environ.get("GITHUB_EVENT_NAME") in {"schedule", "workflow_dispatch"}
     target_issue_raw = os.environ.get("ICARUS_TASK_ISSUE", "").strip()
     target_issue = int(target_issue_raw) if target_issue_raw.isdecimal() else None
+    backlog_scan = scheduled or (
+        os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch" and target_issue is not None
+    )
     owner_comments = fetch_pages(f"{issues_url}/99/comments", token)
     owner_comments_by_id = {int(row["id"]): row for row in owner_comments}
     live_schedule = (pilot_state.on_live_schedule(repo)
