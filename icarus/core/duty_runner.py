@@ -151,7 +151,7 @@ def owner_originated_bot_task(issue, owner_comments):
         return False
     body = issue.get("body") or ""
     match = re.search(
-        r"^\\[PROPOSED_BY\\] ICARUS on owner ping from issue #99, comment ([1-9][0-9]*)$",
+        r"^\[PROPOSED_BY\] ICARUS on owner ping from issue #99, comment ([1-9][0-9]*)$",
         body, re.MULTILINE,
     )
     if not match:
