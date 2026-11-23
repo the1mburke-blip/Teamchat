@@ -463,7 +463,7 @@ ISSUE_N = {"n": 0}
 LOOP_STEPS = [
     "STEP 1 DISCOVER (read-only), ALWAYS, whatever the task says: call list_issues (state open) to read the board; read STATUS.md and any evidence files the owner named; read_issue for any issue you may act on. Note which open items already have a '[T1] [REQUESTED]' task issue (already delegated, with their task numbers). Cite paths and issue numbers. Do not write or delegate yet.",
     "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already delegated (never this conversation issue or a [TEST] issue). DELEGATE when a specialist is better suited; do not require the source task to name an executor. Select any suitable target from the configured delegateTargets based on task fit, and call delegate now in this step. DO_MYSELF is also valid whenever Icarus can complete the task safely and fully with the currently authorised tools, within scope, budget and owner-approval gates; it is not restricted to tasks that name a specific file change. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. Choose ASK_OWNER only for credentials, legal, payment, security, safety, or facts only the owner has. State who proposed and who executes.",
-    "STEP 3 ACT: carry out the decision now. If STEP 2 called DELEGATE, do not delegate again; carry forward the exact task issue number and report REQUESTED, never done. If STEP 2 chose DO_MYSELF, perform the task now with authorised tools and read back the result before claiming completion. NOTHING_TO_DO: list the existing task numbers. ASK_OWNER: set needs_owner true with the exact question. End with PASS, PARTIAL or BLOCKED and evidence.",
+    "STEP 3 ACT: carry out the decision now. If STEP 2 called DELEGATE, first read the exact task issue and its comments. A runner dispatch alone is not a worker claim. If a real worker claim is present, leave execution with that worker and report REQUESTED. If no worker claim is present, Icarus must attempt the same objective itself now using authorised tools; do not stop at REQUESTED. If a protected-path or capability gate prevents self-execution, preserve the delegated task and report the exact blocker. If STEP 2 chose DO_MYSELF, perform the task now and read back the result. NOTHING_TO_DO: list existing task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. End with PASS, PARTIAL or BLOCKED and evidence.",
 ]
 
 
@@ -641,6 +641,10 @@ def tool_delegate(args):
         cd, _td = http("POST", f"https://api.github.com/repos/{REPO}/actions/workflows/teamchat-gemini-notebook.yml/dispatches",
                        {"ref": BRANCH, "inputs": {"issue": str(num)}}, timeout=30)
         wake += f"; PRIME notebook dispatch: HTTP {cd} (204 = started)"
+    # Wake the existing repo duty runner for this exact task issue.
+    cr, _tr = http("POST", f"https://api.github.com/repos/{REPO}/actions/workflows/icarus-pulse.yml/dispatches",
+                   {"ref": "main", "inputs": {"task_issue": str(num)}}, timeout=30)
+    wake += f"; repo duty-runner dispatch: HTTP {cr} (204 = accepted)"
     DELEGATED.append(f"{to}: #{num} {url}")
     DELEG_KEYS[(to, obj.lower())] = f"#{num} {url}"
     return redact(f"DELEGATED (status REQUESTED, NOT executed): task #{num} {url} -> {to}; readback {'OK' if ok else 'FAILED'}{wake}. The target has not acted; do not claim it did.")

@@ -145,9 +145,31 @@ def normalized(value):
     return " ".join(re.sub(r"[-_]", " ", value.upper()).split())
 
 
-def backlog_candidate(issue):
+def owner_originated_bot_task(issue, owner_comments):
+    """Trust a bot-created task only when it points to a real owner command on #99."""
+    if (issue.get("user") or {}).get("login") != "github-actions[bot]":
+        return False
+    body = issue.get("body") or ""
+    match = re.search(
+        r"^\\[PROPOSED_BY\\] ICARUS on owner ping from issue #99, comment ([1-9][0-9]*)$",
+        body, re.MULTILINE,
+    )
+    if not match:
+        return False
+    source = owner_comments.get(int(match.group(1)))
+    if (not source or source.get("author_association") != "OWNER"
+            or (source.get("user") or {}).get("id") != 324897963):
+        return False
+    command = (source.get("body") or "").lstrip()
+    return (command.startswith("ICARUS_RUN ") or command == "ICARUS_RUN"
+            or command.startswith("[ICARUS SUPERVISORY DIRECTIVE] ")
+            or command == "[ICARUS SUPERVISORY DIRECTIVE]")
+
+
+def backlog_candidate(issue, authorized_bot_task=False):
+    trusted_author = issue.get("author_association") in TRUSTED_ASSOCIATIONS
     if (issue.get("state") != "open" or issue.get("assignees")
-            or issue.get("assignee") or issue.get("author_association") not in TRUSTED_ASSOCIATIONS):
+            or issue.get("assignee") or not (trusted_author or authorized_bot_task)):
         return None
     labels = {normalized(label["name"]) for label in issue.get("labels", [])}
     states = {re.sub(r"^STATUS\s*:\s*", "", label) for label in labels}
@@ -870,7 +892,11 @@ def monitor_issues(repo, mailbox, token, record):
     pending = []
     candidates = []
     issue_comments_by_number = {mailbox: outbox_comments}
-    scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+    scheduled = os.environ.get("GITHUB_EVENT_NAME") in {"schedule", "workflow_dispatch"}
+    target_issue_raw = os.environ.get("ICARUS_TASK_ISSUE", "").strip()
+    target_issue = int(target_issue_raw) if target_issue_raw.isdecimal() else None
+    owner_comments = fetch_pages(f"{issues_url}/99/comments", token)
+    owner_comments_by_id = {int(row["id"]): row for row in owner_comments}
     live_schedule = pilot_state.on_live_schedule(repo)
     task_states = record["task_states"]
     for dispatch, packet in sorted(bot_dispatches, key=lambda entry: entry[0]["id"]):
@@ -903,7 +929,10 @@ def monitor_issues(repo, mailbox, token, record):
         dispatched.update(packet["task id"] for _, packet in comment_packets(comments, DISPATCH_HEADER))
         pending.extend(inspect_directives(issue, sorted(comments, key=lambda c: c["id"]), record))
         record["issue_numbers_inspected"].append(number)
-        if scheduled and number not in {mailbox, WAKE_ISSUE} and (candidate := backlog_candidate(issue)):
+        if (scheduled and number not in {mailbox, WAKE_ISSUE}
+                and (target_issue is None or number == target_issue)
+                and (candidate := backlog_candidate(
+                    issue, owner_originated_bot_task(issue, owner_comments_by_id)))):
             task_id = f"BACKLOG-{number}"
             if (task_id not in dispatched and number not in dispatched_sources
                     and not pilot_state.reserved(wake_comments, task_id)

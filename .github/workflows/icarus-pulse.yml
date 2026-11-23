@@ -6,6 +6,11 @@ on:
     - cron: '7 1-23/2 1-30 * *'  # Heartbeat
     - cron: '7 * 31 * *'         # Heartbeat on day 31
   workflow_dispatch:
+    inputs:
+      task_issue:
+        description: "Exact owner-originated Icarus task issue for the repo runner"
+        required: false
+        type: string
   push:
     branches: [main, staging]
   pull_request:
@@ -44,6 +49,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ICARUS_ISSUE_NUMBER: "6"
+          ICARUS_TASK_ISSUE: ${{ inputs.task_issue }}
           ICARUS_PULSE_TRIGGER_SCHEDULE: ${{ github.event.schedule }}
           # Public Ed25519 keys only. The executor and verifier keep separate private keys.
           ICARUS_DUTY_AGENT_SIGNERS: ${{ vars.ICARUS_DUTY_AGENT_SIGNERS }}
