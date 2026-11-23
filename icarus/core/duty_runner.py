@@ -1125,7 +1125,9 @@ def monitor_issues(repo, mailbox, token, record):
                     repo, wake_url, token, reporters[seat], run_id, record,
                 )
                 refreshed, _ = call_github_api(f"{issues_url}/{number}", token)
-                if backlog_candidate(refreshed) != candidate or refreshed.get("body") != current.get("body"):
+                if (backlog_candidate(
+                        refreshed, owner_originated_bot_task(refreshed, owner_comments_by_id),
+                ) != candidate or refreshed.get("body") != current.get("body")):
                     continue
             selected_chair = available_dispatch_chair(chair, states, reporters)
             if selected_chair is None or (claim is not None and selected_chair != chair):
