@@ -59,6 +59,9 @@ class DutyRunnerTests(unittest.TestCase):
         (repo / "harness-runner.py").write_text("# Source file for preflight\n", encoding="utf-8")
         (repo / "icarus").mkdir()
         (repo / "icarus" / "__init__.py").touch()
+        memory = repo / "icarus" / "memory"
+        memory.mkdir(parents=True)
+        (memory / "current-state.md").write_text("# Test current state\n", encoding="utf-8")
         for args in (
             ["init", "--quiet"], ["add", "."],
             ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
@@ -990,6 +993,24 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["first_processing_error"],
                          "GET /repos/example/Teamchat/issues/19/comments: HTTP 503")
         self.assertFalse(self.posts)
+    def test_benched_sol_is_excluded_and_code_work_only_uses_codex(self):
+        reporters = {"CODEX": 10, "SOL": 11, "LUNA": 12}
+        states = {"CODEX": "available", "SOL": "available", "LUNA": "available"}
+        self.assertEqual(
+            runner.available_dispatch_chair("[SOL]", states, reporters, {"SOL"}, code_task=True),
+            "[CODEX]",
+        )
+        self.assertIsNone(
+            runner.available_dispatch_chair(
+                "[CODEX]", {"CODEX": "unavailable", "SOL": "available", "LUNA": "available"},
+                reporters, {"SOL"}, code_task=True,
+            )
+        )
+        self.assertEqual(
+            runner.benched_seats_from_text("Sol is benched; do not newly delegate to SOL."),
+            {"SOL"},
+        )
+
 def test_legacy_module_reexports_packaged_implementation():
     assert legacy_runner.main is runner.main
 

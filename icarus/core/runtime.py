@@ -12,6 +12,7 @@ Constitutional rules enforced here:
 """
 import os, re, json, time, base64, pathlib, datetime, urllib.request, urllib.error, urllib.parse
 import sys
+from difflib import SequenceMatcher
 
 KEY = os.environ.get("GEMINI_API_KEY", "")
 OR_KEY = os.environ.get("OPENROUTER_API_KEY", "")
@@ -461,8 +462,8 @@ LOOP_ON = {"v": False}
 LOOP_READ = {"read_file", "list_dir", "read_issue", "list_issues", "list_prs", "read_pr"}
 ISSUE_N = {"n": 0}
 LOOP_STEPS = [
-    "STEP 1 DISCOVER (read-only), ALWAYS, whatever the task says: call list_issues (state open) to read the board; read STATUS.md and any evidence files the owner named; read_issue for any issue you may act on. Note which open items already have a '[T1] [REQUESTED]' task issue (already delegated, with their task numbers). Cite paths and issue numbers. Do not write or delegate yet.",
-    "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already delegated (never this conversation issue or a [TEST] issue). DELEGATE when a specialist is better suited; do not require the source task to name an executor. Select any suitable target from the configured delegateTargets based on task fit, and call delegate now in this step. DO_MYSELF is also valid whenever Icarus can complete the task safely and fully with the currently authorised tools, within scope, budget and owner-approval gates; it is not restricted to tasks that name a specific file change. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. Choose ASK_OWNER only for credentials, legal, payment, security, safety, or facts only the owner has. State who proposed and who executes.",
+    "STEP 1 DISCOVER (read-only), ALWAYS, whatever the task says: call list_issues (state open) to read the board; read STATUS.md AND icarus/memory/current-state.md before selecting any chair; read owner-named evidence and read_issue for any issue you may act on. Record every benched seat and exclude it from chair selection. Note which open items already have a genuinely equivalent [T1] [REQUESTED] task issue; shared issue references alone do not mean duplicate work. Cite paths and issue numbers. Do not write or delegate yet.",
+    "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already covered by genuinely equivalent active work (never this conversation issue or a [TEST] issue). Before chair selection, apply icarus/memory/current-state.md: never select a benched seat. When Sol is benched, route code/implementation/runtime/workflow tasks to CODEX; the source task does not need to name an executor. For non-code work, choose another eligible configured target based on task fit; if none is eligible, report BLOCKED rather than selecting a benched seat. Call delegate now when a specialist is better suited. DO_MYSELF is valid whenever Icarus can complete the task safely and fully with authorised tools; it is not restricted to tasks naming a specific file. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. State who proposed and who executes.",
     "STEP 3 ACT: carry out the decision now. If STEP 2 called DELEGATE, read the exact task issue and its comments. A bot-authored [ICARUS CLAIM] is the repo runner reservation, NOT a worker claim. Only a task-specific agent-authored claim or signed execution receipt verified against the enrolled executor identity proves worker action. If that proof exists, leave execution with that worker and report REQUESTED. If it does not exist, Icarus must attempt the same objective itself now using authorised tools; do not stop at REQUESTED or mistake the runner reservation for execution. If a protected-path or capability gate prevents self-execution, preserve the delegated task and report the exact blocker. If STEP 2 chose DO_MYSELF, perform the task now and read back the result. NOTHING_TO_DO: list existing task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. End with PASS, PARTIAL or BLOCKED and evidence.",
 ]
 
@@ -566,6 +567,52 @@ def _one_line(s, cap):
     return re.sub(r"\s+", " ", str(s or "")).strip().replace("[", "(").replace("]", ")")[:cap]
 
 
+def _normalise_task_objective(value):
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9#]+", " ", str(value or "").casefold())).strip()
+
+
+def _task_references(value):
+    return set(re.findall(r"#([0-9]+)", str(value or "")))
+
+
+def _is_code_task(value):
+    return bool(re.search(
+        r"\b(implement|code|fix|refactor|bug|runtime|workflow|python|javascript|typescript|compile|build|source file)\b",
+        str(value or ""), re.IGNORECASE,
+    ))
+
+
+def _benched_seats_from_text(value):
+    return {
+        match.group(1).upper()
+        for match in re.finditer(r"\b([A-Za-z][A-Za-z0-9_-]*)\s+is\s+benched\b",
+                                 str(value or ""), re.IGNORECASE)
+    }
+
+
+def _current_benched_seats():
+    try:
+        state = pathlib.Path("icarus/memory/current-state.md").read_text(encoding="utf-8")
+    except OSError:
+        return None
+    return _benched_seats_from_text(state)
+
+
+def _select_delegate_target(requested, objective, benched, targets):
+    requested = str(requested or "").strip().upper()
+    targets = {str(target).strip().upper() for target in targets}
+    benched = {str(seat).strip().upper() for seat in benched}
+    if "SOL" in benched and _is_code_task(objective):
+        if "CODEX" in targets and "CODEX" not in benched:
+            return "CODEX", "Sol is benched; code work is routed to Codex"
+        return "", "Sol is benched and no eligible Codex code executor is configured"
+    if requested in benched:
+        return "", f"{requested} is benched in icarus/memory/current-state.md"
+    if requested not in targets:
+        return "", f"{requested} is not an enabled delegate target"
+    return requested, ""
+
+
 def _open_task_dup(obj):
     c, t = http("GET", f"https://api.github.com/repos/{REPO}/issues?state=open&per_page=100&sort=updated", timeout=20)
     if c != 200:
@@ -574,14 +621,24 @@ def _open_task_dup(obj):
         rows = [j for j in json.loads(t) if not j.get("pull_request")]
     except Exception:
         return ""
-    refs = set(re.findall(r"#(\d+)", obj))
+    objective = _normalise_task_objective(obj)
+    references = _task_references(obj)
     for j in rows:
         title = str(j.get("title") or "")
         if not title.startswith("[T1] [REQUESTED]"):
             continue
-        m = re.search(r"\[OBJECTIVE\] (.*)", str(j.get("body") or ""))
-        text = title + " " + (m.group(1) if m else "")
-        if obj.lower()[:80] in text.lower() or (refs and refs & set(re.findall(r"#(\d+)", text))):
+        match = re.search(r"^\[OBJECTIVE\] (.*)$", str(j.get("body") or ""), re.MULTILINE)
+        existing = match.group(1) if match else ""
+        existing_normalised = _normalise_task_objective(existing)
+        existing_references = _task_references(existing)
+        if not existing_normalised:
+            continue
+        exact_objective = objective == existing_normalised
+        near_equivalent = (
+            bool(references) and references == existing_references
+            and SequenceMatcher(None, objective, existing_normalised).ratio() >= 0.94
+        )
+        if exact_objective or near_equivalent:
             return f"#{j['number']} {j.get('html_url')}"
     return ""
 
@@ -593,6 +650,12 @@ def tool_delegate(args):
     obj = _one_line(args.get("objective"), 400)
     if len(obj) < 10:
         return "DENIED: objective too short"
+    benched = _current_benched_seats()
+    if benched is None:
+        return "DENIED: cannot read icarus/memory/current-state.md; chair selection fails closed"
+    to, route_reason = _select_delegate_target(to, obj, benched, CFG["delegateTargets"])
+    if not to:
+        return "DENIED: " + route_reason
     ev = _one_line(args.get("evidence"), 300) or "Physical/readback proof required for PASS"
     dup = DELEG_KEYS.get((to, obj.lower()))
     if dup:

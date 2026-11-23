@@ -57,14 +57,39 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CHAIR_FALLBACK_ORDER = ("[CODEX]", "[SOL]", "[LUNA]", "[GRACE]")
 
 
-def available_dispatch_chair(preferred, states, reporters):
-    """Keep the requested chair when available; otherwise use an enrolled available chair."""
+def benched_seats_from_text(value):
+    return {
+        match.group(1).upper()
+        for match in re.finditer(r"\b([A-Za-z][A-Za-z0-9_-]*)\s+is\s+benched\b",
+                                 str(value or ""), re.IGNORECASE)
+    }
+
+
+def load_benched_seats():
+    path = REPO_ROOT / "icarus" / "memory" / "current-state.md"
+    if not path.is_file():
+        raise RuntimeError("icarus/memory/current-state.md missing; refusing chair selection")
+    return benched_seats_from_text(path.read_text(encoding="utf-8"))
+
+
+def is_code_task(value):
+    return bool(re.search(
+        r"\b(implement|code|fix|refactor|bug|runtime|workflow|python|javascript|typescript|compile|build|source file)\b",
+        str(value or ""), re.IGNORECASE,
+    ))
+
+
+def available_dispatch_chair(preferred, states, reporters, benched_seats=None, *, code_task=False):
+    """Keep the requested eligible chair; never route to a benched seat."""
     preferred_seat = preferred.strip("[]")
-    if states.get(preferred_seat) == "available":
+    benched = {str(seat).strip("[]").upper() for seat in (benched_seats or set())}
+    if preferred_seat.upper() not in benched and states.get(preferred_seat) == "available":
         return preferred
-    for chair in CHAIR_FALLBACK_ORDER:
+    fallback_order = ("[CODEX]",) if code_task else CHAIR_FALLBACK_ORDER
+    for chair in fallback_order:
         seat = chair.strip("[]")
-        if chair != preferred and seat in reporters and states.get(seat) == "available":
+        if (chair != preferred and seat in reporters and seat.upper() not in benched
+                and states.get(seat) == "available"):
             return chair
     return None
 
@@ -876,6 +901,7 @@ def monitor_issues(repo, mailbox, token, record):
     policy, policy_digest = pilot_state.load_policy()
     reporters = policy["seat_reporters"]
     registry_ready = set(reporters) == pilot_state.SEATS
+    benched_seats = load_benched_seats()
     dispatch_packets = [packet for _, packet in comment_packets(outbox_comments, DISPATCH_HEADER)]
     bot_dispatches = list(comment_packets(outbox_comments, DISPATCH_HEADER, bot_only=True))
     dispatched = {packet["task id"] for packet in dispatch_packets}
@@ -963,10 +989,16 @@ def monitor_issues(repo, mailbox, token, record):
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = wake_comments
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
-            selected_chair = available_dispatch_chair(chair, states, reporters)
+            selected_chair = available_dispatch_chair(
+                chair, states, reporters, benched_seats, code_task=is_code_task(task[2]),
+            )
             if selected_chair is None:
-                record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
-                                                         "availability": states[seat]})
+                held = {"task_id": task_id, "target_chair": chair, "availability": states[seat]}
+                if seat.upper() in benched_seats:
+                    held["reason"] = f"{seat} is benched in current-state.md"
+                elif is_code_task(task[2]):
+                    held["reason"] = "no available enrolled code executor"
+                record["held_specialist_routes"].append(held)
                 continue
             if selected_chair != chair:
                 record.setdefault("chair_fallbacks", []).append(
@@ -1129,10 +1161,18 @@ def monitor_issues(repo, mailbox, token, record):
                         refreshed, owner_originated_bot_task(refreshed, owner_comments_by_id),
                 ) != candidate or refreshed.get("body") != current.get("body")):
                     continue
-            selected_chair = available_dispatch_chair(chair, states, reporters)
+            objective_match = re.search(r"^\[OBJECTIVE\] (.*)$", str(current.get("body") or ""), re.MULTILINE)
+            selected_chair = available_dispatch_chair(
+                chair, states, reporters, benched_seats,
+                code_task=is_code_task(objective_match.group(1) if objective_match else ""),
+            )
             if selected_chair is None or (claim is not None and selected_chair != chair):
-                record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
-                                                         "availability": states[seat]})
+                held = {"task_id": task_id, "target_chair": chair, "availability": states[seat]}
+                if seat.upper() in benched_seats:
+                    held["reason"] = f"{seat} is benched in current-state.md"
+                elif is_code_task(objective_match.group(1) if objective_match else ""):
+                    held["reason"] = "no available enrolled code executor"
+                record["held_specialist_routes"].append(held)
                 record["loop_state"] = "WAITING_FOR_SPECIALIST"
                 if claim is None and live_schedule and all(value == "unavailable" for value in states.values()):
                     run_pilot_if_approved(task_id, number, seat, policy, policy_digest,

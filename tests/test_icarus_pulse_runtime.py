@@ -12,6 +12,41 @@ from icarus.runtime import icarus_run as legacy_runtime
 
 
 class PulseRuntimeTests(unittest.TestCase):
+    def test_duplicate_detection_does_not_conflate_issue_137_with_issue_218(self):
+        rows = [{
+            "number": 137, "state": "open",
+            "title": "[T1] [REQUESTED] Enforce true adjudication and physical evidence readback",
+            "body": "[OBJECTIVE] Enforce true adjudication and physical evidence readback for open issue #6.",
+            "html_url": "https://github.com/example/Teamchat/issues/137",
+        }]
+        objective = "Execute existing open Teamchat task #218 exactly within its declared scope (Sol review and delegation only)."
+        with patch.object(runtime, "http", return_value=(200, json.dumps(rows))):
+            self.assertEqual(runtime._open_task_dup(objective), "")
+
+    def test_duplicate_detection_blocks_same_objective_and_same_issue_scope(self):
+        objective = "Implement smallest decision/delegation fix for issue #272"
+        rows = [{
+            "number": 280, "state": "open",
+            "title": "[T1] [REQUESTED] Implement smallest decision/delegation fix",
+            "body": f"[OBJECTIVE] {objective}",
+            "html_url": "https://github.com/example/Teamchat/issues/280",
+        }]
+        with patch.object(runtime, "http", return_value=(200, json.dumps(rows))):
+            self.assertIn("#280", runtime._open_task_dup(objective))
+
+    def test_sol_bench_routes_code_work_to_codex_and_blocks_other_sol_work(self):
+        targets = runtime.CFG["delegateTargets"]
+        selected, reason = runtime._select_delegate_target(
+            "SOL", "Implement the runtime decision fix", {"SOL"}, targets,
+        )
+        self.assertEqual(selected, "CODEX")
+        self.assertIn("Codex", reason)
+        selected, reason = runtime._select_delegate_target(
+            "SOL", "Review the open task and report status", {"SOL"}, targets,
+        )
+        self.assertEqual(selected, "")
+        self.assertIn("benched", reason)
+
     def test_loop_off_restricts_owner_command_to_read_only_tools(self):
         cfg = dict(runtime.CFG)
         cfg.update({
