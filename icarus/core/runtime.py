@@ -462,8 +462,8 @@ LOOP_READ = {"read_file", "list_dir", "read_issue", "list_issues", "list_prs", "
 ISSUE_N = {"n": 0}
 LOOP_STEPS = [
     "STEP 1 DISCOVER (read-only), ALWAYS, whatever the task says: call list_issues (state open) to read the board; read STATUS.md and any evidence files the owner named; read_issue for any issue you may act on. Note which open items already have a '[T1] [REQUESTED]' task issue (already delegated, with their task numbers). Cite paths and issue numbers. Do not write or delegate yet.",
-    "STEP 2 DECIDE (no tools): your default is DELEGATE. Pick the highest-priority open work item that is not already delegated (never the issue this comment is on, and never a [TEST] issue) and choose DELEGATE to one of LUNA, SOL, PRIME, DEEPSEEK, CLAUDE, CODEX (name agent, objective that includes the source issue number, evidence required, why; " + CHAIRS_NOTE + "). Choose DO_MYSELF only when the task itself names a specific file change you can finish and read back. Choose NOTHING_TO_DO only when every open item is already delegated or blocked: list each with its task number. Choose ASK_OWNER only for credentials, legal, payment, security, safety, or facts only the owner has. Check-in, status or reply tasks still end in DELEGATE when an undelegated open item exists. State who proposed and who executes.",
-    "STEP 3 ACT: carry out the decision now. DELEGATE: you MUST call the delegate tool (a delegated task is REQUESTED, never done) and report the NEW task's own issue number from the tool result. DO_MYSELF: use tools and read back before claiming anything. NOTHING_TO_DO: say so and list the existing task numbers. ASK_OWNER: set needs_owner true with the exact question. End with PASS, PARTIAL or BLOCKED and the evidence.",
+    "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already delegated (never this conversation issue or a [TEST] issue). DELEGATE when a specialist is better suited; do not require the source task to name an executor. Select any suitable target from the configured delegateTargets based on task fit, and call delegate now in this step. DO_MYSELF is also valid whenever Icarus can complete the task safely and fully with the currently authorised tools, within scope, budget and owner-approval gates; it is not restricted to tasks that name a specific file change. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. Choose ASK_OWNER only for credentials, legal, payment, security, safety, or facts only the owner has. State who proposed and who executes.",
+    "STEP 3 ACT: carry out the decision now. If STEP 2 called DELEGATE, do not delegate again; carry forward the exact task issue number and report REQUESTED, never done. If STEP 2 chose DO_MYSELF, perform the task now with authorised tools and read back the result before claiming completion. NOTHING_TO_DO: list the existing task numbers. ASK_OWNER: set needs_owner true with the exact question. End with PASS, PARTIAL or BLOCKED and evidence.",
 ]
 
 
@@ -870,7 +870,7 @@ def run_step(system, step, context, cands, test_cap, inject, tool_log, allowed=N
         if name not in CFG["tools"] or name not in TOOLS:
             res = "DENIED: tool is not on the allowlist"
         elif allowed is not None and name not in allowed:
-            res = "DENIED: tool is not allowed in this step (DISCOVER is read-only, DECIDE has no tools, ACT may write or delegate)"
+            res = "DENIED: tool is not allowed in this step (DISCOVER is read-only, DECIDE may only delegate; ACT may use the remaining authorised tools)"
         else:
             res = TOOLS[name](args)
         tool_log.append(f"{name}({json.dumps(args)[:70]})")
@@ -1052,7 +1052,7 @@ def main(pulse_issue=None):
             if pulse_issue is None and ACTOR != "schedule" and not plan_flag and not loop_off:
                 steps = list(LOOP_STEPS)
                 plan_steps = steps
-                step_tools = [LOOP_READ, set(), None]
+                step_tools = [LOOP_READ, {"delegate"}, None]
                 LOOP_ON["v"] = True
                 disc = []
                 plan_reads = [("list_issues", tool_list_issues, {"state": "open"}), ("read_file", tool_read_file, {"path": "STATUS.md"})]
