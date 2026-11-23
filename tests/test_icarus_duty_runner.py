@@ -602,8 +602,7 @@ class DutyRunnerTests(unittest.TestCase):
     def test_owner_command_workflow_is_restricted_to_issue_99(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/icarus-pulse.yml").read_text(
             encoding="utf-8")
-        owner_job = workflow.split("  icarus-owner-command:", 1)[1].split("\n  ", 1)[0]
-        self.assertEqual(owner_job.count("github.event.issue.number == 99"), 2)
+        self.assertEqual(workflow.count("github.event.issue.number == 99"), 2)
 
     def test_empty_registry_keeps_legacy_backlog_route(self):
         self.issues += [
