@@ -558,12 +558,52 @@ class DutyRunnerTests(unittest.TestCase):
             row["user"]["id"] = uid
             self.comments.setdefault(8, []).append(row)
 
-    def test_unknown_specialist_holds_before_dispatch(self):
+    def test_unknown_specialist_holds_when_no_enrolled_alternative_is_available(self):
         self.comments[6] = [comment(10, task("HOLD").replace("[WORK]", "[CODEX]"))]
-        self.assertEqual(self.run_pulse()["held_specialist_routes"], [
+        reporters = {"CODEX": 101}
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
+            record = self.run_pulse()
+        self.assertEqual(record["held_specialist_routes"], [
             {"task_id": "HOLD", "target_chair": "[CODEX]", "availability": "unknown"},
         ])
         self.assertEqual(self.posts, [])
+
+    def test_unknown_specialist_falls_back_to_an_available_enrolled_chair(self):
+        self.comments[6] = [comment(10, task("FALLBACK").replace("[WORK]", "[CODEX]"))]
+        reporters = {"CODEX": 101, "SOL": 102}
+        self.add_seat_reports({"SOL": 102}, "available")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
+            record = self.run_pulse()
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
+        self.assertEqual(record["chair_fallbacks"], [{
+            "task_id": "FALLBACK", "requested_chair": "[CODEX]", "selected_chair": "[SOL]"}])
+        self.assertEqual(self.posts[0].splitlines()[2], "Target Chair: [SOL]")
+
+    def test_scheduled_backlog_falls_back_to_an_available_enrolled_chair(self):
+        self.issues.append({
+            **issue(7, title="[READY] Fallback backlog", body="[TO] [CODEX]"),
+            "state": "open",
+        })
+        reporters = {"CODEX": 101, "SOL": 102}
+        self.add_seat_reports({"SOL": 102}, "available")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with (
+            patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}),
+            patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
+        ):
+            record = self.run_pulse()
+        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-7")
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[SOL]")
+        self.assertEqual(record["chair_fallbacks"], [{
+            "task_id": "BACKLOG-7", "requested_chair": "[CODEX]", "selected_chair": "[SOL]"}])
+
+    def test_owner_command_workflow_is_restricted_to_issue_99(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/icarus-pulse.yml").read_text(
+            encoding="utf-8")
+        owner_job = workflow.split("  icarus-owner-command:", 1)[1].split("\n  ", 1)[0]
+        self.assertEqual(owner_job.count("github.event.issue.number == 99"), 2)
 
     def test_empty_registry_keeps_legacy_backlog_route(self):
         self.issues += [
