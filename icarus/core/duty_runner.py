@@ -54,6 +54,19 @@ PAGE_SIZE = 100
 STATUS_PATH = "icarus_status.json"
 LEDGER_PATH = "RUN_LOG.jsonl"
 REPO_ROOT = Path(__file__).resolve().parents[2]
+CHAIR_FALLBACK_ORDER = ("[CODEX]", "[SOL]", "[LUNA]", "[GRACE]")
+
+
+def available_dispatch_chair(preferred, states, reporters):
+    """Keep the requested chair when available; otherwise use an enrolled available chair."""
+    preferred_seat = preferred.strip("[]")
+    if states.get(preferred_seat) == "available":
+        return preferred
+    for chair in CHAIR_FALLBACK_ORDER:
+        seat = chair.strip("[]")
+        if chair != preferred and seat in reporters and states.get(seat) == "available":
+            return chair
+    return None
 
 
 def call_github_api(url, token, method="GET", payload=None):
@@ -915,10 +928,16 @@ def monitor_issues(repo, mailbox, token, record):
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = wake_comments
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
-            if states[seat] != "available":
+            selected_chair = available_dispatch_chair(chair, states, reporters)
+            if selected_chair is None:
                 record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
                                                          "availability": states[seat]})
                 continue
+            if selected_chair != chair:
+                record.setdefault("chair_fallbacks", []).append(
+                    {"task_id": task_id, "requested_chair": chair, "selected_chair": selected_chair}
+                )
+                task = (task[0], selected_chair, task[2], task[3])
         dispatch_task(outbox_url, token, origin, task, mailbox, record, mailbox_full=mailbox_full)
         record["loop_state"] = "DISPATCHED"
     # All task-specific dispatches and receipts live on their source issue thread.
@@ -1070,7 +1089,8 @@ def monitor_issues(repo, mailbox, token, record):
                 refreshed, _ = call_github_api(f"{issues_url}/{number}", token)
                 if backlog_candidate(refreshed) != candidate or refreshed.get("body") != current.get("body"):
                     continue
-            if states[seat] != "available":
+            selected_chair = available_dispatch_chair(chair, states, reporters)
+            if selected_chair is None or (claim is not None and selected_chair != chair):
                 record["held_specialist_routes"].append({"task_id": task_id, "target_chair": chair,
                                                          "availability": states[seat]})
                 record["loop_state"] = "WAITING_FOR_SPECIALIST"
@@ -1078,6 +1098,13 @@ def monitor_issues(repo, mailbox, token, record):
                     run_pilot_if_approved(task_id, number, seat, policy, policy_digest,
                                           issues_url, wake_url, token, record)
                 break
+            if selected_chair != chair:
+                record.setdefault("chair_fallbacks", []).append(
+                    {"task_id": task_id, "requested_chair": chair, "selected_chair": selected_chair}
+                )
+                chair = selected_chair
+                task = (task[0], chair, task[2], task[3])
+                task_states[task_id]["target_chair"] = chair
         claim_id = claim["id"] if claim else post_comment(f"{issues_url}/{number}/comments", token, (
             f"{CLAIM_HEADER}\nTask ID: {task_id}\nTarget Chair: {chair}\n"
             "Budget: €0.00 | Repair Leash: 1 attempt"
@@ -1134,6 +1161,7 @@ def main():
         "task_states": {},
         "backlog_claim": None,
         "held_specialist_routes": [],
+        "chair_fallbacks": [],
         "pilot_attempt": None,
         "loop_state": "IDLE_SELECT",
         "first_processing_error": None,
