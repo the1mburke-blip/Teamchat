@@ -892,7 +892,8 @@ def monitor_issues(repo, mailbox, token, record):
     pending = []
     candidates = []
     issue_comments_by_number = {mailbox: outbox_comments}
-    scheduled = os.environ.get("GITHUB_EVENT_NAME") in {"schedule", "workflow_dispatch"}
+    scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+    backlog_scan = os.environ.get("GITHUB_EVENT_NAME") in {"schedule", "workflow_dispatch"}
     target_issue_raw = os.environ.get("ICARUS_TASK_ISSUE", "").strip()
     target_issue = int(target_issue_raw) if target_issue_raw.isdecimal() else None
     owner_comments = fetch_pages(f"{issues_url}/99/comments", token)
@@ -929,7 +930,7 @@ def monitor_issues(repo, mailbox, token, record):
         dispatched.update(packet["task id"] for _, packet in comment_packets(comments, DISPATCH_HEADER))
         pending.extend(inspect_directives(issue, sorted(comments, key=lambda c: c["id"]), record))
         record["issue_numbers_inspected"].append(number)
-        if (scheduled and number not in {mailbox, WAKE_ISSUE}
+        if (backlog_scan and number not in {mailbox, WAKE_ISSUE}
                 and (target_issue is None or number == target_issue)
                 and (candidate := backlog_candidate(
                     issue, owner_originated_bot_task(issue, owner_comments_by_id)))):
