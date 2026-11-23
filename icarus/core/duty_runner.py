@@ -1000,7 +1000,7 @@ def monitor_issues(repo, mailbox, token, record):
                 chair, states, reporters, benched_seats, code_task=is_code_task(task[2]),
             )
             if selected_chair is None:
-                held = {"task_id": task_id, "target_chair": chair, "availability": states.get(seat, "unavailable")}
+                held = {"task_id": task_id, "target_chair": chair, "availability": states[seat]}
                 if seat.upper() in benched_seats:
                     held["reason"] = f"{seat} is benched in current-state.md"
                 elif is_code_task(task[2]):
