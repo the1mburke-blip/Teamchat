@@ -898,7 +898,8 @@ def monitor_issues(repo, mailbox, token, record):
     target_issue = int(target_issue_raw) if target_issue_raw.isdecimal() else None
     owner_comments = fetch_pages(f"{issues_url}/99/comments", token)
     owner_comments_by_id = {int(row["id"]): row for row in owner_comments}
-    live_schedule = pilot_state.on_live_schedule(repo)
+    live_schedule = (pilot_state.on_live_schedule(repo)
+                     or os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch")
     task_states = record["task_states"]
     for dispatch, packet in sorted(bot_dispatches, key=lambda entry: entry[0]["id"]):
         task_id = packet["task id"]
@@ -920,6 +921,8 @@ def monitor_issues(repo, mailbox, token, record):
 
     # Finish discovery and read all prior receipts before making any dispatch writes.
     for number, issue in sorted(open_issues.items()):
+        if target_issue is not None and number != target_issue:
+            continue
         if number == mailbox:
             comments = outbox_comments
         elif issue.get("comments") == 0:
@@ -1057,29 +1060,30 @@ def monitor_issues(repo, mailbox, token, record):
     if record["adjudication_receipts"]:
         record["loop_state"] = "ADJUDICATED"
 
-    if not scheduled:
+    if not backlog_scan:
         return
 
-    record["waiting_canary"].extend(adjudicate_canaries(
-        repo, mailbox, outbox_comments, bot_dispatches, outbox_url, token, record,
-    ))
-    adjudicate_backlog(issues_url, mailbox, outbox_comments, legacy_remaining, token, record)
-    record["waiting_backlog"] = [
-        {"task_id": task_id, "dispatch_comment_id": state["dispatch_comment_id"]}
-        for task_id, state in task_states.items()
-        if re.fullmatch(r"BACKLOG-[0-9]+", task_id) and state["status"] == "WAITING_FOR_RECEIPT"
-    ]
-    if record["adjudication_receipts"]:
-        for receipt in record["adjudication_receipts"]:
-            task_states[receipt["task_id"]].update(
-                status="ADJUDICATED", adjudication_comment_id=receipt["adjudication_comment_id"],
-            )
-        record["loop_state"] = "ADJUDICATED"
-        return
-    if record["dispatch_receipts"]:
-        return
-    if record["terminal_receipts"]:
-        record["loop_state"] = "ADJUDICATED"
+    if scheduled:
+        record["waiting_canary"].extend(adjudicate_canaries(
+            repo, mailbox, outbox_comments, bot_dispatches, outbox_url, token, record,
+        ))
+        adjudicate_backlog(issues_url, mailbox, outbox_comments, legacy_remaining, token, record)
+        record["waiting_backlog"] = [
+            {"task_id": task_id, "dispatch_comment_id": state["dispatch_comment_id"]}
+            for task_id, state in task_states.items()
+            if re.fullmatch(r"BACKLOG-[0-9]+", task_id) and state["status"] == "WAITING_FOR_RECEIPT"
+        ]
+        if record["adjudication_receipts"]:
+            for receipt in record["adjudication_receipts"]:
+                task_states[receipt["task_id"]].update(
+                    status="ADJUDICATED", adjudication_comment_id=receipt["adjudication_comment_id"],
+                )
+            record["loop_state"] = "ADJUDICATED"
+            return
+        if record["dispatch_receipts"]:
+            return
+        if record["terminal_receipts"]:
+            record["loop_state"] = "ADJUDICATED"
 
     # Outstanding receipts are recorded above. Discovery already excludes their dispatched backlog tasks.
     # Resume a previously persisted claim first. The workflow serializes Pulse jobs.
@@ -1089,7 +1093,9 @@ def monitor_issues(repo, mailbox, token, record):
         if task_id in considered:
             continue
         current, _ = call_github_api(f"{issues_url}/{number}", token)
-        fresh = backlog_candidate(current)
+        fresh = backlog_candidate(
+            current, owner_originated_bot_task(current, owner_comments_by_id),
+        )
         if fresh != candidate:
             continue
         scope = f"{fresh[3]}. Read the canonical scope and evidence gates in https://github.com/{repo}/issues/{number}."
