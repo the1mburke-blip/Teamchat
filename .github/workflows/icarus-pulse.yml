@@ -95,6 +95,7 @@ jobs:
       (
         github.event_name == 'issues' &&
         github.event.action == 'opened' &&
+        github.event.issue.number == 99 &&
         github.event.issue.user.id == 324897963 &&
         github.event.issue.author_association == 'OWNER' &&
         startsWith(github.event.issue.body, 'ICARUS_RUN')
@@ -103,6 +104,7 @@ jobs:
         github.event_name == 'issue_comment' &&
         github.event.action == 'created' &&
         github.event.issue.pull_request == null &&
+        github.event.issue.number == 99 &&
         github.event.comment.user.id == 324897963 &&
         github.event.comment.author_association == 'OWNER' &&
         (
