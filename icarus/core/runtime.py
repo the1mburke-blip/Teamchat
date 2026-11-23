@@ -602,12 +602,12 @@ def _select_delegate_target(requested, objective, benched, targets):
     requested = str(requested or "").strip().upper()
     targets = {str(target).strip().upper() for target in targets}
     benched = {str(seat).strip().upper() for seat in benched}
+    if requested == "ANY":
+        return "ANY", "runner will select any available eligible executor"
     if "SOL" in benched and _is_code_task(objective):
         if "CODEX" in targets and "CODEX" not in benched:
             return "CODEX", "Sol is benched; code work is routed to Codex"
         return "", "Sol is benched and no eligible Codex code executor is configured"
-    if requested == "ANY":
-        return "ANY", "runner will select any available eligible executor"
     if requested in benched:
         return "", f"{requested} is benched in icarus/memory/current-state.md"
     if requested not in targets:
