@@ -993,16 +993,18 @@ def monitor_issues(repo, mailbox, token, record):
             continue
         chair = task[1]
         seat = chair.strip("[]")
-        if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
+        if (seat in pilot_state.SEATS or chair == "[ANY]") and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = wake_comments
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
             selected_chair = available_dispatch_chair(
                 chair, states, reporters, benched_seats, code_task=is_code_task(task[2]),
             )
             if selected_chair is None:
-                held = {"task_id": task_id, "target_chair": chair, "availability": states[seat]}
+                held = {"task_id": task_id, "target_chair": chair, "availability": states.get(seat, "unavailable")}
                 if seat.upper() in benched_seats:
                     held["reason"] = f"{seat} is benched in current-state.md"
+                elif chair == "[ANY]":
+                    held["reason"] = "no available enrolled executor"
                 elif is_code_task(task[2]):
                     held["reason"] = "no available enrolled code executor"
                 record["held_specialist_routes"].append(held)
@@ -1160,7 +1162,7 @@ def monitor_issues(repo, mailbox, token, record):
             if claimed_packet.get("target chair") in pilot_state.SEATS:
                 chair = claimed_packet["target chair"]
         seat = chair.strip("[]")
-        if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
+        if (seat in pilot_state.SEATS or chair == "[ANY]") and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = wake_comments
             states, _ = pilot_state.availability(reports, reporters, datetime.datetime.now(datetime.timezone.utc))
             run_id = os.getenv("GITHUB_RUN_ID", "")

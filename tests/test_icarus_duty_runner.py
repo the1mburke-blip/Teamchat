@@ -554,6 +554,43 @@ class DutyRunnerTests(unittest.TestCase):
             self.assertIn(f"Target Chair: {chair}", body)
             self.assertIn("Repair Leash: 1 attempt", body)
 
+    def test_any_executor_explicit_task_dispatches_to_available_enrolled_chair(self):
+        self.comments[6] = [comment(10, task("ANY-EXPLICIT").replace(
+            "Target Chair: [WORK]", "Target Chair: [ANY]"))]
+        reporters = {"CODEX": 101, "SOL": 102}
+        self.add_seat_reports(reporters, "available")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
+            record = self.run_pulse()
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[CODEX]")
+        self.assertEqual(self.posts[0].splitlines()[2], "Target Chair: [CODEX]")
+
+    def test_any_executor_backlog_dispatches_to_available_enrolled_chair(self):
+        self.issues.append({**issue(7, title="[READY] Generic executor backlog", body="[TO] [ANY]"),
+                            "state": "open"})
+        reporters = {"CODEX": 101, "SOL": 102}
+        self.add_seat_reports(reporters, "available")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with (patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}),
+              patch.object(pilot_state, "load_policy", return_value=(policy, "digest"))):
+            record = self.run_pulse()
+        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-7")
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[CODEX]")
+
+    def test_any_executor_holds_cleanly_when_no_enrolled_worker_is_available(self):
+        self.comments[6] = [comment(10, task("ANY-HOLD").replace(
+            "Target Chair: [WORK]", "Target Chair: [ANY]"))]
+        reporters = {"CODEX": 101}
+        self.add_seat_reports(reporters, "unavailable")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
+            record = self.run_pulse()
+        self.assertEqual(record["held_specialist_routes"], [{
+            "task_id": "ANY-HOLD", "target_chair": "[ANY]", "availability": "unavailable",
+            "reason": "no available enrolled executor",
+        }])
+        self.assertEqual(self.posts, [])
+
     def add_seat_reports(self, reporters, state, at="2026-11-08T14:02:00Z"):
         for i, (seat, uid) in enumerate(reporters.items()):
             row = comment(30 + i, f"{pilot_state.SEAT_REPORT}\nSeat: {seat}\nAvailability: {state}")
