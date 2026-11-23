@@ -21,7 +21,7 @@ on:
     types: [created]
 
 concurrency:
-  group: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && format('harness-gate-{0}', github.ref) || 'icarus-issue-6-intake' }}
+  group: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && format('harness-gate-{0}', github.ref) || (github.event_name == 'workflow_dispatch' && inputs.task_issue != '' && format('icarus-task-{0}', inputs.task_issue)) || 'icarus-issue-6-intake' }}
   cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
 
 jobs:
