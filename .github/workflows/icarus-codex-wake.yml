@@ -45,7 +45,7 @@ jobs:
             const expectedIssue = 'https://api.github.com/repos/' + owner + '/' + repo + '/issues/8';
             const expectedBody = '[ICARUS CODEX WAKE RELAY REQUEST]\nPulse Run ID: ' + pulse_run_id;
             if (pulse.path !== '.github/workflows/icarus-pulse.yml' || pulse.head_branch !== 'main' ||
-                pulse.event !== 'schedule' || pulse.status !== 'in_progress' ||
+                !['schedule', 'workflow_dispatch'].includes(pulse.event) || pulse.status !== 'in_progress' ||
                 request.user?.id !== 41898282 || request.issue_url?.toLowerCase() !== expectedIssue.toLowerCase() ||
                 request.body !== expectedBody || request.created_at !== request.updated_at ||
                 !Number.isFinite(age) || age < 0 || age >= 180000 || created < Date.parse(pulse.run_started_at)) {
