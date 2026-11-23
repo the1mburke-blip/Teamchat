@@ -34,6 +34,14 @@ class PulseRuntimeTests(unittest.TestCase):
         with patch.object(runtime, "http", return_value=(200, json.dumps(rows))):
             self.assertIn("#280", runtime._open_task_dup(objective))
 
+    def test_any_executor_is_an_explicit_generic_delegate_target(self):
+        selected, reason = runtime._select_delegate_target(
+            "ANY", "Implement the runtime executor routing fix", {"SOL"}, runtime.CFG["delegateTargets"],
+        )
+        self.assertEqual(selected, "ANY")
+        self.assertIn("available eligible executor", reason)
+        self.assertIn("ANY AVAILABLE EXECUTOR", runtime.rules_text())
+
     def test_sol_bench_routes_code_work_to_codex_and_blocks_other_sol_work(self):
         targets = runtime.CFG["delegateTargets"]
         selected, reason = runtime._select_delegate_target(

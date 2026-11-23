@@ -40,7 +40,7 @@ MONITOR_ONLY_MARKER = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 TRUSTED_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
-CHAIRS = {"[WORK]", "[CODEX]", "[SOL]", "[LUNA]", "[GRACE]"}
+CHAIRS = {"[WORK]", "[CODEX]", "[SOL]", "[LUNA]", "[GRACE]", "[ANY]"}
 LEGACY_CHAIRS = {"[WORK]", "[SOL]"}
 READY = {"REQUESTED", "READY", "TODO", "BACKLOG", "OPEN"}
 UNAVAILABLE = {
@@ -83,6 +83,12 @@ def available_dispatch_chair(preferred, states, reporters, benched_seats=None, *
     """Keep the requested eligible chair; never route to a benched seat."""
     preferred_seat = preferred.strip("[]")
     benched = {str(seat).strip("[]").upper() for seat in (benched_seats or set())}
+    if preferred_seat.upper() == "ANY":
+        for chair in CHAIR_FALLBACK_ORDER:
+            seat = chair.strip("[]")
+            if seat in reporters and seat.upper() not in benched and states.get(seat) == "available":
+                return chair
+        return None
     if preferred_seat.upper() not in benched and states.get(preferred_seat) == "available":
         return preferred
     fallback_order = ("[CODEX]",) if code_task else CHAIR_FALLBACK_ORDER
@@ -968,10 +974,11 @@ def monitor_issues(repo, mailbox, token, record):
             task_id = f"BACKLOG-{number}"
             if (task_id not in dispatched and number not in dispatched_sources
                     and not pilot_state.reserved(wake_comments, task_id)
-                    and (candidate[2] in LEGACY_CHAIRS or candidate[2].strip("[]") in reporters)):
+                    and (candidate[2] in LEGACY_CHAIRS or candidate[2] == "[ANY]"
+                         or candidate[2].strip("[]") in reporters)):
                 claim = next((comment for comment, packet in comment_packets(comments, CLAIM_HEADER, bot_only=True)
                               if packet["task id"] == task_id
-                              and packet.get("target chair") == candidate[2]), None)
+                              and (packet.get("target chair") == candidate[2] or candidate[2] == "[ANY]")), None)
                 candidates.append((claim is None, candidate, claim))
 
     # Explicit operator work overrides automatic selection. Preserve existing packet routing.
@@ -993,7 +1000,7 @@ def monitor_issues(repo, mailbox, token, record):
                 chair, states, reporters, benched_seats, code_task=is_code_task(task[2]),
             )
             if selected_chair is None:
-                held = {"task_id": task_id, "target_chair": chair, "availability": states[seat]}
+                held = {"task_id": task_id, "target_chair": chair, "availability": states.get(seat, "unavailable")}
                 if seat.upper() in benched_seats:
                     held["reason"] = f"{seat} is benched in current-state.md"
                 elif is_code_task(task[2]):
@@ -1147,6 +1154,11 @@ def monitor_issues(repo, mailbox, token, record):
                 "source_preflight": "ISSUE_BODY_PINNED", "source_file": anchor,
                 "source_blob": blob,
             }
+        if chair == "[ANY]" and claim is not None:
+            claimed_packet = next((packet for comment, packet in comment_packets(comments, CLAIM_HEADER, bot_only=True)
+                                   if comment["id"] == claim["id"]), {})
+            if claimed_packet.get("target chair") in pilot_state.SEATS:
+                chair = claimed_packet["target chair"]
         seat = chair.strip("[]")
         if seat in pilot_state.SEATS and (registry_ready or chair not in LEGACY_CHAIRS):
             reports = wake_comments
@@ -1167,9 +1179,11 @@ def monitor_issues(repo, mailbox, token, record):
                 code_task=is_code_task(objective_match.group(1) if objective_match else ""),
             )
             if selected_chair is None or (claim is not None and selected_chair != chair):
-                held = {"task_id": task_id, "target_chair": chair, "availability": states[seat]}
+                held = {"task_id": task_id, "target_chair": chair, "availability": states.get(seat, "unavailable")}
                 if seat.upper() in benched_seats:
                     held["reason"] = f"{seat} is benched in current-state.md"
+                elif chair == "[ANY]":
+                    held["reason"] = "no available enrolled executor"
                 elif is_code_task(objective_match.group(1) if objective_match else ""):
                     held["reason"] = "no available enrolled code executor"
                 record["held_specialist_routes"].append(held)

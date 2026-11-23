@@ -606,6 +606,8 @@ def _select_delegate_target(requested, objective, benched, targets):
         if "CODEX" in targets and "CODEX" not in benched:
             return "CODEX", "Sol is benched; code work is routed to Codex"
         return "", "Sol is benched and no eligible Codex code executor is configured"
+    if requested == "ANY":
+        return "ANY", "runner will select any available eligible executor"
     if requested in benched:
         return "", f"{requested} is benched in icarus/memory/current-state.md"
     if requested not in targets:
@@ -645,8 +647,8 @@ def _open_task_dup(obj):
 
 def tool_delegate(args):
     to = str(args.get("to", "")).strip().upper()
-    if to not in CFG["delegateTargets"]:
-        return "DENIED: 'to' must be one of " + ", ".join(CFG["delegateTargets"])
+    if to != "ANY" and to not in CFG["delegateTargets"]:
+        return "DENIED: 'to' must be ANY (ANY AVAILABLE EXECUTOR) or one of " + ", ".join(CFG["delegateTargets"])
     obj = _one_line(args.get("objective"), 400)
     if len(obj) < 10:
         return "DENIED: objective too short"
@@ -811,7 +813,7 @@ def rules_text():
                "list_dir": 'list_dir {path, offset?} (path "" is the repo root)',
                "read_issue": "read_issue {number, offset?, comments?}",
                "list_issues": "list_issues {state?, page?}",
-               "delegate": "delegate {to, objective, evidence?} (opens a REQUESTED Teamchat task for LUNA/SOL/PRIME/DEEPSEEK/CLAUDE/CODEX; it is not done until they report)",
+               "delegate": "delegate {to, objective, evidence?} (to may be ANY for ANY AVAILABLE EXECUTOR, or LUNA/SOL/PRIME/DEEPSEEK/CLAUDE/CODEX; it opens a REQUESTED task and is not done until the executor reports)",
                "write_file": "write_file {path, content} (commits to the repo; needs owner approval)",
                "delete_file": "delete_file {path} (commits a deletion; needs owner approval)",
                "comment_issue": "comment_issue {number, body} (posts a comment on an issue or PR, read back)",

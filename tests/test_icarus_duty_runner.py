@@ -993,6 +993,16 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["first_processing_error"],
                          "GET /repos/example/Teamchat/issues/19/comments: HTTP 503")
         self.assertFalse(self.posts)
+    def test_any_executor_backlog_is_admitted_and_selects_available_non_benched_worker(self):
+        candidate = runner.backlog_candidate({**issue(41, title="[T1] [REQUESTED] Generic executor task",
+            body="[TO] [ANY]\n[STATUS] REQUESTED\n[ACTIVE_OWNER] NONE\n[COST] €0"), "state": "open"})
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate[2], "[ANY]")
+        reporters = {"CODEX": 10, "SOL": 11, "LUNA": 12, "GRACE": 13}
+        states = {seat: "available" for seat in reporters}
+        self.assertEqual(runner.available_dispatch_chair("[ANY]", states, reporters, {"CODEX"}, code_task=True), "[SOL]")
+        self.assertIsNone(runner.available_dispatch_chair("[ANY]", states, reporters, set(reporters), code_task=True))
+
     def test_benched_sol_is_excluded_and_code_work_only_uses_codex(self):
         reporters = {"CODEX": 10, "SOL": 11, "LUNA": 12}
         states = {"CODEX": "available", "SOL": "available", "LUNA": "available"}
