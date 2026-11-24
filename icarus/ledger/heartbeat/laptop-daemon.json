@@ -2,9 +2,9 @@
   "build": "b675139",
   "interval_seconds": 1800,
   "jobs_settled_since_start": 0,
-  "last_status": "idle",
+  "last_status": "ledger_error",
   "note": "liveness only; job evidence is icarus/ledger/state and run_log.jsonl",
   "runner": "laptop-daemon",
   "started_utc": "2026-11-24T20:45:07Z",
-  "utc": "2026-11-24T21:45:48Z"
+  "utc": "2026-11-24T22:41:18Z"
 }
