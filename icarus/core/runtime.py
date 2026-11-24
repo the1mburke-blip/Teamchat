@@ -455,7 +455,7 @@ def tool_delete_file(args):
     return redact(f"DELETED {p} on {BRANCH}; commit {sha}. NOT VERIFIED until read_file/list_dir confirms it is gone.")
 
 
-CHAIRS_NOTE = "routing guide: CLAUDE code review/logic/long context; PRIME Google Workspace (Docs/Sheets/Calendar/Gmail); DEEPSEEK bulk drafts/volume/data transforms; SOL orchestration/owner-facing/publishing; LUNA and CODEX only when the task names them"
+CHAIRS_NOTE = "routing guide: CLAUDE code implementation/review/logic/long context; PRIME Google Workspace (Docs/Sheets/Calendar/Gmail); DEEPSEEK bulk drafts/volume/data transforms; SOL orchestration/owner-facing/publishing; LUNA and CODEX only when the task names them"
 DELEGATED = []
 DELEG_KEYS = {}
 LOOP_ON = {"v": False}
@@ -463,7 +463,7 @@ LOOP_READ = {"read_file", "list_dir", "read_issue", "list_issues", "list_prs", "
 ISSUE_N = {"n": 0}
 LOOP_STEPS = [
     "STEP 1 DISCOVER (read-only), ALWAYS, whatever the task says: call list_issues (state open) to read the board; read STATUS.md AND icarus/memory/current-state.md before selecting any chair; read owner-named evidence and read_issue for any issue you may act on. Record every benched seat and exclude it from chair selection. Note which open items already have a genuinely equivalent [T1] [REQUESTED] task issue; shared issue references alone do not mean duplicate work. Cite paths and issue numbers. Do not write or delegate yet.",
-    "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already covered by genuinely equivalent active work (never this conversation issue or a [TEST] issue). Before chair selection, apply icarus/memory/current-state.md: never select a benched seat. When Sol is benched, route code/implementation/runtime/workflow tasks to CODEX; the source task does not need to name an executor. For non-code work, choose another eligible configured target based on task fit; if none is eligible, report BLOCKED rather than selecting a benched seat. Call delegate now when a specialist is better suited. DO_MYSELF is valid whenever Icarus can complete the task safely and fully with authorised tools; it is not restricted to tasks naming a specific file. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. State who proposed and who executes.",
+    "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already covered by genuinely equivalent active work (never this conversation issue or a [TEST] issue). Before chair selection, apply icarus/memory/current-state.md: never select a benched seat. When Sol is benched, route code/implementation/runtime/workflow tasks to CLAUDE (CODEX only if CLAUDE is benched or unavailable); the source task does not need to name an executor. For non-code work, choose another eligible configured target based on task fit; if none is eligible, report BLOCKED rather than selecting a benched seat. Call delegate now when a specialist is better suited. DO_MYSELF is valid whenever Icarus can complete the task safely and fully with authorised tools; it is not restricted to tasks naming a specific file. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. State who proposed and who executes.",
     "STEP 3 ACT: carry out the decision now. If STEP 2 called DELEGATE, read the exact task issue and its comments. A bot-authored [ICARUS CLAIM] is the repo runner reservation, NOT a worker claim. Only a task-specific agent-authored claim or signed execution receipt verified against the enrolled executor identity proves worker action. If that proof exists, leave execution with that worker and report REQUESTED. If it does not exist, Icarus must attempt the same objective itself now using authorised tools; do not stop at REQUESTED or mistake the runner reservation for execution. If a protected-path or capability gate prevents self-execution, preserve the delegated task and report the exact blocker. If STEP 2 chose DO_MYSELF, perform the task now and read back the result. NOTHING_TO_DO: list existing task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. End with PASS, PARTIAL or BLOCKED and evidence.",
 ]
 
@@ -605,9 +605,11 @@ def _select_delegate_target(requested, objective, benched, targets):
     if requested == "ANY":
         return "ANY", "runner will select any available eligible executor"
     if "SOL" in benched and _is_code_task(objective):
+        if "CLAUDE" in targets and "CLAUDE" not in benched:
+            return "CLAUDE", "Sol is benched; code work is routed to Claude"
         if "CODEX" in targets and "CODEX" not in benched:
             return "CODEX", "Sol is benched; code work is routed to Codex"
-        return "", "Sol is benched and no eligible Codex code executor is configured"
+        return "", "Sol is benched and no eligible Claude or Codex code executor is configured"
     if requested in benched:
         return "", f"{requested} is benched in icarus/memory/current-state.md"
     if requested not in targets:
