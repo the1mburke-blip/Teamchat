@@ -610,15 +610,24 @@ class DutyRunnerTests(unittest.TestCase):
             row["user"]["id"] = uid
             self.comments.setdefault(8, []).append(row)
 
-    def test_unknown_specialist_holds_when_no_enrolled_alternative_is_available(self):
-        self.comments[6] = [comment(10, task("HOLD").replace("[WORK]", "[CODEX]"))]
+    def test_unreported_specialist_keeps_its_assignment_instead_of_expiring(self):
+        self.comments[6] = [comment(10, task("KEEP").replace("[WORK]", "[CODEX]"))]
         reporters = {"CODEX": 101}
         policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
         with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
             record = self.run_pulse()
-        self.assertEqual(record["held_specialist_routes"], [
-            {"task_id": "HOLD", "target_chair": "[CODEX]", "availability": "unknown"},
-        ])
+        self.assertEqual(record["held_specialist_routes"], [])
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[CODEX]")
+        self.assertEqual(self.posts[0].splitlines()[2], "Target Chair: [CODEX]")
+
+    def test_explicitly_unavailable_specialist_still_holds_without_alternative(self):
+        self.comments[6] = [comment(10, task("HOLD").replace("[WORK]", "[CODEX]"))]
+        reporters = {"CODEX": 101}
+        self.add_seat_reports(reporters, "unavailable")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
+            record = self.run_pulse()
+        self.assertEqual(record["held_specialist_routes"][0]["availability"], "unavailable")
         self.assertEqual(self.posts, [])
 
     def test_unknown_specialist_falls_back_to_an_available_enrolled_chair(self):

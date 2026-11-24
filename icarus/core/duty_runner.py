@@ -103,6 +103,11 @@ def available_dispatch_chair(preferred, states, reporters, benched_seats=None, *
         if (chair != preferred and seat in reporters and seat.upper() not in benched
                 and states.get(seat) == "available"):
             return chair
+    # A missing or expired availability report is not a refusal: the assignment stays with its
+    # named seat, which picks it up on its own timer. Only a bench or an explicit fresh
+    # "unavailable" report moves it.
+    if preferred_seat.upper() not in benched and states.get(preferred_seat, "unknown") == "unknown":
+        return preferred
     if not code_task:
         return None
     return next((chair for chair in SCHEDULED_PICKUP_CHAIRS
