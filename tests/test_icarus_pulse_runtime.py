@@ -42,10 +42,15 @@ class PulseRuntimeTests(unittest.TestCase):
         self.assertIn("available eligible executor", reason)
         self.assertIn("ANY AVAILABLE EXECUTOR", runtime.rules_text())
 
-    def test_sol_bench_routes_code_work_to_codex_and_blocks_other_sol_work(self):
+    def test_sol_bench_routes_code_work_to_claude_and_blocks_other_sol_work(self):
         targets = runtime.CFG["delegateTargets"]
         selected, reason = runtime._select_delegate_target(
             "SOL", "Implement the runtime decision fix", {"SOL"}, targets,
+        )
+        self.assertEqual(selected, "CLAUDE")
+        self.assertIn("Claude", reason)
+        selected, reason = runtime._select_delegate_target(
+            "SOL", "Implement the runtime decision fix", {"SOL", "CLAUDE"}, targets,
         )
         self.assertEqual(selected, "CODEX")
         self.assertIn("Codex", reason)
