@@ -40,7 +40,7 @@ MONITOR_ONLY_MARKER = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 TRUSTED_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
-CHAIRS = {"[WORK]", "[CODEX]", "[SOL]", "[LUNA]", "[GRACE]", "[ANY]"}
+CHAIRS = {"[WORK]", "[CODEX]", "[SOL]", "[LUNA]", "[GRACE]", "[CLAUDE]", "[ANY]"}
 LEGACY_CHAIRS = {"[WORK]", "[SOL]"}
 READY = {"REQUESTED", "READY", "TODO", "BACKLOG", "OPEN"}
 UNAVAILABLE = {
@@ -55,6 +55,10 @@ STATUS_PATH = "icarus_status.json"
 LEDGER_PATH = "RUN_LOG.jsonl"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CHAIR_FALLBACK_ORDER = ("[CODEX]", "[SOL]", "[LUNA]", "[GRACE]")
+# Chairs picked up by their own scheduled Teamchat check rather than a live availability
+# report. They are tried only after every enrolled seat (ANY, or code-task fallback), so live
+# seats keep priority and non-code holds/pilot behaviour are unchanged.
+SCHEDULED_PICKUP_CHAIRS = ("[CLAUDE]",)
 
 
 def benched_seats_from_text(value):
@@ -88,8 +92,10 @@ def available_dispatch_chair(preferred, states, reporters, benched_seats=None, *
             seat = chair.strip("[]")
             if seat in reporters and seat.upper() not in benched and states.get(seat) == "available":
                 return chair
-        return None
-    if preferred_seat.upper() not in benched and states.get(preferred_seat) == "available":
+        return next((chair for chair in SCHEDULED_PICKUP_CHAIRS
+                     if chair.strip("[]").upper() not in benched), None)
+    if preferred_seat.upper() not in benched and (
+            preferred in SCHEDULED_PICKUP_CHAIRS or states.get(preferred_seat) == "available"):
         return preferred
     fallback_order = ("[CODEX]",) if code_task else CHAIR_FALLBACK_ORDER
     for chair in fallback_order:
@@ -97,7 +103,10 @@ def available_dispatch_chair(preferred, states, reporters, benched_seats=None, *
         if (chair != preferred and seat in reporters and seat.upper() not in benched
                 and states.get(seat) == "available"):
             return chair
-    return None
+    if not code_task:
+        return None
+    return next((chair for chair in SCHEDULED_PICKUP_CHAIRS
+                 if chair != preferred and chair.strip("[]").upper() not in benched), None)
 
 
 def call_github_api(url, token, method="GET", payload=None):
@@ -975,6 +984,7 @@ def monitor_issues(repo, mailbox, token, record):
             if (task_id not in dispatched and number not in dispatched_sources
                     and not pilot_state.reserved(wake_comments, task_id)
                     and (candidate[2] in LEGACY_CHAIRS or candidate[2] == "[ANY]"
+                         or candidate[2] in SCHEDULED_PICKUP_CHAIRS
                          or candidate[2].strip("[]") in reporters)):
                 claim = next((comment for comment, packet in comment_packets(comments, CLAIM_HEADER, bot_only=True)
                               if packet["task id"] == task_id
