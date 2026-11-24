@@ -577,13 +577,25 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-7")
         self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[CODEX]")
 
+    def test_any_executor_falls_back_to_claude_when_no_enrolled_worker_is_available(self):
+        self.comments[6] = [comment(10, task("ANY-CLAUDE").replace(
+            "Target Chair: [WORK]", "Target Chair: [ANY]"))]
+        reporters = {"CODEX": 101}
+        self.add_seat_reports(reporters, "unavailable")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
+            record = self.run_pulse()
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[CLAUDE]")
+        self.assertEqual(self.posts[0].splitlines()[2], "Target Chair: [CLAUDE]")
+
     def test_any_executor_holds_cleanly_when_no_enrolled_worker_is_available(self):
         self.comments[6] = [comment(10, task("ANY-HOLD").replace(
             "Target Chair: [WORK]", "Target Chair: [ANY]"))]
         reporters = {"CODEX": 101}
         self.add_seat_reports(reporters, "unavailable")
         policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
-        with patch.object(pilot_state, "load_policy", return_value=(policy, "digest")):
+        with (patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
+              patch.object(runner, "load_benched_seats", return_value={"SOL", "CLAUDE"})):
             record = self.run_pulse()
         self.assertEqual(record["held_specialist_routes"], [{
             "task_id": "ANY-HOLD", "target_chair": "[ANY]", "availability": "unavailable",
@@ -1038,21 +1050,36 @@ class DutyRunnerTests(unittest.TestCase):
         reporters = {"CODEX": 10, "SOL": 11, "LUNA": 12, "GRACE": 13}
         states = {seat: "available" for seat in reporters}
         self.assertEqual(runner.available_dispatch_chair("[ANY]", states, reporters, {"CODEX"}, code_task=True), "[SOL]")
-        self.assertIsNone(runner.available_dispatch_chair("[ANY]", states, reporters, set(reporters), code_task=True))
+        self.assertIsNone(runner.available_dispatch_chair(
+            "[ANY]", states, reporters, set(reporters) | {"CLAUDE"}, code_task=True))
+        self.assertEqual(runner.available_dispatch_chair("[ANY]", states, reporters, set(reporters), code_task=True),
+                         "[CLAUDE]")
 
-    def test_benched_sol_is_excluded_and_code_work_only_uses_codex(self):
+    def test_benched_sol_is_excluded_and_code_work_uses_codex_then_claude(self):
         reporters = {"CODEX": 10, "SOL": 11, "LUNA": 12}
         states = {"CODEX": "available", "SOL": "available", "LUNA": "available"}
         self.assertEqual(
             runner.available_dispatch_chair("[SOL]", states, reporters, {"SOL"}, code_task=True),
             "[CODEX]",
         )
+        unavailable_codex = {"CODEX": "unavailable", "SOL": "available", "LUNA": "available"}
+        self.assertEqual(
+            runner.available_dispatch_chair("[CODEX]", unavailable_codex, reporters, {"SOL"}, code_task=True),
+            "[CLAUDE]",
+        )
         self.assertIsNone(
             runner.available_dispatch_chair(
-                "[CODEX]", {"CODEX": "unavailable", "SOL": "available", "LUNA": "available"},
-                reporters, {"SOL"}, code_task=True,
+                "[CODEX]", unavailable_codex, reporters, {"SOL", "CLAUDE"}, code_task=True,
             )
         )
+        self.assertEqual(runner.available_dispatch_chair("[CLAUDE]", {}, reporters, {"SOL"}), "[CLAUDE]")
+        self.assertIsNone(runner.available_dispatch_chair("[CLAUDE]", {}, reporters, {"SOL", "CLAUDE"}))
+
+    def test_claude_backlog_task_is_admitted_as_scheduled_pickup_chair(self):
+        candidate = runner.backlog_candidate({**issue(42, title="[T1] [REQUESTED] Claude code task",
+            body="[TO] [CLAUDE]\n[STATUS] REQUESTED\n[ACTIVE_OWNER] NONE\n[COST] \u20ac0"), "state": "open"})
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate[2], "[CLAUDE]")
         self.assertEqual(
             runner.benched_seats_from_text("Sol is benched; do not newly delegate to SOL."),
             {"SOL"},
