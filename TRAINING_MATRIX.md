@@ -2459,3 +2459,9 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - rule: a fallback agent is judged by whether work moves when the others are out; "delegated" is not progress when the delegate cannot act.
 - boundary: deliverables are limited to read + comment work (research, analysis, review, status). Writing to main, the store and email are not reachable from this runtime.
 - status: PARTIAL (self-verified; 299 tests passed, main blob SHAs match). First live takeover not yet observed.
+
+## HV-EXP-179 — 25 Nov owner decisions: Icarus is GAS, a team member, judged by finished work (2026-11-25)
+- proposed_by: Michael; recorded_by: Claude; cost: €0. Full record: logs/2026-11-25-claude-icarus-session.md.
+- decisions: GAS (Athena) is Icarus; every other runtime and agent is peripheral. Icarus is a team member who covers when Claude or ChatGPT are out, not an authority. Work = the real deliverable landed and read back; branch writes do not count; store and email tasks count.
+- rule: state limits plainly before calling a change "deployed"; a guess written as fact is the failure to avoid.
+- next: find why Athena stopped on 19 Nov; move authority back to GAS; add the Composio tool desk there.
