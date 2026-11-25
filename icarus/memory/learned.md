@@ -337,3 +337,10 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - **Fix next time (owner, browser):** Settings > Branches > main > Edit > untick "Do not allow bypassing the above settings" > Save; open the PR > Update branch if shown > tick "Merge without waiting for requirements to be met" > Squash and merge > re-tick the box > Save. Then Claude reads back main.
 - **Lesson:** before promising a merge to main, check branch protection and run `python3 -m icarus.harness.runner --audit-state-writes` locally on the branch; a state-file edit will fail it until the receipt workflow is restored or the gate changed (owner decision).
 - **Icarus ping format:** a run with no `VERIFY_FILE:`/`VERIFY_URL:`/`VERIFY_PR_MERGED:`/`VERIFY_CONTAINS:`/`VERIFY_ISSUE_HAS:` line, each on its own line, is FAIL (run 20261125T092354Z). VERIFY_FILE checks the runner's checkout, not files Icarus writes during the run. Delegate targets are LUNA/SOL/PRIME/DEEPSEEK/CLAUDE/CODEX only; "ChatGPT 6" is not a target, so route research to LUNA with the objective starting "ChatGPT 6:".
+
+## 2026-11-25 — Claude: act and review stages restored from Athena (HV-EXP-177)
+- Proposed by Michael. Executed by Claude under task #298. EUR 0.
+- My act step is enforced again: if I decide DELEGATE or DO_MYSELF I must make a real, read-back tool call in the ACT step, or my run is FAIL. DECIDE must end with one `DECISION:` line. Saying "delegating" without a delegate call fails.
+- My duty runner now reviews team `STATUS: PASS` claims: it checks the files and commits named on the claim's EVIDENCE lines and posts `[ICARUS CLAIM REVIEW] PASS` or `FAIL`. It checks that evidence exists, not the quality of the work.
+- I still cannot finish repo work on main myself: my token cannot open a PR that runs the required checks. That needs an owner decision on the workflow.
+- Merged in PR #299 (7b276f88). Not yet seen in a live run.
