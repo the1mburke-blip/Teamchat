@@ -59,6 +59,8 @@ CHAIR_FALLBACK_ORDER = ("[CODEX]", "[SOL]", "[LUNA]", "[GRACE]")
 # report. They are tried only after every enrolled seat (ANY, or code-task fallback), so live
 # seats keep priority and non-code holds/pilot behaviour are unchanged.
 SCHEDULED_PICKUP_CHAIRS = ("[CLAUDE]",)
+# Owner setting 2026-11-25: backlog tasks handed out per duty run (raise later if needed).
+MAX_BACKLOG_DISPATCHES_PER_RUN = 3
 
 
 def benched_seats_from_text(value):
@@ -1145,6 +1147,7 @@ def monitor_issues(repo, mailbox, token, record):
 
     # Outstanding receipts are recorded above. Discovery already excludes their dispatched backlog tasks.
     # Resume a previously persisted claim first. The workflow serializes Pulse jobs.
+    backlog_dispatched = 0
     for _, candidate, claim in sorted(candidates, key=lambda item: (item[0], item[1])):
         _, number, chair, _ = candidate
         task_id = f"BACKLOG-{number}"
@@ -1204,7 +1207,8 @@ def monitor_issues(repo, mailbox, token, record):
                 elif is_code_task(objective_match.group(1) if objective_match else ""):
                     held["reason"] = "no available enrolled code executor"
                 record["held_specialist_routes"].append(held)
-                record["loop_state"] = "WAITING_FOR_SPECIALIST"
+                if not backlog_dispatched:
+                    record["loop_state"] = "WAITING_FOR_SPECIALIST"
                 if (claim is None and live_schedule and record.get("pilot_attempt") is None
                         and all(value == "unavailable" for value in states.values())):
                     run_pilot_if_approved(task_id, number, seat, policy, policy_digest,
@@ -1222,12 +1226,16 @@ def monitor_issues(repo, mailbox, token, record):
             f"{CLAIM_HEADER}\nTask ID: {task_id}\nTarget Chair: {chair}\n"
             "Budget: €0.00 | Repair Leash: 1 attempt"
         ))
-        record["backlog_claim"] = {"issue_number": number, "claim_comment_id": claim_id}
+        if record["backlog_claim"] is None:
+            # The first claim stays the Pulse reasoning anchor (runtime.pulse_reserve).
+            record["backlog_claim"] = {"issue_number": number, "claim_comment_id": claim_id}
         task_states[task_id]["status"] = "CLAIMED"
         dispatch_task(outbox_url, token, {"issue_number": number, "source_comment_id": claim_id},
                       task, mailbox, record, mailbox_full=mailbox_full)
         record["loop_state"] = "DISPATCHED"
-        break
+        backlog_dispatched += 1
+        if backlog_dispatched >= MAX_BACKLOG_DISPATCHES_PER_RUN:
+            break
 
 def append_status(record):
     try:
