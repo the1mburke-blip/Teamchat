@@ -202,7 +202,57 @@ class PulseRuntimeTests(unittest.TestCase):
                 self.assertEqual(runtime.pulse_infer(), 0)
                 with self.assertRaises(FileNotFoundError):
                     runtime.pulse_infer()
-        main.assert_called_once_with(pulse_issue=12)
+        main.assert_called_once_with(pulse_issue=12, self_task=False)
+
+    def test_self_task_outranks_triage_and_runs_in_self_mode(self):
+        self.duty["self_task"] = {"issue_number": 44, "task_id": "BACKLOG-44", "reason": "held: no available agent"}
+        self.write_duty()
+        with patch.object(runtime, "pulse_artifacts", side_effect=[[], []]):
+            runtime.pulse_reserve()
+        self.assertEqual(json.loads(self.reservation.read_text(encoding="utf-8"))["mode"], "self")
+        own = {"id": 201, "workflow_run": {"id": 101}, "expired": False}
+        with patch.multiple(runtime, PULSE_DAY=None), patch.object(runtime, "main", return_value=0) as main:
+            with patch.object(runtime, "pulse_artifacts", return_value=[own]):
+                runtime.pulse_infer()
+        main.assert_called_once_with(pulse_issue=44, self_task=True)
+
+    def run_self(self, posted):
+        cfg = dict(runtime.CFG)
+
+        def step(*args, **kwargs):
+            runtime.COMMENTS_POSTED.extend(posted)
+            return ({"answer": "done", "tool": None, "unverified_claims": [], "needs_owner": False,
+                     "owner_reason": "", "lesson": ""}, runtime.PULSE_MODEL, "", False)
+        with patch.multiple(runtime, KEY="k", CID="pulse-9", ACTOR="schedule", CFG=cfg, RAW="",
+                            PROVIDER={runtime.PULSE_MODEL: "google"}, USAGE={}, LOG=[], SKIPPED=[], RECALLED=[],
+                            BLOCKER_RECALLS={"n": 0}, DELEGATED=[], DELEG_KEYS={}, LOOP_ON={"v": False}), \
+             patch.object(runtime, "approved", return_value=([runtime.PULSE_MODEL], "")), \
+             patch.object(runtime, "usage_today", return_value={}), \
+             patch.object(runtime, "tool_read_issue", return_value="#44 [open] task"), \
+             patch.object(runtime, "http", return_value=(404, "")), \
+             patch.object(runtime, "run_step", side_effect=step) as run, redirect_stdout(io.StringIO()):
+            runtime.main(pulse_issue=44, self_task=True)
+            tools = set(cfg["tools"])
+        return next(Path("icarus/runs").glob("*-pulse-9.md")).read_text(encoding="utf-8"), tools, run
+
+    def test_self_task_run_has_read_and_comment_tools_only_and_passes_on_result(self):
+        receipt, tools, run = self.run_self([(44, "TAKEOVER RESULT: analysis with evidence")])
+        self.assertEqual(tools, set(runtime.SELF_TOOLS))
+        self.assertFalse({"write_file", "delete_file", "delegate", "close_issue"} & tools)
+        self.assertIn("Take over task #44 yourself", run.call_args.args[1])
+        self.assertIn("VERDICT: PASS", receipt)
+
+    def test_self_task_blocked_comment_is_not_a_pass(self):
+        receipt, _, _ = self.run_self([(44, "TAKEOVER BLOCKED: needs store access")])
+        self.assertIn("VERDICT: FAIL", receipt)
+
+    def test_self_takeover_passes_only_on_a_read_back_result_comment(self):
+        with patch.object(runtime, "COMMENTS_POSTED", [(44, "TAKEOVER BLOCKED: needs store access")]):
+            self.assertFalse(runtime.self_takeover_gate(44)[0])
+        with patch.object(runtime, "COMMENTS_POSTED", [(45, "TAKEOVER RESULT: done")]):
+            self.assertFalse(runtime.self_takeover_gate(44)[0])
+        with patch.object(runtime, "COMMENTS_POSTED", [(44, "TAKEOVER RESULT: findings with evidence")]):
+            self.assertTrue(runtime.self_takeover_gate(44)[0])
 
     def test_missing_or_incomplete_receipt_blocks_inference(self):
         with patch.object(runtime, "pulse_artifacts", side_effect=[[], []]):
