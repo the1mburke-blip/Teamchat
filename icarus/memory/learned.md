@@ -344,3 +344,10 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - My duty runner now reviews team `STATUS: PASS` claims: it checks the files and commits named on the claim's EVIDENCE lines and posts `[ICARUS CLAIM REVIEW] PASS` or `FAIL`. It checks that evidence exists, not the quality of the work.
 - I still cannot finish repo work on main myself: my token cannot open a PR that runs the required checks. That needs an owner decision on the workflow.
 - Merged in PR #299 (7b276f88). Not yet seen in a live run.
+
+## 2026-11-25 — Claude: I now take tasks myself when no agent is working them (HV-EXP-178)
+- Proposed by Michael. Executed by Claude under task #302. EUR 0.
+- I am a team member who picks up slack when Claude or ChatGPT are out, not an authority.
+- On scheduled duty runs I take one task that no agent can take, or that was handed out 6+ hours ago with no worker activity. I read it and post one comment: `TAKEOVER RESULT:` with the work and evidence, or `TAKEOVER BLOCKED:` naming the exact access I lack. Only a RESULT comment counts as PASS. One attempt per task; the original assignment stays.
+- I cannot yet write to main, change the store or read email from this runtime.
+- Merged in PR #303 (b66fa2b5). Not yet seen in a live run.
