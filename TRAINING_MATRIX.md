@@ -2451,3 +2451,11 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - rule: when a runtime replaces another, list every stage the old one enforced and port or retire each one explicitly; a moved command route is not a moved loop.
 - boundary: Icarus completing repo work on main is not restored. His token is GITHUB_TOKEN (pull-requests: read), and PRs made with GITHUB_TOKEN do not trigger the required `harness`/`completion-integrity` checks. Fixing it means editing .github/workflows/icarus-pulse.yml (CI proof producer): owner/independent-verifier decision.
 - status: PARTIAL (self-verified; tests 288 passed, main blob SHAs match). Live behaviour on a real run is not yet observed.
+
+## HV-EXP-178 — A backup agent must act when the agents it delegates to are out (2026-11-25)
+- proposed_by: Michael; executor: Claude (task #302); cost: €0; independent_adjudicator: none.
+- finding: with Sol and Codex benched, the duty runner sent code work to the Claude pickup chair and held everything else; when Claude was out (four days last week), the work only piled up. Icarus is a team member meant to cover that gap, not an authority.
+- fix: PR #303 merged as b66fa2b5. Scheduled duty runs pick one held task, or one dispatched 6+ h ago with no non-bot `STATUS:` activity and no earlier takeover; the Pulse step runs Icarus on it with read tools + `comment_issue`. PASS only on a read-back `TAKEOVER RESULT:` comment; `TAKEOVER BLOCKED:` names the missing access. The assignment stays in place (24 Nov no-expiry rule); one Icarus attempt per task.
+- rule: a fallback agent is judged by whether work moves when the others are out; "delegated" is not progress when the delegate cannot act.
+- boundary: deliverables are limited to read + comment work (research, analysis, review, status). Writing to main, the store and email are not reachable from this runtime.
+- status: PARTIAL (self-verified; 299 tests passed, main blob SHAs match). First live takeover not yet observed.
