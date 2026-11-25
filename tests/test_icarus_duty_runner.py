@@ -689,6 +689,19 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[CLAUDE]")
         self.assertEqual(record["loop_state"], "DISPATCHED")
 
+    def test_duty_run_dispatches_at_most_three_backlog_tasks(self):
+        self.issues += [
+            {**issue(n, title=f"[READY] Backlog {n}"), "state": "open"} for n in (7, 9, 11, 13)
+        ]
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}):
+            first = self.run_pulse()
+            second = self.run_pulse()
+        self.assertEqual([r["task_id"] for r in first["dispatch_receipts"]],
+                         ["BACKLOG-7", "BACKLOG-9", "BACKLOG-11"])
+        self.assertEqual(first["backlog_claim"]["issue_number"], 7)
+        self.assertEqual(first["loop_state"], "DISPATCHED")
+        self.assertEqual([r["task_id"] for r in second["dispatch_receipts"]], ["BACKLOG-13"])
+
     def test_owner_command_workflow_is_restricted_to_issue_99(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/icarus-pulse.yml").read_text(
             encoding="utf-8")
@@ -874,14 +887,11 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(first["backlog_claim"]["issue_number"], 9)
         self.assertTrue(any(row["body"].startswith(runner.CLAIM_HEADER) for row in self.comments[9]))
         self.assertIn("Source Issue: #9 (comment 10001)", self.comments[9][-1]["body"])
-        second = self.run_pulse()
-        self.assertEqual(second["backlog_claim"]["issue_number"], 18)
-        self.assertEqual(second["waiting_backlog"], [
-            {"task_id": "BACKLOG-9", "dispatch_comment_id": 10002},
-        ])
-        self.assertEqual(set(second["task_states"]), {"BACKLOG-18", "BACKLOG-9"})
-        self.assertEqual(second["task_states"]["BACKLOG-9"]["dispatch_comment_id"], 10002)
-        self.assertEqual(second["task_states"]["BACKLOG-18"]["dispatch_comment_id"], 10005)
+        # Up to MAX_BACKLOG_DISPATCHES_PER_RUN tasks go out in one run; the first stays the claim anchor.
+        self.assertEqual([r["task_id"] for r in first["dispatch_receipts"]], ["BACKLOG-9", "BACKLOG-18"])
+        self.assertEqual(set(first["task_states"]), {"BACKLOG-18", "BACKLOG-9"})
+        self.assertEqual(first["task_states"]["BACKLOG-9"]["dispatch_comment_id"], 10002)
+        self.assertEqual(first["task_states"]["BACKLOG-18"]["dispatch_comment_id"], 10004)
         third = self.run_pulse()
         self.assertEqual(third["loop_state"], "IDLE_SELECT")
         self.assertEqual(third["task_states"]["BACKLOG-9"]["status"], "WAITING_FOR_RECEIPT")
