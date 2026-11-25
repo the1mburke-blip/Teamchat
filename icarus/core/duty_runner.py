@@ -1347,6 +1347,58 @@ def review_claims(repo, token, record, now=None):
                                         "verdict": verdict, "review_comment_id": review_id})
 
 
+# Self-takeover (owner 2026-11-25): Icarus is the team member who picks up work no agent is doing.
+SELF_TAKEOVER_AFTER_HOURS = 6
+SELF_TAKEOVER_MARKER = "[ICARUS via runtime] TAKEOVER"
+WORKER_ACTIVITY = re.compile(r"^[ \t>*-]*(?:\[STATUS\]|STATUS\s*:)\s*(?:CLAIMED|EXECUTING|VERIFYING|PASS|PARTIAL|BLOCKED|FAIL)\b",
+                             re.I | re.M)
+MAX_SELF_TAKEOVER_CHECKS = 5
+
+
+def _utc(value):
+    return datetime.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+
+
+def select_self_task(repo, token, record, mailbox, now=None):
+    """Pick one backlog task for Icarus to do himself: held this run, or dispatched long ago with no worker activity.
+
+    The assignment stays in place; Icarus adds one attempt of his own per task (marker-checked)."""
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    issues_url = f"https://api.github.com/repos/{repo}/issues"
+    held = [(entry["task_id"], None) for entry in record["held_specialist_routes"]]
+    stale = sorted(
+        (task_id, state["dispatch_comment_id"]) for task_id, state in record["task_states"].items()
+        if state.get("status") == "WAITING_FOR_RECEIPT" and state.get("dispatch_comment_id")
+    )
+    checked = 0
+    for task_id, dispatch_id in held + sorted(stale, key=lambda item: item[1]):
+        match = re.fullmatch(r"BACKLOG-([1-9][0-9]{0,9})", str(task_id))
+        if not match or int(match[1]) == mailbox:
+            continue
+        if checked >= MAX_SELF_TAKEOVER_CHECKS:
+            break
+        checked += 1
+        number = int(match[1])
+        dispatched_at = None
+        if dispatch_id is not None:
+            dispatch, _ = call_github_api(f"{issues_url}/comments/{dispatch_id}", token)
+            dispatched_at = _utc(dispatch["created_at"])
+            if now - dispatched_at < datetime.timedelta(hours=SELF_TAKEOVER_AFTER_HOURS):
+                continue
+        comments = fetch_pages(f"{issues_url}/{number}/comments", token)
+        if any((c.get("body") or "").startswith(SELF_TAKEOVER_MARKER) for c in comments):
+            continue
+        if any((c.get("user") or {}).get("type") != "Bot" and WORKER_ACTIVITY.search(c.get("body") or "")
+               and (dispatched_at is None or _utc(c["created_at"]) > dispatched_at) for c in comments):
+            continue
+        record["self_task"] = {
+            "issue_number": number, "task_id": task_id,
+            "reason": "held: no available agent" if dispatch_id is None
+            else f"no worker activity {SELF_TAKEOVER_AFTER_HOURS}+ h after dispatch {dispatch_id}",
+        }
+        return
+
+
 def main():
     timestamp = datetime.datetime.now(datetime.timezone.utc)
     entry = {
@@ -1376,6 +1428,8 @@ def main():
         "first_processing_error": None,
         "claim_reviews": [],
         "claim_review_error": None,
+        "self_task": None,
+        "self_task_error": None,
     }
     # GitHub drops and delays many scheduled slots, so every scheduled run,
     # heartbeat included, does intake. Only a run whose trigger cron is unknown
@@ -1399,6 +1453,10 @@ def main():
                     review_claims(repo, token, status)
                 except Exception as error:  # a review failure never blocks task dispatch
                     status["claim_review_error"] = str(error)
+                try:
+                    select_self_task(repo, token, status, mailbox)
+                except Exception as error:  # selection failure never blocks task dispatch
+                    status["self_task_error"] = str(error)
     except Exception as error:
         status.update(monitoring_result="FAILURE", first_processing_error=str(error))
 
