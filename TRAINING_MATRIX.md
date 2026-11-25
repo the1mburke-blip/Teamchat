@@ -2443,3 +2443,11 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - owner fix: untick "Do not allow bypassing the above settings" on main, merge the PR with the bypass box, re-tick it. Permanent fix (restore the receipt workflow or change the gate) is an owner decision, still open.
 - rule: every ICARUS_RUN needs at least one VERIFY_* gate line on its own line or the run is FAIL; "ChatGPT 6" research goes to delegate target LUNA with the objective starting "ChatGPT 6:".
 - status: PARTIAL (self-logged).
+
+## HV-EXP-177 — Act and review stages lived in Athena, not in the runtime that replaced her (2026-11-25)
+- proposed_by: Michael; executor: Claude (task #298); cost: €0; independent_adjudicator: none.
+- finding: Athena (icarus/athena-gas/Athena.gs cloud-4.3) enforced the ACT step (a DELEGATE or DO_MYSELF decision with no successful tool action is FAIL) and reviewed team PASS claims against cited files/commits. Her last receipt was 2026-11-19T19:52:45Z. From 2026-11-20 09:30Z (commit 3c0c935) #99 commands ran on the GitHub runtime, which had neither check, so runs could report delegations that never happened (25 Nov receipts: "Delegating up to 10" with 0/10 delegations) and no claim was ever reviewed.
+- fix: PR #299 merged as 7b276f88. runtime.py requires `DECISION:` in DECIDE and fails `ACT_STEP_NO_ACTION`, `DECIDE_STEP_NO_STRUCTURED_DECISION` and `MUTATION_READBACK_FAILED`; any execution error fails the verdict. duty_runner.py posts `[ICARUS CLAIM REVIEW] PASS|FAIL` under team `STATUS: PASS` claims on scheduled runs (deterministic file/commit check, 5 per run, once per claim).
+- rule: when a runtime replaces another, list every stage the old one enforced and port or retire each one explicitly; a moved command route is not a moved loop.
+- boundary: Icarus completing repo work on main is not restored. His token is GITHUB_TOKEN (pull-requests: read), and PRs made with GITHUB_TOKEN do not trigger the required `harness`/`completion-integrity` checks. Fixing it means editing .github/workflows/icarus-pulse.yml (CI proof producer): owner/independent-verifier decision.
+- status: PARTIAL (self-verified; tests 288 passed, main blob SHAs match). Live behaviour on a real run is not yet observed.
