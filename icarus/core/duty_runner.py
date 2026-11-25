@@ -16,7 +16,7 @@ import tempfile
 import time
 import urllib.parse
 import urllib.request
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from icarus.core import pilot_state
 
@@ -1259,6 +1259,94 @@ def append_ledger(record):
         ledger.write(json.dumps(record) + "\n")
 
 
+# Claim review, ported from icarus/athena-gas/Athena.gs (classifyComment_ 'claim' + claimGates_).
+# A team comment that claims PASS is checked against the repo files and commits it names as
+# evidence. Deterministic only: a review checks the cited evidence exists, not the work's quality.
+CLAIM_PASS = re.compile(r"^[ \t>*-]*(?:\[STATUS\]\s*PASS\b|STATUS\s*:\s*PASS\b|/evidence\s+\S+\s+PASS\b)", re.I | re.M)
+CLAIM_REVIEW_HEADER = "[ICARUS CLAIM REVIEW]"
+CLAIM_OWN_OUTPUT = re.compile(r"^\s*(# Icarus run|\[ICARUS|\[TEAMCHAT_WAKE\]|\[TASK_INCOMING\])")
+CLAIM_REVIEW_WINDOW_HOURS = 6
+MAX_CLAIM_REVIEWS_PER_RUN = 5
+
+
+def claim_evidence_gates(body):
+    """Athena claimGates_: repo paths and commit hashes named on EVIDENCE lines, at most six."""
+    text = " ".join(
+        match.group(1) for match in re.finditer(
+            r"^[ \t>*-]*(?:\[EVIDENCE[^\]]*\]|EVIDENCE\s*:|/evidence\s+\S+\s+PASS\s*\|)(.*)$", body or "", re.I | re.M)
+    )
+    gates = []
+
+    def add(gate):
+        if gate not in gates and len(gates) < 6:
+            gates.append(gate)
+
+    for match in re.finditer(r"github\.com/the1mburke-blip/Teamchat/blob/[^/\s]+/([^\s#?)'\"]+)", text, re.I):
+        add(("file", urllib.parse.unquote(match.group(1))))
+    no_urls = re.sub(r"https?://\S+", " ", text)
+    for match in re.finditer(
+            r"(?:^|[\s('\"])((?:[\w.-]+/)+[\w.-]+\.[A-Za-z0-9]{1,8}|[\w-][\w.-]*\.(?:md|json|js|gs|py|ya?ml|txt|ipynb|html|csv))"
+            r"(?=[\s)'\",;:]|\.(?:\s|$)|$)", no_urls):
+        add(("file", match.group(1)))
+    for value in re.findall(r"\b[0-9a-f]{7,40}\b", no_urls):
+        if re.search(r"\d", value) and re.search(r"[a-f]", value):
+            add(("commit", value))
+    return gates
+
+
+def check_claim_gate(repo, token, gate):
+    kind, value = gate
+    if kind == "file":
+        path = PurePosixPath(value)
+        ok = (not path.is_absolute() and ".." not in path.parts and not value.startswith(".git")
+              and (REPO_ROOT / value).is_file())
+        return ok, f"file {value}: exists on main={ok}"
+    try:
+        call_github_api(f"https://api.github.com/repos/{repo}/commits/{value}", token)
+        return True, f"commit {value}: exists=True"
+    except RuntimeError as error:
+        return False, f"commit {value}: exists=False ({str(error)[-40:]})"
+
+
+def review_claims(repo, token, record, now=None):
+    """Post one deterministic review under each new team PASS claim in the review window."""
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    since = (now - datetime.timedelta(hours=CLAIM_REVIEW_WINDOW_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    rows, _ = call_github_api(
+        f"https://api.github.com/repos/{repo}/issues/comments?since={since}&per_page={PAGE_SIZE}&sort=created&direction=asc", token)
+    for row in rows if isinstance(rows, list) else []:
+        if len(record["claim_reviews"]) >= MAX_CLAIM_REVIEWS_PER_RUN:
+            break
+        body = row.get("body") or ""
+        if (row.get("author_association") not in TRUSTED_ASSOCIATIONS or "/pull/" in str(row.get("html_url"))
+                or CLAIM_OWN_OUTPUT.match(body) or not CLAIM_PASS.search(body)):
+            continue
+        issue_url = str(row.get("issue_url") or "")
+        number = issue_url.rsplit("/", 1)[-1]
+        if not number.isdigit():
+            continue
+        marker = f"Claim comment: {row['id']}"
+        comments = fetch_pages(f"{issue_url}/comments", token)
+        if any(marker in (c.get("body") or "") and (c.get("body") or "").startswith(CLAIM_REVIEW_HEADER) for c in comments):
+            continue
+        results = [check_claim_gate(repo, token, gate) for gate in claim_evidence_gates(body)]
+        verdict = "PASS" if results and all(ok for ok, _ in results) else "FAIL"
+        reason = ("every cited file/commit was found" if verdict == "PASS" else
+                  "the claim names no checkable evidence (repo file path or commit hash); a PASS claim without checkable evidence is FAIL"
+                  if not results else "cited evidence was not found")
+        review_id = post_comment(f"{issue_url}/comments", token, "\n".join([
+            f"{CLAIM_REVIEW_HEADER} {verdict}",
+            marker,
+            f"Claim link: {row.get('html_url')}",
+            "Reviewer: Icarus duty runner (deterministic evidence check; the claimant cannot self-PASS)",
+            "Checks:", *(f"- {'ok' if ok else 'FAIL'}: {detail}" for ok, detail in results), *([] if results else ["- none"]),
+            f"Reason: {reason}",
+            "Scope: confirms the cited evidence exists; it does not judge the quality of the work.",
+        ]))
+        record["claim_reviews"].append({"issue_number": int(number), "claim_comment_id": row["id"],
+                                        "verdict": verdict, "review_comment_id": review_id})
+
+
 def main():
     timestamp = datetime.datetime.now(datetime.timezone.utc)
     entry = {
@@ -1286,6 +1374,8 @@ def main():
         "pilot_attempt": None,
         "loop_state": "IDLE_SELECT",
         "first_processing_error": None,
+        "claim_reviews": [],
+        "claim_review_error": None,
     }
     # GitHub drops and delays many scheduled slots, so every scheduled run,
     # heartbeat included, does intake. Only a run whose trigger cron is unknown
@@ -1304,6 +1394,11 @@ def main():
             repo = os.getenv("GITHUB_REPOSITORY", "the1mburke-blip/Teamchat")
             mailbox = int(os.getenv("ICARUS_ISSUE_NUMBER", "6"))
             monitor_issues(repo, mailbox, token, status)
+            if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+                try:
+                    review_claims(repo, token, status)
+                except Exception as error:  # a review failure never blocks task dispatch
+                    status["claim_review_error"] = str(error)
     except Exception as error:
         status.update(monitoring_result="FAILURE", first_processing_error=str(error))
 

@@ -274,6 +274,9 @@ def gate(line):
 
 APPROVED = {"v": False}
 WRITES = {"n": 0}
+EFFECTS = []  # successful write_file/delete_file mutations, re-read before the verdict (Athena executionIntegrity_)
+ACT_EVENTS = []  # (loop step, tool, succeeded) for the ACT check (Athena ACT_STEP_NO_ACTION)
+CUR_STEP = {"n": 0}
 TOUCHED = {}  # path -> written/deleted this run; reads of these go to GitHub, not the stale checkout
 BRANCH = os.environ.get("GITHUB_REF_NAME") or "main"
 
@@ -429,6 +432,7 @@ def tool_write_file(args):
     except Exception:
         j2 = {}
     TOUCHED[p] = "written"
+    EFFECTS.append(("write_file", p, content))
     return redact(f"{'CREATED' if c2 == 201 else 'UPDATED'} {p} on {BRANCH}; commit {(j2.get('commit') or {}).get('sha', '?')}. NOT VERIFIED until you read_file it back.")
 
 
@@ -452,6 +456,7 @@ def tool_delete_file(args):
     except Exception:
         sha = "?"
     TOUCHED[p] = "deleted"
+    EFFECTS.append(("delete_file", p, None))
     return redact(f"DELETED {p} on {BRANCH}; commit {sha}. NOT VERIFIED until read_file/list_dir confirms it is gone.")
 
 
@@ -459,11 +464,68 @@ CHAIRS_NOTE = "routing guide: CLAUDE code implementation/review/logic/long conte
 DELEGATED = []
 DELEG_KEYS = {}
 LOOP_ON = {"v": False}
+MUTATION_TOOLS = ("write_file", "delete_file", "comment_issue", "close_issue")
+DECISIONS = ("DELEGATE", "DO_MYSELF", "READ_ONLY", "NOTHING_TO_DO", "ASK_OWNER")
+
+
+def _tool_succeeded(name, res):
+    """True only for the result text each tool returns after a real, read-back action."""
+    r = str(res)
+    if name == "delegate":
+        return r.startswith("DELEGATED ") and "readback OK" in r
+    if name == "comment_issue":
+        return r.startswith("COMMENTED on ") and "readback OK" in r
+    if name == "close_issue":
+        return r.startswith("CLOSE #") and "readback state=closed" in r
+    if name == "write_file":
+        return r.startswith(("CREATED ", "UPDATED "))
+    if name == "delete_file":
+        return r.startswith("DELETED ")
+    return not re.match(r"(DENIED|HARD STOP|.*FAILED|NOT FOUND|HTTP [45])", r)
+
+
+def _loop_decision(outs):
+    """The last DECISION: line of DECIDE (step 2), else of DISCOVER (Athena receipt 6905135569)."""
+    for text in (outs[1:2], outs[:1]):
+        found = re.findall(r"DECISION\s*:\s*(" + "|".join(DECISIONS) + r")\b", " ".join(text).replace("*", "").replace("`", ""), re.I)
+        if found:
+            return found[-1].upper()
+    return ""
+
+
+def act_check(outs):
+    """Athena cloud-4.3 ACT enforcement: a DELEGATE or DO_MYSELF decision must show a real action."""
+    decision = _loop_decision(outs)
+    if not decision:
+        return "", "DECIDE_STEP_NO_STRUCTURED_DECISION"
+    if decision == "DELEGATE":
+        acted = any(ok and name == "delegate" for _, name, ok in ACT_EVENTS)
+    elif decision == "DO_MYSELF":
+        acted = any(ok and step == 3 and name in MUTATION_TOOLS for step, name, ok in ACT_EVENTS)
+    else:
+        acted = True
+    return decision, "" if acted else f"ACT_STEP_NO_ACTION: decision={decision}"
+
+
+def mutation_readback():
+    """Re-read every file this run wrote or deleted; a mismatch fails the run."""
+    for name, path, content in EFFECTS:
+        c, j = _gh_get(path)
+        if name == "delete_file":
+            ok = c == 404
+        else:
+            try:
+                ok = c == 200 and base64.b64decode(j.get("content", "")).decode("utf-8") == content
+            except Exception:
+                ok = False
+        if not ok:
+            return f"MUTATION_READBACK_FAILED: {path}"
+    return ""
 LOOP_READ = {"read_file", "list_dir", "read_issue", "list_issues", "list_prs", "read_pr"}
 ISSUE_N = {"n": 0}
 LOOP_STEPS = [
     "STEP 1 DISCOVER (read-only), ALWAYS, whatever the task says: call list_issues (state open) to read the board; read STATUS.md AND icarus/memory/current-state.md before selecting any chair; read owner-named evidence and read_issue for any issue you may act on. Record every benched seat and exclude it from chair selection. Note which open items already have a genuinely equivalent [T1] [REQUESTED] task issue; shared issue references alone do not mean duplicate work. Cite paths and issue numbers. Do not write or delegate yet.",
-    "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already covered by genuinely equivalent active work (never this conversation issue or a [TEST] issue). Before chair selection, apply icarus/memory/current-state.md: never select a benched seat. When Sol is benched, route code/implementation/runtime/workflow tasks to CLAUDE (CODEX only if CLAUDE is benched or unavailable); the source task does not need to name an executor. For non-code work, choose another eligible configured target based on task fit; if none is eligible, report BLOCKED rather than selecting a benched seat. Call delegate now when a specialist is better suited. DO_MYSELF is valid whenever Icarus can complete the task safely and fully with authorised tools; it is not restricted to tasks naming a specific file. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. State who proposed and who executes.",
+    "STEP 2 DECIDE (delegate or self-execute): choose the highest-priority open work item not already covered by genuinely equivalent active work (never this conversation issue or a [TEST] issue). Before chair selection, apply icarus/memory/current-state.md: never select a benched seat. When Sol is benched, route code/implementation/runtime/workflow tasks to CLAUDE (CODEX only if CLAUDE is benched or unavailable); the source task does not need to name an executor. For non-code work, choose another eligible configured target based on task fit; if none is eligible, report BLOCKED rather than selecting a benched seat. Call delegate now when a specialist is better suited. DO_MYSELF is valid whenever Icarus can complete the task safely and fully with authorised tools; it is not restricted to tasks naming a specific file. Choose NOTHING_TO_DO only when every open item is already delegated or blocked, and list their task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. State who proposed and who executes. End with exactly one line: DECISION: DELEGATE, DO_MYSELF, READ_ONLY, NOTHING_TO_DO, or ASK_OWNER. The runtime fails the run if a DELEGATE or DO_MYSELF decision has no successful tool action behind it.",
     "STEP 3 ACT: carry out the decision now. If STEP 2 called DELEGATE, read the exact task issue and its comments. A bot-authored [ICARUS CLAIM] is the repo runner reservation, NOT a worker claim. Only a task-specific agent-authored claim or signed execution receipt verified against the enrolled executor identity proves worker action. If that proof exists, leave execution with that worker and report REQUESTED. If it does not exist, Icarus must attempt the same objective itself now using authorised tools; do not stop at REQUESTED or mistake the runner reservation for execution. If a protected-path or capability gate prevents self-execution, preserve the delegated task and report the exact blocker. If STEP 2 chose DO_MYSELF, perform the task now and read back the result. NOTHING_TO_DO: list existing task numbers. ASK_OWNER only for credentials, legal, payment, security, safety, or owner-only facts. End with PASS, PARTIAL or BLOCKED and evidence.",
 ]
 
@@ -944,6 +1006,7 @@ def run_step(system, step, context, cands, test_cap, inject, tool_log, allowed=N
             res = "DENIED: tool is not allowed in this step (DISCOVER is read-only, DECIDE may only delegate; ACT may use the remaining authorised tools)"
         else:
             res = TOOLS[name](args)
+        ACT_EVENTS.append((CUR_STEP["n"], name, _tool_succeeded(name, res)))
         tool_log.append(f"{name}({json.dumps(args)[:70]})")
         scratch += f"\n### {name} {json.dumps(args)[:120]}\n{res}\n"
         if BLOCKER_RECALLS["n"] < 2 and re.search(r"DENIED|HARD STOP|failed|error|not found|\b40[134]\b|\b429\b", str(res)[:400], re.I):
@@ -1025,6 +1088,9 @@ def pulse_infer():
 
 
 def main(pulse_issue=None):
+    ACT_EVENTS.clear()
+    EFFECTS.clear()
+    CUR_STEP["n"] = 0
     USAGE.update(usage_today())
     if pulse_issue is None:
         lines = RAW.splitlines()
@@ -1094,6 +1160,7 @@ def main(pulse_issue=None):
     )
 
     log, answer, used, err = LOG, None, "none", ""
+    loop_decision = ""
     tool_log, plan_steps = [], []
     if stop_pre:
         err = stop_pre
@@ -1148,6 +1215,7 @@ def main(pulse_issue=None):
                     steps = []
             outs, claims, owner, why_owner, lesson = [], [], False, "", ""
             for si, st in enumerate(steps, 1):
+                CUR_STEP["n"] = si
                 step_text = st if not plan_steps else f"OVERALL TASK: {task}{hint}\nCURRENT STEP {si}/{len(steps)}: {st}"
                 ans, used, err, hard = run_step(system, step_text, "\n".join(outs), cands, test_cap, inject, tool_log, step_tools[si - 1] if step_tools else None)
                 if ans is None:
@@ -1164,6 +1232,10 @@ def main(pulse_issue=None):
                     break
             if steps and answer is not None and len(outs) < len(steps) and not err:
                 err = f"plan incomplete: {len(outs)}/{len(steps)} steps"
+            if LOOP_ON["v"] and answer is not None and not err:
+                loop_decision, err = act_check(outs)
+    if answer is not None and not err:
+        err = mutation_readback()
 
     diag = []
     if list_q and KEY:
@@ -1179,13 +1251,15 @@ def main(pulse_issue=None):
 
     tools_txt = (", ".join(CFG["tools"]) or "none") + f" ({len(tool_log)}/{CFG['maxToolCalls']} calls used" + (": " + "; ".join(tool_log) if tool_log else "") + ")"
     gate_results = [gate(g) for g in gates]
-    passed = bool(gate_results) and all(ok for ok, _ in gate_results) and answer is not None
+    passed = bool(gate_results) and all(ok for ok, _ in gate_results) and answer is not None and not err
     if not gates:
         reason = "no evidence gate supplied (add VERIFY_FILE:/VERIFY_URL:/VERIFY_PR_MERGED:/VERIFY_CONTAINS: lines); output is UNVERIFIED"
     elif answer is None:
         reason = "no model output"
+    elif not all(ok for ok, _ in gate_results):
+        reason = "a gate failed"
     else:
-        reason = "all gates passed" if passed else "a gate failed"
+        reason = "all gates passed" if passed else f"execution failed: {redact(err)[:200]}"
     verdict = "PASS" if passed else "FAIL"
 
     ans = answer if isinstance(answer, dict) else {}
@@ -1205,7 +1279,7 @@ def main(pulse_issue=None):
          else "- Cost: EUR 0 (free-tier model, free Actions minutes)"),
         f"- Memory read: icarus/memory/{{identity,inherited,current-state,learned}}.md (recent tails) + TRAINING_MATRIX.md tail (read-only); long-term recall by keyword over learned.md, TRAINING_MATRIX.md, lessons/",
         f"- Recalled: " + ("; ".join(RECALLED) if RECALLED else "none"),
-        *(["- Loop: DISCOVER (read-only) -> DECIDE (no tools) -> ACT"] if LOOP_ON["v"] else ([f"- Plan: {len(plan_steps)} steps: " + " | ".join(plan_steps)] if plan_steps else [])),
+        *([f"- Loop: DISCOVER (read-only) -> DECIDE (no tools) -> ACT; decision: {loop_decision or 'none'}"] if LOOP_ON["v"] else ([f"- Plan: {len(plan_steps)} steps: " + " | ".join(plan_steps)] if plan_steps else [])),
         f"- Lesson write-back: {wb_txt}",
         "- Usage today (Icarus calls, incl. this run): " + (", ".join(f"{m} {c}" + (f"/{RPD[m]}" if m in RPD else "") for m, c in sorted(USAGE.items())) or "none"),
         f"- Model attempts: {'; '.join(log) or 'none'}",
