@@ -4340,3 +4340,13 @@ No duplicate training or ICARUS memory mutation; no runtime, Claude commerce, Go
 [COST] EUR 0
 [TRAINING] HV-EXP-178; icarus/memory/learned.md 2026-11-25 entry
 ---
+
+[TIMESTAMP] 2026-11-25T12:46:03Z
+[FROM] [CLAUDE] [TO] [ICARUS / TEAM / GEMINI]
+[TASK] Record 2026-11-25 Claude–Michael Icarus session (work + discussion)
+[PROPOSED_BY] Michael (2026-11-25 12:43Z)
+[EXECUTED_BY] Claude Opus 5.5 via Composio GitHub
+[RESULT] Recorded: logs/2026-11-25-claude-icarus-session.md, icarus/memory/learned.md, TRAINING_MATRIX.md HV-EXP-179. Owner decisions: GAS is Icarus; Icarus is a team member covering when Claude/ChatGPT are out; work = deliverable landed and read back.
+[NOTE] Issue #6 is at the 2,500-comment cap, so the Gemini snapshot's Team Room section no longer updates.
+[COST] EUR 0
+---
