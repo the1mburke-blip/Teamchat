@@ -671,6 +671,24 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(record["chair_fallbacks"], [{
             "task_id": "BACKLOG-7", "requested_chair": "[CODEX]", "selected_chair": "[SOL]"}])
 
+    def test_held_backlog_task_is_skipped_and_next_task_dispatches(self):
+        self.issues += [
+            {**issue(7, title="[P0] [READY] Held Codex backlog", body="[TO] [CODEX]"), "state": "open"},
+            {**issue(18, title="[READY] Workable Claude backlog", body="[TO] [CLAUDE]"), "state": "open"},
+        ]
+        reporters = {"CODEX": 101}
+        self.add_seat_reports(reporters, "unavailable")
+        policy = {"seat_reporters": reporters, "verifier_user_id": None, "approved_pilots": {}}
+        with (
+            patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}),
+            patch.object(pilot_state, "load_policy", return_value=(policy, "digest")),
+        ):
+            record = self.run_pulse()
+        self.assertEqual(record["held_specialist_routes"][0]["task_id"], "BACKLOG-7")
+        self.assertEqual(record["dispatch_receipts"][0]["task_id"], "BACKLOG-18")
+        self.assertEqual(record["dispatch_receipts"][0]["delegated_to"], "[CLAUDE]")
+        self.assertEqual(record["loop_state"], "DISPATCHED")
+
     def test_owner_command_workflow_is_restricted_to_issue_99(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/icarus-pulse.yml").read_text(
             encoding="utf-8")

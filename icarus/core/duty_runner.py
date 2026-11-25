@@ -1205,10 +1205,12 @@ def monitor_issues(repo, mailbox, token, record):
                     held["reason"] = "no available enrolled code executor"
                 record["held_specialist_routes"].append(held)
                 record["loop_state"] = "WAITING_FOR_SPECIALIST"
-                if claim is None and live_schedule and all(value == "unavailable" for value in states.values()):
+                if (claim is None and live_schedule and record.get("pilot_attempt") is None
+                        and all(value == "unavailable" for value in states.values())):
                     run_pilot_if_approved(task_id, number, seat, policy, policy_digest,
                                           issues_url, wake_url, token, record)
-                break
+                # Skip an unworkable task and try the next candidate instead of stalling the queue.
+                continue
             if selected_chair != chair:
                 record.setdefault("chair_fallbacks", []).append(
                     {"task_id": task_id, "requested_chair": chair, "selected_chair": selected_chair}
