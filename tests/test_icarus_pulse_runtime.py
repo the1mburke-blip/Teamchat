@@ -89,6 +89,59 @@ class PulseRuntimeTests(unittest.TestCase):
         self.assertFalse(runtime.LOOP_ON["v"])
 
 
+    def run_loop(self, decide_text, act_events=()):
+        """Run one owner ICARUS_RUN loop with scripted step answers; return the receipt text."""
+        Path("STATUS.md").write_text("status", encoding="utf-8")
+        cfg = dict(runtime.CFG)
+        cfg.update({"tools": ["read_file", "list_issues", "write_file", "delegate", "comment_issue", "close_issue"],
+                    "maxToolCalls": 4, "maxApiCallsPerRun": 12, "dailyRunCap": 10,
+                    "maxRuntimeSeconds": 120, "writeBack": False})
+        texts = ["discovered the board", decide_text, "acted"]
+
+        def step(*args, **kwargs):
+            n = runtime.CUR_STEP["n"]
+            if n == 3:
+                runtime.ACT_EVENTS.extend(act_events)
+            return ({"answer": texts[n - 1], "tool": None, "unverified_claims": [],
+                     "needs_owner": False, "owner_reason": "", "lesson": ""}, "test-model", "", False)
+        with patch.multiple(
+            runtime, RAW="ICARUS_RUN Review the board and act.\nVERIFY_FILE: STATUS.md",
+            KEY="test-key", CID="88", ACTOR="owner", CFG=cfg,
+            PROVIDER={"test-model": "google"}, USAGE={}, LOG=[], SKIPPED=[], RECALLED=[],
+            BLOCKER_RECALLS={"n": 0}, DELEGATED=[], DELEG_KEYS={}, LOOP_ON={"v": False},
+        ), patch.object(runtime, "approved", return_value=(["test-model"], "")), \
+             patch.object(runtime, "usage_today", return_value={}), \
+             patch.object(runtime, "thread_context", return_value=(0, "")), \
+             patch.object(runtime, "http", return_value=(404, "")), \
+             patch.object(runtime, "run_step", side_effect=step), redirect_stdout(io.StringIO()):
+            runtime.main()
+        return next(Path("icarus/runs").glob("*-88.md")).read_text(encoding="utf-8")
+
+    def test_delegate_decision_without_a_delegate_call_fails(self):
+        receipt = self.run_loop("Delegating up to 10 issues.\nDECISION: DELEGATE")
+        self.assertIn("VERDICT: FAIL - execution failed: ACT_STEP_NO_ACTION: decision=DELEGATE", receipt)
+        self.assertIn("decision: DELEGATE", receipt)
+
+    def test_delegate_decision_with_a_read_back_delegation_passes(self):
+        receipt = self.run_loop("DECISION: DELEGATE", act_events=[(3, "delegate", True)])
+        self.assertIn("VERDICT: PASS - all gates passed", receipt)
+
+    def test_do_myself_needs_a_successful_mutation_in_the_act_step(self):
+        receipt = self.run_loop("DECISION: DO_MYSELF", act_events=[(3, "write_file", False)])
+        self.assertIn("ACT_STEP_NO_ACTION: decision=DO_MYSELF", receipt)
+        self.assertIn("VERDICT: FAIL", receipt)
+
+    def test_decide_step_without_a_structured_decision_fails(self):
+        receipt = self.run_loop("I reviewed everything and it is all covered.")
+        self.assertIn("DECIDE_STEP_NO_STRUCTURED_DECISION", receipt)
+        self.assertIn("VERDICT: FAIL", receipt)
+
+    def test_tool_success_reads_only_real_read_back_results(self):
+        self.assertTrue(runtime._tool_succeeded("delegate", "DELEGATED (status REQUESTED, NOT executed): task #5 u -> CLAUDE; readback OK"))
+        self.assertFalse(runtime._tool_succeeded("delegate", "ALREADY DELEGATED: open task #5 covers this"))
+        self.assertFalse(runtime._tool_succeeded("write_file", "WRITE FAILED: HTTP 409 protected branch"))
+        self.assertFalse(runtime._tool_succeeded("comment_issue", "COMMENTED on #5: u; readback FAILED"))
+
     def test_legacy_runtime_module_reexports_packaged_implementation(self):
         self.assertIs(legacy_runtime.main, runtime.main)
 
