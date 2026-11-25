@@ -1277,11 +1277,12 @@ def main():
         "loop_state": "IDLE_SELECT",
         "first_processing_error": None,
     }
-    # GitHub can start a scheduled run after its intended UTC slot.
-    duty_schedule = os.environ.get("ICARUS_PULSE_DUTY_SCHEDULE")
+    # GitHub drops and delays many scheduled slots, so every scheduled run,
+    # heartbeat included, does intake. Only a run whose trigger cron is unknown
+    # skips. Pulse reasoning stays gated to the duty cron in the workflow.
     cadence_skip = (
         os.environ.get("GITHUB_EVENT_NAME") == "schedule"
-        and (not duty_schedule or os.environ.get("ICARUS_PULSE_TRIGGER_SCHEDULE") != duty_schedule)
+        and not os.environ.get("ICARUS_PULSE_TRIGGER_SCHEDULE")
     )
     try:
         if cadence_skip:

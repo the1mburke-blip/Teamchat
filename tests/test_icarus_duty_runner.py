@@ -178,20 +178,31 @@ class DutyRunnerTests(unittest.TestCase):
         self.assertEqual(json.loads((stderr if expected_exit else stdout).getvalue()), record)
         return record
 
-    def test_heartbeat_and_missing_trigger_skip_duty_with_evidence(self):
+    def test_missing_trigger_skips_duty_with_evidence(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        os.environ["ICARUS_PULSE_TRIGGER_SCHEDULE"] = ""
         del os.environ["GITHUB_TOKEN"]
-        for trigger in ("7 1-23/2 1-30 * *", "7 * 31 * *", ""):
+        timestamp = datetime(2027, 1, 1, 0, 7, tzinfo=timezone.utc)
+        record = self.run_pulse(at=timestamp)
+        self.assertEqual(record["monitoring_result"], "SKIPPED")
+        self.assertEqual(record["loop_state"], "SKIPPED_CADENCE")
+        self.assertEqual(record["intake_state"], "SKIPPED")
+        self.assertEqual(record["open_issues_inspected"], 0)
+        self.assertEqual(record["timestamp_utc"], timestamp.isoformat())
+        self.assertEqual(self.requests, [])
+
+    def test_heartbeat_trigger_runs_duty_intake(self):
+        os.environ["GITHUB_EVENT_NAME"] = "schedule"
+        for trigger in ("7 1-23/2 1-30 * *", "7 * 31 * *"):
             with self.subTest(trigger=trigger):
                 os.environ["ICARUS_PULSE_TRIGGER_SCHEDULE"] = trigger
-                timestamp = datetime(2027, 1, 1, 0, 7, tzinfo=timezone.utc)
-                record = self.run_pulse(at=timestamp)
-                self.assertEqual(record["monitoring_result"], "SKIPPED")
-                self.assertEqual(record["loop_state"], "SKIPPED_CADENCE")
-                self.assertEqual(record["intake_state"], "SKIPPED")
-                self.assertEqual(record["open_issues_inspected"], 0)
-                self.assertEqual(record["timestamp_utc"], timestamp.isoformat())
-                self.assertEqual(self.requests, [])
+                self.requests.clear()
+                record = self.run_pulse()
+                self.assertEqual(record["monitoring_result"], "SUCCESS")
+                self.assertNotEqual(record["loop_state"], "SKIPPED_CADENCE")
+                self.assertNotEqual(record["intake_state"], "SKIPPED")
+                self.assertGreater(record["open_issues_inspected"], 0)
+                self.assertNotEqual(self.requests, [])
 
     def test_completed_inspection_writes_zero_task_tool_idle_receipt(self):
         os.environ["GITHUB_EVENT_NAME"] = "schedule"
