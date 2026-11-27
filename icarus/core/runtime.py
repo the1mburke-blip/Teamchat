@@ -48,6 +48,29 @@ def redact(s):
     return s
 
 
+_SECRET_SHAPES = [
+    (re.compile(r"(?i)github_pat_[A-Za-z0-9_]{20,}"), "[REDACTED]"),
+    (re.compile(r"(?i)\bgh[pousr]_[A-Za-z0-9]{20,}"), "[REDACTED]"),
+    (re.compile(r"\bAIza[0-9A-Za-z_\-]{30,}"), "[REDACTED]"),
+    (re.compile(r"(?i)\bsk-[A-Za-z0-9_\-]{20,}"), "[REDACTED]"),
+    (re.compile(r"(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=\-]{8,}"), r"\1 [REDACTED]"),
+    (re.compile(r"""(?i)([\w-]*(?:authorization|api[_-]?key|token|secret|passw(?:or)?d|credential)[\w-]*)(["']?\s*[:=]\s*)("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s"',;]{6,})"""), r"\1\2[REDACTED]"),
+]
+
+
+def redact_result(s):
+    """redact() plus common secret shapes, for tool results echoed into receipts (redact-then-truncate).
+
+    Best-effort pattern matching, NOT guaranteed secret detection: a secret in an unrecognised format that is not
+    one of the three env values can pass through. Known limit: a tool that RAISES (rather than returning an error
+    string) crashes the run before any receipt is written; tool_results are only diagnostic for returned failures.
+    """
+    s = redact(str(s))
+    for rx, rep in _SECRET_SHAPES:
+        s = rx.sub(rep, s)
+    return s
+
+
 def read(path, head=0, tail=0):
     p = pathlib.Path(path)
     if not p.is_file():
@@ -278,6 +301,7 @@ COMMENTS_POSTED = []  # (issue number, body) of comments read back this run
 SELF_TOOLS = ["read_file", "list_dir", "read_issue", "list_issues", "list_prs", "read_pr", "comment_issue"]
 EFFECTS = []  # successful write_file/delete_file mutations, re-read before the verdict (Athena executionIntegrity_)
 ACT_EVENTS = []  # (loop step, tool, succeeded) for the ACT check (Athena ACT_STEP_NO_ACTION)
+TOOL_RESULTS = []  # redacted, truncated tool results, written to the receipt so a failed action is diagnosable
 CUR_STEP = {"n": 0}
 TOUCHED = {}  # path -> written/deleted this run; reads of these go to GitHub, not the stale checkout
 BRANCH = os.environ.get("GITHUB_REF_NAME") or "main"
@@ -1012,6 +1036,7 @@ def run_step(system, step, context, cands, test_cap, inject, tool_log, allowed=N
             res = TOOLS[name](args)
         ACT_EVENTS.append((CUR_STEP["n"], name, _tool_succeeded(name, res)))
         tool_log.append(f"{name}({json.dumps(args)[:70]})")
+        TOOL_RESULTS.append(f"[step {CUR_STEP['n']}] {name}: " + " ".join(redact_result(res).split())[:200])
         scratch += f"\n### {name} {json.dumps(args)[:120]}\n{res}\n"
         if BLOCKER_RECALLS["n"] < 2 and re.search(r"DENIED|HARD STOP|failed|error|not found|\b40[134]\b|\b429\b", str(res)[:400], re.I):
             BLOCKER_RECALLS["n"] += 1
@@ -1101,6 +1126,7 @@ def self_takeover_gate(number):
 
 def main(pulse_issue=None, self_task=False):
     ACT_EVENTS.clear()
+    TOOL_RESULTS.clear()
     EFFECTS.clear()
     COMMENTS_POSTED.clear()
     CUR_STEP["n"] = 0
@@ -1308,6 +1334,7 @@ def main(pulse_issue=None, self_task=False):
         "- Usage today (Icarus calls, incl. this run): " + (", ".join(f"{m} {c}" + (f"/{RPD[m]}" if m in RPD else "") for m, c in sorted(USAGE.items())) or "none"),
         f"- Model attempts: {'; '.join(log) or 'none'}",
         f"- Enforcement: API calls {STATE['calls']}/{CFG['maxApiCallsPerRun']}; runtime {int(time.time() - START)}s/{CFG['maxRuntimeSeconds']}s; runs today {daily}/{CFG['dailyRunCap']}; tools: {tools_txt}; writes {WRITES['n']}/{CFG['maxWrites']}; delegations {len(DELEGATED)}/{CFG['maxDelegations']}",
+        *([f"- Tool results (redacted, 200 chars each): " + " | ".join(TOOL_RESULTS)] if TOOL_RESULTS else []),
         *([f"- TEST HOOKS ACTIVE (owner-set): {', '.join(test_notes)}"] if test_notes else []),
         *([f"- Delegations (status REQUESTED, not executed): " + "; ".join(DELEGATED)] if DELEGATED else []),
         f"- VERDICT: {verdict} - {reason}",
@@ -1332,6 +1359,7 @@ def main(pulse_issue=None, self_task=False):
     if pulse_issue is not None:
         response = str(ans.get("answer", "")).strip()
         return int(not response or response == "(tool budget exhausted before an answer)")
+    return 0 if verdict == "PASS" else 1
 
 
 if __name__ == "__main__":
@@ -1340,4 +1368,4 @@ if __name__ == "__main__":
     elif sys.argv[1:] == ["--pulse-infer"]:
         sys.exit(pulse_infer())
     else:
-        main()
+        sys.exit(main())
