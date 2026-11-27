@@ -89,7 +89,7 @@ class PulseRuntimeTests(unittest.TestCase):
         self.assertFalse(runtime.LOOP_ON["v"])
 
 
-    def run_loop(self, decide_text, act_events=()):
+    def run_loop(self, decide_text, act_events=(), tool_results=(), raw=None):
         """Run one owner ICARUS_RUN loop with scripted step answers; return the receipt text."""
         Path("STATUS.md").write_text("status", encoding="utf-8")
         cfg = dict(runtime.CFG)
@@ -102,10 +102,11 @@ class PulseRuntimeTests(unittest.TestCase):
             n = runtime.CUR_STEP["n"]
             if n == 3:
                 runtime.ACT_EVENTS.extend(act_events)
+                runtime.TOOL_RESULTS.extend(tool_results)
             return ({"answer": texts[n - 1], "tool": None, "unverified_claims": [],
                      "needs_owner": False, "owner_reason": "", "lesson": ""}, "test-model", "", False)
         with patch.multiple(
-            runtime, RAW="ICARUS_RUN Review the board and act.\nVERIFY_FILE: STATUS.md",
+            runtime, RAW=raw or "ICARUS_RUN Review the board and act.\nVERIFY_FILE: STATUS.md",
             KEY="test-key", CID="88", ACTOR="owner", CFG=cfg,
             PROVIDER={"test-model": "google"}, USAGE={}, LOG=[], SKIPPED=[], RECALLED=[],
             BLOCKER_RECALLS={"n": 0}, DELEGATED=[], DELEG_KEYS={}, LOOP_ON={"v": False},
@@ -114,13 +115,113 @@ class PulseRuntimeTests(unittest.TestCase):
              patch.object(runtime, "thread_context", return_value=(0, "")), \
              patch.object(runtime, "http", return_value=(404, "")), \
              patch.object(runtime, "run_step", side_effect=step), redirect_stdout(io.StringIO()):
-            runtime.main()
+            self.last_rc = runtime.main()
         return next(Path("icarus/runs").glob("*-88.md")).read_text(encoding="utf-8")
 
     def test_delegate_decision_without_a_delegate_call_fails(self):
         receipt = self.run_loop("Delegating up to 10 issues.\nDECISION: DELEGATE")
         self.assertIn("VERDICT: FAIL - execution failed: ACT_STEP_NO_ACTION: decision=DELEGATE", receipt)
         self.assertIn("decision: DELEGATE", receipt)
+
+    def test_fail_verdict_returns_nonzero_and_pass_returns_zero(self):
+        self.run_loop("DECISION: DO_MYSELF", act_events=[(3, "write_file", False)])
+        self.assertEqual(self.last_rc, 1)
+        self.run_loop("DECISION: DELEGATE", act_events=[(3, "delegate", True)])
+        self.assertEqual(self.last_rc, 0)
+
+    def test_missing_verification_gate_is_fail_and_nonzero(self):
+        receipt = self.run_loop("DECISION: DELEGATE", act_events=[(3, "delegate", True)], raw="ICARUS_RUN Review the board and act.")
+        self.assertIn("VERDICT: FAIL - no evidence gate supplied", receipt)
+        self.assertEqual(self.last_rc, 1)
+
+    def test_tool_results_do_not_leak_into_the_next_run(self):
+        self.run_loop("DECISION: DO_MYSELF", act_events=[(3, "comment_issue", False)],
+                      tool_results=["[step 3] comment_issue: COMMENT FAILED: HTTP 403"])
+        receipt = self.run_loop("DECISION: DELEGATE", act_events=[(3, "delegate", True)])
+        self.assertNotIn("Tool results", receipt)
+        self.assertNotIn("HTTP 403", receipt)
+
+    def test_receipt_records_the_failed_tool_result(self):
+        receipt = self.run_loop("DECISION: DO_MYSELF", act_events=[(3, "comment_issue", False)],
+                                tool_results=["[step 3] comment_issue: COMMENT FAILED: HTTP 403 Resource not accessible"])
+        self.assertIn("- Tool results (redacted, 200 chars each): [step 3] comment_issue: COMMENT FAILED: HTTP 403", receipt)
+        self.assertIn("VERDICT: FAIL", receipt)
+
+    def test_redact_result_masks_common_secret_shapes(self):
+        gh, pat, aiza, orv1 = "ghp_" + "a" * 36, "github_pat_" + "B" * 30, "AIza" + "c" * 35, "sk-or-v1-" + "d" * 30
+        env_secret = "envsecretvalue123"
+        raw = (f"HTTP 401 Bad credentials: Authorization: Bearer {gh} / {pat} / key={aiza} / {orv1} / "
+               f'{{"token": "plainvalue99"}} / {env_secret}')
+        with patch.object(runtime, "GH_TOKEN", env_secret):
+            out = runtime.redact_result(raw)
+        for leaked in (gh, pat, aiza, orv1, "plainvalue99", env_secret):
+            self.assertNotIn(leaked, out)
+        self.assertIn("HTTP 401 Bad credentials", out)
+
+    def test_redact_result_edge_cases(self):
+        gh = "ghp_" + "a" * 36
+        cases = [
+            f"BEARER {gh}.", f"bearer\n{gh}", f"token:\n  abcdef123456", f'"token":"abcdef123456"', "token=abcdef123456;",
+            "Authorization: Basic dXNlcjpwYXNzd29yZA==", f"GHP_{'A' * 36}", f"x-api-key: {'k' * 20}",
+        ]
+        for raw in cases:
+            out = runtime.redact_result(raw)
+            self.assertIn("[REDACTED]", out, raw)
+            for frag in ("abcdef123456", "dXNlcjpwYXNzd29yZA", "a" * 20, "A" * 20, "k" * 20):
+                self.assertNotIn(frag, out, raw)
+        for benign in ("HTTP 404 not found", "ghp_short", "", None, {"a": 1}, 403):
+            runtime.redact_result(benign)
+        self.assertEqual(runtime.redact_result("HTTP 404 not found"), "HTTP 404 not found")
+
+    def test_redact_result_masks_whole_quoted_values(self):
+        cases = [
+            ('{"password": "first-part second-part"}', "second-part"),
+            ('{"token": "abc def ghi jkl"}', "def ghi"),
+            ('{"password": "pa\\"ss word tail"}', "word tail"),
+            ('{"secret": "line1\nline2 tail"}', "line2 tail"),
+            ("{'password': 'single quoted secret words'}", "secret words"),
+            ('{"client_secret": "csval123456 more"}', "csval123456"),
+            ('{"refresh_token": "rtval123456"}', "rtval123456"),
+            ("refresh_token=rtval123456", "rtval123456"),
+            ('{"password": "unterminated value with spaces', "value with spaces"),
+        ]
+        for raw, leaked in cases:
+            out = runtime.redact_result(raw)
+            self.assertNotIn(leaked, out, raw)
+            self.assertIn("[REDACTED]", out, raw)
+        self.assertEqual(runtime.redact_result('{"message": "Resource not accessible by integration", "status": "403"}'),
+                         '{"message": "Resource not accessible by integration", "status": "403"}')
+
+    def test_run_step_redacts_a_secret_that_straddles_the_truncation_point(self):
+        gh = "ghp_" + "a" * 36
+        cfg = dict(runtime.CFG)
+        cfg.update({"tools": ["comment_issue"], "maxToolCalls": 3})
+        replies = iter([({"tool": {"name": "comment_issue", "args": {}}}, "m", "", False), ({"answer": "done", "tool": None}, "m", "", False)])
+        runtime.TOOL_RESULTS.clear()
+        with patch.multiple(runtime, CFG=cfg, CUR_STEP={"n": 3}, BLOCKER_RECALLS={"n": 2}), \
+             patch.dict(runtime.TOOLS, {"comment_issue": lambda a: "y" * 170 + " token=" + gh}), \
+             patch.object(runtime, "pool", side_effect=lambda *a, **k: next(replies)):
+            runtime.run_step("sys", "step", "", [], None, None, [], None)
+        runtime.ACT_EVENTS.clear()
+        self.assertNotIn("ghp_", runtime.TOOL_RESULTS[0])
+        self.assertNotIn("aaaa", runtime.TOOL_RESULTS[0])
+        runtime.TOOL_RESULTS.clear()
+
+    def test_run_step_stores_a_redacted_truncated_tool_result(self):
+        cfg = dict(runtime.CFG)
+        cfg.update({"tools": ["comment_issue"], "maxToolCalls": 3})
+        replies = iter([({"tool": {"name": "comment_issue", "args": {"number": 259, "body": "x"}}}, "m", "", False),
+                        ({"answer": "done", "tool": None}, "m", "", False)])
+        runtime.TOOL_RESULTS.clear()
+        with patch.multiple(runtime, CFG=cfg, CUR_STEP={"n": 3}, BLOCKER_RECALLS={"n": 2}), \
+             patch.dict(runtime.TOOLS, {"comment_issue": lambda a: "COMMENT FAILED: HTTP 403\n" + "x" * 500}), \
+             patch.object(runtime, "pool", side_effect=lambda *a, **k: next(replies)):
+            runtime.run_step("sys", "step", "", [], None, None, [], None)
+        runtime.ACT_EVENTS.clear()
+        self.assertEqual(len(runtime.TOOL_RESULTS), 1)
+        self.assertTrue(runtime.TOOL_RESULTS[0].startswith("[step 3] comment_issue: COMMENT FAILED: HTTP 403 xxx"))
+        self.assertLessEqual(len(runtime.TOOL_RESULTS[0]), len("[step 3] comment_issue: ") + 200)
+        runtime.TOOL_RESULTS.clear()
 
     def test_delegate_decision_with_a_read_back_delegation_passes(self):
         receipt = self.run_loop("DECISION: DELEGATE", act_events=[(3, "delegate", True)])
