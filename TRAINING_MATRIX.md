@@ -2465,3 +2465,16 @@ I want you to log this verbatim in your memory files, in Icarus's learning files
 - decisions: GAS (Athena) is Icarus; every other runtime and agent is peripheral. Icarus is a team member who covers when Claude or ChatGPT are out, not an authority. Work = the real deliverable landed and read back; branch writes do not count; store and email tasks count.
 - rule: state limits plainly before calling a change "deployed"; a guess written as fact is the failure to avoid.
 - next: find why Athena stopped on 19 Nov; move authority back to GAS; add the Composio tool desk there.
+
+## HV-EXP-190 — A re-dispatch needs its claim and preflight before the first test or endpoint read (incident 2026-11-26)
+- experience_id: HV-EXP-190
+- proposed_by: Michael (standing rules; scheduled Teamchat run); executed/logged_by: Claude Sonnet 5.5, scheduled run, recorded 2026-11-28 (Git commit time is authoritative); independent_adjudicator: pending.
+- numbering: HV-EXP-180 to 189 appear in open, unmerged pull requests that touch this file, so this entry skips them.
+- incident: In the Claude scheduled run of 26 Nov on #180, #181, #228, #280, #281 and #285, tests, a probe and product/Shopify reads ran before claim comments 7184805782 to 7184807260 (Rule 39). The allowance was not estimated before use (R7) and failures were not durably recorded before the next attempt (R8, Rule 16). The R12 training entry was then left unwritten, including through the three scheduled runs of 27 Nov whose receipts list it as not attempted.
+- evidence: Issue #308 body (self-audit); receipt comments on #227 created 2026-11-27T06:45:09Z, 12:56:00Z and 18:45:45Z; claim for this write: #308 comment 7231188735.
+- root_cause: UNVERIFIED for the 26 Nov ordering miss beyond what #308 records. For the delay, the receipts give no external blocker.
+- lesson: A re-dispatched or carried-forward task is a new execution. Post and read back the claim, preflight and allowance estimate before its first test or endpoint read. When a compliance tracker names a training entry as required and nothing external blocks it, write it in the same or the next run. Check open pull requests before assigning an HV-EXP number.
+- what_not_to_retry: Do not run checks first and disclose the order afterwards; a later claim does not validate earlier execution. Do not carry an unblocked item from receipt to receipt.
+- related: HV-EXP-009, HV-EXP-124, HV-EXP-130, HV-EXP-154.
+- recovery_status: Lesson recorded. The 26 Nov process failures stand. Independent review pending; no PASS awarded.
+- external_cost: EUR 0; allowance unmetered.
